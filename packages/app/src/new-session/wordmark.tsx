@@ -16,57 +16,55 @@ import {
 } from "./wordmark-machine"
 import "./wordmark.css"
 
-// Each letter in the 234×42 logo viewBox, with its counter shadow, stem, and bottom-centre pivot.
+// Each letter of the BELLU CODE wordmark in the 234×42 logo viewBox, with its bottom-centre pivot.
 const LETTERS = [
   {
-    cx: 12,
-    weak: "M18 30H6V18H18V30Z",
+    cx: 11.1,
     fill: "var(--icon-base)",
-    stem: "M18 12H6V30H18V12ZM24 36H0V6H24V36Z",
+    stem: "M-0 35.89V6.11H14.07C18.91 6.11 21.33 8.52 21.33 13.36V15.95C21.33 16.93 21.04 17.76 20.46 18.45L18.95 20.27L20.76 21.78C21.71 22.55 22.19 23.71 22.19 25.23V28.64C22.19 33.48 19.77 35.89 14.94 35.89H-0ZM6.22 30.28H14.68C15.54 30.28 15.97 29.85 15.97 28.99V24.67C15.97 23.81 15.54 23.37 14.68 23.37H6.22V30.28ZM6.22 17.76H13.81C14.68 17.76 15.11 17.33 15.11 16.47V13.01C15.11 12.15 14.68 11.72 13.81 11.72H6.22V17.76Z",
   },
   {
-    cx: 42,
-    weak: "M48 30H36V18H48V30Z",
+    cx: 36.62,
     fill: "var(--icon-base)",
-    stem: "M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z",
+    stem: "M26.43 35.89V6.11H46.81V11.72H32.65V17.76H45.51V23.37H32.65V30.28H46.81V35.89H26.43Z",
   },
   {
-    cx: 72,
-    weak: "M84 24V30H66V24H84Z",
+    cx: 60.3,
     fill: "var(--icon-base)",
-    stem: "M84 24H66V30H84V36H60V6H84V24ZM66 18H78V12H66V18Z",
+    stem: "M50.76 35.89V6.11H56.98V30.28H69.84V35.89H50.76Z",
   },
   {
-    cx: 102,
-    weak: "M108 36H96V18H108V36Z",
+    cx: 82.22,
     fill: "var(--icon-base)",
-    stem: "M108 12H96V36H90V6H108V12ZM114 36H108V12H114V36Z",
+    stem: "M72.68 35.89V6.11H78.9V30.28H91.76V35.89H72.68Z",
   },
   {
-    cx: 132,
-    weak: "M144 30H126V18H144V30Z",
-    fill: "var(--icon-strong-base)",
-    stem: "M144 12H126V30H144V36H120V6H144V12Z",
+    cx: 106.09,
+    fill: "var(--icon-base)",
+    stem: "M94.35 28.64V6.11H100.56V28.99C100.56 29.85 101 30.28 101.86 30.28H110.32C111.18 30.28 111.62 29.85 111.62 28.99V6.11H117.83V28.64C117.83 33.48 115.41 35.89 110.58 35.89H101.6C96.77 35.89 94.35 33.48 94.35 28.64Z",
   },
   {
-    cx: 162,
-    weak: "M168 30H156V18H168V30Z",
+    cx: 141.99,
     fill: "var(--icon-strong-base)",
-    stem: "M168 12H156V30H168V12ZM174 36H150V6H174V36Z",
+    stem: "M131.15 28.64V13.36C131.15 8.52 133.57 6.11 138.4 6.11H149.93L152.82 8.35V11.72H138.66C137.8 11.72 137.37 12.15 137.37 13.01V28.99C137.37 29.85 137.8 30.28 138.66 30.28H152.82V33.65L149.93 35.89H138.4C133.57 35.89 131.15 33.48 131.15 28.64Z",
   },
   {
-    cx: 192,
-    weak: "M198 30H186V18H198V30Z",
+    cx: 168.54,
     fill: "var(--icon-strong-base)",
-    stem: "M198 12H186V30H198V12ZM204 36H180V6H198V0H204V36Z",
+    stem: "M156.36 28.64V13.36C156.36 8.52 158.78 6.11 163.61 6.11H173.46C178.29 6.11 180.71 8.52 180.71 13.36V28.64C180.71 33.48 178.29 35.89 173.46 35.89H163.61C158.78 35.89 156.36 33.48 156.36 28.64ZM162.58 28.99C162.58 29.85 163.01 30.28 163.87 30.28H173.2C174.06 30.28 174.49 29.85 174.49 28.99V13.01C174.49 12.15 174.06 11.72 173.2 11.72H163.87C163.01 11.72 162.58 12.15 162.58 13.01V28.99Z",
   },
   {
-    cx: 222,
-    weak: "M234 24V30H216V24H234Z",
+    cx: 197.37,
     fill: "var(--icon-strong-base)",
-    stem: "M216 12V18H228V12H216ZM234 24H216V30H234V36H210V6H234V24Z",
+    stem: "M185.63 35.89V6.11H196.94C205.06 6.11 209.11 10.16 209.11 18.28V23.72C209.11 31.84 205.06 35.89 196.94 35.89H185.63ZM191.85 30.28H197.29C201.03 30.28 202.9 28.41 202.9 24.67V17.33C202.9 13.59 201.03 11.72 197.29 11.72H191.85V30.28Z",
+  },
+  {
+    cx: 223.81,
+    fill: "var(--icon-strong-base)",
+    stem: "M213.62 35.89V6.11H234V11.72H219.84V17.76H232.7V23.37H219.84V30.28H234V35.89H213.62Z",
   },
 ] as const
+const LAST = LETTERS.length - 1
 
 // Lodger geometry, in the logo's 234×42 viewBox units. The lodger is drawn from its bottom centre.
 const W = 234
@@ -238,10 +236,9 @@ function WordmarkLodger(props: {
             {(item, i) => (
               <g ref={(el) => (letters[i()] = el)}>
                 <g class="opacity-[0.16]">
-                  <path d={item.weak} fill="var(--icon-weak-base)" />
                   <path d={item.stem} fill={item.fill} />
                 </g>
-                <Show when={i() === 7}>
+                <Show when={i() === LAST}>
                   <rect
                     ref={notch}
                     x="224.6"
@@ -512,10 +509,10 @@ function mountLodger(
     c.pinY = lerp(PIN_SLOT.y, c.y - 11, clamp01(out / 7))
     c.pinRot = (c.x - REST.x) * 2.5
     c.pinScale = 1 + stress * 0.35
-    poses[7].x = (c.x - REST.x) * 0.12
-    poses[7].y = (c.y - REST.y) * 0.12
-    poses[7].sx = 1 + stress * 0.05
-    poses[7].sy = 1 + stress * 0.05
+    poses[LAST].x = (c.x - REST.x) * 0.12
+    poses[LAST].y = (c.y - REST.y) * 0.12
+    poses[LAST].sx = 1 + stress * 0.05
+    poses[LAST].sy = 1 + stress * 0.05
   }
 
   const snapIn = (dt: number) => {

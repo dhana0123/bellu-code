@@ -4,14 +4,12 @@ export function BelluCodeLogo(props: { class?: string }) {
       data-component="bellucode-logo"
       aria-hidden="true"
       class={props.class}
-      viewBox="0 0 16 16"
+      viewBox="0 0 419 419"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g transform="translate(1.2 1.2) scale(0.85)">
-        <path opacity="0.2" d="M11.1999 12.8H4.79993V6.40002H11.1999V12.8Z" fill="currentColor" />
-        <path d="M11.2 3.2H4.79998V12.8H11.2V3.2ZM14.4 16H1.59998V0H14.4V16Z" fill="currentColor" />
-      </g>
+      <path d="M319 122.058L121 36L175.525 128.158L121 209.684L319 122.058Z" fill="currentColor" />
+      <path d="M319 295.742L121 209.684L175.525 301.842L121 383.368L319 295.742Z" fill="currentColor" />
     </svg>
   )
 }
