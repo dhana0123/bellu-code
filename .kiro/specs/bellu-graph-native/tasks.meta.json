@@ -657,6 +657,11 @@
         "executionId": "416ee9b9-f751-4077-81ef-596bc30d2d2b",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794501483954
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794501924931
       }
     ],
     "18.1 Update the `go-server-bellu-graph` spec": [
@@ -664,6 +669,16 @@
         "executionId": "416ee9b9-f751-4077-81ef-596bc30d2d2b",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794494181304
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794501939232
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794502162758
       }
     ],
     "18.2 Update `services/bellud/README.md`": [
@@ -671,6 +686,16 @@
         "executionId": "416ee9b9-f751-4077-81ef-596bc30d2d2b",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794494184364
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794501941877
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794502164508
       }
     ],
     "18.3 Add `script/check-no-upstream-name` and run it in CI": [
@@ -678,6 +703,16 @@
         "executionId": "416ee9b9-f751-4077-81ef-596bc30d2d2b",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794494187594
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794501944192
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794502167989
       }
     ],
     "19. Final checkpoint": [
@@ -685,6 +720,16 @@
         "executionId": "416ee9b9-f751-4077-81ef-596bc30d2d2b",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794494190685
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794502178701
+      },
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794502356895
       }
     ],
     "1. Scaffold the Engine module tree": [
@@ -1388,6 +1433,27 @@
         "executionId": "416ee9b9-f751-4077-81ef-596bc30d2d2b",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794500680626
+      }
+    ],
+    "17. Remove the vendored engine and sync tooling": [
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794501928609
+      }
+    ],
+    "11. Swap the Facade onto the Engine": [
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794502376792
+      }
+    ],
+    "18. Documentation and the upstream-name check": [
+      {
+        "executionId": "d9d80e2e-d8ab-47a9-86c2-cc02c10d5d8f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794502380209
       }
     ]
   }

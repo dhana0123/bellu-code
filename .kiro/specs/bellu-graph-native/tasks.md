@@ -224,7 +224,7 @@ Go is at `/usr/local/go/bin`. Run commands from `services/bellud` unless noted.
     - Encodings, partial success, `400`/`401`/`403`/`413`/`503`.
     - _Requirements: 19.1, 19.4, 19.5_
 
-- [ ] 11. Swap the Facade onto the Engine
+- [x] 11. Swap the Facade onto the Engine
   - [x] 11.1 Add the additive Facade surface in `facade/types.go` and a new `facade/roles.go`
     - `Role`, `Grant`, `Config.Grants`, `Caller`, `WithCaller`/`CallerFrom` and `ErrForbidden`.
     - New fields: `Entity.Annotations`, `Edge.Derived`, `NeighborOpts.Resolve` and `Diff.Flapping`/`Flap`.
@@ -308,7 +308,7 @@ Go is at `/usr/local/go/bin`. Run commands from `services/bellud` unless noted.
 - [x] 16. Checkpoint: full stack on the new Engine
   - Run `go build ./...`, `go vet ./...` and `go test ./...`. Confirm with `go list -deps ./internal/bellugraph/facade` that the Facade imports no old engine package. Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 17. Remove the vendored engine and sync tooling
+- [x] 17. Remove the vendored engine and sync tooling
   - [x] 17.1 Delete the Vendored_Tree and attribution files
     - Delete every path under `services/bellud/internal/bellugraph` except `facade/` and `internal/bge/`, using `git rm -r` on the top-level entries without opening them.
     - This includes `NOTICE`, `UPSTREAM.md`, `LICENSE` and the other copied top-level files.
@@ -318,24 +318,24 @@ Go is at `/usr/local/go/bin`. Run commands from `services/bellud` unless noted.
     - Remove the `sync-graph` target, the `TestFixtureV1` line and the sync wording from the root `Makefile`.
     - Remove the `script/sync-bellu-graph/**` path filter and the "Vendored sync-tool leftover check" step from `.github/workflows/bellud.yml`.
     - _Requirements: 23.2, 23.4, 23.5_
-  - [-] 17.3 Run `go mod tidy` and rebuild
+  - [x] 17.3 Run `go mod tidy` and rebuild
     - Run `go mod tidy`, `go build ./...`, `go vet ./...` and `go test ./...`. Confirm that modules used only by the old tree are gone from `go.mod`/`go.sum`.
     - _Requirements: 23.6, 22.4_
 
-- [ ] 18. Documentation and the upstream-name check
-  - [~] 18.1 Update the `go-server-bellu-graph` spec
+- [x] 18. Documentation and the upstream-name check
+  - [x] 18.1 Update the `go-server-bellu-graph` spec
     - Edit `requirements.md`, `design.md`, `tasks.md` and `tasks.meta.json`: drop the sync tool, rename map, Allow_List, NOTICE and upstream references, and describe the in-tree Bellu Graph Engine with a pointer to this spec.
     - _Requirements: 23.7, 25.5_
-  - [~] 18.2 Update `services/bellud/README.md`
+  - [x] 18.2 Update `services/bellud/README.md`
     - Replace "Sync the Bellu Graph engine" with an in-tree Engine section: features, routes, token roles and `graph-tokens.json`.
     - Add the upgrade note: delete `~/.local/share/bellucode/graph` (copy `audit.jsonl` first if needed); collectors rebuild the graph.
     - _Requirements: 23.8, 24.3, 25.5_
-  - [~] 18.3 Add `script/check-no-upstream-name` and run it in CI
+  - [x] 18.3 Add `script/check-no-upstream-name` and run it in CI
     - Write a POSIX shell script that builds the term from two fragments and runs a case-insensitive search over the repository paths (`git ls-files` plus untracked, non-ignored files) and contents, excluding `.git`, `node_modules`, `dist` and the Finnish words in `fi.ts`. It prints each match and exits `1` on any match.
     - Add a CI step in `.github/workflows/bellud.yml` that runs it from the repository root.
     - _Requirements: 25.1, 25.2, 25.3, 25.4_
 
-- [~] 19. Final checkpoint
+- [x] 19. Final checkpoint
   - From `services/bellud`, run `go build ./...`, `go vet ./...` and `go test ./...`. From the repository root, run `script/check-no-upstream-name`, which must find zero matches. Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

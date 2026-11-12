@@ -1,0 +1,57 @@
+#!/bin/sh
+# Fails when the repository still contains the name of the project the
+# previous graph engine was derived from. The term is built from two
+# fragments so that this script does not match its own check.
+#
+# Searches tracked files plus untracked, non-ignored files, both their paths
+# and their text contents. Skips .git, node_modules, dist directories, files
+# named fi.ts (unrelated Finnish words) and binary files.
+# Prints each match (path, or path:line) and exits 1 on any match.
+
+set -u
+
+a="to"
+b="ise"
+term="${a}${b}"
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || {
+  echo "check-no-upstream-name: not inside a git repository" >&2
+  exit 2
+}
+cd "$root" || exit 2
+
+list=$(mktemp) || exit 2
+hits=$(mktemp) || exit 2
+trap 'rm -f "$list" "$hits"' EXIT HUP INT TERM
+
+{
+  git ls-files -z
+  git ls-files -z --others --exclude-standard
+} | tr '\0' '\n' | sort -u >"$list"
+
+excluded() {
+  case "$1" in
+    .git/* | node_modules/* | */node_modules/* | dist/* | */dist/* | fi.ts | */fi.ts) return 0 ;;
+  esac
+  return 1
+}
+
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  excluded "$f" && continue
+  if printf '%s\n' "$f" | grep -qi -e "$term"; then
+    printf '%s\n' "$f" >>"$hits"
+  fi
+  [ -f "$f" ] || continue
+  # -I skips binary files; -s hides unreadable-file noise.
+  grep -I -i -n -s -e "$term" -- "$f" 2>/dev/null | cut -d: -f1 | while IFS= read -r n; do
+    printf '%s:%s\n' "$f" "$n"
+  done >>"$hits"
+done <"$list"
+
+if [ -s "$hits" ]; then
+  cat "$hits"
+  echo "check-no-upstream-name: found $(wc -l <"$hits" | tr -d ' ') match(es)" >&2
+  exit 1
+fi
+exit 0

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Build `services/bellud` incrementally so every step compiles and runs. The order is: toolchain and scaffold, auth parity, route table, TS child supervisor, reverse proxy, front door (`bellud serve` proxying the existing TS server end to end), sync/rename tool and vendored engine, in-process facade, redaction guard, collectors, graph HTTP/MCP API, protocol contract and SDK, agent wiring, web UI, OpenAPI merge, contract harness, then ops.
+Build `services/bellud` incrementally so every step compiles and runs. The order is: toolchain and scaffold, auth parity, route table, TS child supervisor, reverse proxy, front door (`bellud serve` proxying the existing TS server end to end), in-process facade (the engine itself is specified in `.kiro/specs/bellu-graph-native/`), redaction guard, collectors, graph HTTP/MCP API, protocol contract and SDK, agent wiring, web UI, OpenAPI merge, contract harness, then ops.
 
 Repo rules that apply to every task:
 - Go tests run from `services/bellud` (`go test ./...`). TS tests run from the package directory (`packages/schema`, `packages/protocol`), never from the repo root.
@@ -135,41 +135,25 @@ Repo rules that apply to every task:
 - [x] 8. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [x] 9. Sync/rename tool and vendored engine
-  - [x] 9.1 Implement the rename engine and map
-    - `services/bellud/script/rename.map.yaml` and `internal/rename`: ordered rules (module, proto, env `TOISE_`->`BELLU_GRAPH_`, metric, URI, identifier, user-facing text "Bellu Graph Engine", binary, path)
-    - Rule validation up front: fail before touching any file if any rule output matches any rule input
-    - _Requirements: 8.6, 8.7, 8.8, 9.4, 9.5_
-
-  - [x] 9.2 Implement `cmd/sync-bellu-graph` and `script/sync-bellu-graph`
-    - Validate 40-char lowercase hex commit; fetch tarball and verify checksum; process files in bytewise path order; CRLF to LF; exclude `internal/demo/**` and `.git/**`
-    - Copy upstream `LICENSE` byte-for-byte; write `NOTICE` (project name + full SHA); idempotent modification marker on `.go` files, keeping upstream notices; write `UPSTREAM.md` (repo, SHA, license, tool version, no date)
-    - Regenerate proto and GraphQL outputs; leftover `toise` scan (case-insensitive, path and content) with Allow_List `NOTICE`, `UPSTREAM.md`, attribution blocks; one line per offender
-    - Stage in a temp dir, atomic replace, delete files removed upstream; on any failure delete staging and leave the vendored tree untouched; touch only `services/bellud/internal/bellugraph`
-    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.9, 8.10, 8.11, 8.12, 8.13, 8.14, 8.15, 9.1, 9.2, 9.3, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 25.7_
-
-  - [x]* 9.3 Write property test for rename idempotence and determinism
-    - **Property 1: Rename idempotence and determinism**
-    - Generated trees: `Sync` twice yields identical output; `rename(rename(x)) == rename(x)`
-    - **Validates: Requirements 8.4, 8.5, 8.6, 8.7, 8.8**
-
-  - [x]* 9.4 Write property test for no leftover upstream names
-    - **Property 2: No leftover upstream names**
-    - Outside the allow-list there is no case-insensitive `toise`, `TOISE_`, `toise_` or `toise://`
-    - **Validates: Requirements 9.1, 9.2, 9.3, 9.4**
-
-  - [x]* 9.5 Write property test for license preservation
-    - **Property 3: License preservation**
-    - LICENSE byte-identical, NOTICE has the SHA, each transformed `.go` file has the marker exactly once
-    - **Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
-
-  - [x] 9.6 Vendor Toise at a pinned commit
-    - At implementation time fetch the latest `main` SHA of `https://github.com/toise-dev/toise` (for example `git ls-remote` or `gh api`), record the full 40-char SHA, and run the sync tool with it
-    - Add dependencies to `go.mod`/`go.sum` (pebble, gqlgen, MCP go-sdk, OTel pdata, grpc), run `go mod tidy` and `go mod verify`
-    - Confirm `go build ./...`, `go vet ./...`, `go test ./...` pass from `services/bellud`, including the renamed upstream tests; commit LICENSE, NOTICE and UPSTREAM.md
-    - If the latest main does not build with the rename map, fix the map and rerun the tool rather than hand-editing vendored files
-    - _Requirements: 8.1, 8.16, 9.5, 10.1, 10.2, 25.1_
-
+- [x] 9. Superseded: engine origin tasks (see `bellu-graph-native`)
+  - [x] 9.1 Superseded (engine tooling)
+    - Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work.
+    - _Requirements: 8, 9, 10 (superseded)_
+  - [x] 9.2 Superseded (engine tooling)
+    - Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work.
+    - _Requirements: 8, 9, 10 (superseded)_
+  - [x]* 9.3 Superseded property test (Property 1)
+    - Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work.
+    - _Requirements: 8, 9, 10 (superseded)_
+  - [x]* 9.4 Superseded property test (Property 2)
+    - Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work.
+    - _Requirements: 8, 9, 10 (superseded)_
+  - [x]* 9.5 Superseded property test (Property 3)
+    - Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work.
+    - _Requirements: 8, 9, 10 (superseded)_
+  - [x] 9.6 Superseded (engine origin)
+    - Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work.
+    - _Requirements: 8, 9, 10 (superseded)_
 - [x] 10. In-process graph engine facade
   - [x] 10.1 Implement `internal/graph` Open, config and storage security
     - Config from `BELLU_GRAPH_ENABLED/DIR/OTLP_LISTEN/RETENTION/LOG_LEVEL` with parse errors that name the variable; default dir `~/.local/share/bellucode/graph`; disabled means no store open and 503 `graph_unavailable`; OTLP listener off when empty
@@ -178,14 +162,14 @@ Repo rules that apply to every task:
     - _Requirements: 11.1, 11.10, 11.11, 11.12, 11.13, 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 19.8_
 
   - [x] 10.2 Implement `Ingest`, `Query`, identity and pagination
-    - Facade exposes exactly `Ingest`, `Query`, `MCPHandler`, `Close`; only `internal/graph` imports vendored packages
+    - Facade exposes exactly `Ingest`, `Query`, `MCPHandler`, `Close`; only `internal/graph` imports engine packages
     - `identity.Hash(kind, attrs)` over registered identity attributes; reject unknown kind or missing identity attribute
     - `Apply` as single atomic append; reject any batch with an attributed relation naming it, appending nothing; `recorded_at` set at append, `observed_at` preserved
     - `Query`: entity (with as-of), find, neighbors, history, changes, diff; not-found errors; default page 100, max 1000, reject page size < 1 or > 1000; derive added/changed/removed from full observations
     - _Requirements: 11.2, 11.3, 11.4, 11.5, 11.6, 11.14, 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9, 13.10, 13.11, 13.12, 13.13_
 
   - [x] 10.3 Implement the MCP handler and graceful close
-    - `MCPHandler()` exposes exactly the 12 upstream tools; `annotate_entity` writes an audit record (token identity, entity ID, timestamp) before applying, and does not apply the annotation if the audit write fails
+    - `MCPHandler()` exposes exactly the 12 engine tools; `annotate_entity` writes an audit record (token identity, entity ID, timestamp) before applying, and does not apply the annotation if the audit write fails
     - `Close` flushes the store; integrate with shutdown in `serve`
     - _Requirements: 11.7, 11.8, 16.13, 16.14_
 
@@ -388,7 +372,7 @@ Repo rules that apply to every task:
     - _Requirements: 24.1, 24.2, 24.3_
 
   - [x] 22.2 Root Makefile targets
-    - Create `Makefile` with `bellud` (same output as 22.1) and `sync-graph` (runs the sync tool with `COMMIT=`)
+    - Create `Makefile` with `bellud` (same output as 22.1)
     - _Requirements: 24.6_
 
   - [x] 22.3 systemd unit and operations docs
@@ -396,7 +380,7 @@ Repo rules that apply to every task:
     - _Requirements: 23.1, 23.2, 23.5, 23.6, 25.5, 25.6_
 
   - [x] 22.4 CI checks
-    - Add a workflow job: Go >= 1.26.9, `go mod verify`, checksum presence in `go.sum`, `govulncheck ./...`, six-way `GOOS/GOARCH` cross-compile, sync-tool leftover check, PR/commit title format rule
+    - Add a workflow job: Go >= 1.26.9, `go mod verify`, checksum presence in `go.sum`, `govulncheck ./...`, six-way `GOOS/GOARCH` cross-compile, PR/commit title format rule
     - _Requirements: 24.4, 24.5, 24.8, 24.9, 24.10, 25.7_
 
 - [~] 23. Final checkpoint - Ensure all tests pass
@@ -409,7 +393,7 @@ Repo rules that apply to every task:
 - Each task references specific acceptance criteria for traceability.
 - Checkpoints ensure incremental validation; each step leaves `go build ./...` green and `bellud serve` runnable.
 - Property tests validate the 14 correctness properties; unit tests cover examples and edge cases.
-- Task 9.6 pins the upstream SHA at implementation time; record it in `UPSTREAM.md` only.
+- Tasks 9.x are superseded by `.kiro/specs/bellu-graph-native/`; they stay as completed placeholders so numbering and dependency waves remain stable.
 
 ## Task Dependency Graph
 

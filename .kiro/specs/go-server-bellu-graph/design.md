@@ -2,11 +2,11 @@
 
 ## Overview
 
-`bellud` is a new Go service (`services/bellud`) that becomes the single externally exposed server process on `:4096` (default `127.0.0.1`). It replaces `packages/cli serve` as the front door. It embeds a vendored, renamed copy of the Toise graph engine, called the **Bellu Graph Engine**, and runs it in-process. Collectors write into it through a Go Ingest API with no network hop.
+`bellud` is a new Go service (`services/bellud`) that becomes the single externally exposed server process on `:4096` (default `127.0.0.1`). It replaces `packages/cli serve` as the front door. It embeds the **Bellu Graph Engine**, an original in-tree graph engine specified in `.kiro/specs/bellu-graph-native/`, and runs it in-process. Collectors write into it through a Go Ingest API with no network hop.
 
 The existing TypeScript server (`packages/server`, about 37 `HttpApi` groups in `packages/protocol/src/groups`, SQLite via Drizzle) cannot be rewritten at once. `bellud` therefore spawns it as a loopback-only child and reverse-proxies every route it does not yet own, including SSE and WebSocket. Route groups then move from TS to Go in stages. A route ownership table plus contract tests against the `packages/protocol` schemas keep the Go handlers compatible with the generated TS client used by the TUI, web app and desktop app. The end state removes the TS server package.
 
-Toise's engine lives entirely under `internal/`, so it cannot be imported. It is copied. A deterministic sync tool (`script/sync-bellu-graph`) copies a pinned upstream commit and rewrites all names. After the rename, upstream changes arrive by re-running the tool at a new commit, not by git merge. Apache-2.0 obligations are preserved (LICENSE kept, NOTICE added, modified files marked).
+The Bellu Graph Engine is implemented in-tree under `services/bellud/internal/bellugraph` as original work. Its design, requirements and tasks live in `.kiro/specs/bellu-graph-native/`; this spec only defines how `bellud` hosts and uses it through the facade.
 
 ### Design decisions
 
@@ -14,7 +14,7 @@ Toise's engine lives entirely under `internal/`, so it cannot be imported. It is
 |---|---|
 | Go front door with TS child behind a proxy | Lets the server migrate incrementally; clients see one origin and one credential. |
 | Engine in-process, not a sidecar | No network hop for collectors; one process lifecycle; Pebble is single-writer anyway. |
-| Copy plus rename tool, not fork-and-merge | Renaming touches almost every file, so merges would conflict constantly. A deterministic transform is auditable and repeatable. |
+| In-tree original engine | One codebase to maintain; engine scope is specified in `bellu-graph-native`. |
 | Graph API is `/api/experimental/graph/*` | Repo rule: new endpoints start experimental. |
 | Go validates the external password; TS child gets a separate internal credential | The external secret never reaches the child's environment or tools, and child compromise does not leak it. |
 | Route ownership table is the single source of routing truth | Totality and disjointness become testable properties. |
@@ -23,7 +23,7 @@ Toise's engine lives entirely under `internal/`, so it cannot be imported. It is
 
 Everything new this spec introduces uses bellucode naming. Existing opencode names in the repo are not renamed now; they will be renamed gradually later. New bellucode names:
 
-- Go module root `github.com/bellu/bellucode`; bellud module `github.com/bellu/bellucode/services/bellud`; vendored engine `github.com/bellu/bellucode/services/bellud/internal/bellugraph`.
+- Go module root `github.com/bellu/bellucode`; bellud module `github.com/bellu/bellucode/services/bellud`; engine `github.com/bellu/bellucode/services/bellud/internal/bellugraph`.
 - Data and config dirs: graph data in `~/.local/share/bellucode/graph` (0700); any other config or data bellud generates goes under `~/.config/bellucode/` or `~/.local/share/bellucode/`.
 - bellud env vars: `BELLUCODE_PASSWORD`, `BELLUCODE_HOSTNAME`, `BELLUCODE_PORT`, `BELLUCODE_CORS`, `BELLUCODE_WEB_DIST`. Graph engine env stays `BELLU_GRAPH_*`. Compatibility fallback: when `BELLUCODE_PASSWORD` is unset, bellud reads `OPENCODE_PASSWORD`, so the existing systemd `EnvironmentFile` (`~/.config/bellucode/env`, which currently sets `OPENCODE_PASSWORD`) keeps working during the switch.
 - Systemd unit stays `bellucode.service`.
@@ -38,13 +38,13 @@ Compatibility names (kept because new code must interoperate with existing TS co
 - `@opencode/*` package imports and existing files and paths under `packages/*`.
 - The TS child's data dir and database (`~/.local/share/opencode/opencode-local.db`).
 
-The rename tool's scope is only Toise to Bellu Graph Engine. It never rewrites opencode names in the existing repo.
+Existing opencode names in the repo are never rewritten by this spec.
 
 ### Out of scope
 
 - Rewriting all TS route groups in this spec. The migration mechanism and the first stage are in scope; later stages are tracked as ordered work.
 - Network-exposed OTLP ingestion by default (the listener exists but is disabled).
-- Windows prebuilt engine binaries from upstream (we cross-compile ourselves).
+- Windows prebuilt engine binaries (we cross-compile ourselves).
 
 ## Architecture
 
@@ -224,7 +224,7 @@ Requirements: `httputil.ReverseProxy` with `FlushInterval = -1` for `Stream` rou
 
 ### Component 5: Bellu Graph Engine (`internal/bellugraph`)
 
-**Purpose**: Vendored, renamed Toise engine. Same sub-packages as upstream minus `demo`: `annotations, audit, auth, canonical, change, config, debugui, graphql, ingest, logship, mcp, metrics, model, oidc, ops, projection, registry, store, tenant, version`, plus `pkg/emit` and `proto/bellugraph/v1/events.proto`.
+**Purpose**: The in-tree Bellu Graph Engine (original work), specified in `.kiro/specs/bellu-graph-native/`. This spec depends only on the facade surface below.
 
 bellud-owned facade (the only surface the rest of bellud uses):
 
@@ -255,7 +255,7 @@ type Query interface {
 func Open(ctx context.Context, cfg Config) (Engine, error)
 ```
 
-The facade isolates the vendored packages so a later sync only has to fix this one adapter file. MCP tools exposed (names unchanged from upstream): `describe_schema, describe_type, find_entities, get_entity, annotate_entity, get_neighbors, find_path, impact_of, entity_history, recent_changes, graph_diff, telemetry_keys`.
+The facade isolates the engine packages so engine changes only touch this one adapter file. MCP tools exposed: `describe_schema, describe_type, find_entities, get_entity, annotate_entity, get_neighbors, find_path, impact_of, entity_history, recent_changes, graph_diff, telemetry_keys`.
 
 ### Component 6: Collectors (`internal/collectors`)
 
@@ -277,7 +277,7 @@ type Collector interface {
 | `iac` | Terraform `*.tf`, Kubernetes manifests | `iac_resource`, `k8s_object` |
 | `secrets` | file scan with rule set | `secret_finding` (metadata only) |
 
-Constraints driven by Toise: **relations carry no attributes**, so qualifiers (for example a dependency's version range, a workflow permission scope, a port's protocol) live on entities. Where a relation would need a qualifier, the design introduces an intermediate entity (for example `dependency` is keyed by `(repo, name, range)` and relation `repo -> dependency` is plain).
+Constraints driven by the engine model: **relations carry no attributes**, so qualifiers (for example a dependency's version range, a workflow permission scope, a port's protocol) live on entities. Where a relation would need a qualifier, the design introduces an intermediate entity (for example `dependency` is keyed by `(repo, name, range)` and relation `repo -> dependency` is plain).
 
 ### Component 7: Redaction guard (`internal/redact`)
 
@@ -367,48 +367,13 @@ type Config struct {
 }
 ```
 
-Environment (renamed from `TOISE_*`): `BELLU_GRAPH_ENABLED`, `BELLU_GRAPH_DIR`, `BELLU_GRAPH_OTLP_LISTEN`, `BELLU_GRAPH_RETENTION`, `BELLU_GRAPH_LOG_LEVEL`.
+Environment: `BELLU_GRAPH_ENABLED`, `BELLU_GRAPH_DIR`, `BELLU_GRAPH_OTLP_LISTEN`, `BELLU_GRAPH_RETENTION`, `BELLU_GRAPH_LOG_LEVEL`.
 
-### Rename map (`services/bellud/script/rename.map.yaml`)
+### Rename map and provenance: Superseded
 
-```go
-type RenameRule struct {
-	Kind    string // "module" | "identifier" | "env" | "proto" | "metric" | "uri" | "binary" | "text" | "path"
-	From    string
-	To      string
-	Scope   string // glob of files the rule applies to; "" = all
-	Exact   bool   // whole-token match
-}
-```
+Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work, so this item no longer applies. Numbering is kept so cross-references stay valid.
 
-| Kind | From | To |
-|---|---|---|
-| module | `github.com/toise-dev/toise` | `github.com/bellu/bellucode/services/bellud/internal/bellugraph` |
-| proto package | `toise.v1` | `bellugraph.v1` |
-| proto path | `proto/toise/v1` | `proto/bellugraph/v1` |
-| env | `TOISE_` prefix | `BELLU_GRAPH_` prefix |
-| metric | `toise_` prefix | `bellu_graph_` prefix |
-| uri scheme | `toise://` | `bellugraph://` |
-| identifier | `Toise`, `toise` (Go idents, word-bounded) | `BelluGraph`, `bellugraph` |
-| user-facing text | `Toise` | `Bellu Graph Engine` |
-| binary | `toise`, `toised` | `bellu-graph` (not shipped separately; engine is linked into bellud) |
-| path | `**/toise*` | `**/bellugraph*` |
-
-The rename tool's scope is only Toise to Bellu Graph Engine, applied to the vendored upstream tree. It never rewrites opencode names in the existing repo. User-visible strings (debug UI titles, MCP server `name`/`instructions`, docs) use the human name "Bellu Graph Engine". Code identifiers use `bellugraph`. Rules are ordered and the order is part of the tool's determinism. A leftover check fails the run if any case-insensitive `toise` remains outside `NOTICE`, `UPSTREAM.md` and the license-attribution blocks.
-
-### Provenance (`internal/bellugraph/UPSTREAM.md`)
-
-```go
-type Upstream struct {
-	Repo    string // https://github.com/toise-dev/toise
-	Commit  string // full 40-char SHA
-	License string // Apache-2.0
-	SyncedAt string // intentionally NOT written; keeps output deterministic
-	ToolVersion string
-}
-```
-
-### Graph event shape (renamed, informative)
+### Graph event shape (informative)
 
 Events are bi-temporal: `observed_at` (valid time) and `recorded_at` (transaction time, assigned by the engine at append). Entity identity is `id = H(kind || canonical(identity_attrs))`.
 
@@ -560,239 +525,23 @@ func (c *runner) tick(ctx context.Context, col Collector) error {
 
 **Postconditions:** No string in any appended event matches a redaction pattern. A leak aborts the batch and raises an audit event naming the collector and rule only.
 
-### Algorithm F: Sync and rename tool
+### Algorithm F: Superseded
 
-`script/sync-bellu-graph <commit>` (Go program `services/bellud/cmd/sync-bellu-graph`; a shell wrapper calls it).
-
-```go
-func Sync(commit string, out string, rules []RenameRule) error {
-	src := fetchTarball(commit) // pinned SHA, verified against go.sum-style checksum in UPSTREAM.md
-	files := walk(src, include, exclude("internal/demo/**", ".git/**", "**/*_test_fixtures_large/**"))
-	sort.Strings(files) // deterministic order
-	staging := tempDir()
-	for _, f := range files {
-		b := read(f)
-		b = applyRules(rules, f, b)       // ordered rules
-		b = markModified(f, b)            // Apache-2.0 §4(b) header comment on source files
-		write(staging, renamePath(rules, f), normalizeEOL(b))
-	}
-	copyVerbatim(src, "LICENSE", staging)
-	writeNotice(staging, commit)
-	writeUpstream(staging, commit)
-	regenerateProto(staging)             // buf/protoc for bellugraph.v1, outputs committed
-	regenerateGraphQL(staging)           // gqlgen
-	assertNoLeftovers(staging, "toise")
-	return atomicReplace(out, staging)   // swap directory; remove files that disappeared upstream
-}
-```
-
-**Preconditions:** `commit` is a full SHA; network or a local cache of the tarball is available; `rules` validated (no rule's `To` re-matches an earlier rule's `From`).
-
-**Postconditions:**
-- Output depends only on `(commit, rules, tool version)`.
-- Running again on the same inputs yields a byte-identical tree.
-- Output contains no case-insensitive `toise` except in `NOTICE`, `UPSTREAM.md` and attribution comments.
-- Output contains LICENSE (unmodified Apache-2.0), NOTICE and `UPSTREAM.md`; each modified source file carries the modification notice.
-- Output compiles: `go build ./...` and `go vet ./...` pass (checked by the CI job, not by the tool).
-
-**Loop invariant:** Every file already written to `staging` is fully transformed and has no leftover match.
-
-`markModified` is idempotent: it inserts the header only if the marker line is absent.
-
-### Algorithm G: As-of query
-
-```go
-// Entity state at T is a fold over the event log up to T on the valid-time axis (observed_at <= T),
-// restricted to events recorded by the requested transaction time (recorded_at <= asOfRecorded, default now).
-func (e *engine) EntityAt(id EntityID, t time.Time) (Entity, error) {
-	state := Entity{}
-	for ev := range e.store.Scan(id, Until(t)) {
-		state = projection.Apply(state, ev)
-	}
-	return state, nil
-}
-```
-
-**Postcondition:** `Query.Entity(id, &t)` returns the same value as folding `projection.Apply` over `Scan(id, Until(t))` from the empty state. Snapshots or caches are an optimization and must not change the result.
-
-**Loop invariant:** `state` equals the fold of all events with `observed_at <= ` the last event examined.
-
-## Key Functions with Formal Specifications
-
-### `identity.Hash`
-
-```go
-func Hash(kind string, identityAttrs map[string]string) EntityID
-```
-
-**Preconditions:** `kind` non-empty; keys are the registered identity attributes for `kind`.
-
-**Postconditions:** Pure and deterministic: independent of map iteration order, process, platform and run. Equal inputs give equal IDs; any difference in `kind` or an identity attribute value gives a different ID (modulo hash collision). Attributes not in the identity set do not affect the result.
-
-### `redact.Guard.Scrub`
-
-```go
-func (g *guard) Scrub(b graph.Batch) graph.Batch
-```
-
-**Postconditions:** Returns a batch with the same entity IDs and structure; no string field matches any pattern; idempotent (`Scrub(Scrub(b)) == Scrub(b)`); does not mutate its input.
-
-### `auth.VerifySession`
-
-```go
-func (a *auth) VerifySession(token string, now time.Time) bool
-```
-
-**Postconditions:** True iff token is `"<exp>.<sig>"`, `exp` is a safe integer greater than `now`, and `sig` equals the HMAC for the current password. A token issued by the TS implementation verifies in Go and the reverse (cross-implementation compatibility).
-
-### `routes.Validate`
-
-See Algorithm A. **Postcondition:** returns nil iff the table is total over the protocol operations and pairwise disjoint.
-
-### `contract.Check`
-
-```go
-// Check replays golden request/response pairs captured from the TS server against a Go handler and
-// validates the response against the JSON Schema derived from packages/protocol for that operation.
-func Check(op Operation, h http.Handler, fixtures []Fixture) []Violation
-```
-
-**Postconditions:** No violations means every fixture yields the same status, content type and a body that validates against the operation's success or declared error schema, and SSE operations emit events whose payloads validate against the event schemas.
-
-## Example Usage
-
-```go
-// main.go: wiring
-func main() {
-	cfg := config.FromEnv() // BELLUCODE_PASSWORD (fallback OPENCODE_PASSWORD), BELLUCODE_HOSTNAME, BELLUCODE_PORT, BELLUCODE_CORS
-	eng, _ := graph.Open(ctx, cfg.Graph)
-	defer eng.Close(ctx)
-
-	sup := tschild.New(cfg.Child(eng.MCPToken())) // injects mcp.bellu-graph config
-	go sup.Run(ctx)
-
-	table := routes.MustLoadEmbedded()
-	srv := &server.Server{
-		Table: table,
-		Auth:  auth.New(cfg.Password),
-		Go:    api.New(eng, webui.New(cfg.WebDist), pairing.New(cfg.Password)),
-		Proxy: proxy.New(sup.Current),
-	}
-	runCollectors(ctx, eng, collectors.Default(cfg))
-	http.ListenAndServe(cfg.Addr, srv)
-}
-```
-
-```go
-// Collector appends a scrubbed finding (metadata only)
-batch.Entities = append(batch.Entities, graph.Entity{
-	Kind: "secret_finding",
-	Identity: map[string]string{"path": rel, "line": "42", "rule": "aws_access_key"},
-	Attrs:    map[string]string{"hash_prefix": hex8(sha256(value))}, // value discarded immediately
-})
-```
-
-```bash
-# Sync the vendored engine to a new upstream commit
-script/sync-bellu-graph 3f2a9c1d... && git diff --stat services/bellud/internal/bellugraph
-```
-
-```ts
-// Client: no change needed after `bun run generate`; the typed client gains the graph namespace
-const changes = await client.experimental.graph.changes({ query: { since: "2026-01-01T00:00:00Z" } })
-```
-
-## Route Migration Plan
-
-Stage order (each stage flips `Owner` for its groups only after contract tests pass):
-
-1. **Stage 0 (this spec):** bellud as proxy front door; Go owns `experimental.graph.*`, graph MCP, and nothing else. All other routes `ts`.
-2. **Stage 1:** auth and pairing (`/auth/*`, session issue/verify), web UI static assets.
-3. **Stage 2:** server info, health, event feed (SSE, `event` group).
-4. **Stage 3+:** remaining groups, ordered by dependency on the SQLite/Drizzle data and the session runtime: `config`, `project`, `fs`, `vcs`, `shell`, `pty`/`persistent-pty` (WebSocket), `mcp`, `plugin`, `integration`, `credential`, then `session`, `message`, `generate`, and the LLM runtime last.
-5. **End state:** all routes `go`; the child supervisor and `packages/server` removed; `packages/cli serve` and `packages/cli/src/services/web-ui.ts` deleted or reduced to launching bellud.
-
-The TS plugin system and the LLM session runtime are the largest unknowns. If they are not ported, the end state "TS removed" is not reachable and the child stays for those groups. That is an explicit open decision, called out in Risks.
-
-Shared state during coexistence: SQLite `opencode-local.db` (compatibility name, in the TS child's `~/.local/share/opencode/` data dir) is owned by the TS child. A Go-owned group that needs session data calls the TS child's HTTP API (internal credential) until its data layer is ported. Go never opens the TS database concurrently, to avoid migration and locking conflicts.
-
-### OpenAPI merge
-
-`/openapi.json` is generated in bellud by fetching the child's document at start (internal credential), then adding Go-owned operations from a build-time-embedded Go contract document (generated from the same TS protocol group via the `packages/client` generator), then removing operations whose owner is `go` but which the child still declares. Result is cached until the child restarts.
-
-## Error Handling
-
-### Child not ready or crashed
-**Condition:** TS-owned route requested while child is starting or restarting.
-**Response:** `503` with `Retry-After: 2` and a JSON error body in the protocol's error shape.
-**Recovery:** Supervisor restarts with backoff (500 ms to 15 s). Go-owned routes continue. `/api/experimental/graph/status` reports child state.
-
-### Child startup failure repeated
-**Condition:** More than N consecutive failures within a window.
-**Response:** bellud keeps serving Go routes and logs the child's last stderr lines; `status` shows `degraded`.
-**Recovery:** Operator fixes the cause; the next successful start clears the state.
-
-### Pebble open failure or corruption
-**Condition:** Directory locked by another process, permissions not `0700`, or corrupt log.
-**Response:** Engine disabled, graph routes return `503` with `code: "graph_unavailable"`; the rest of bellud starts normally. Lock contention is logged with the holder's path.
-**Recovery:** Fix permissions or restore; the engine is opened again on restart. Opening never silently creates a new empty log over a corrupt one.
-
-### Collector failure
-**Condition:** A collector errors or times out (for example Docker socket missing).
-**Response:** Log once per backoff window, record a `collector_status` entity attribute, continue other collectors.
-**Recovery:** Next interval retries; absence of Docker is a normal state, not an error.
-
-### Secret leak detected
-**Condition:** `Guard.Leaks` finds a match after scrubbing.
-**Response:** Batch dropped, audit event with collector and rule id only.
-**Recovery:** Collector bug is fixed; the next batch is evaluated independently.
-
-### Authentication failure
-**Condition:** Missing or invalid credentials on a non-public route.
-**Response:** `401` with `WWW-Authenticate: Basic`, identical to the TS server. The graph MCP endpoint answers `401` for anything but its bearer token.
-
-### Sync tool failure
-**Condition:** Leftover `toise`, rule conflict, build failure.
-**Response:** Non-zero exit; the staging directory is discarded and the existing vendored tree is untouched (atomic replace).
-
-## Testing Strategy
-
-### Unit testing approach
-
-- Go: `go test ./...` in `services/bellud`, table-driven. Auth compatibility vectors generated by the TS implementation and committed as fixtures (token and expected result).
-- TS: protocol and schema tests per `packages/schema/AGENTS.md` (optional fields omit `undefined`, no `Schema.Any`, stable unique identifiers) and `packages/protocol/test/experimental-identifiers.test.ts`. Run from `packages/schema` and `packages/protocol`, never from the root.
-- Vendored upstream tests are renamed and kept; they must pass after each sync.
-
-### Property-based testing approach
-
-**Libraries:** Go `pgregory.net/rapid`; TS `fast-check` (already the usual choice with bun test) for protocol schemas.
-
-### Integration testing approach
-
-- Spawn real bellud with a real TS child in a temp HOME; run the generated TS client smoke tests (`session` list, `server` info, event stream) through it.
-- Kill the child during an open SSE stream; assert the client sees a clean close and later requests succeed after restart.
-- Run the TUI `dev:live` flow against bellud.
-- A cross-implementation contract job runs the same fixture set against the TS server and against Go for every `go`-owned operation.
+Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work, so this item no longer applies. Numbering is kept so cross-references stay valid.
 
 ## Correctness Properties
 
-### Property 1: Rename idempotence and determinism
+### Property 1: Superseded
 
-**Rename idempotence and determinism.** For any commit tree `T` and valid rules `R`: `Sync(T, R)` run twice yields byte-identical output; `rename(rename(x)) == rename(x)` for any text `x` (no rule's output matches any rule's input).
+Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work, so this item no longer applies. Numbering is kept so cross-references stay valid.
 
-**Validates: Requirements 8.4, 8.5, 8.6, 8.7, 8.8**
+### Property 2: Superseded
 
-### Property 2: No leftover upstream names
+Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work, so this item no longer applies. Numbering is kept so cross-references stay valid.
 
-**No leftover upstream names.** For all files `f` in the output outside the allow-list, `!containsFold(f, "toise")`; all `TOISE_` env references became `BELLU_GRAPH_`; no `toise_` metric names remain.
+### Property 3: Superseded
 
-**Validates: Requirements 9.1, 9.2, 9.3, 9.4**
-
-### Property 3: License preservation
-
-**License preservation.** Output contains a byte-identical upstream LICENSE; NOTICE names the upstream commit; every transformed `.go` file contains the modification marker exactly once.
-
-**Validates: Requirements 10.1, 10.2, 10.3, 10.4, 10.5**
+Superseded by the `bellu-graph-native` spec (`.kiro/specs/bellu-graph-native/`); the engine is implemented in-tree as original work, so this item no longer applies. Numbering is kept so cross-references stay valid.
 
 ### Property 4: No secret bytes in stored events
 
@@ -874,34 +623,34 @@ Shared state during coexistence: SQLite `opencode-local.db` (compatibility name,
 - The MCP bearer token is per start, held in memory, compared in constant time, and valid only for the graph MCP route. Tool `annotate_entity` writes are audited with the token identity.
 - Graph directory `0700`, files `0600`; refuse to open if group or world bits are set.
 - Secret findings are metadata only; the guard runs as the last step before the engine. Debug UI is disabled by default and never exposes raw log contents when enabled.
-- Vendored dependencies are pinned in `go.sum`; the sync tool verifies the tarball checksum; `govulncheck` runs in CI.
+- Dependencies are pinned in `go.sum`; `govulncheck` runs in CI.
 - Docker collector uses a read-only API subset and never calls exec or inspect-with-env endpoints that return environment variables; container env values are dropped, only keys are retained.
 
 ## Operations
 
 - **Systemd:** `/etc/systemd/system/bellucode.service` `ExecStart` changes from `bun run src/index.ts serve --hostname 127.0.0.1 --port 4096` (working dir `packages/cli`) to `/usr/local/bin/bellud serve --hostname 127.0.0.1 --port 4096`; `EnvironmentFile=~/.config/bellucode/env` is unchanged and currently sets `OPENCODE_PASSWORD`, which bellud accepts as a compatibility fallback until the file is switched to `BELLUCODE_PASSWORD`. The unit stays named `bellucode.service`. `Type=notify`; `KillMode=mixed` so the child gets a clean lease close. Rollback is restoring the old `ExecStart`.
-- **Build:** Turbo task `build` for `services/bellud` (`go build -trimpath -o dist/bellud ./cmd/bellud`), depends on `packages/app#build` when embedding web assets. Cross-compile targets for linux/darwin/windows via `GOOS`/`GOARCH` because upstream ships no Windows prebuilt. Go toolchain pinned to the engine's required version (1.26.9 or later) in `go.mod` and CI.
-- **Config files:** `Makefile` targets `bellud`, `sync-graph`; `.gitignore` covers `services/bellud/dist`.
+- **Build:** Turbo task `build` for `services/bellud` (`go build -trimpath -o dist/bellud ./cmd/bellud`), depends on `packages/app#build` when embedding web assets. Cross-compile targets for linux/darwin/windows via `GOOS`/`GOARCH` because no Windows prebuilt engine is shipped. Go toolchain pinned to the engine's required version (1.26.9 or later) in `go.mod` and CI.
+- **Config files:** `Makefile` target `bellud`; `.gitignore` covers `services/bellud/dist`.
 - **Branching and commits:** per repo rules (base `dev`, no changesets, conventional commits such as `feat(bellud): add go front door`).
 
 ## Dependencies
 
 - Go 1.26.9 or later; `github.com/cockroachdb/pebble`, `github.com/99designs/gqlgen`, `github.com/modelcontextprotocol/go-sdk`, OpenTelemetry pdata, `google.golang.org/grpc`, `pgregory.net/rapid` (test), a YAML library for the route table.
 - TS: `packages/schema`, `packages/protocol`, `packages/client` (regenerated), existing `Mcp.RemoteConfig`.
-- Upstream: Toise (Apache-2.0) at a pinned commit recorded in `UPSTREAM.md`.
+- Graph engine: implemented in-tree (original work); see `.kiro/specs/bellu-graph-native/`.
 - Runtime: Bun and the existing `packages/cli` until the TS child is retired.
 
 ## Risks and Open Questions
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Toise is pre-1.0 | Upstream API and storage format changes | Facade isolates the adapter; pin commits; log format version stored in `UPSTREAM.md` and checked at open |
+| Engine storage format evolves | Log format changes | Facade isolates the adapter; log format version is owned by the in-tree engine and checked at open |
 | Two runtimes until migration completes | Higher memory, harder debugging | Single supervisor, unified log prefix, `status` endpoint shows both |
 | Proxy hop latency and streaming fidelity | Regressions in TUI/web | Properties 6 and 7, benchmarks gate promotion |
-| Rename misses a dynamic string (for example reflection, struct tags, generated code) | Runtime mismatch with `toise` names | Leftover scan plus regenerate proto/gqlgen inside the tool, plus vendored tests |
+| Engine internals change under the facade | Adapter churn | Facade isolates the adapter; engine design lives in `.kiro/specs/bellu-graph-native/` |
 | Relations carry no attributes | Qualifiers must be modeled as entities | Intermediate entity pattern, property 14 |
 | No Windows prebuilt | Windows support needs self-build | Cross-compile in CI; Pebble and Go are portable, but `/proc` collectors are Linux-only (build-tagged, no-op elsewhere) |
 | Porting the LLM runtime and plugin system to Go | May not be feasible | Treat as separate decision; the design remains valid with a permanent TS child for those groups |
-| Apache-2.0 compliance after heavy renaming | Legal | NOTICE, LICENSE, modification markers, test for property 3 |
+| In-tree engine scope and schedule | Engine work could delay collectors | Facade isolates the engine; scope and risks are tracked in `.kiro/specs/bellu-graph-native/` |
 
 Open decisions for the requirements phase: whether to embed web assets or read from disk in release builds, and whether the TS child remains for the plugin and LLM groups at end state.
