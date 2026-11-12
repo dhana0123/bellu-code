@@ -49,7 +49,8 @@ function serveUI(
   if (request.method !== "GET" && request.method !== "HEAD")
     return Effect.succeed(HttpServerResponse.empty({ status: 405 }))
   const html = name === "index.html"
-  const revalidate = html || name === "sw.js" || name === "registerSW.js"
+  // Only content-hashed build output is immutable; favicons, icons and the manifest keep their URL.
+  const revalidate = !name.startsWith("_assets/")
   const headers = {
     "content-type": FSUtil.mimeType(name),
     "cache-control": revalidate ? "no-cache" : "public, max-age=31536000, immutable",

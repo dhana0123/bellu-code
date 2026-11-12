@@ -42,6 +42,7 @@ func setup(t *testing.T, index string) http.Handler {
 	write(t, d, "_assets/a.js", "A")
 	write(t, d, "_assets/a.js.br", "BR")
 	write(t, d, "sw.js", "sw")
+	write(t, d, "icons/dev/favicon.ico", "ico")
 	h, err := New(Options{Dir: d})
 	if err != nil {
 		t.Fatal(err)
@@ -66,6 +67,10 @@ func TestServing(t *testing.T) {
 	}
 	if do(h, "GET", "/sw.js").Header().Get("Cache-Control") != "no-cache" {
 		t.Fatal("sw cache")
+	}
+	// Unhashed files keep their URL across releases, so they must revalidate.
+	if do(h, "GET", "/icons/dev/favicon.ico").Header().Get("Cache-Control") != "no-cache" {
+		t.Fatal("icon cache")
 	}
 	w = do(h, "GET", "/_assets/a.js")
 	if w.Body.String() != "A" || w.Header().Get("Cache-Control") != "public, max-age=31536000, immutable" ||

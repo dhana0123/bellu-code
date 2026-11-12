@@ -106,10 +106,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		hdr.Set("Content-Security-Policy", csp(""))
 	}
 	hdr.Set("Content-Type", mimeType(name))
-	if html || name == "sw.js" || name == "registerSW.js" {
-		hdr.Set("Cache-Control", "no-cache")
-	} else {
+	// Only content-hashed build output is immutable. Favicons, icons and the manifest keep
+	// their URL across releases, so they must revalidate or browsers show stale branding.
+	if strings.HasPrefix(name, "_assets/") {
 		hdr.Set("Cache-Control", "public, max-age=31536000, immutable")
+	} else {
+		hdr.Set("Cache-Control", "no-cache")
 	}
 	hdr.Set("X-Content-Type-Options", "nosniff")
 	if !html {
