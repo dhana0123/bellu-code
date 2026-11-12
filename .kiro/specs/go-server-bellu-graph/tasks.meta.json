@@ -660,6 +660,16 @@
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794466444101
+      },
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490070476
+      },
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490252918
       }
     ],
     "18.1 Implement `internal/webui`": [
@@ -684,6 +694,16 @@
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794466449370
+      },
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490263092
+      },
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490392677
       }
     ],
     "19.1 Implement the merger": [
@@ -1402,6 +1422,20 @@
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794472350766
+      }
+    ],
+    "17. Agent MCP wiring, skill, agent and feature flag": [
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490255985
+      }
+    ],
+    "18. Web UI serving": [
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490395492
       }
     ]
   }

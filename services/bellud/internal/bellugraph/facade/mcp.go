@@ -2,6 +2,7 @@ package facade
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
@@ -16,8 +17,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/auth"
-	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/mcp"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/errs"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/mcpserver"
 )
 
 const (
@@ -29,7 +30,7 @@ const (
 	frontDoorIdentity = "front-door"
 )
 
-// MCPTools are the upstream MCP tool names, unchanged.
+// MCPTools are the MCP tool names the Facade serves.
 var MCPTools = []string{
 	"describe_schema", "describe_type", "find_entities", "get_entity",
 	"annotate_entity", "get_neighbors", "find_path", "impact_of",
@@ -101,42 +102,94 @@ func tokenEqual(a, b string) bool {
 	return subtle.ConstantTimeCompare(ha[:], hb[:]) == 1
 }
 
-// MCPHandler serves the upstream MCP tools over Streamable HTTP. When
-// Config.MCPToken is set the handler verifies the bearer token in constant
-// time; otherwise it relies on the caller's front door. annotate_entity is
-// audited before it is applied.
+var errUnauthorized = errors.New("unauthorized")
+
+// resolveCaller determines who is calling, in this order: a Caller already on
+// the request context (set by bellud's front door); else the bearer token
+// matched in constant time against the configured grants (Config.MCPToken is
+// an implicit write grant); else, when no grants are configured, the front
+// door is trusted and the caller is a write-role "front-door" identity.
+func (e *engine) resolveCaller(r *http.Request) (Caller, error) {
+	if c, ok := CallerFrom(r.Context()); ok {
+		if c.Identity == "" {
+			c.Identity = frontDoorIdentity
+		}
+		return c, nil
+	}
+	grants := e.cfg.Grants
+	if e.cfg.MCPToken != "" {
+		grants = append(append([]Grant(nil), grants...), Grant{Token: e.cfg.MCPToken, Role: RoleWrite})
+	}
+	if len(grants) == 0 {
+		return Caller{Role: RoleWrite, Identity: frontDoorIdentity}, nil
+	}
+	got, ok := bearerToken(r.Header.Get("Authorization"))
+	if !ok {
+		return Caller{}, errUnauthorized
+	}
+	var match *Grant
+	for i := range grants { // no early exit: every grant is compared
+		if tokenEqual(got, grants[i].Token) && match == nil {
+			match = &grants[i]
+		}
+	}
+	if match == nil {
+		return Caller{}, errUnauthorized
+	}
+	return Caller{Role: match.Role, Identity: TokenIdentity(match.Token)}, nil
+}
+
+// authorizeIngest is the OTLP receiver's authorizer: the caller must be
+// resolvable and allowed to ingest.
+func (e *engine) authorizeIngest(r *http.Request) error {
+	c, err := e.resolveCaller(r)
+	if err != nil {
+		return err
+	}
+	if !c.Role.Allows(RoleIngest) {
+		return errs.Forbidden
+	}
+	return nil
+}
+
+// MCPHandler serves the MCP tools over Streamable HTTP. It wraps the engine's
+// MCP handler with readiness (503 graph_unavailable), caller resolution (401
+// with a Bearer challenge when a token is required and missing or wrong) and
+// a 4 MiB request body limit (413). annotate_entity is audited before it is
+// applied.
 func (e *engine) MCPHandler() http.Handler {
 	if e.State().Kind != StateReady {
 		return UnavailableHandler(e.State().Reason)
 	}
-	st := e.stack
-	inner := mcp.New(st.Graph, st.Store).
-		SetTenant(st.Tenant).
-		SetCadence(st.Engine).
-		SetAnnotations(st.Annotations).
-		HTTPHandler()
-	token := e.cfg.MCPToken
+	srv, err := mcpserver.New(mcpserver.Config{
+		Core:     e.stack,
+		Annotate: e.annotateAudited,
+		CallerRole: func(ctx context.Context) string {
+			c, _ := CallerFrom(ctx)
+			return string(c.Role)
+		},
+	})
+	if err != nil {
+		e.log.Error("mcp server unavailable", "err", err)
+		return UnavailableHandler(err.Error())
+	}
+	inner := srv.Handler()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		identity := frontDoorIdentity
-		if token != "" {
-			got, ok := bearerToken(r.Header.Get("Authorization"))
-			if !ok || !tokenEqual(got, token) {
-				w.Header().Set("WWW-Authenticate", `Bearer realm="bellu-graph"`)
-				http.Error(w, "unauthorized", http.StatusUnauthorized)
-				return
-			}
-			identity = TokenIdentity(token)
+		if e.State().Kind != StateReady {
+			UnavailableHandler(e.State().Reason).ServeHTTP(w, r)
+			return
 		}
-		ctx := auth.WithWritable(r.Context(), true)
-		r = r.WithContext(ctx)
+		caller, err := e.resolveCaller(r)
+		if err != nil {
+			w.Header().Set("WWW-Authenticate", `Bearer realm="bellu-graph"`)
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		r = r.WithContext(WithCaller(r.Context(), caller))
 		if r.Method == http.MethodPost && r.Body != nil {
 			body, err := io.ReadAll(io.LimitReader(r.Body, maxMCPBodyBytes+1))
 			if err != nil || len(body) > maxMCPBodyBytes {
 				http.Error(w, "request body unreadable or too large", http.StatusRequestEntityTooLarge)
-				return
-			}
-			if rid, err := e.auditAnnotations(body, identity); err != nil {
-				writeAuditFailure(w, rid, err)
 				return
 			}
 			r.Body = io.NopCloser(bytes.NewReader(body))
@@ -145,66 +198,29 @@ func (e *engine) MCPHandler() http.Handler {
 	})
 }
 
-type rpcCall struct {
-	ID     json.RawMessage `json:"id"`
-	Method string          `json:"method"`
-	Params struct {
-		Name      string `json:"name"`
-		Arguments struct {
-			EntityID string `json:"entity_id"`
-		} `json:"arguments"`
-	} `json:"params"`
-}
-
-// auditAnnotations writes an audit record for every annotate_entity call in a
-// JSON-RPC body, before any of them is applied. On failure it returns the id
-// of the offending request (nil for a batch) and nothing has been applied.
-func (e *engine) auditAnnotations(body []byte, identity string) (json.RawMessage, error) {
-	trimmed := bytes.TrimSpace(body)
-	var calls []rpcCall
-	if len(trimmed) > 0 && trimmed[0] == '[' {
-		_ = json.Unmarshal(trimmed, &calls)
-	} else {
-		var c rpcCall
-		if json.Unmarshal(trimmed, &c) == nil {
-			calls = append(calls, c)
-		}
+// annotateAudited is the only path to Core.Annotate. It checks the caller's
+// role, writes (and syncs) the audit record, and only then applies the
+// annotation; when the audit write fails nothing is applied.
+func (e *engine) annotateAudited(ctx context.Context, id string, set map[string]string, unset []string) error {
+	caller, ok := CallerFrom(ctx)
+	if !ok {
+		caller = Caller{Role: RoleWrite, Identity: frontDoorIdentity}
 	}
-	batch := len(trimmed) > 0 && trimmed[0] == '['
-	for _, c := range calls {
-		if c.Method != "tools/call" || c.Params.Name != toolAnnotate {
-			continue
-		}
-		rec := AuditRecord{Time: time.Now().UTC(), Identity: identity, Action: toolAnnotate, EntityID: c.Params.Arguments.EntityID}
-		sink := e.audit
-		if sink == nil {
-			return rpcID(c, batch), errors.New("audit sink unavailable")
-		}
-		if err := sink.Write(rec); err != nil {
-			e.log.Error("audit write failed; annotation not applied", "err", err)
-			return rpcID(c, batch), err
-		}
+	if !caller.Role.Allows(RoleWrite) {
+		return fmt.Errorf("%w: annotating needs the write role", ErrForbidden)
 	}
-	return nil, nil
-}
-
-func rpcID(c rpcCall, batch bool) json.RawMessage {
-	if batch {
-		return nil
+	if caller.Identity == "" {
+		caller.Identity = frontDoorIdentity
 	}
-	return c.ID
-}
-
-func writeAuditFailure(w http.ResponseWriter, id json.RawMessage, cause error) {
-	w.Header().Set("Content-Type", "application/json")
-	msg := fmt.Sprintf("annotation not applied: audit record could not be written: %v", cause)
-	if len(id) == 0 {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "error": map[string]any{"code": -32603, "message": msg}})
-		return
+	sink := e.audit
+	if sink == nil {
+		return errors.New("annotation not applied: audit sink unavailable")
 	}
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"jsonrpc": "2.0", "id": id,
-		"result": map[string]any{"isError": true, "content": []map[string]string{{"type": "text", "text": msg}}},
-	})
+	rec := AuditRecord{Time: time.Now().UTC(), Identity: caller.Identity, Action: toolAnnotate, EntityID: id}
+	if err := sink.Write(rec); err != nil {
+		e.log.Error("audit write failed; annotation not applied", "err", err)
+		return fmt.Errorf("annotation not applied: audit record could not be written: %w", err)
+	}
+	_, err := e.stack.Annotate(ctx, id, set, unset, caller.Identity)
+	return err
 }

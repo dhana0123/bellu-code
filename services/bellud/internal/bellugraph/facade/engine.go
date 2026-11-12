@@ -11,19 +11,18 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/change"
-	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/ingest"
-	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/registry"
-	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/store"
-	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/tenant"
+	bgeengine "github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/engine"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/metrics"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/otlp"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/store"
 )
 
 const (
 	defaultOpenTimeout = 5 * time.Second
+	otlpStopTimeout    = 5 * time.Second
 	dirMode            = 0o700
 	fileMode           = 0o600
 )
@@ -53,7 +52,7 @@ func Open(ctx context.Context, cfg Config) (Engine, error) {
 	if cfg.Dir == "" {
 		d, err := DefaultDir()
 		if err != nil {
-			return fail(log, err)
+			return fail(log, cfg, err)
 		}
 		cfg.Dir = d
 	}
@@ -67,37 +66,34 @@ func Open(ctx context.Context, cfg Config) (Engine, error) {
 		e, err := openStore(cfg, log)
 		done <- result{e, err}
 	}()
+	release := func() { // release a late success; never leak the lock
+		if r := <-done; r.e != nil {
+			_ = r.e.stack.Close(context.Background())
+		}
+	}
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 	select {
 	case r := <-done:
 		if r.err != nil {
-			return fail(log, r.err)
+			return fail(log, cfg, r.err)
 		}
 		r.e.start()
 		return r.e, nil
 	case <-timer.C:
-		go func() { // release a late success; never leak the lock
-			if r := <-done; r.e != nil {
-				_ = r.e.reg.Close()
-			}
-		}()
-		return fail(log, fmt.Errorf("opening graph store timed out after %s", timeout))
+		go release()
+		return fail(log, cfg, fmt.Errorf("opening graph store timed out after %s", timeout))
 	case <-ctx.Done():
-		go func() {
-			if r := <-done; r.e != nil {
-				_ = r.e.reg.Close()
-			}
-		}()
-		return fail(log, ctx.Err())
+		go release()
+		return fail(log, cfg, ctx.Err())
 	}
 }
 
-func fail(log *slog.Logger, err error) (Engine, error) {
-	var le *lockedError
-	if errors.As(err, &le) {
+func fail(log *slog.Logger, cfg Config, err error) (Engine, error) {
+	if errors.Is(err, ErrLocked) {
 		// The single error-level entry for lock contention names the holder path.
-		log.Error("graph engine disabled: store lock is held by another process", "holder_path", le.path, "err", err)
+		log.Error("graph engine disabled: store lock is held by another process",
+			"holder_path", filepath.Join(store.Path(cfg.Dir), "LOCK"), "err", err)
 	} else {
 		log.Error("graph engine disabled: store unavailable", "err", err)
 	}
@@ -121,26 +117,6 @@ func checkDir(dir string) error {
 	return nil
 }
 
-func isLockErr(err error) bool {
-	s := strings.ToLower(err.Error())
-	return strings.Contains(s, "lock") || strings.Contains(s, "temporarily unavailable")
-}
-
-type lockedError struct {
-	path string
-	err  error
-}
-
-func (l *lockedError) Error() string        { return fmt.Sprintf("%v: %s: %v", ErrLocked, l.path, l.err) }
-func (l *lockedError) Is(target error) bool { return target == ErrLocked }
-
-func classify(dir string, err error) error {
-	if isLockErr(err) {
-		return &lockedError{path: filepath.Join(dir, tenant.Default, "LOCK"), err: err}
-	}
-	return fmt.Errorf("%w: %v", ErrCorrupt, err)
-}
-
 func openStore(cfg Config, log *slog.Logger) (*engine, error) {
 	if err := checkDir(cfg.Dir); err != nil {
 		return nil, err
@@ -149,33 +125,14 @@ func openStore(cfg Config, log *slog.Logger) (*engine, error) {
 	old := setUmask(0o077) // every file/dir the store creates is 0600/0700
 	defer func() { setUmask(old); umaskMu.Unlock() }()
 
-	// A read-only pre-flight proves an existing log opens before the writable
-	// open, which could otherwise rewrite manifests or WAL of a damaged log.
-	tdir := filepath.Join(cfg.Dir, tenant.Default)
-	if _, err := os.Stat(filepath.Join(tdir, "CURRENT")); err == nil {
-		ro, err := store.OpenReadOnly(tdir, store.DefaultConfig())
-		if err != nil {
-			return nil, classify(cfg.Dir, err)
-		}
-		_ = ro.Close()
-	}
-
-	scfg := store.DefaultConfig()
-	scfg.RetentionMaxAge = cfg.Retention
-	// Collector kinds (process, listening_port, secret_finding, ...) are not in
-	// the upstream vocabulary; identity shape is validated by Hash instead.
-	scfg.AcceptUnknownTypes = true
-	reg, err := registry.OpenWithLimits(cfg.Dir, scfg, 30*time.Second,
-		registry.Limits{AutoCreate: false, Allowlist: []string{tenant.Default}}, log)
+	// The engine opens an existing store read-only and loads it before it
+	// opens it for writing, so a locked or damaged store is reported (ErrLocked,
+	// ErrCorrupt) before any file is written.
+	core, err := bgeengine.Open(cfg.Dir, bgeengine.Options{Logger: log, Retention: cfg.Retention})
 	if err != nil {
-		return nil, classify(cfg.Dir, err)
+		return nil, err
 	}
-	st, err := reg.For(tenant.Default)
-	if err != nil {
-		_ = reg.Close()
-		return nil, classify(cfg.Dir, err)
-	}
-	en := &engine{cfg: cfg, log: log, reg: reg, stack: st, state: State{StateStarting, "opening"}}
+	en := &engine{cfg: cfg, log: log, stack: core}
 	if fa, err := openFileAudit(cfg.Dir); err != nil {
 		log.Error("audit log unavailable; annotate_entity will be refused", "err", err)
 	} else {
@@ -209,17 +166,9 @@ func tightenFiles(dir string) {
 type engine struct {
 	cfg   Config
 	log   *slog.Logger
-	reg   *registry.Registry
-	stack *registry.Stack
+	stack *bgeengine.Core
 
-	mu    sync.Mutex
-	state State
-
-	applyMu sync.Mutex // serialises Apply so validation and append see one projection
-
-	recv   *ingest.Receiver
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	recv *otlp.Server
 
 	audit     AuditSink // annotate_entity audit trail; nil refuses annotations
 	auditFile *fileAudit
@@ -228,16 +177,12 @@ type engine struct {
 }
 
 func (e *engine) start() {
-	ctx, cancel := context.WithCancel(context.Background())
-	e.cancel = cancel
-	if e.cfg.OTLPListen != "" {
-		if err := e.startOTLP(); err != nil {
-			e.log.Error("otlp listener failed; continuing without it", "listen", e.cfg.OTLPListen, "err", err)
-		}
+	if e.cfg.OTLPListen == "" {
+		return
 	}
-	e.wg.Add(1)
-	go e.maintain(ctx)
-	e.setState(State{StateReady, ""})
+	if err := e.startOTLP(); err != nil {
+		e.log.Error("otlp listener failed; continuing without it", "listen", e.cfg.OTLPListen, "err", err)
+	}
 }
 
 func (e *engine) startOTLP() error {
@@ -245,103 +190,53 @@ func (e *engine) startOTLP() error {
 	if err != nil {
 		return err
 	}
-	engineFor := func(t string) (*change.Engine, error) {
-		st, err := e.reg.For(t)
-		if err != nil {
-			return nil, err
-		}
-		return st.Engine, nil
-	}
-	e.recv = ingest.NewRoutedReceiver(engineFor,
-		func(_ context.Context, t string) bool { return t == tenant.Default },
-		ingest.NewMetrics(), false, e.log)
-	go func() {
-		if err := e.recv.Serve(lis); err != nil {
+	e.recv = otlp.New(otlp.Config{
+		Applier:   e.stack,
+		Authorize: e.authorizeIngest,
+		Ready:     e.ready,
+		Metrics:   metrics.New(),
+		Logger:    e.log,
+	})
+	go func(recv *otlp.Server) {
+		if err := recv.Serve(lis); err != nil {
 			e.log.Error("otlp receiver stopped", "err", err)
 		}
-	}()
+	}(e.recv)
 	return nil
 }
 
-// maintain runs liveness sweep, compaction/retention and snapshots, as the
-// upstream server does.
-func (e *engine) maintain(ctx context.Context) {
-	defer e.wg.Done()
-	sweep := time.NewTicker(30 * time.Second)
-	compact := time.NewTicker(time.Hour)
-	snap := time.NewTicker(5 * time.Minute)
-	defer sweep.Stop()
-	defer compact.Stop()
-	defer snap.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-sweep.C:
-			if _, err := e.stack.Engine.Sweep(); err != nil {
-				e.log.Error("liveness sweep failed", "err", err)
-			}
-		case <-compact.C:
-			if _, err := e.stack.Store.CoalesceHeartbeats(); err != nil {
-				e.log.Error("heartbeat coalescing failed", "err", err)
-			}
-			if e.cfg.Retention > 0 {
-				if _, _, err := e.stack.Store.PruneOlderThan(time.Now().Add(-e.cfg.Retention)); err != nil {
-					e.log.Error("retention pruning failed", "err", err)
-				}
-			}
-		case <-snap.C:
-			if err := e.snapshot(); err != nil {
-				e.log.Error("snapshot write failed", "err", err)
-			}
-		}
-	}
-}
-
-func (e *engine) snapshot() error {
-	st := e.stack
-	seq := st.Store.Sequence()
-	events := st.Graph.SnapshotEvents(time.Now())
-	live, err := st.Engine.LivenessBlob()
-	if err != nil {
-		e.log.Error("liveness snapshot failed; writing snapshot without it", "err", err)
-	}
-	return st.Store.WriteSnapshot(seq, events, live)
-}
-
+// State maps the engine core's lifecycle onto the Facade states.
 func (e *engine) State() State {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	return e.state
-}
-
-func (e *engine) setState(s State) {
-	e.mu.Lock()
-	e.state = s
-	e.mu.Unlock()
+	switch e.stack.State() {
+	case bgeengine.StateReady:
+		return State{StateReady, ""}
+	case bgeengine.StateStarting:
+		return State{StateStarting, "opening"}
+	case bgeengine.StateFailed:
+		return State{StateFailed, fmt.Sprint(e.stack.Failure())}
+	}
+	return State{StateDisabled, "closed"}
 }
 
 func (e *engine) Ingest() Ingest { return e }
 func (e *engine) Query() Query   { return e }
 
-// Close stops background work, writes a final snapshot and closes the store.
+// Close stops the OTLP receiver, writes a final snapshot and closes the store.
 func (e *engine) Close(ctx context.Context) error {
-	e.closeOnce.Do(func() { e.closeErr = e.close() })
+	e.closeOnce.Do(func() { e.closeErr = e.close(ctx) })
 	return e.closeErr
 }
 
-func (e *engine) close() error {
-	e.setState(State{StateDisabled, "closed"})
-	e.cancel()
-	if e.recv != nil {
-		e.recv.Stop()
-	}
-	e.wg.Wait()
+func (e *engine) close(ctx context.Context) error {
 	var errs []error
-	if err := e.snapshot(); err != nil {
-		e.log.Error("final snapshot failed", "err", err)
+	if e.recv != nil {
+		sctx, cancel := context.WithTimeout(ctx, otlpStopTimeout)
+		if err := e.recv.Shutdown(sctx); err != nil {
+			e.log.Error("otlp receiver shutdown failed", "err", err)
+		}
+		cancel()
 	}
-	errs = append(errs, e.reg.Close())
+	errs = append(errs, e.stack.Close(ctx))
 	if e.auditFile != nil {
 		errs = append(errs, e.auditFile.Close())
 	}
@@ -356,7 +251,9 @@ type unavailable struct{ state State }
 func newUnavailable(s State) *unavailable { return &unavailable{s} }
 
 func (u *unavailable) State() State { return u.state }
-func (u *unavailable) err() error   { return fmt.Errorf("%w: %s", ErrUnavailable, u.state.Reason) }
+func (u *unavailable) err() error {
+	return fmt.Errorf("%s: %w: %s", CodeUnavailable, ErrUnavailable, u.state.Reason)
+}
 func (u *unavailable) Ingest() Ingest {
 	return unavailableIngest{u}
 }

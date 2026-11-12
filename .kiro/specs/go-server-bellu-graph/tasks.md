@@ -308,7 +308,7 @@ Repo rules that apply to every task:
     - Extend `experimental-identifiers` coverage check and add fast-check round trips for `Graph.*` schemas
     - _Requirements: 17.3, 17.4, 17.9_
 
-- [ ] 17. Agent MCP wiring, skill, agent and feature flag
+- [x] 17. Agent MCP wiring, skill, agent and feature flag
   - [x] 17.1 Add the `bellu_graph` flag
     - Add key and description in `packages/schema/src/config/flag.ts`; gate TS-side surfaces with `Flag.enabled("bellu_graph")` where they are registered
     - Run `bun typecheck` and tests in the touched packages
@@ -319,7 +319,7 @@ Repo rules that apply to every task:
     - Pass the config through `ChildConfig.Env` in `serve`
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.7_
 
-  - [~] 17.3 Embed the `security-context` skill and `security` agent
+  - [x] 17.3 Embed the `security-context` skill and `security` agent
     - Embed files; skill lists all MCP tool names and forbids requesting secret values
     - Without `OPENCODE_CONFIG_DIR`, write to a generated dir under `~/.config/bellucode/` and pass it as `OPENCODE_CONFIG_DIR` (compatibility name); with a user dir, leave it untouched and inject via `OPENCODE_CONFIG_CONTENT`; fall back to injection with a warning if the write fails
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 25.4_
@@ -328,14 +328,14 @@ Repo rules that apply to every task:
     - Merge cases, invalid inbound JSON, flag off, dir fallback paths, skill mentions every tool name, parse output against `Mcp.RemoteConfig` shape
     - _Requirements: 18.3, 18.4, 18.5, 18.7, 19.2, 19.5_
 
-- [ ] 18. Web UI serving
+- [x] 18. Web UI serving
   - [x] 18.1 Implement `internal/webui`
     - Asset FS from `go:embed` (release) or `BELLUCODE_WEB_DIST` (fail to start if set but unreadable, no fallback); GET/HEAD file else `index.html`; 404 `no-store` for missing `_assets/` and `icons/`; 405 for other methods; 404 when `index.html` is absent
     - Cache headers, brotli variants (never for `index.html`) with `vary`, `nosniff`, CSP with the sha256 of the `oc-theme-preload-script` inline script (omit when absent)
     - Mirror `packages/cli/src/services/web-ui.ts`
     - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6, 20.7, 20.8, 20.9, 20.10, 20.11, 20.12_
 
-  - [~] 18.2 Wire the web UI as a public route
+  - [x] 18.2 Wire the web UI as a public route
     - Serve before auth for unauthenticated `/`; `/api`, `/api/*`, `/auth/*`, `/openapi.json` stay on the API side
     - _Requirements: 1.7, 20.13, 20.14, 20.15_
 

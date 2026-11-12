@@ -138,9 +138,9 @@ func TestIdentityHashGolden(t *testing.T) {
 		attrs map[string]string
 		want  EntityID
 	}{
-		{"host", map[string]string{"hostname": "web-1"}, "host:8aabbfeea7ae96362d5205b88e9c1610"},
-		{"container", map[string]string{"id": "abc123"}, "container:fcb78a1aa1ec323b638aba0da3bcf9c3"},
-		{"listening_port", map[string]string{"host": "web-1", "protocol": "tcp", "address": "0.0.0.0", "port": "443"}, "listening_port:eb90dff5ff9089d9609472e3044b7bae"},
+		{"host", map[string]string{"hostname": "web-1"}, "host:fe1c72acbf340314776943d30489cf82"},
+		{"container", map[string]string{"id": "abc123"}, "container:519e9b3282adbda5e91413d99f2c5f3c"},
+		{"listening_port", map[string]string{"host": "web-1", "protocol": "tcp", "address": "0.0.0.0", "port": "443"}, "listening_port:96ec1501c61e5d9662f329fe8fccc242"},
 	}
 	for _, c := range cases {
 		got, err := Hash(c.kind, c.attrs)

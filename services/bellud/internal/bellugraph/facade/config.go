@@ -1,6 +1,8 @@
-// Package facade is the bellud-owned adapter over the vendored Bellu Graph
-// Engine. It is preserved across upstream syncs; only this package (and the
-// thin internal/graph re-export) touches engine packages.
+// Package facade is the bellud-owned adapter over the in-process Bellu Graph
+// Engine (internal/bellugraph/internal/bge). It opens and supervises the
+// store, resolves callers, audits operator writes and converts engine types at
+// the boundary; only this package (and the thin internal/graph re-export)
+// touches the engine packages.
 package facade
 
 import (
@@ -31,7 +33,9 @@ type Config struct {
 	Retention  time.Duration // 0 = keep forever
 	OTLPListen string        // "" disables the OTLP listener (default)
 	LogLevel   slog.Level
-	MCPToken   string // bearer for the MCP endpoint (used by the MCP handler)
+	MCPToken   string // bearer for the MCP endpoint; a non-empty value is an implicit RoleWrite grant
+	// Grants maps bearer tokens to roles in addition to MCPToken.
+	Grants []Grant
 
 	// Logger receives engine logs. Nil means slog.Default().
 	Logger *slog.Logger

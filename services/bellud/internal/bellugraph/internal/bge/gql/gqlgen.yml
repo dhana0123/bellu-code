@@ -1,0 +1,22 @@
+schema:
+  - schema.graphqls
+exec:
+  filename: generated.go
+  package: gql
+model:
+  filename: models_gen.go
+  package: gql
+# No resolver section: resolvers.go is hand-written and never regenerated.
+call_argument_directives_with_null: true
+omit_slice_element_pointers: false
+models:
+  Time:
+    model: github.com/99designs/gqlgen/graphql.Time
+  JSON:
+    model: github.com/99designs/gqlgen/graphql.Any
+  ID:
+    model: github.com/99designs/gqlgen/graphql.ID
+  Entity:
+    model: github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/gql.Entity
+  Edge:
+    model: github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/gql.Edge

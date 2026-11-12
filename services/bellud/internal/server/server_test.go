@@ -108,3 +108,27 @@ func TestCORS(t *testing.T) {
 		t.Errorf("preflight: %d %v", w.Code, w.Header())
 	}
 }
+
+func TestWebServedBeforeAuth(t *testing.T) {
+	s := newServer(t)
+	s.Web = tag("web")
+	cases := []struct {
+		path string
+		code int
+		body string
+	}{
+		{"/", 200, "web"},
+		{"/sessions/abc", 200, "web"},
+		{"/api/ts", 401, ""},
+		{"/api", 401, ""},
+		{"/api/unknown", 401, ""},
+		{"/auth/login", 200, "ts"},
+		{"/openapi.json", 401, ""},
+	}
+	for _, c := range cases {
+		w := do(s, "GET", c.path, nil)
+		if w.Code != c.code || (c.code == 200 && w.Body.String() != c.body) {
+			t.Errorf("%s: got %d %q, want %d %q", c.path, w.Code, w.Body.String(), c.code, c.body)
+		}
+	}
+}

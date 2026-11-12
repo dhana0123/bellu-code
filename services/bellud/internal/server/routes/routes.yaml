@@ -212,8 +212,26 @@ routes:
     owner: ts
     public: false
     stream: false
+  - method: "POST"
+    pattern: "/api/experimental/graph/batches"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "GET"
     pattern: "/api/experimental/graph/changes"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/graph/debug"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/graph/debug/*"
     group: experimental
     owner: go
     public: false
@@ -249,11 +267,23 @@ routes:
     public: false
     stream: false
   - method: "*"
+    pattern: "/api/experimental/graph/graphql"
+    group: experimental
+    owner: go
+    public: false
+    stream: true
+  - method: "*"
     pattern: "/api/experimental/graph/mcp"
     group: experimental
     owner: go
     public: false
     stream: true
+  - method: "GET"
+    pattern: "/api/experimental/graph/metrics"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "GET"
     pattern: "/api/experimental/graph/schema"
     group: experimental
@@ -266,6 +296,12 @@ routes:
     owner: go
     public: false
     stream: false
+  - method: "GET"
+    pattern: "/api/experimental/graph/subscribe"
+    group: experimental
+    owner: go
+    public: false
+    stream: true
   - method: "POST"
     pattern: "/api/experimental/integration/wellknown"
     group: integration

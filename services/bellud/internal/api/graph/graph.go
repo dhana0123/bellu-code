@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
 	"github.com/bellu/bellucode/services/bellud/internal/tschild"
 )
 
@@ -47,7 +48,11 @@ func ChildStateOf(s tschild.State) ChildState {
 	}
 }
 
-var idPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*:[0-9a-f]{32}$`)
+// idPattern accepts an Entity_ID, a Local_ID or a bellugraph:// entity URI.
+var idPattern = regexp.MustCompile(`^(?:[a-z][a-z0-9_]*:[0-9a-f]{32}|@[23456789a-km-np-z]{6}|bellugraph://[^\s]+)$`)
+
+// maxBatchBytes bounds a POST /batches body.
+const maxBatchBytes = 4 << 20
 
 type handler struct {
 	engine graph.Engine
@@ -67,6 +72,7 @@ func New(engine graph.Engine, child func() ChildState) http.Handler {
 	mux.HandleFunc("GET "+Prefix+"/diff", h.diff)
 	mux.HandleFunc("GET "+Prefix+"/schema", h.schema)
 	mux.HandleFunc("GET "+Prefix+"/status", h.status)
+	mux.HandleFunc("POST "+Prefix+"/batches", h.batches)
 	return mux
 }
 
@@ -242,11 +248,21 @@ func timeParam(w http.ResponseWriter, r *http.Request, name string) (time.Time, 
 	return t, true, true
 }
 
+// idParam validates the path reference and resolves it to an Entity_ID through
+// the extended surface; engines without one use the reference as given.
 func (h *handler) idParam(w http.ResponseWriter, r *http.Request) (graph.EntityID, bool) {
 	id := r.PathValue("id")
 	if !idPattern.MatchString(id) {
 		invalid(w, "id", "malformed entity id")
 		return "", false
+	}
+	if x, ok := graph.ExtendedOf(h.engine); ok {
+		resolved, err := x.Resolve(r.Context(), id)
+		if err != nil {
+			fail(w, err)
+			return "", false
+		}
+		return resolved, true
 	}
 	return graph.EntityID(id), true
 }
@@ -646,4 +662,74 @@ func (h *handler) status(w http.ResponseWriter, _ *http.Request) {
 		child = h.child()
 	}
 	writeJSON(w, http.StatusOK, wireStatus{Engine: string(st.Kind), TSChild: string(child), Detail: st.Reason})
+}
+
+// ---- POST /batches ----
+
+type wireBatch struct {
+	Collector  string         `json:"collector"`
+	ObservedAt time.Time      `json:"observed_at"`
+	Entities   []wireBatchEnt `json:"entities"`
+	Relations  []wireBatchRel `json:"relations"`
+}
+
+type wireBatchEnt struct {
+	Type       string            `json:"type"`
+	Identity   map[string]string `json:"identity"`
+	Attributes map[string]any    `json:"attributes"`
+}
+
+type wireBatchRel struct {
+	Type       string         `json:"type"`
+	From       string         `json:"from"`
+	To         string         `json:"to"`
+	Attributes map[string]any `json:"attributes"`
+}
+
+type wireReceipt struct {
+	ID         string `json:"id"`
+	ObservedAt string `json:"observed_at"`
+	RecordedAt string `json:"recorded_at"`
+	Entities   int    `json:"entities"`
+	Relations  int    `json:"relations"`
+	Removed    int    `json:"removed"`
+}
+
+func (h *handler) batches(w http.ResponseWriter, r *http.Request) {
+	if h.engine == nil {
+		unavailable(w, "graph engine unavailable: disabled")
+		return
+	}
+	if st := graph.StateOf(h.engine); st.Kind != graph.StateReady {
+		unavailable(w, "graph engine unavailable: "+string(st.Kind)+reason(st.Reason))
+		return
+	}
+	var in wireBatch
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxBatchBytes)).Decode(&in); err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"_tag": "InvalidRequestError", "message": "batch exceeds 4 MiB", "kind": "validation"})
+			return
+		}
+		invalid(w, "", "malformed batch: "+err.Error())
+		return
+	}
+	b := graph.Batch{Collector: in.Collector, ObservedAt: in.ObservedAt}
+	for _, e := range in.Entities {
+		b.Entities = append(b.Entities, batch.Entity{Type: e.Type, Identity: e.Identity, Attributes: e.Attributes})
+	}
+	for _, e := range in.Relations {
+		b.Relations = append(b.Relations, batch.Relation{Type: e.Type, From: e.From, To: e.To, Attributes: e.Attributes})
+	}
+	ing := h.engine.Ingest()
+	if ing == nil {
+		unavailable(w, "graph engine unavailable: ingest")
+		return
+	}
+	rc, err := ing.Apply(r.Context(), b)
+	if err != nil {
+		fail(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, wireReceipt{ID: rc.ID, ObservedAt: ts(rc.ObservedAt), RecordedAt: ts(rc.RecordedAt), Entities: rc.Entities, Relations: rc.Relations, Removed: rc.Removed})
 }

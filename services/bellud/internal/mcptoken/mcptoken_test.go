@@ -82,3 +82,38 @@ func TestBearerRejectedByAuthenticatorOnOtherRoutes(t *testing.T) {
 		t.Fatal("bearer token authorized on a non-MCP route")
 	}
 }
+
+func TestSetRoleOf(t *testing.T) {
+	w, _ := mcptoken.New()
+	s, err := mcptoken.NewSet(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Write != w || s.Read == w || s.Ingest == w || s.Read == s.Ingest || s.Read.String() == "" {
+		t.Fatal("NewSet must keep write and mint distinct read/ingest tokens")
+	}
+	other, _ := mcptoken.New()
+	cases := []struct {
+		name string
+		tok  mcptoken.Token
+		role mcptoken.Role
+		ok   bool
+	}{
+		{"write", s.Write, mcptoken.RoleWrite, true},
+		{"ingest", s.Ingest, mcptoken.RoleIngest, true},
+		{"read", s.Read, mcptoken.RoleRead, true},
+		{"unknown", other, "", false},
+	}
+	for _, c := range cases {
+		role, tok, ok := s.RoleOf(req(func(r *http.Request) { r.Header.Set("Authorization", c.tok.Header()) }))
+		if role != c.role || ok != c.ok || (ok && tok != c.tok) {
+			t.Errorf("%s: got %q %v", c.name, role, ok)
+		}
+	}
+	if _, _, ok := s.RoleOf(req(nil)); ok {
+		t.Error("no header must not match")
+	}
+	if _, _, ok := s.RoleOf(req(func(r *http.Request) { r.SetBasicAuth("u", s.Read.String()) })); ok {
+		t.Error("basic auth must not match")
+	}
+}

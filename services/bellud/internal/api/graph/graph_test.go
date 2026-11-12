@@ -30,11 +30,11 @@ type fakeEngine struct {
 	lastFQ  graph.FindQuery
 }
 
-func (f *fakeEngine) Ingest() graph.Ingest      { return nil }
-func (f *fakeEngine) Query() graph.Query        { return f }
-func (f *fakeEngine) MCPHandler() http.Handler  { return nil }
+func (f *fakeEngine) Ingest() graph.Ingest        { return nil }
+func (f *fakeEngine) Query() graph.Query          { return f }
+func (f *fakeEngine) MCPHandler() http.Handler    { return nil }
 func (f *fakeEngine) Close(context.Context) error { return nil }
-func (f *fakeEngine) State() graph.State        { return f.state }
+func (f *fakeEngine) State() graph.State          { return f.state }
 
 func (f *fakeEngine) find(id graph.EntityID) (graph.Entity, bool) {
 	for _, e := range f.ents {

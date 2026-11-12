@@ -62,6 +62,12 @@ func GenerateRoutes(infos []OperationInfo) []Route {
 	routes = append(routes,
 		// The MCP endpoint is not an HttpApi operation but is served by Go.
 		Route{Method: "*", Pattern: "/api/experimental/graph/mcp", Group: "experimental", Owner: OwnerGo, Stream: true},
+		Route{Method: "*", Pattern: "/api/experimental/graph/graphql", Group: "experimental", Owner: OwnerGo, Stream: true},
+		Route{Method: "GET", Pattern: "/api/experimental/graph/subscribe", Group: "experimental", Owner: OwnerGo, Stream: true},
+		Route{Method: "GET", Pattern: "/api/experimental/graph/debug", Group: "experimental", Owner: OwnerGo},
+		Route{Method: "GET", Pattern: "/api/experimental/graph/debug/*", Group: "experimental", Owner: OwnerGo},
+		Route{Method: "GET", Pattern: "/api/experimental/graph/metrics", Group: "experimental", Owner: OwnerGo},
+		Route{Method: "POST", Pattern: "/api/experimental/graph/batches", Group: "experimental", Owner: OwnerGo},
 		Route{Method: "*", Pattern: "/api", Group: "api", Owner: OwnerTS},
 		Route{Method: "*", Pattern: "/api/*", Group: "api", Owner: OwnerTS},
 		Route{Method: "*", Pattern: "/auth/*", Group: "auth", Owner: OwnerTS, Public: true},
