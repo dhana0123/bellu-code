@@ -12,6 +12,8 @@ EnvironmentFile=/home/ubuntu/.config/bellucode/env
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
 # bellud uses this to locate packages/cli for the TS child server.
 Environment=BELLUCODE_REPO=/home/ubuntu/bellucode
+# Web UI assets (built with `bun run build` in packages/app); non-embedweb builds ship none.
+Environment=BELLUCODE_WEB_DIST=/home/ubuntu/bellucode/packages/app/dist
 ExecStart=/usr/local/bin/bellud serve --hostname 127.0.0.1 --port 4096
 # mixed: SIGTERM to bellud only, SIGKILL to the rest on timeout, so the TS child closes its lease cleanly.
 KillMode=mixed

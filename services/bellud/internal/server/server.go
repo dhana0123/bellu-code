@@ -27,6 +27,9 @@ type Server struct {
 	// authentication instead of falling through to the default owner (ts).
 	// Enable once the Go side owns the whole API surface.
 	StrictAPI bool
+	// Web serves every non-API path before authentication (nil: the route
+	// table decides, so such paths go to the TS proxy).
+	Web http.Handler
 }
 
 // IsAPIPath reports whether the cleaned path belongs to the API side.
@@ -42,6 +45,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	clean := routes.CleanPath(r.URL.Path)
+	if s.Web != nil && !IsAPIPath(clean) {
+		s.Web.ServeHTTP(w, r)
+		return
+	}
 	route, found := s.Table.Lookup(r.Method, clean)
 
 	if found && route.Public {

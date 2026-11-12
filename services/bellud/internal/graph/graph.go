@@ -39,7 +39,41 @@ type (
 	Paging        = facade.Paging
 	ChangeKind    = facade.ChangeKind
 	ChangeSubject = facade.ChangeSubject
+	Role          = facade.Role
+	Grant         = facade.Grant
+	Caller        = facade.Caller
+	Flap          = facade.Flap
+	Extended      = facade.Extended
+	PathOpts      = facade.PathOpts
+	PathResult    = facade.PathResult
+	ImpactOpts    = facade.ImpactOpts
+	Impacted      = facade.Impacted
+	ImpactResult  = facade.ImpactResult
+	SubscribeOpts = facade.SubscribeOpts
+	SeqChange     = facade.SeqChange
+	Subscription  = facade.Subscription
 )
+
+const (
+	RoleRead   = facade.RoleRead
+	RoleIngest = facade.RoleIngest
+	RoleWrite  = facade.RoleWrite
+)
+
+// WithCaller attaches the authenticated caller to ctx.
+func WithCaller(ctx context.Context, c Caller) context.Context { return facade.WithCaller(ctx, c) }
+
+// CallerFrom returns the caller attached to ctx, if any.
+func CallerFrom(ctx context.Context) (Caller, bool) { return facade.CallerFrom(ctx) }
+
+// Handlers are the engine's GraphQL, Subscribe, Debug and Metrics handlers.
+type Handlers = facade.Handlers
+
+// HandlersOf returns e's handlers (503 graph_unavailable when not ready).
+func HandlersOf(e Engine) Handlers { return facade.HandlersOf(e) }
+
+// ExtendedOf returns the extended query surface of e, if it has one.
+func ExtendedOf(e Engine) (Extended, bool) { return facade.ExtendedOf(e) }
 
 type Page[T any] = facade.Page[T]
 
@@ -69,6 +103,7 @@ var (
 	ErrCorrupt             = facade.ErrCorrupt
 	ErrNotFound            = facade.ErrNotFound
 	ErrValidation          = facade.ErrValidation
+	ErrForbidden           = facade.ErrForbidden
 )
 
 // LoadConfig reads BELLU_GRAPH_* from the process environment using the build default.

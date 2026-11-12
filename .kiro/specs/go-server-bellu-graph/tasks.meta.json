@@ -8,7 +8,7 @@
       "status": "passed",
       "lastRunTimestamp": 1794468046993
     },
-    "9.4 Write property test for no leftover upstream names": {
+    "9.4 Superseded property test (Property 2)": {
       "status": "passed",
       "lastRunTimestamp": 1794468566063
     },
@@ -20,7 +20,7 @@
       "status": "passed",
       "lastRunTimestamp": 1794468570328
     },
-    "9.3 Write property test for rename idempotence and determinism": {
+    "9.3 Superseded property test (Property 1)": {
       "status": "passed",
       "lastRunTimestamp": 1794468600878
     },
@@ -247,7 +247,7 @@
         "timestamp": 1794469833753
       }
     ],
-    "9.1 Implement the rename engine and map": [
+    "9.1 Superseded (engine tooling)": [
       {
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
@@ -264,7 +264,7 @@
         "timestamp": 1794466895442
       }
     ],
-    "9.2 Implement `cmd/sync-bellu-graph` and `script/sync-bellu-graph`": [
+    "9.2 Superseded (engine tooling)": [
       {
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
@@ -281,7 +281,7 @@
         "timestamp": 1794467389025
       }
     ],
-    "9.6 Vendor Toise at a pinned commit": [
+    "9.6 Superseded (engine origin)": [
       {
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
@@ -660,6 +660,16 @@
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794466444101
+      },
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490070476
+      },
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490252918
       }
     ],
     "18.1 Implement `internal/webui`": [
@@ -684,6 +694,16 @@
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794466449370
+      },
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490263092
+      },
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490392677
       }
     ],
     "19.1 Implement the merger": [
@@ -1072,7 +1092,7 @@
         "timestamp": 1794469967053
       }
     ],
-    "9.3 Write property test for rename idempotence and determinism": [
+    "9.3 Superseded property test (Property 1)": [
       {
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
@@ -1089,7 +1109,7 @@
         "timestamp": 1794468626160
       }
     ],
-    "9.4 Write property test for no leftover upstream names": [
+    "9.4 Superseded property test (Property 2)": [
       {
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
@@ -1106,7 +1126,7 @@
         "timestamp": 1794468627364
       }
     ],
-    "9.5 Write property test for license preservation": [
+    "9.5 Superseded property test (Property 3)": [
       {
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
@@ -1333,7 +1353,7 @@
         "timestamp": 1794468470603
       }
     ],
-    "9. Sync/rename tool and vendored engine": [
+    "9. Superseded: engine origin tasks (see `bellu-graph-native`)": [
       {
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
@@ -1402,6 +1422,20 @@
         "executionId": "10a382c9-bfe7-41fb-a7c2-0b06da5e3f5d",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794472350766
+      }
+    ],
+    "17. Agent MCP wiring, skill, agent and feature flag": [
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490255985
+      }
+    ],
+    "18. Web UI serving": [
+      {
+        "executionId": "4b676944-f21a-4818-abf3-5f38477efc5f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794490395492
       }
     ]
   }

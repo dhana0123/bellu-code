@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/errs"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
 )
 
@@ -13,21 +14,23 @@ import (
 // route while the engine is disabled or failed.
 const CodeUnavailable = "graph_unavailable"
 
+// The error values below are the engine's own sentinels, so errors.Is works
+// for errors returned by the engine and by the Facade alike.
 var (
 	// ErrUnavailable is returned (wrapped) when the engine is not ready.
-	ErrUnavailable = errors.New(CodeUnavailable)
+	ErrUnavailable = errs.Unavailable
 	// ErrInsecurePermissions: the data dir has group/world bits set.
-	ErrInsecurePermissions = errors.New("graph data directory has group or world permissions")
+	ErrInsecurePermissions = errs.InsecurePermissions
 	// ErrLocked: another process holds the store lock.
-	ErrLocked = errors.New("graph store is locked")
+	ErrLocked = errs.Locked
 	// ErrCorrupt: the store failed to open or validate; it is left untouched.
-	ErrCorrupt = errors.New("graph store is corrupt or unreadable")
+	ErrCorrupt = errs.Corrupt
 	// ErrNotImplemented marks surface completed by later tasks (10.3).
 	ErrNotImplemented = errors.New("not implemented")
 	// ErrNotFound: the entity does not exist (at the requested time).
-	ErrNotFound = errors.New("graph entity not found")
+	ErrNotFound = errs.NotFound
 	// ErrValidation is wrapped by every input rejection (batch or query).
-	ErrValidation = errors.New("graph validation error")
+	ErrValidation = errs.Validation
 )
 
 // Batch is one collector run's observations.
@@ -115,8 +118,10 @@ type Entity struct {
 	Type       string
 	Label      string
 	Attributes map[string]any
-	ObservedAt time.Time
-	RecordedAt time.Time
+	// Annotations holds operator annotations; nil when there are none.
+	Annotations map[string]string
+	ObservedAt  time.Time
+	RecordedAt  time.Time
 }
 
 // Paging selects a page. PageSize 0 means DefaultPageSize; values outside
@@ -145,6 +150,8 @@ type NeighborOpts struct {
 	Direction    string
 	RelationType string
 	Depth        int // 1..MaxNeighborDepth
+	// Resolve includes derived endpoint-resolution edges.
+	Resolve bool
 	Paging
 }
 
@@ -159,6 +166,8 @@ type Edge struct {
 	Type      string
 	Direction string
 	Hops      int
+	// Derived is true for resolves_to edges computed rather than stored.
+	Derived bool
 }
 
 // TimeRange bounds observed_at, inclusive on both ends. A zero bound is open.
@@ -202,11 +211,19 @@ type ChangeFilter struct {
 // Diff compares the graph at two observed_at instants. Lists are capped at
 // MaxPageSize each, with Truncated set when a cap was hit.
 type Diff struct {
-	From, To  time.Time
-	Added     []Entity
-	Changed   []Entity
-	Removed   []EntityID
+	From, To time.Time
+	Added    []Entity
+	Changed  []Entity
+	Removed  []EntityID
+	// Flapping lists entities that changed at least twice yet ended unchanged.
+	Flapping  []Flap
 	Truncated bool
+}
+
+// Flap is an entity with its change count over a Diff range.
+type Flap struct {
+	ID      EntityID
+	Changes int
 }
 
 // Page is one page of results. Items is ordered by the query; Total counts the

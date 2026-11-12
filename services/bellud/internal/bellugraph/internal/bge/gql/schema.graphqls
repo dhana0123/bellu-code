@@ -1,0 +1,45 @@
+scalar Time
+scalar JSON
+enum Direction { OUT IN BOTH }
+enum ChangeKind { ADDED CHANGED REMOVED }
+enum Subject { ENTITY RELATION }
+type Entity {
+  id: ID!                    # Entity_ID
+  identityFingerprint: ID!   # same value, explicit name
+  localId: String!
+  kind: String!
+  label: String!
+  attributes: JSON!
+  annotations: JSON!
+  observedAt: Time!
+  recordedAt: Time!
+  uri: String!
+  neighbors(direction: Direction = BOTH, relationType: String, depth: Int = 1, resolve: Boolean = true, first: Int = 100, after: String): EdgePage!
+  history(from: Time, to: Time, first: Int = 100, after: String): ChangePage!
+  dependents: [Entity!]!
+}
+type Edge { from: Entity!  to: Entity!  type: String!  direction: Direction!  hops: Int!  derived: Boolean! }
+type Change { seq: String!  kind: ChangeKind!  subject: Subject!  entity: ID  from: ID  to: ID  relationType: String  observedAt: Time!  recordedAt: Time! }
+type EntityPage { items: [Entity!]!  total: Int!  truncated: Boolean!  nextCursor: String }
+type EdgePage   { items: [Edge!]!    total: Int!  truncated: Boolean!  nextCursor: String }
+type ChangePage { items: [Change!]!  total: Int!  truncated: Boolean!  nextCursor: String }
+type Flap { entity: ID!  changes: Int! }
+type Diff { from: Time!  to: Time!  added: [Entity!]!  changed: [Entity!]!  removed: [ID!]!  flapping: [Flap!]!  truncated: Boolean! }
+type PathResult { connected: Boolean!  path: [Edge!]!  exhausted: Boolean!  depthSearched: Int!  sharedNeighbors: [Entity!]!  sharedAttributes: JSON! }
+type Impacted { entity: Entity!  hops: Int!  via: [Edge!]! }
+type Digest { total: Int!  byKind: JSON!  bySubject: JSON!  byEntityKind: JSON!  top: [Flap!]! }
+input AttrFilter { key: String!  value: String! }
+input ChangeFilter { kind: ChangeKind  subject: Subject  entityKind: String  entity: ID }
+type Query {
+  entity(id: ID!, asOf: Time): Entity
+  find(kind: String, attributes: [AttrFilter!], asOf: Time, first: Int = 100, after: String): EntityPage!
+  neighbors(id: ID!, direction: Direction = BOTH, relationType: String, depth: Int = 1, resolve: Boolean = true, asOf: Time, first: Int = 100, after: String): EdgePage!
+  history(id: ID!, from: Time, to: Time, first: Int = 100, after: String): ChangePage!
+  recentChanges(since: Time, filter: ChangeFilter, first: Int = 100, after: String): ChangePage!
+  recentDigest(since: Time, filter: ChangeFilter): Digest!
+  diff(from: Time!, to: Time!): Diff!
+  path(from: ID!, to: ID!, maxDepth: Int = 6, asOf: Time): PathResult!
+  impact(id: ID!, depth: Int = 3, asOf: Time): [Impacted!]!
+}
+type Mutation { annotateEntity(id: ID!, set: JSON!, remove: [String!]): Entity! }
+type Subscription { changes(filter: ChangeFilter, fromSeq: String): Change! }

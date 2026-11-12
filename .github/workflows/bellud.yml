@@ -4,11 +4,11 @@ on:
     branches: [dev]
     paths: &paths
       - services/bellud/**
-      - script/sync-bellu-graph/**
       - packages/schema/**
       - packages/protocol/**
       - packages/client/**
       - .github/workflows/bellud.yml
+      - script/check-no-upstream-name
   pull_request:
     branches: [dev, beta]
     types: [opened, edited, synchronize, reopened, ready_for_review]
@@ -59,8 +59,6 @@ jobs:
       - name: Test
         run: go test -short ./...
 
-      - name: Vendored sync-tool leftover check
-        run: go test ./internal/syncgraph -run 'Vendored|Leftover'
 
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
@@ -85,6 +83,9 @@ jobs:
         goarch: [amd64, arm64]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: No upstream name
+        working-directory: .
+        run: script/check-no-upstream-name
       - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version-file: services/bellud/go.mod

@@ -1,36 +1,37 @@
 import { type ComponentProps } from "solid-js"
-
+// Bellu Code brand mark: two black chevrons on the #FF4A23 square.
 export const Mark = (props: { class?: string }) => {
   return (
     <svg
       data-component="logo-mark"
       classList={{ [props.class ?? ""]: !!props.class }}
-      viewBox="0 0 16 20"
+      viewBox="0 0 419 419"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path data-slot="logo-logo-mark-shadow" d="M12 16H4V8H12V16Z" fill="var(--icon-weak-base)" />
-      <path data-slot="logo-logo-mark-o" d="M12 4H4V16H12V4ZM16 20H0V0H16V20Z" fill="var(--icon-strong-base)" />
+      <rect width="419" height="419" fill="#FF4A23" />
+      <path d="M319 122.058L121 36L175.525 128.158L121 209.684L319 122.058Z" fill="#000" />
+      <path d="M319 295.742L121 209.684L175.525 301.842L121 383.368L319 295.742Z" fill="#000" />
     </svg>
   )
 }
-
 export const Splash = (props: Pick<ComponentProps<"svg">, "ref" | "class">) => {
   return (
     <svg
       ref={props.ref}
       data-component="logo-splash"
       classList={{ [props.class ?? ""]: !!props.class }}
-      viewBox="0 0 80 100"
+      viewBox="0 0 419 419"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M60 80H20V40H60V80Z" fill="var(--icon-base)" />
-      <path d="M60 20H20V80H60V20ZM80 100H0V0H80V100Z" fill="var(--icon-strong-base)" />
+      <rect width="419" height="419" fill="#FF4A23" />
+      <path d="M319 122.058L121 36L175.525 128.158L121 209.684L319 122.058Z" fill="#000" />
+      <path d="M319 295.742L121 209.684L175.525 301.842L121 383.368L319 295.742Z" fill="#000" />
     </svg>
   )
 }
-
+// "BELLU CODE" wordmark in a 234×42 viewBox; the new-session wordmark animates the same letter geometry.
 export const Logo = (props: { class?: string }) => {
   return (
     <svg
@@ -39,23 +40,16 @@ export const Logo = (props: { class?: string }) => {
       fill="none"
       classList={{ [props.class ?? ""]: !!props.class }}
     >
-      <g>
-        <path d="M18 30H6V18H18V30Z" fill="var(--icon-weak-base)" />
-        <path d="M18 12H6V30H18V12ZM24 36H0V6H24V36Z" fill="var(--icon-base)" />
-        <path d="M48 30H36V18H48V30Z" fill="var(--icon-weak-base)" />
-        <path d="M36 30H48V12H36V30ZM54 36H36V42H30V6H54V36Z" fill="var(--icon-base)" />
-        <path d="M84 24V30H66V24H84Z" fill="var(--icon-weak-base)" />
-        <path d="M84 24H66V30H84V36H60V6H84V24ZM66 18H78V12H66V18Z" fill="var(--icon-base)" />
-        <path d="M108 36H96V18H108V36Z" fill="var(--icon-weak-base)" />
-        <path d="M108 12H96V36H90V6H108V12ZM114 36H108V12H114V36Z" fill="var(--icon-base)" />
-        <path d="M144 30H126V18H144V30Z" fill="var(--icon-weak-base)" />
-        <path d="M144 12H126V30H144V36H120V6H144V12Z" fill="var(--icon-strong-base)" />
-        <path d="M168 30H156V18H168V30Z" fill="var(--icon-weak-base)" />
-        <path d="M168 12H156V30H168V12ZM174 36H150V6H174V36Z" fill="var(--icon-strong-base)" />
-        <path d="M198 30H186V18H198V30Z" fill="var(--icon-weak-base)" />
-        <path d="M198 12H186V30H198V12ZM204 36H180V6H198V0H204V36Z" fill="var(--icon-strong-base)" />
-        <path d="M234 24V30H216V24H234Z" fill="var(--icon-weak-base)" />
-        <path d="M216 12V18H228V12H216ZM234 24H216V30H234V36H210V6H234V24Z" fill="var(--icon-strong-base)" />
+      <g fill="var(--icon-strong-base)">
+        <path d="M-0 35.89V6.11H14.07C18.91 6.11 21.33 8.52 21.33 13.36V15.95C21.33 16.93 21.04 17.76 20.46 18.45L18.95 20.27L20.76 21.78C21.71 22.55 22.19 23.71 22.19 25.23V28.64C22.19 33.48 19.77 35.89 14.94 35.89H-0ZM6.22 30.28H14.68C15.54 30.28 15.97 29.85 15.97 28.99V24.67C15.97 23.81 15.54 23.37 14.68 23.37H6.22V30.28ZM6.22 17.76H13.81C14.68 17.76 15.11 17.33 15.11 16.47V13.01C15.11 12.15 14.68 11.72 13.81 11.72H6.22V17.76Z" />
+        <path d="M26.43 35.89V6.11H46.81V11.72H32.65V17.76H45.51V23.37H32.65V30.28H46.81V35.89H26.43Z" />
+        <path d="M50.76 35.89V6.11H56.98V30.28H69.84V35.89H50.76Z" />
+        <path d="M72.68 35.89V6.11H78.9V30.28H91.76V35.89H72.68Z" />
+        <path d="M94.35 28.64V6.11H100.56V28.99C100.56 29.85 101 30.28 101.86 30.28H110.32C111.18 30.28 111.62 29.85 111.62 28.99V6.11H117.83V28.64C117.83 33.48 115.41 35.89 110.58 35.89H101.6C96.77 35.89 94.35 33.48 94.35 28.64Z" />
+        <path d="M131.15 28.64V13.36C131.15 8.52 133.57 6.11 138.4 6.11H149.93L152.82 8.35V11.72H138.66C137.8 11.72 137.37 12.15 137.37 13.01V28.99C137.37 29.85 137.8 30.28 138.66 30.28H152.82V33.65L149.93 35.89H138.4C133.57 35.89 131.15 33.48 131.15 28.64Z" />
+        <path d="M156.36 28.64V13.36C156.36 8.52 158.78 6.11 163.61 6.11H173.46C178.29 6.11 180.71 8.52 180.71 13.36V28.64C180.71 33.48 178.29 35.89 173.46 35.89H163.61C158.78 35.89 156.36 33.48 156.36 28.64ZM162.58 28.99C162.58 29.85 163.01 30.28 163.87 30.28H173.2C174.06 30.28 174.49 29.85 174.49 28.99V13.01C174.49 12.15 174.06 11.72 173.2 11.72H163.87C163.01 11.72 162.58 12.15 162.58 13.01V28.99Z" />
+        <path d="M185.63 35.89V6.11H196.94C205.06 6.11 209.11 10.16 209.11 18.28V23.72C209.11 31.84 205.06 35.89 196.94 35.89H185.63ZM191.85 30.28H197.29C201.03 30.28 202.9 28.41 202.9 24.67V17.33C202.9 13.59 201.03 11.72 197.29 11.72H191.85V30.28Z" />
+        <path d="M213.62 35.89V6.11H234V11.72H219.84V17.76H232.7V23.37H219.84V30.28H234V35.89H213.62Z" />
       </g>
     </svg>
   )

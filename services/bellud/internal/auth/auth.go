@@ -106,7 +106,9 @@ func SessionCookieName(host string) string {
 // WriteUnauthorized writes a 401 with WWW-Authenticate: Basic.
 func WriteUnauthorized(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", "Basic")
-	http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+	_, _ = w.Write([]byte(`{"_tag":"UnauthorizedError","message":"Authentication required"}`))
 }
 
 func (a *auth) sign(payload string) string {

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Graph debug</title>
+<link rel="stylesheet" href="{{.Base}}/debug/style.css"></head><body>
+<h1>Graph debug</h1>
+<form method="get" action="{{.Base}}/debug">
+<label>Ref <input name="ref" value="{{.Ref}}"></label>
+<label>As of <input name="as_of" value="{{.AsOf}}" placeholder="RFC 3339"></label>
+<label>Depth <input name="depth" type="number" min="1" max="3" value="{{.Depth}}"></label>
+<button type="submit">Show</button></form>
+<form method="get" action="{{.Base}}/debug">
+<label>Kind <input name="kind" value="{{.Kind}}"></label>
+<label>Query <input name="q" value="{{.Q}}" placeholder="key=value"></label>
+<button type="submit">Find</button></form>
+{{if .Error}}<p class="err">{{.Error}}</p>{{end}}
+{{if .Found}}<h2>Find results ({{.Found.Total}})</h2>
+<table><tr><th>ID</th><th>Kind</th><th>Label</th></tr>
+{{range .Found.Rows}}<tr><td><a href="{{.Link}}">{{.ID}}</a></td><td>{{.Kind}}</td><td>{{.Label}}</td></tr>{{end}}</table>{{end}}
+{{with .Entity}}<h2>{{.Kind}} {{.Label}}</h2>
+<p>ID <code>{{.ID}}</code> local <code>{{.Local}}</code><br>observed {{.Observed}} recorded {{.Recorded}}</p>
+<h3>Attributes</h3>
+<table><tr><th>Name</th><th>Value</th></tr>{{range .Attrs}}<tr><td>{{.K}}</td><td>{{.V}}</td></tr>{{end}}</table>
+<h3>Annotations</h3>
+<table><tr><th>Name</th><th>Value</th></tr>{{range .Annots}}<tr><td>{{.K}}</td><td>{{.V}}</td></tr>{{end}}</table>
+<h3>Neighbors ({{.NTotal}})</h3>
+<table><tr><th>Type</th><th>Direction</th><th>Hops</th><th>From</th><th>To</th></tr>
+{{range .Neighbors}}<tr><td>{{.Type}}{{if .Derived}} (derived){{end}}</td><td>{{.Dir}}</td><td>{{.Hops}}</td><td><a href="{{.FromLink}}">{{.From}}</a></td><td><a href="{{.ToLink}}">{{.To}}</a></td></tr>{{end}}</table>
+<h3>History</h3>
+<table><tr><th>Seq</th><th>Change</th><th>Subject</th><th>Detail</th><th>Observed</th><th>Recorded</th></tr>
+{{range .History}}<tr><td>{{.Seq}}</td><td>{{.Kind}}</td><td>{{.Subject}}</td><td>{{.Detail}}</td><td>{{.Observed}}</td><td>{{.Recorded}}</td></tr>{{end}}</table>
+{{if .NextHistory}}<p><a href="{{.NextHistory}}">Older page</a></p>{{end}}
+{{end}}
+</body></html>

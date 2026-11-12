@@ -68,15 +68,24 @@ curl -u bellucode:<password> http://127.0.0.1:4096/api/info
 
 `systemctl status` should show `active (running)`. `/api/info` should return JSON. A wrong or missing password returns 401.
 
-## Sync the Bellu Graph engine
+## Bellu Graph Engine
 
-The engine is a vendored, renamed copy of upstream Toise. To update it to a pinned upstream commit:
+The engine is original in-tree code under `internal/bellugraph/internal/bge`, used through the `internal/bellugraph` facade. It runs inside bellud.
 
-```sh
-make sync-graph COMMIT=<40-hex upstream commit> [SYNC_FLAGS=-record]
-# or directly
-script/sync-bellu-graph [-record] <40-hex upstream commit>
-git diff --stat services/bellud/internal/bellugraph
-```
+Features: append-only event log, bi-temporal as-of reads, history/diff/flapping, search, path and impact queries, endpoint resolution, 12 MCP tools plus resources and prompts, GraphQL, SSE subscribe, a debug UI, OTLP ingest, snapshots and retention, and metrics.
 
-Review the diff before committing. Rename rules are in `script/rename.map.yaml`.
+Routes live under `/api/experimental/graph`: `mcp`, `graphql`, `subscribe`, `debug`, `metrics`, `batches` and the read endpoints.
+
+Token roles:
+
+- `read`: all read routes.
+- `ingest`: `POST /batches` only.
+- `write`: held by bellud itself (front-door requests).
+
+bellud rewrites `~/.local/share/bellucode/graph-tokens.json` (mode 0600) on every start. It holds the read and ingest tokens for collectors.
+
+Config: `BELLU_GRAPH_ENABLED`, `BELLU_GRAPH_DIR`, `BELLU_GRAPH_OTLP_LISTEN`, `BELLU_GRAPH_RETENTION`, `BELLU_GRAPH_LOG_LEVEL`.
+
+### Upgrade note
+
+Before the first start of this version, delete `~/.local/share/bellucode/graph`. Copy `audit.jsonl` out first if you need it. Collectors rebuild the graph, and entity IDs change once.

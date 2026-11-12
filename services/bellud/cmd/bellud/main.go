@@ -35,6 +35,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/server"
 	"github.com/bellu/bellucode/services/bellud/internal/server/routes"
 	"github.com/bellu/bellucode/services/bellud/internal/tschild"
+	"github.com/bellu/bellucode/services/bellud/internal/webui"
 )
 
 const (
@@ -87,12 +88,29 @@ func serve(args []string) error {
 	}
 
 	table := routes.MustLoadEmbedded()
+	// Fails the start when BELLUCODE_WEB_DIST is set but unreadable (no fallback).
+	web, err := webui.New(webui.Options{Dir: cfg.WebDist})
+	if err != nil {
+		return err
+	}
 	// The MCP token lives in memory only; it is handed to the TS child via agentcfg.
 	tok, err := mcptoken.New()
 	if err != nil {
 		return fmt.Errorf("mcp token: %w", err)
 	}
-	engine, runner := openGraph(logger, tok.String(), scanRoots(filepath.Dir(filepath.Dir(cliDir))))
+	set, err := mcptoken.NewSet(tok)
+	if err != nil {
+		return fmt.Errorf("graph tokens: %w", err)
+	}
+	engine, runner := openGraph(logger, set, scanRoots(filepath.Dir(filepath.Dir(cliDir))))
+
+	if engine != nil {
+		if dd, derr := config.DataDir(); derr != nil {
+			logger.Println("warning: graph tokens file:", derr)
+		} else if werr := writeGraphTokens(dd, set); werr != nil {
+			logger.Println("warning: graph tokens file:", werr)
+		}
+	}
 
 	// Bind first so a bind failure never starts the child.
 	ln, err := net.Listen("tcp", cfg.Addr())
@@ -115,6 +133,28 @@ func serve(args []string) error {
 		return err
 	}
 	childEnv := map[string]string{}
+	if enabled {
+		_, userDirSet := os.LookupEnv(agentcfg.EnvConfigDir)
+		genDir := ""
+		if cd, cerr := config.ConfigDir(); cerr == nil {
+			genDir = filepath.Join(cd, agentcfg.GeneratedDirName)
+		}
+		plan := agentcfg.PlanDefinitions(userDirSet || genDir == "", genDir)
+		if plan.Warn != nil {
+			logger.Println("warning:", plan.Warn)
+		}
+		if plan.ConfigDir != "" {
+			childEnv[agentcfg.EnvConfigDir] = plan.ConfigDir
+		}
+		if plan.Inject {
+			if content, err = agentcfg.InjectDefinitions(content, setContent); err != nil {
+				_ = ln.Close()
+				stopGraph(engine, runner, logger)
+				return err
+			}
+			setContent = true
+		}
+	}
 	if setContent {
 		childEnv[agentcfg.EnvConfigContent] = content
 	}
@@ -131,15 +171,15 @@ func serve(args []string) error {
 			origins = append(origins, o)
 		}
 	}
+	authn := auth.New(cfg.Password)
 	handler := &server.Server{
-		Table: table,
-		Auth:  auth.New(cfg.Password),
-		Go:    goHandler(engine, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) }),
-		GoAuth: map[string]func(*http.Request) bool{
-			apigraph.Prefix + "/mcp": tok.Verify,
-		},
-		Proxy: proxy.New(sup.Current),
-		CORS:  origins,
+		Table:  table,
+		Auth:   authn,
+		Go:     goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) }),
+		GoAuth: graphGoAuth(table, set, authn.Authorize),
+		Proxy:  proxy.New(sup.Current),
+		CORS:   origins,
+		Web:    web,
 	}
 	srv := &http.Server{Handler: handler, ReadHeaderTimeout: 10 * time.Second}
 
@@ -187,13 +227,14 @@ func serve(args []string) error {
 
 // openGraph opens the graph engine and, when it is enabled and ready, starts the
 // collector runner. A failed open leaves the engine disabled; serving continues.
-func openGraph(logger *log.Logger, mcpToken string, roots []string) (graph.Engine, *collectors.Runner) {
+func openGraph(logger *log.Logger, set mcptoken.Set, roots []string) (graph.Engine, *collectors.Runner) {
 	gcfg, err := graph.LoadConfig()
 	if err != nil {
 		logger.Println("warning: graph config:", err)
 		return nil, nil
 	}
-	gcfg.MCPToken = mcpToken
+	gcfg.MCPToken = set.Write.String()
+	gcfg.Grants = grantsOf(set)
 	eng, err := graph.Open(context.Background(), gcfg)
 	if err != nil {
 		logger.Println("warning: graph unavailable:", err)
@@ -240,7 +281,7 @@ func stopChild(sup *tschild.Supervisor, logger interface{ Println(...any) }) err
 }
 
 // goHandler serves the Go-owned routes: the MCP endpoint and the graph read API.
-func goHandler(eng graph.Engine, child func() apigraph.ChildState) http.Handler {
+func goHandler(eng graph.Engine, set mcptoken.Set, child func() apigraph.ChildState) http.Handler {
 	var mcp http.Handler
 	if eng == nil {
 		mcp = graph.UnavailableHandler("graph disabled")
@@ -249,9 +290,15 @@ func goHandler(eng graph.Engine, child func() apigraph.ChildState) http.Handler 
 	}
 	api := apigraph.New(eng, child)
 	mux := http.NewServeMux()
+	hs := graph.HandlersOf(eng)
 	mux.Handle(apigraph.Prefix+"/mcp", mcp)
-	mux.Handle("/", api)
-	return mux
+	mux.Handle(apigraph.Prefix+"/graphql", hs.GraphQL)
+	mux.Handle(apigraph.Prefix+"/subscribe", hs.Subscribe)
+	mux.Handle(apigraph.Prefix+"/debug", hs.Debug)
+	mux.Handle(apigraph.Prefix+"/debug/", hs.Debug)
+	mux.Handle(apigraph.Prefix+"/metrics", hs.Metrics)
+	mux.Handle("/", api) // reads and POST /batches
+	return roleMiddleware(set, mux)
 }
 
 // scanRoots returns the code scan roots from BELLUCODE_SCAN_ROOTS (colon

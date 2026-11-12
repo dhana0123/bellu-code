@@ -1,7 +1,9 @@
-// Package mcptoken holds the per-start bearer token that guards the graph MCP
-// endpoint. The token lives in memory only and is accepted on that endpoint
-// alone; every other route authorizes with Basic/session credentials, so a
-// Bearer header never satisfies them.
+// Package mcptoken holds the per-start bearer tokens that guard the graph
+// routes (MCP, GraphQL, subscribe, HTTP reads, batches, debug and metrics).
+// A Set carries one token per role (read, ingest, write). Tokens live in
+// memory only and are accepted on graph routes alone; every other route
+// authorizes with Basic/session credentials, so a Bearer header never
+// satisfies them.
 package mcptoken
 
 import (
@@ -29,6 +31,46 @@ func New() (Token, error) {
 		return Token{}, err
 	}
 	return Token{value: base64.RawURLEncoding.EncodeToString(b)}, nil
+}
+
+// Role is the capability level a graph token grants.
+type Role string
+
+const (
+	RoleRead   Role = "read"
+	RoleIngest Role = "ingest"
+	RoleWrite  Role = "write"
+)
+
+// Set holds one token per role.
+type Set struct{ Read, Ingest, Write Token }
+
+// NewSet returns a Set using write as the write token and minting fresh read
+// and ingest tokens.
+func NewSet(write Token) (Set, error) {
+	read, err := New()
+	if err != nil {
+		return Set{}, err
+	}
+	ingest, err := New()
+	if err != nil {
+		return Set{}, err
+	}
+	return Set{Read: read, Ingest: ingest, Write: write}, nil
+}
+
+// RoleOf reports which role's token r carries as a Bearer credential, checking
+// write first. Every comparison is constant time.
+func (s Set) RoleOf(r *http.Request) (Role, Token, bool) {
+	for _, c := range []struct {
+		role Role
+		tok  Token
+	}{{RoleWrite, s.Write}, {RoleIngest, s.Ingest}, {RoleRead, s.Read}} {
+		if c.tok.Verify(r) {
+			return c.role, c.tok, true
+		}
+	}
+	return "", Token{}, false
 }
 
 // String returns the raw token (for Config.MCPToken and handing to clients).
