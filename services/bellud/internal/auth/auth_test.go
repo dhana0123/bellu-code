@@ -1,0 +1,129 @@
+package auth
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+)
+
+func basicReq(user, pass string) *http.Request {
+	r := httptest.NewRequest(http.MethodGet, "http://localhost:4096/x", nil)
+	r.SetBasicAuth(user, pass)
+	return r
+}
+
+func TestBasicWithPassword(t *testing.T) {
+	a := New("secret")
+	if !a.Authorize(basicReq("opencode", "secret")) {
+		t.Fatal("expected authorized")
+	}
+	if a.Authorize(basicReq("opencode", "wrong")) {
+		t.Fatal("wrong password accepted")
+	}
+	if a.Authorize(basicReq("other", "secret")) {
+		t.Fatal("wrong username accepted")
+	}
+}
+
+func TestBasicWithSessionToken(t *testing.T) {
+	a := New("secret")
+	tok, ok := a.IssueSession(time.Now())
+	if !ok {
+		t.Fatal("issue failed")
+	}
+	if !a.Authorize(basicReq("opencode", tok)) {
+		t.Fatal("valid token rejected")
+	}
+	if a.Authorize(basicReq("other", tok)) {
+		t.Fatal("wrong username accepted with token")
+	}
+}
+
+func TestCookieByHostPort(t *testing.T) {
+	a := New("secret")
+	tok, _ := a.IssueSession(time.Now())
+
+	r := httptest.NewRequest(http.MethodGet, "http://localhost:4096/x", nil)
+	r.AddCookie(&http.Cookie{Name: "opencode_session_4096", Value: tok})
+	if !a.Authorize(r) {
+		t.Fatal("port cookie rejected")
+	}
+
+	r = httptest.NewRequest(http.MethodGet, "http://localhost:4096/x", nil)
+	r.AddCookie(&http.Cookie{Name: "opencode_session", Value: tok})
+	if a.Authorize(r) {
+		t.Fatal("cookie without port accepted for host with port")
+	}
+
+	r = httptest.NewRequest(http.MethodGet, "http://example.com/x", nil)
+	r.AddCookie(&http.Cookie{Name: "opencode_session", Value: tok})
+	if !a.Authorize(r) {
+		t.Fatal("bare cookie rejected for host without port")
+	}
+
+	r = httptest.NewRequest(http.MethodGet, "http://localhost:4096/x", nil)
+	r.AddCookie(&http.Cookie{Name: "opencode_session_4096", Value: "bad.token"})
+	if a.Authorize(r) {
+		t.Fatal("invalid cookie accepted")
+	}
+}
+
+func TestSessionCookieName(t *testing.T) {
+	for host, want := range map[string]string{
+		"localhost:4096": "opencode_session_4096",
+		"localhost":      "opencode_session",
+		"[::1]:4096":     "opencode_session_4096",
+	} {
+		if got := SessionCookieName(host); got != want {
+			t.Errorf("%q: got %q want %q", host, got, want)
+		}
+	}
+}
+
+func TestEmptyPasswordRejectsEverything(t *testing.T) {
+	a := New("")
+	if a.Required() {
+		t.Fatal("Required should be false")
+	}
+	if a.Authorize(basicReq("opencode", "")) {
+		t.Fatal("empty password accepted")
+	}
+	if a.Authorize(httptest.NewRequest(http.MethodGet, "/x", nil)) {
+		t.Fatal("anonymous accepted")
+	}
+	if tok, ok := a.IssueSession(time.Now()); ok || tok != "" {
+		t.Fatal("issued token with empty password")
+	}
+	if a.VerifySession(".", time.Now()) || a.VerifySession("", time.Now()) {
+		t.Fatal("empty token verified")
+	}
+}
+
+func TestMalformedTokensRejected(t *testing.T) {
+	a := New("secret")
+	now := time.Now()
+	tok, _ := a.IssueSession(now)
+	for _, bad := range []string{"", "abc", "a.b.c", "x." + tok[len(tok)-5:], tok + "A", tok[:len(tok)-1]} {
+		if a.VerifySession(bad, now) {
+			t.Errorf("accepted %q", bad)
+		}
+	}
+	if a.VerifySession(tok, now.Add(SessionTTL+time.Second)) {
+		t.Error("expired token accepted")
+	}
+	if New("other").VerifySession(tok, now) {
+		t.Error("token valid for different password")
+	}
+}
+
+func TestWriteUnauthorized(t *testing.T) {
+	w := httptest.NewRecorder()
+	WriteUnauthorized(w)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("status %d", w.Code)
+	}
+	if got := w.Header().Get("WWW-Authenticate"); got != "Basic" {
+		t.Fatalf("header %q", got)
+	}
+}

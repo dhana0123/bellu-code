@@ -1,0 +1,27 @@
+{
+  "operationId": "server.info",
+  "name": "info-session-token",
+  "method": "GET",
+  "path": "/api/info",
+  "request": {
+    "headers": {
+      "authorization": "<AUTH:info-session-token>"
+    }
+  },
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "version": "<VERSION>",
+    "pid": "<NUMBER>",
+    "hostname": "<HOSTNAME>",
+    "urls": [
+      "http://127.0.0.1:<PORT>"
+    ],
+    "paths": {
+      "tmp": "/tmp/opencode"
+    },
+    "capabilities": {
+      "persistentPty": true
+    }
+  }
+}

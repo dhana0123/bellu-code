@@ -1,0 +1,15 @@
+{
+  "operationId": "server.pair",
+  "name": "pair-no-auth",
+  "method": "POST",
+  "path": "/api/pair",
+  "request": {
+    "headers": {}
+  },
+  "status": 401,
+  "contentType": "application/json",
+  "body": {
+    "_tag": "UnauthorizedError",
+    "message": "Authentication required"
+  }
+}

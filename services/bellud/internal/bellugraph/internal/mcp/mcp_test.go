@@ -1,0 +1,2095 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+package mcp
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"slices"
+	"sort"
+	"strings"
+	"testing"
+	"time"
+
+	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/model"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/store"
+)
+
+// --- fakes -------------------------------------------------------------------
+
+type fakeGraph struct {
+	entities  map[model.EntityID]model.Entity
+	deleted   map[model.EntityID]bool
+	relations []model.Relation
+	neighbors map[model.EntityID][]model.Entity
+}
+
+func (g *fakeGraph) GetEntity(id model.EntityID) (model.Entity, bool, bool) {
+	e, ok := g.entities[id]
+	return e, ok, g.deleted[id]
+}
+
+// ResolveHandle mirrors projection.Graph's three handle forms (ADR 0035): a
+// logical id, an identity fingerprint, or an identity written inline.
+func (g *fakeGraph) ResolveHandle(handle string) (model.EntityID, bool) {
+	typ, rest, hasColon := strings.Cut(handle, ":")
+	switch {
+	case !hasColon:
+		return model.EntityID(handle), true
+	case !strings.Contains(rest, "="):
+		for id, e := range g.entities {
+			if e.IdentityHash() == handle {
+				return id, true
+			}
+		}
+		return "", false
+	}
+	want := map[string]string{}
+	for _, pair := range strings.Split(rest, ",") {
+		k, v, ok := strings.Cut(pair, "=")
+		if !ok {
+			return "", false
+		}
+		want[k] = v
+	}
+	for id, e := range g.entities {
+		if e.Type != typ || len(e.Identity) != len(want) {
+			continue
+		}
+		match := true
+		for _, kv := range e.Identity {
+			if v, ok := want[kv.Key]; !ok || kv.Value.Display() != v {
+				match = false
+				break
+			}
+		}
+		if match {
+			return id, true
+		}
+	}
+	return "", false
+}
+
+func (g *fakeGraph) ListEntities(typ string) []model.Entity {
+	var out []model.Entity
+	for id, e := range g.entities {
+		if g.deleted[id] {
+			continue
+		}
+		if typ != "" && e.Type != typ {
+			continue
+		}
+		out = append(out, e)
+	}
+	return out
+}
+
+// The fake mirrors the projection's contract: fingerprint order, which is what
+// a paged read resumes against. Sorting here is fine — the real projection
+// reads the order from its hash index instead of recomputing it.
+func (g *fakeGraph) ListEntitiesByFingerprint(typ string) []model.Entity {
+	out := g.ListEntities(typ)
+	sort.Slice(out, func(i, j int) bool { return out[i].IdentityHash() < out[j].IdentityHash() })
+	return out
+}
+
+func (g *fakeGraph) PageEntitiesByFingerprint(typ, after string, limit int) ([]model.Entity, string, int) {
+	all := g.ListEntitiesByFingerprint(typ)
+	total := len(all)
+	if after != "" {
+		k := 0
+		for k < len(all) && all[k].IdentityHash() <= after {
+			k++
+		}
+		all = all[k:]
+	}
+	if len(all) <= limit {
+		return all, "", total
+	}
+	page := all[:limit]
+	return page, page[len(page)-1].IdentityHash(), total
+}
+
+func (g *fakeGraph) ListRelations(typ string, from, to model.EntityID) []model.Relation {
+	var out []model.Relation
+	for _, r := range g.relations {
+		if typ != "" && r.Type != typ {
+			continue
+		}
+		if from != "" && r.From != from {
+			continue
+		}
+		if to != "" && r.To != to {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out
+}
+
+func (g *fakeGraph) RelationsTouching(id model.EntityID, relType string) []model.Relation {
+	var out []model.Relation
+	for _, r := range g.relations {
+		if relType != "" && r.Type != relType {
+			continue
+		}
+		if r.From == id || r.To == id {
+			out = append(out, r)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+func (g *fakeGraph) Neighbors(id model.EntityID, _ string, _ int) []model.Entity {
+	return g.neighbors[id]
+}
+
+func (g *fakeGraph) CountByType() map[string]int {
+	out := make(map[string]int)
+	for id, e := range g.entities {
+		if !g.deleted[id] {
+			out[e.Type]++
+		}
+	}
+	return out
+}
+
+func (g *fakeGraph) EntityCount() int {
+	n := 0
+	for id := range g.entities {
+		if !g.deleted[id] {
+			n++
+		}
+	}
+	return n
+}
+
+func (g *fakeGraph) RelationCount() int { return len(g.relations) }
+
+type fakeStore struct {
+	byEntity map[model.EntityID][]model.Event
+	byTime   []model.Event
+	horizon  time.Time
+}
+
+func (s *fakeStore) PruneHorizon() time.Time { return s.horizon }
+
+func (s *fakeStore) ReadByEntity(_ context.Context, id model.EntityID) ([]model.Event, error) {
+	return s.byEntity[id], nil
+}
+
+func (s *fakeStore) ReadByTimeRange(_ context.Context, start, end time.Time) ([]model.Event, error) {
+	var out []model.Event
+	for _, ev := range s.byTime {
+		et, _ := ev.Times()
+		if !et.Before(start) && !et.After(end) {
+			out = append(out, ev)
+		}
+	}
+	return out, nil
+}
+
+func (s *fakeStore) ScanByTimeRange(_ context.Context, start, end time.Time, fn func(model.Event) error) error {
+	for _, ev := range s.byTime {
+		et, _ := ev.Times()
+		if !et.Before(start) && !et.After(end) {
+			if err := fn(ev); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// ScanTimeIndex mirrors the store's classified scan over the in-memory slice:
+// each event is its own index entry, tagged from its content, with its slice
+// position as the sequence Resolve looks up.
+func (s *fakeStore) ScanTimeIndex(_ context.Context, start, end time.Time, newestFirst bool, fn func(store.TimeIndexEntry) error) error {
+	emit := func(i int) error {
+		ev := s.byTime[i]
+		et, _ := ev.Times()
+		if et.Before(start) || et.After(end) {
+			return nil
+		}
+		e := store.TimeIndexEntry{Seq: uint64(i), Tagged: true}
+		switch {
+		case ev.Entity != nil:
+			e.ChangeType = ev.Entity.ChangeType
+		case ev.Relation != nil:
+			e.ChangeType = ev.Relation.ChangeType
+			e.Structural = ev.Relation.Relation.Structural
+		}
+		return fn(e)
+	}
+	if newestFirst {
+		for i := len(s.byTime) - 1; i >= 0; i-- {
+			if err := emit(i); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	for i := range s.byTime {
+		if err := emit(i); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// NewestEventTime mirrors the store: the max event time across the fixture.
+func (s *fakeStore) NewestEventTime() (time.Time, bool, error) {
+	var newest time.Time
+	for _, ev := range s.byTime {
+		if et, _ := ev.Times(); et.After(newest) {
+			newest = et
+		}
+	}
+	return newest, !newest.IsZero(), nil
+}
+
+func (s *fakeStore) Resolve(seq uint64) (model.Event, bool, error) {
+	if int(seq) >= len(s.byTime) {
+		return model.Event{}, false, nil
+	}
+	return s.byTime[seq], true, nil
+}
+
+// --- fixture -----------------------------------------------------------------
+
+func host(id, name string) model.Entity {
+	return model.Entity{
+		ID:         model.EntityID(id),
+		Type:       "host",
+		Identity:   []model.KeyValue{{Key: "host.name", Value: model.StringValue(name)}},
+		Attributes: []model.KeyValue{{Key: "os.type", Value: model.StringValue("linux")}},
+	}
+}
+
+func newFixture() (*fakeGraph, *fakeStore) {
+	web := host("01HOST_WEB", "web-server-1")
+	db := host("01HOST_DB", "db-server-1")
+	proc := model.Entity{
+		ID:       "01PROC_NGINX",
+		Type:     "process",
+		Identity: []model.KeyValue{{Key: "process.pid", Value: model.IntValue(4242)}},
+	}
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			web.ID: web, db.ID: db, proc.ID: proc,
+		},
+		deleted: map[model.EntityID]bool{},
+		relations: []model.Relation{
+			{ID: "rel-runs", Type: "runs_on", From: proc.ID, To: web.ID, Structural: true},
+			{ID: "rel-conn", Type: "connected_to", From: web.ID, To: db.ID},
+		},
+		neighbors: map[model.EntityID][]model.Entity{
+			web.ID: {proc, db},
+		},
+	}
+	t0 := time.Date(2026, 5, 29, 12, 0, 0, 0, time.UTC)
+	mk := func(eid string, ct model.ChangeType, e model.Entity, et, rt time.Time) model.Event {
+		return model.Event{Entity: &model.EntityEvent{
+			EventID: eid, ChangeType: ct, Entity: e, EventTime: et, RecordedAt: rt, SchemaVersion: "1.0",
+		}}
+	}
+	hist := []model.Event{
+		mk("ev1", model.EntityCreated, web, t0, t0),
+		mk("ev2", model.EntityStateChanged, web, t0.Add(time.Hour), t0.Add(time.Hour)),
+		// recorded late: known only well after it became true (audit view)
+		mk("ev3", model.EntityAttributeUpdated, web, t0.Add(2*time.Hour), t0.Add(10*time.Hour)),
+	}
+	relEv := model.Event{Relation: &model.RelationEvent{
+		EventID: "rev1", ChangeType: model.RelationAdded,
+		Relation:  model.Relation{ID: "rel-runs", Type: "runs_on", From: proc.ID, To: web.ID, Structural: true},
+		EventTime: t0.Add(30 * time.Minute), RecordedAt: t0.Add(30 * time.Minute), SchemaVersion: "1.0",
+	}}
+	st := &fakeStore{
+		byEntity: map[model.EntityID][]model.Event{web.ID: hist},
+		byTime:   append(append([]model.Event{}, hist...), relEv),
+	}
+	return g, st
+}
+
+func newTestServer() *Server {
+	g, st := newFixture()
+	s := New(g, st)
+	s.now = func() time.Time { return time.Date(2026, 5, 29, 20, 0, 0, 0, time.UTC) }
+	return s
+}
+
+// --- unit tests on handlers --------------------------------------------------
+
+func TestFindEntities(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	_, out, err := s.findEntities(ctx, nil, FindEntitiesInput{Type: "host"})
+	if err != nil {
+		t.Fatalf("findEntities: %v", err)
+	}
+	if out.Total != 2 || len(out.Entities) != 2 {
+		t.Fatalf("want 2 hosts, got total=%d len=%d", out.Total, len(out.Entities))
+	}
+
+	_, out, err = s.findEntities(ctx, nil, FindEntitiesInput{Type: "host", Match: map[string]string{"host.name": "web-server-1"}})
+	if err != nil {
+		t.Fatalf("findEntities match: %v", err)
+	}
+	if out.Total != 1 || out.Entities[0].Label != "host host.name=web-server-1" {
+		t.Fatalf("unexpected match result: %+v", out)
+	}
+
+	// match against a descriptive attribute too
+	_, out, _ = s.findEntities(ctx, nil, FindEntitiesInput{Match: map[string]string{"os.type": "linux"}})
+	if out.Total != 2 {
+		t.Fatalf("want 2 linux hosts, got %d", out.Total)
+	}
+}
+
+func TestFindEntitiesLimitTruncates(t *testing.T) {
+	s := newTestServer()
+	_, out, err := s.findEntities(context.Background(), nil, FindEntitiesInput{Limit: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 3 || len(out.Entities) != 1 || !out.Truncated {
+		t.Fatalf("want total=3 returned=1 truncated, got %+v", out)
+	}
+}
+
+// TestVerbosityCompact pins the 0.7.0 verbosity tiers: compact drops identity
+// and attributes (cheap to scan), full (default) keeps them, unknown errors.
+func TestVerbosityCompact(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	_, full, err := s.findEntities(ctx, nil, FindEntitiesInput{Type: "host"})
+	if err != nil || len(full.Entities) == 0 {
+		t.Fatalf("full find_entities: %v", err)
+	}
+	if len(full.Entities[0].Identity) == 0 || len(full.Entities[0].Attributes) == 0 {
+		t.Fatal("full must carry identity and attributes")
+	}
+
+	_, comp, err := s.findEntities(ctx, nil, FindEntitiesInput{Type: "host", Verbosity: "compact"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	e := comp.Entities[0]
+	if len(e.Identity) != 0 || len(e.Attributes) != 0 {
+		t.Errorf("compact must omit identity/attributes, got %+v", e)
+	}
+	if e.ID == "" || e.Type == "" || e.Label == "" {
+		t.Errorf("compact must keep id/type/label, got %+v", e)
+	}
+
+	if _, _, err := s.findEntities(ctx, nil, FindEntitiesInput{Verbosity: "verbose"}); err == nil {
+		t.Error("unknown verbosity must error")
+	}
+
+	_, ge, _ := s.getEntity(ctx, nil, GetEntityInput{EntityID: "01HOST_WEB", Verbosity: "compact"})
+	if len(ge.Entity.Identity) != 0 {
+		t.Error("get_entity compact must omit identity")
+	}
+	_, gn, _ := s.getNeighbors(ctx, nil, GetNeighborsInput{EntityID: "01HOST_WEB", MaxDepth: 1, Verbosity: "compact"})
+	for _, nb := range gn.Neighbors {
+		if len(nb.Identity) != 0 {
+			t.Error("get_neighbors compact must omit neighbor identity")
+		}
+	}
+}
+
+func TestGetEntity(t *testing.T) {
+	s := newTestServer()
+	_, out, err := s.getEntity(context.Background(), nil, GetEntityInput{EntityID: "01HOST_WEB"})
+	if err != nil {
+		t.Fatalf("getEntity: %v", err)
+	}
+	if out.Entity.Type != "host" || out.Entity.Label != "host host.name=web-server-1" {
+		t.Fatalf("unexpected entity: %+v", out.Entity)
+	}
+
+	if _, _, err := s.getEntity(context.Background(), nil, GetEntityInput{EntityID: "nope"}); err == nil {
+		t.Fatal("expected error for unknown id")
+	}
+	if _, _, err := s.getEntity(context.Background(), nil, GetEntityInput{}); err == nil {
+		t.Fatal("expected error for empty id")
+	}
+}
+
+func TestGetNeighborsDepthCap(t *testing.T) {
+	s := newTestServer()
+	if _, _, err := s.getNeighbors(context.Background(), nil, GetNeighborsInput{EntityID: "01HOST_WEB", MaxDepth: 7}); err == nil {
+		t.Fatal("expected error exceeding maxDepth")
+	}
+	_, out, err := s.getNeighbors(context.Background(), nil, GetNeighborsInput{EntityID: "01HOST_WEB", MaxDepth: 2})
+	if err != nil {
+		t.Fatalf("getNeighbors: %v", err)
+	}
+	if out.Count != 2 {
+		t.Fatalf("want 2 neighbors, got %d", out.Count)
+	}
+	if _, _, err := s.getNeighbors(context.Background(), nil, GetNeighborsInput{EntityID: "ghost"}); err == nil {
+		t.Fatal("expected error for unknown entity")
+	}
+}
+
+// get_neighbors digests like the other list tools: Total counts everything
+// reachable within max_depth, the result is capped to the limit, and Truncated
+// flags the difference (#166 P1).
+func TestGetNeighborsLimitDigest(t *testing.T) {
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{"h": {ID: "h", Type: model.TypeHost}},
+		deleted:  map[model.EntityID]bool{},
+	}
+	for i := 0; i < 60; i++ {
+		pid := model.EntityID(fmt.Sprintf("p%02d", i))
+		g.entities[pid] = model.Entity{ID: pid, Type: model.TypeProcess}
+		g.relations = append(g.relations, model.Relation{
+			ID: model.RelationID(fmt.Sprintf("r%02d", i)), Type: model.RelRunsOn, From: pid, To: "h",
+		})
+	}
+	s := New(g, &fakeStore{})
+	ctx := context.Background()
+
+	_, out, err := s.getNeighbors(ctx, nil, GetNeighborsInput{EntityID: "h", MaxDepth: 1, Limit: 10})
+	if err != nil {
+		t.Fatalf("getNeighbors: %v", err)
+	}
+	if out.Total != 60 || out.Count != 10 || len(out.Neighbors) != 10 || !out.Truncated {
+		t.Fatalf("limit=10: total=%d count=%d len=%d truncated=%v, want 60/10/10/true", out.Total, out.Count, len(out.Neighbors), out.Truncated)
+	}
+
+	// Default limit (50) still truncates 60.
+	_, out, _ = s.getNeighbors(ctx, nil, GetNeighborsInput{EntityID: "h", MaxDepth: 1})
+	if out.Total != 60 || out.Count != 50 || !out.Truncated {
+		t.Fatalf("default limit: total=%d count=%d truncated=%v, want 60/50/true", out.Total, out.Count, out.Truncated)
+	}
+
+	// A limit above the reachable set returns everything, not truncated.
+	_, out, _ = s.getNeighbors(ctx, nil, GetNeighborsInput{EntityID: "h", MaxDepth: 1, Limit: 200})
+	if out.Total != 60 || out.Count != 60 || out.Truncated {
+		t.Fatalf("limit=200: total=%d count=%d truncated=%v, want 60/60/false", out.Total, out.Count, out.Truncated)
+	}
+}
+
+func TestEntityHistoryAsKnownAt(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	_, full, err := s.entityHistory(ctx, nil, EntityHistoryInput{EntityID: "01HOST_WEB"})
+	if err != nil {
+		t.Fatalf("entityHistory: %v", err)
+	}
+	if full.Count != 3 {
+		t.Fatalf("want 3 changes, got %d", full.Count)
+	}
+	if full.Changes[0].EventID != "ev1" {
+		t.Fatalf("want oldest-first, got %s first", full.Changes[0].EventID)
+	}
+
+	// audit cut-off before ev3 was recorded (recorded at t0+10h): ev3 hidden.
+	known := "2026-05-29T15:00:00Z"
+	_, audit, err := s.entityHistory(ctx, nil, EntityHistoryInput{EntityID: "01HOST_WEB", AsKnownAt: known})
+	if err != nil {
+		t.Fatalf("entityHistory audit: %v", err)
+	}
+	if audit.Count != 2 {
+		t.Fatalf("audit view should hide the late-recorded ev3, got %d changes", audit.Count)
+	}
+
+	if _, _, err := s.entityHistory(ctx, nil, EntityHistoryInput{EntityID: "01HOST_WEB", Since: "nonsense"}); err == nil {
+		t.Fatal("expected error for bad since")
+	}
+}
+
+func TestRecentChanges(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	_, all, err := s.recentChanges(ctx, nil, RecentChangesInput{Window: "24h"})
+	if err != nil {
+		t.Fatalf("recentChanges: %v", err)
+	}
+	if all.Count != 4 {
+		t.Fatalf("want 4 changes in 24h, got %d", all.Count)
+	}
+	if all.Changes[0].EventTime < all.Changes[len(all.Changes)-1].EventTime {
+		t.Fatal("want newest-first ordering")
+	}
+
+	_, structural, err := s.recentChanges(ctx, nil, RecentChangesInput{Window: "24h", Kind: "structural"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if structural.Count != 1 || structural.Changes[0].Relation == nil {
+		t.Fatalf("want 1 structural relation change, got %+v", structural)
+	}
+
+	if _, _, err := s.recentChanges(ctx, nil, RecentChangesInput{Window: "-5m"}); err == nil {
+		t.Fatal("expected error for non-positive window")
+	}
+	if _, _, err := s.recentChanges(ctx, nil, RecentChangesInput{Window: "1h", Kind: "bogus"}); err == nil {
+		t.Fatal("expected error for bad kind")
+	}
+
+	if _, _, err := s.recentChanges(ctx, nil, RecentChangesInput{}); err != nil {
+		t.Fatalf("omitted window should default to 1h, got error: %v", err)
+	}
+}
+
+func TestDescribeSchema(t *testing.T) {
+	s := newTestServer()
+	_, out, err := s.describeSchema(context.Background(), nil, DescribeSchemaInput{})
+	if err != nil {
+		t.Fatalf("describeSchema: %v", err)
+	}
+	if out.TotalEntities != 3 || out.TotalRelations != 2 {
+		t.Fatalf("unexpected totals: %+v", out)
+	}
+	if len(out.EntityTypes) != 2 || out.EntityTypes[0].Type != "host" { // host (2) sorts before process (1)
+		t.Fatalf("unexpected entity types: %+v", out.EntityTypes)
+	}
+	if out.Description == "" {
+		t.Fatal("expected a natural-language description")
+	}
+}
+
+func TestDescribeSchemaEmpty(t *testing.T) {
+	s := New(&fakeGraph{entities: map[model.EntityID]model.Entity{}, deleted: map[model.EntityID]bool{}}, &fakeStore{})
+	_, out, err := s.describeSchema(context.Background(), nil, DescribeSchemaInput{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.TotalEntities != 0 || out.Description == "" {
+		t.Fatalf("unexpected empty description: %+v", out)
+	}
+	// The governance vocabulary is constant: it must be advertised even on an
+	// empty graph, so a consumer learns what it can filter on before any entity
+	// exists.
+	if len(out.GovernanceAttributes) == 0 {
+		t.Error("describe_schema must advertise the governance vocabulary even when empty")
+	}
+	var sawSemconv, sawProvisional bool
+	for _, g := range out.GovernanceAttributes {
+		if g.Key == "" || g.Summary == "" {
+			t.Errorf("governance attribute missing key/summary: %+v", g)
+		}
+		if g.Key == "service.criticality" && g.Semconv {
+			sawSemconv = true
+		}
+		if g.Key == "senhub.owner.team" && !g.Semconv {
+			sawProvisional = true
+			// The previous spelling must reach the consumer: data emitted before
+			// the rename still carries it and is not rewritten.
+			if !slices.Contains(g.Was, "entity.owner.team") {
+				t.Errorf("senhub.owner.team does not advertise its previous spelling, got %v", g.Was)
+			}
+		}
+	}
+	if !sawSemconv || !sawProvisional {
+		t.Errorf("expected both a semconv key and a senhub.* key of ours advertised, got %+v", out.GovernanceAttributes)
+	}
+}
+
+// --- end-to-end over the MCP protocol ---------------------------------------
+
+func TestMCPRoundTrip(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	clientT, serverT := mcpsdk.NewInMemoryTransports()
+	ss, err := s.srv.Connect(ctx, serverT, nil)
+	if err != nil {
+		t.Fatalf("server connect: %v", err)
+	}
+	defer func() { _ = ss.Wait() }()
+
+	client := mcpsdk.NewClient(&mcpsdk.Implementation{Name: "test-client", Version: "0"}, nil)
+	cs, err := client.Connect(ctx, clientT, nil)
+	if err != nil {
+		t.Fatalf("client connect: %v", err)
+	}
+	defer func() { _ = cs.Close() }()
+
+	tools, err := cs.ListTools(ctx, nil)
+	if err != nil {
+		t.Fatalf("list tools: %v", err)
+	}
+	if len(tools.Tools) != 12 {
+		t.Fatalf("want 12 tools, got %d", len(tools.Tools))
+	}
+
+	// Resources and prompts are part of the same surface — exercise them over the
+	// real transport too.
+	rs, err := cs.ListResources(ctx, nil)
+	if err != nil {
+		t.Fatalf("list resources: %v", err)
+	}
+	if len(rs.Resources) != len(resourceCatalog) {
+		t.Fatalf("want %d resources, got %d", len(resourceCatalog), len(rs.Resources))
+	}
+	rr, err := cs.ReadResource(ctx, &mcpsdk.ReadResourceParams{URI: "bellugraph://schema"})
+	if err != nil {
+		t.Fatalf("read schema resource: %v", err)
+	}
+	if len(rr.Contents) == 0 || rr.Contents[0].MIMEType != "application/json" {
+		t.Fatalf("unexpected schema resource: %+v", rr.Contents)
+	}
+	ps, err := cs.ListPrompts(ctx, nil)
+	if err != nil {
+		t.Fatalf("list prompts: %v", err)
+	}
+	if len(ps.Prompts) != len(promptCatalog) {
+		t.Fatalf("want %d prompts, got %d", len(promptCatalog), len(ps.Prompts))
+	}
+	gp, err := cs.GetPrompt(ctx, &mcpsdk.GetPromptParams{
+		Name:      "investigate_incident",
+		Arguments: map[string]string{"entity": "db-07"},
+	})
+	if err != nil {
+		t.Fatalf("get prompt: %v", err)
+	}
+	if len(gp.Messages) != 1 {
+		t.Fatalf("want one prompt message, got %d", len(gp.Messages))
+	}
+
+	res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{
+		Name:      "find_entities",
+		Arguments: map[string]any{"type": "host"},
+	})
+	if err != nil {
+		t.Fatalf("call find_entities: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("tool returned error: %+v", res.Content)
+	}
+	var got FindEntitiesOutput
+	raw, _ := json.Marshal(res.StructuredContent)
+	if uerr := json.Unmarshal(raw, &got); uerr != nil {
+		t.Fatalf("decode structured content: %v", uerr)
+	}
+	if got.Total != 2 {
+		t.Fatalf("want 2 hosts over the wire, got %d", got.Total)
+	}
+
+	// a tool error is surfaced as an MCP tool error, not a transport failure
+	bad, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{
+		Name:      "get_neighbors",
+		Arguments: map[string]any{"entity_id": "01HOST_WEB", "depth": 9},
+	})
+	if err != nil {
+		t.Fatalf("unexpected transport error: %v", err)
+	}
+	if !bad.IsError {
+		t.Fatal("want IsError for depth exceeding the cap")
+	}
+}
+
+// TestChangeBudgets pins the #115 result budget on the timeline tools:
+// heartbeats excluded by default (opt-in), change_type filter, limit with
+// total/truncated, and the per-type digest.
+func TestChangeBudgets(t *testing.T) {
+	g, st := newFixture()
+	web := g.entities["01HOST_WEB"]
+	t0 := time.Date(2026, 5, 29, 12, 0, 0, 0, time.UTC)
+	// Flood the window with heartbeats, the dominant noise on a live instance.
+	for i := 0; i < 60; i++ {
+		hb := model.Event{Entity: &model.EntityEvent{
+			EventID: fmt.Sprintf("hb%d", i), ChangeType: model.EntityUnchanged,
+			Entity: web, EventTime: t0.Add(time.Duration(i) * time.Minute),
+			RecordedAt: t0.Add(time.Duration(i) * time.Minute), SchemaVersion: "1.0",
+		}}
+		st.byTime = append(st.byTime, hb)
+		st.byEntity[web.ID] = append(st.byEntity[web.ID], hb)
+	}
+	s := New(g, st)
+	s.now = func() time.Time { return time.Date(2026, 5, 29, 20, 0, 0, 0, time.UTC) }
+	ctx := context.Background()
+
+	// Default: heartbeats out, real changes in, digest reports the exclusion.
+	_, out, err := s.recentChanges(ctx, nil, RecentChangesInput{Window: "24h"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Count != 4 || out.Total != 4 || out.Truncated {
+		t.Fatalf("default: count=%d total=%d truncated=%v, want 4/4/false", out.Count, out.Total, out.Truncated)
+	}
+	if out.HeartbeatsExcluded != 60 {
+		t.Errorf("HeartbeatsExcluded = %d, want 60", out.HeartbeatsExcluded)
+	}
+	for _, c := range out.Changes {
+		if c.ChangeType == "entity.unchanged" {
+			t.Fatal("heartbeat leaked into the default result")
+		}
+	}
+	if len(out.ByChangeType) == 0 || out.ByChangeType[0].Count == 0 {
+		t.Errorf("digest missing: %+v", out.ByChangeType)
+	}
+
+	// Opt-in heartbeats + limit: bounded with the budget reported.
+	_, out, err = s.recentChanges(ctx, nil, RecentChangesInput{Window: "24h", IncludeHeartbeats: true, Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Count != 10 || out.Total != 64 || !out.Truncated {
+		t.Fatalf("heartbeats+limit: count=%d total=%d truncated=%v, want 10/64/true", out.Count, out.Total, out.Truncated)
+	}
+
+	// change_type filter; asking for entity.unchanged explicitly includes them.
+	_, out, err = s.recentChanges(ctx, nil, RecentChangesInput{Window: "24h", ChangeType: "entity.unchanged", Limit: 200})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 60 || out.HeartbeatsExcluded != 0 {
+		t.Fatalf("change_type=entity.unchanged: total=%d excluded=%d, want 60/0", out.Total, out.HeartbeatsExcluded)
+	}
+	if _, _, cerr := s.recentChanges(ctx, nil, RecentChangesInput{Window: "24h", ChangeType: "bogus.type"}); cerr == nil {
+		t.Fatal("expected error for invalid change_type")
+	}
+
+	// entity_history: same budget; truncation keeps the newest, oldest-first.
+	_, hist, err := s.entityHistory(ctx, nil, EntityHistoryInput{EntityID: "01HOST_WEB"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hist.Count != 3 || hist.HeartbeatsExcluded != 60 {
+		t.Fatalf("history default: count=%d excluded=%d, want 3/60", hist.Count, hist.HeartbeatsExcluded)
+	}
+	_, hist, err = s.entityHistory(ctx, nil, EntityHistoryInput{EntityID: "01HOST_WEB", IncludeHeartbeats: true, Limit: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hist.Count != 5 || hist.Total != 63 || !hist.Truncated {
+		t.Fatalf("history limit: count=%d total=%d truncated=%v, want 5/63/true", hist.Count, hist.Total, hist.Truncated)
+	}
+	if hist.Changes[0].EventTime > hist.Changes[len(hist.Changes)-1].EventTime {
+		t.Fatal("history must stay oldest-first after truncation")
+	}
+	// the newest events are the ones kept: the tail holds ev2/ev3 (13:00/14:00),
+	// the dropped head was the oldest heartbeats.
+	if last := hist.Changes[len(hist.Changes)-1]; last.ChangeType != "entity.attribute_updated" {
+		t.Fatalf("truncation must keep the newest changes, last = %s", last.ChangeType)
+	}
+	if first := hist.Changes[0]; first.ChangeType != "entity.unchanged" {
+		t.Fatalf("kept slice should start at the newest heartbeats, first = %s", first.ChangeType)
+	}
+}
+
+// TestGraphDiff pins the folded-diff semantics: net created/deleted/changed,
+// transient flapping surfaced, heartbeat-only churn dropped, totals complete
+// even when the lists are truncated.
+func TestGraphDiff(t *testing.T) {
+	g, _ := newFixture()
+	t0 := time.Date(2026, 5, 29, 12, 0, 0, 0, time.UTC)
+	ent := func(id, name string) model.Entity { return host(id, name) }
+	mkE := func(ct model.ChangeType, e model.Entity, at time.Time, keys ...string) model.Event {
+		return model.Event{Entity: &model.EntityEvent{
+			EventID: fmt.Sprintf("e-%s-%d", e.ID, at.Unix()), ChangeType: ct, Entity: e,
+			EventTime: at, RecordedAt: at, SchemaVersion: "1.0", ChangedKeys: keys,
+		}}
+	}
+	mkR := func(ct model.ChangeType, rel model.Relation, at time.Time) model.Event {
+		return model.Event{Relation: &model.RelationEvent{
+			EventID: fmt.Sprintf("r-%s-%d", rel.ID, at.Unix()), ChangeType: ct, Relation: rel,
+			EventTime: at, RecordedAt: at, SchemaVersion: "1.0",
+		}}
+	}
+	stable, flapper, goner, mutant := ent("E_STABLE", "stable"), ent("E_FLAP", "flap"), ent("E_GONE", "gone"), ent("E_MUT", "mutant")
+	relAdd := model.Relation{ID: "R_NEW", Type: "runs_on", From: stable.ID, To: mutant.ID, Structural: true}
+	relFlap := model.Relation{ID: "R_FLAP", Type: "connected_to", From: stable.ID, To: goner.ID}
+	st := &fakeStore{byTime: []model.Event{
+		// created and kept: net created (even with later updates)
+		mkE(model.EntityCreated, stable, t0),
+		mkE(model.EntityAttributeUpdated, stable, t0.Add(time.Minute), "os.type"),
+		// created then deleted: transient
+		mkE(model.EntityCreated, flapper, t0.Add(2*time.Minute)),
+		mkE(model.EntityDeleted, flapper, t0.Add(3*time.Minute)),
+		// pre-existing, deleted in window: net deleted
+		mkE(model.EntityDeleted, goner, t0.Add(4*time.Minute)),
+		// pre-existing, changed twice: net changed with the union of keys
+		mkE(model.EntityStateChanged, mutant, t0.Add(5*time.Minute), "status"),
+		mkE(model.EntityAttributeUpdated, mutant, t0.Add(6*time.Minute), "os.type"),
+		// heartbeat-only churn: dropped from the diff
+		mkE(model.EntityUnchanged, ent("E_HB", "hb"), t0.Add(7*time.Minute)),
+		// relations: one net added, one transient
+		mkR(model.RelationAdded, relAdd, t0.Add(8*time.Minute)),
+		mkR(model.RelationAdded, relFlap, t0.Add(9*time.Minute)),
+		mkR(model.RelationRemoved, relFlap, t0.Add(10*time.Minute)),
+	}}
+	s := New(g, st)
+	s.now = func() time.Time { return t0.Add(time.Hour) }
+	ctx := context.Background()
+
+	_, out, err := s.graphDiff(ctx, nil, GraphDiffInput{Window: "2h"})
+	if err != nil {
+		t.Fatalf("graphDiff: %v", err)
+	}
+	want := DiffTotals{
+		EntitiesCreated: 1, EntitiesDeleted: 1, EntitiesChanged: 1, EntitiesTransient: 1,
+		RelationsAdded: 1, RelationsRemoved: 0, RelationsChanged: 0, RelationsTransient: 1,
+	}
+	if out.Totals != want {
+		t.Fatalf("totals = %+v, want %+v", out.Totals, want)
+	}
+	if out.Truncated {
+		t.Error("nothing should be truncated at default limit")
+	}
+	if len(out.EntitiesCreated) != 1 || out.EntitiesCreated[0].ID != "E_STABLE" {
+		t.Errorf("created = %+v, want E_STABLE", out.EntitiesCreated)
+	}
+	if len(out.EntitiesTransient) != 1 || out.EntitiesTransient[0].ID != "E_FLAP" {
+		t.Errorf("transient = %+v, want E_FLAP", out.EntitiesTransient)
+	}
+	if len(out.EntitiesDeleted) != 1 || out.EntitiesDeleted[0].ID != "E_GONE" {
+		t.Errorf("deleted = %+v, want E_GONE", out.EntitiesDeleted)
+	}
+	if len(out.EntitiesChanged) != 1 {
+		t.Fatalf("changed = %+v, want one (E_MUT)", out.EntitiesChanged)
+	}
+	ch := out.EntitiesChanged[0]
+	if ch.ID != "E_MUT" || !ch.StateChanged || len(ch.ChangedKeys) != 2 {
+		t.Errorf("changed entity = id %s stateChanged=%v keys=%v, want E_MUT/true/[os.type status]", ch.ID, ch.StateChanged, ch.ChangedKeys)
+	}
+	if len(out.RelationsAdded) != 1 || out.RelationsAdded[0].ID != "R_NEW" {
+		t.Errorf("relations added = %+v, want R_NEW", out.RelationsAdded)
+	}
+	if len(out.RelationsTransient) != 1 || out.RelationsTransient[0].ID != "R_FLAP" {
+		t.Errorf("relations transient = %+v, want R_FLAP", out.RelationsTransient)
+	}
+	if out.Summary == "" || !strings.Contains(out.Summary, "1 entities created") {
+		t.Errorf("summary = %q", out.Summary)
+	}
+
+	// Truncation: limit 0 -> default; limit 1 keeps totals complete.
+	_, out, err = s.graphDiff(ctx, nil, GraphDiffInput{Window: "2h", Limit: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Totals != want {
+		t.Errorf("totals must be unaffected by limit: %+v", out.Totals)
+	}
+
+	// Bounds validation.
+	if _, _, berr := s.graphDiff(ctx, nil, GraphDiffInput{}); berr == nil {
+		t.Error("expected error with neither window nor from")
+	}
+	if _, _, berr := s.graphDiff(ctx, nil, GraphDiffInput{Window: "1h", From: "2026-05-29T12:00:00Z"}); berr == nil {
+		t.Error("expected error with both window and from")
+	}
+	if _, _, berr := s.graphDiff(ctx, nil, GraphDiffInput{From: "2026-05-29T12:00:00Z", To: "2026-05-29T11:00:00Z"}); berr == nil {
+		t.Error("expected error with to before from")
+	}
+
+	// Empty diff reads cleanly.
+	_, out, err = s.graphDiff(ctx, nil, GraphDiffInput{From: "2020-01-01T00:00:00Z", To: "2020-01-02T00:00:00Z"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Summary != "No net change between the two instants." {
+		t.Errorf("empty summary = %q", out.Summary)
+	}
+}
+
+// TestFindPathAndNeighborEdges pins the traversal contract (#115): shortest
+// path with per-hop edge facts, reachable=false as a first-class answer, and
+// get_neighbors returning how each entity was reached.
+func TestFindPathAndNeighborEdges(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	// Fixture topology: proc -runs_on-> web -connected_to-> db.
+	_, out, err := s.findPath(ctx, nil, FindPathInput{FromID: "01PROC_NGINX", ToID: "01HOST_DB"})
+	if err != nil {
+		t.Fatalf("findPath: %v", err)
+	}
+	if !out.Reachable || out.Hops != 2 {
+		t.Fatalf("reachable=%v hops=%d, want true/2", out.Reachable, out.Hops)
+	}
+	if len(out.Path) != 3 || out.Path[0].Entity.ID != "01PROC_NGINX" || out.Path[2].Entity.ID != "01HOST_DB" {
+		t.Fatalf("path = %+v, want proc -> web -> db", out.Path)
+	}
+	if out.Path[0].ViaRelation != "" {
+		t.Error("the start hop must carry no via_relation")
+	}
+	if out.Path[1].ViaRelation != "runs_on" || out.Path[1].Direction != "outgoing" {
+		t.Errorf("hop1 = %s/%s, want runs_on/outgoing", out.Path[1].ViaRelation, out.Path[1].Direction)
+	}
+	if out.Path[2].ViaRelation != "connected_to" || out.Path[2].Direction != "outgoing" {
+		t.Errorf("hop2 = %s/%s, want connected_to/outgoing", out.Path[2].ViaRelation, out.Path[2].Direction)
+	}
+
+	// Direction flips when walking against the edges.
+	_, back, err := s.findPath(ctx, nil, FindPathInput{FromID: "01HOST_DB", ToID: "01PROC_NGINX"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !back.Reachable || back.Path[1].Direction != "incoming" {
+		t.Errorf("reverse path hop1 direction = %s, want incoming", back.Path[1].Direction)
+	}
+
+	// Constrained to one relation type, db is no longer reachable from proc:
+	// a first-class false, not an error.
+	_, out, err = s.findPath(ctx, nil, FindPathInput{FromID: "01PROC_NGINX", ToID: "01HOST_DB", RelationType: "runs_on"})
+	if err != nil {
+		t.Fatalf("constrained findPath must not error: %v", err)
+	}
+	if out.Reachable {
+		t.Error("runs_on-only path to db must be unreachable")
+	}
+	if out.MaxDepth == 0 {
+		t.Error("output must echo the applied max_depth so false is interpretable")
+	}
+
+	// Same entity: zero hops.
+	_, out, _ = s.findPath(ctx, nil, FindPathInput{FromID: "01HOST_WEB", ToID: "01HOST_WEB"})
+	if !out.Reachable || out.Hops != 0 || len(out.Path) != 1 {
+		t.Errorf("self path = reachable=%v hops=%d len=%d, want true/0/1", out.Reachable, out.Hops, len(out.Path))
+	}
+
+	// Unknown endpoints are errors (unlike unreachable).
+	if _, _, gerr := s.findPath(ctx, nil, FindPathInput{FromID: "ghost", ToID: "01HOST_DB"}); gerr == nil {
+		t.Error("unknown from_id must error")
+	}
+
+	// get_neighbors carries the edge facts.
+	_, ns, err := s.getNeighbors(ctx, nil, GetNeighborsInput{EntityID: "01HOST_WEB", MaxDepth: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ns.Count != 2 {
+		t.Fatalf("neighbors = %d, want 2 (proc and db)", ns.Count)
+	}
+	for _, n := range ns.Neighbors {
+		switch n.ID {
+		case "01PROC_NGINX":
+			if n.ViaRelation != "runs_on" || n.Direction != "incoming" || n.Depth != 1 {
+				t.Errorf("proc neighbor = %s/%s/d%d, want runs_on/incoming/1", n.ViaRelation, n.Direction, n.Depth)
+			}
+		case "01HOST_DB":
+			if n.ViaRelation != "connected_to" || n.Direction != "outgoing" || n.Depth != 1 {
+				t.Errorf("db neighbor = %s/%s/d%d, want connected_to/outgoing/1", n.ViaRelation, n.Direction, n.Depth)
+			}
+		default:
+			t.Errorf("unexpected neighbor %s", n.ID)
+		}
+	}
+}
+
+// TestTelemetryKeys pins the graph-to-telemetry pivot (#115): join keys from
+// the entity's own attributes plus those inherited from the entity that owns it,
+// the metric-label spelling and the usage caveats — the host.id lesson from
+// the recette, encoded as a tool.
+func TestTelemetryKeys(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	// The process inherits its host's join key through runs_on.
+	_, out, err := s.telemetryKeys(ctx, nil, TelemetryKeysInput{EntityID: "01PROC_NGINX"})
+	if err != nil {
+		t.Fatalf("telemetryKeys: %v", err)
+	}
+	byKey := map[string]TelemetryKey{}
+	for _, k := range out.Keys {
+		byKey[k.Key] = k
+	}
+	pid, ok := byKey["process.pid"]
+	if !ok {
+		t.Fatalf("process.pid missing from keys: %+v", out.Keys)
+	}
+	if pid.Source != "identity" || pid.Value != "4242" || pid.MetricLabel != "process_pid" {
+		t.Errorf("process.pid = %+v, want identity/4242/process_pid", pid)
+	}
+	if pid.Note == "" {
+		t.Error("process.pid must carry the ephemeral caveat")
+	}
+	hostName, ok := byKey["host.name"]
+	if !ok {
+		t.Fatalf("inherited host.name missing: %+v", out.Keys)
+	}
+	if !strings.Contains(hostName.Source, "via runs_on") {
+		t.Errorf("host.name source = %q, want inherited via runs_on", hostName.Source)
+	}
+	if hostName.Note == "" {
+		t.Error("host.name must carry the name-vs-identity caveat")
+	}
+	if out.Guidance == "" || !strings.Contains(out.Guidance, "underscores") {
+		t.Errorf("guidance must explain the metric-label flattening, got %q", out.Guidance)
+	}
+
+	// The host's own key is reported once, from its identity, even though a
+	// neighbor carries the same attribute key.
+	_, out, err = s.telemetryKeys(ctx, nil, TelemetryKeysInput{EntityID: "01HOST_WEB"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hostKeys []TelemetryKey
+	for _, k := range out.Keys {
+		if k.Key == "host.name" {
+			hostKeys = append(hostKeys, k)
+		}
+	}
+	if len(hostKeys) != 1 || hostKeys[0].Source != "identity" || hostKeys[0].Value != "web-server-1" {
+		t.Errorf("host.name keys = %+v, want exactly one from identity", hostKeys)
+	}
+
+	if _, _, kerr := s.telemetryKeys(ctx, nil, TelemetryKeysInput{}); kerr == nil {
+		t.Error("missing entity_id must error")
+	}
+	if _, _, kerr := s.telemetryKeys(ctx, nil, TelemetryKeysInput{EntityID: "ghost"}); kerr == nil {
+		t.Error("unknown entity must error")
+	}
+}
+
+// blockingStore blocks reads until the caller's context dies, simulating a
+// scan over a huge log.
+type blockingStore struct{}
+
+func (blockingStore) ReadByEntity(ctx context.Context, _ model.EntityID) ([]model.Event, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func (blockingStore) ReadByTimeRange(ctx context.Context, _, _ time.Time) ([]model.Event, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func (blockingStore) ScanByTimeRange(ctx context.Context, _, _ time.Time, _ func(model.Event) error) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (blockingStore) ScanTimeIndex(ctx context.Context, _, _ time.Time, _ bool, _ func(store.TimeIndexEntry) error) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (blockingStore) Resolve(uint64) (model.Event, bool, error) { return model.Event{}, false, nil }
+
+func (blockingStore) NewestEventTime() (time.Time, bool, error) { return time.Time{}, false, nil }
+
+func (blockingStore) PruneHorizon() time.Time { return time.Time{} }
+
+type obsCall struct{ tool, outcome string }
+type fakeObserver struct{ calls []obsCall }
+
+func (o *fakeObserver) ObserveTool(tool, outcome string, _ time.Duration) {
+	o.calls = append(o.calls, obsCall{tool, outcome})
+}
+
+// TestObserveRecordsToolCall pins the query-observability seam (#166): the
+// per-tool wrapper records the tool name and an ok/error outcome.
+func TestObserveRecordsToolCall(t *testing.T) {
+	s := newTestServer()
+	rec := &fakeObserver{}
+	s.SetObserver(rec)
+
+	okHandler := observe(s, "find_entities", s.findEntities)
+	if _, _, err := okHandler(context.Background(), nil, FindEntitiesInput{Type: "host"}); err != nil {
+		t.Fatalf("ok call: %v", err)
+	}
+	errHandler := observe(s, "get_entity", s.getEntity)
+	if _, _, err := errHandler(context.Background(), nil, GetEntityInput{}); err == nil {
+		t.Fatal("expected an error for empty entity id")
+	}
+
+	want := []obsCall{{"find_entities", "ok"}, {"get_entity", "error"}}
+	if len(rec.calls) != len(want) {
+		t.Fatalf("recorded %d calls, want %d: %+v", len(rec.calls), len(want), rec.calls)
+	}
+	for i, w := range want {
+		if rec.calls[i] != w {
+			t.Errorf("call %d = %+v, want %+v", i, rec.calls[i], w)
+		}
+	}
+}
+
+// TestToolCallTimeout pins the per-call budget: a tool whose read outlives the
+// deadline returns a deadline error instead of hanging the transport (#115).
+func TestToolCallTimeout(t *testing.T) {
+	g, _ := newFixture()
+	s := New(g, blockingStore{})
+	s.timeout = 50 * time.Millisecond
+
+	done := make(chan error, 1)
+	go func() {
+		_, _, err := withTimeout(s.budget, s.recentChanges)(context.Background(), nil, RecentChangesInput{Window: "1h"})
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		if err == nil || !strings.Contains(err.Error(), "deadline") {
+			t.Errorf("timed-out tool returned %v, want a deadline error", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("tool call did not respect its timeout")
+	}
+}
+
+// TestAsOfReads pins #135: the read tools answer "as it was at T" from the
+// event log — entities appear, change, and disappear depending on the instant;
+// an as_of older than the retention horizon is refused.
+func TestAsOfReads(t *testing.T) {
+	t0 := time.Date(2026, 5, 29, 12, 0, 0, 0, time.UTC)
+	web, db := host("01W", "web-1"), host("01D", "db-1")
+	webV2 := web
+	webV2.Attributes = []model.KeyValue{{Key: "os.type", Value: model.StringValue("linux")}, {Key: "status", Value: model.StringValue("degraded")}}
+	mkE := func(ct model.ChangeType, e model.Entity, at time.Time) model.Event {
+		return model.Event{Entity: &model.EntityEvent{
+			EventID: fmt.Sprintf("e-%s-%d", e.ID, at.Unix()), ChangeType: ct, Entity: e,
+			EventTime: at, RecordedAt: at, SchemaVersion: "1.0",
+		}}
+	}
+	rel := model.Relation{ID: "R1", Type: "connected_to", From: web.ID, To: db.ID}
+	mkR := func(ct model.ChangeType, at time.Time) model.Event {
+		return model.Event{Relation: &model.RelationEvent{
+			EventID: fmt.Sprintf("r-%d", at.Unix()), ChangeType: ct, Relation: rel,
+			EventTime: at, RecordedAt: at, SchemaVersion: "1.0",
+		}}
+	}
+	st := &fakeStore{byTime: []model.Event{
+		mkE(model.EntityCreated, web, t0),                             // 12:00 web appears
+		mkE(model.EntityCreated, db, t0.Add(time.Hour)),               // 13:00 db appears
+		mkR(model.RelationAdded, t0.Add(2*time.Hour)),                 // 14:00 web->db
+		mkE(model.EntityAttributeUpdated, webV2, t0.Add(3*time.Hour)), // 15:00 web degraded
+		mkR(model.RelationRemoved, t0.Add(4*time.Hour)),               // 16:00 edge gone
+		mkE(model.EntityDeleted, db, t0.Add(5*time.Hour)),             // 17:00 db deleted
+	}}
+	g := &fakeGraph{entities: map[model.EntityID]model.Entity{}, deleted: map[model.EntityID]bool{}}
+	s := New(g, st) // the LIVE graph is empty: every hit below proves the as-of fold answered
+	ctx := context.Background()
+	at := func(h int) string { return t0.Add(time.Duration(h) * time.Hour).Format(time.RFC3339) }
+
+	// 12:30 — only web exists, no relations.
+	_, out, err := s.findEntities(ctx, nil, FindEntitiesInput{AsOf: t0.Add(30 * time.Minute).Format(time.RFC3339)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 1 || out.Entities[0].ID != "01W" {
+		t.Fatalf("12:30 entities = %+v, want only web", out.Entities)
+	}
+
+	// 14:30 — both entities, the relation is live, web still healthy.
+	_, ds, err := s.describeSchema(ctx, nil, DescribeSchemaInput{AsOf: at(2) + ""})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ds.TotalEntities != 2 || ds.TotalRelations != 1 {
+		t.Fatalf("14:00 schema = %d/%d, want 2/1", ds.TotalEntities, ds.TotalRelations)
+	}
+	_, ge, err := s.getEntity(ctx, nil, GetEntityInput{EntityID: "01W", AsOf: at(2)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, a := range ge.Entity.Attributes {
+		if a.Key == "status" {
+			t.Fatalf("14:00 web must not yet be degraded: %+v", ge.Entity.Attributes)
+		}
+	}
+	_, fp, err := s.findPath(ctx, nil, FindPathInput{FromID: "01W", ToID: "01D", AsOf: at(2)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !fp.Reachable || fp.Hops != 1 {
+		t.Fatalf("14:00 path = %+v, want reachable in 1 hop", fp)
+	}
+
+	// 15:30 — web degraded; 16:30 — edge gone (unreachable, entities live).
+	_, ge, err = s.getEntity(ctx, nil, GetEntityInput{EntityID: "01W", AsOf: at(3)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, a := range ge.Entity.Attributes {
+		if a.Key == "status" && a.Value == "degraded" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("15:00 web must be degraded: %+v", ge.Entity.Attributes)
+	}
+	_, fp, err = s.findPath(ctx, nil, FindPathInput{FromID: "01W", ToID: "01D", AsOf: at(4)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fp.Reachable {
+		t.Fatal("16:00 path must be unreachable (edge removed)")
+	}
+
+	// 17:30 — db deleted: neighbors of web see nothing, find_entities sees one.
+	_, ns, err := s.getNeighbors(ctx, nil, GetNeighborsInput{EntityID: "01W", AsOf: at(5)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ns.Count != 0 {
+		t.Fatalf("17:00 neighbors = %d, want 0", ns.Count)
+	}
+
+	// Horizon refusal and format validation.
+	st.horizon = t0.Add(time.Hour)
+	if _, _, herr := s.findEntities(ctx, nil, FindEntitiesInput{AsOf: t0.Add(30 * time.Minute).Format(time.RFC3339)}); herr == nil || !strings.Contains(herr.Error(), "retention horizon") {
+		t.Fatalf("pre-horizon as_of = %v, want a retention-horizon error", herr)
+	}
+	st.horizon = time.Time{}
+	if _, _, ferr := s.findEntities(ctx, nil, FindEntitiesInput{AsOf: "yesterday"}); ferr == nil {
+		t.Fatal("invalid as_of format must error")
+	}
+
+	// Empty as_of still reads the live graph (which is empty here).
+	_, out, err = s.findEntities(ctx, nil, FindEntitiesInput{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 0 {
+		t.Fatalf("live graph read = %d, want 0", out.Total)
+	}
+}
+
+// TestPreEpochTimestampsRejected pins #165: the time index encodes event_time
+// as unsigned nanoseconds, so a pre-1970 instant wraps above every real key —
+// as_of would fold the full current graph and graph_diff would silently come
+// back empty. Every event-time input must be refused at the parse boundary.
+func TestPreEpochTimestampsRejected(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+	const preEpoch = "1950-01-01T00:00:00Z"
+	wantRejected := func(tool string, err error) {
+		t.Helper()
+		if err == nil || !strings.Contains(err.Error(), "1970") {
+			t.Fatalf("%s with a 1950 instant = %v, want a pre-1970 rejection", tool, err)
+		}
+	}
+
+	_, _, err := s.findEntities(ctx, nil, FindEntitiesInput{AsOf: preEpoch})
+	wantRejected("find_entities as_of", err)
+	_, _, err = s.getEntity(ctx, nil, GetEntityInput{EntityID: "01HOST_WEB", AsOf: preEpoch})
+	wantRejected("get_entity as_of", err)
+	_, _, err = s.graphDiff(ctx, nil, GraphDiffInput{From: preEpoch})
+	wantRejected("graph_diff from", err)
+	_, _, err = s.graphDiff(ctx, nil, GraphDiffInput{From: preEpoch, To: "2026-05-29T12:00:00Z"})
+	wantRejected("graph_diff from/to", err)
+	_, _, err = s.entityHistory(ctx, nil, EntityHistoryInput{EntityID: "01HOST_WEB", Since: preEpoch})
+	wantRejected("entity_history since", err)
+	_, _, err = s.entityHistory(ctx, nil, EntityHistoryInput{EntityID: "01HOST_WEB", Until: preEpoch})
+	wantRejected("entity_history until", err)
+	_, _, err = s.entityHistory(ctx, nil, EntityHistoryInput{EntityID: "01HOST_WEB", AsKnownAt: preEpoch})
+	wantRejected("entity_history as_known_at", err)
+}
+
+// TestImpactOf pins the #136 blast-radius semantics on the fixture topology
+// (proc -runs_on-> web -connected_to-> db): impact follows each relation
+// type's dependency direction and propagates transitively.
+func TestImpactOf(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	// web fails: proc depends on it (runs_on, To->From) and db shares a
+	// connectivity edge (both ways) — two impacted at depth 1.
+	_, out, err := s.impactOf(ctx, nil, ImpactOfInput{EntityID: "01HOST_WEB"})
+	if err != nil {
+		t.Fatalf("impactOf: %v", err)
+	}
+	if out.Total != 2 || out.Truncated {
+		t.Fatalf("web blast radius = %d (truncated=%v), want 2", out.Total, out.Truncated)
+	}
+	via := map[string]string{}
+	for _, e := range out.Impacted {
+		via[e.ID] = e.Via
+		if e.Depth != 1 {
+			t.Errorf("impacted %s at depth %d, want 1", e.ID, e.Depth)
+		}
+	}
+	if via["01PROC_NGINX"] != "runs_on" || via["01HOST_DB"] != "connected_to" {
+		t.Errorf("via map = %v", via)
+	}
+	if !strings.Contains(out.Summary, "impacts 2 entities") {
+		t.Errorf("summary = %q", out.Summary)
+	}
+
+	// proc fails: nothing depends on it — zero impact is a first-class answer.
+	_, out, err = s.impactOf(ctx, nil, ImpactOfInput{EntityID: "01PROC_NGINX"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 0 {
+		t.Fatalf("proc blast radius = %d, want 0 (impact must not flow From->To across runs_on)", out.Total)
+	}
+	if !strings.Contains(out.Summary, "Nothing depends on") {
+		t.Errorf("empty summary = %q", out.Summary)
+	}
+
+	// db fails: web via connectivity (depth 1), then proc transitively
+	// (depth 2, runs_on against web).
+	_, out, err = s.impactOf(ctx, nil, ImpactOfInput{EntityID: "01HOST_DB"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 2 {
+		t.Fatalf("db blast radius = %d, want 2 (transitive)", out.Total)
+	}
+	depths := map[string]int{}
+	for _, e := range out.Impacted {
+		depths[e.ID] = e.Depth
+	}
+	if depths["01HOST_WEB"] != 1 || depths["01PROC_NGINX"] != 2 {
+		t.Errorf("depths = %v, want web:1 proc:2", depths)
+	}
+
+	// Limit caps the list, never the totals; bad ids error.
+	_, out, err = s.impactOf(ctx, nil, ImpactOfInput{EntityID: "01HOST_DB", Limit: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 2 || len(out.Impacted) != 1 || !out.Truncated {
+		t.Errorf("limited = total %d, returned %d, truncated %v", out.Total, len(out.Impacted), out.Truncated)
+	}
+	if _, _, gerr := s.impactOf(ctx, nil, ImpactOfInput{EntityID: "ghost"}); gerr == nil {
+		t.Error("unknown entity must error")
+	}
+}
+
+// TestImpactOfSkipsSameAs pins ADR 0020 Lot A: a same_as identity belief is not a
+// failure path, so it must never enter the blast radius (a low-confidence alias
+// otherwise inflates impact).
+func TestImpactOfSkipsSameAs(t *testing.T) {
+	vm := model.Entity{ID: "vmA", Type: model.TypeComputeVM, Identity: []model.KeyValue{{Key: "vmid", Value: sv("42")}}}
+	host := model.Entity{ID: "hostB", Type: model.TypeHost, Identity: []model.KeyValue{{Key: "host.id", Value: sv("mid-b")}}}
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{vm.ID: vm, host.ID: host},
+		deleted:  map[model.EntityID]bool{},
+		relations: []model.Relation{{
+			ID: "s1", Type: model.RelSameAs, From: vm.ID, To: host.ID,
+			Attributes: []model.KeyValue{
+				{Key: "confidence", Value: model.DoubleValue(0.95)},
+				{Key: "basis", Value: sv("hyperv-kvp")},
+			},
+		}},
+	}
+	s := New(g, &fakeStore{})
+	_, out, err := s.impactOf(context.Background(), nil, ImpactOfInput{EntityID: "vmA"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 0 {
+		t.Fatalf("same_as must not propagate impact; blast radius = %d, want 0", out.Total)
+	}
+}
+
+// TestImpactOfFoldsAliases pins ADR 0020 Lot B alias-aware impact: querying any
+// facet of a machine yields the same blast radius — what depends on hostB is
+// impacted when you ask about its high-confidence same_as alias vmA.
+func TestImpactOfFoldsAliases(t *testing.T) {
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			"vmA":   {ID: "vmA", Type: model.TypeComputeVM},
+			"hostB": {ID: "hostB", Type: model.TypeHost},
+			"procX": {ID: "procX", Type: model.TypeProcess},
+		},
+		deleted: map[model.EntityID]bool{},
+		relations: []model.Relation{
+			{ID: "r1", Type: model.RelRunsOn, From: "procX", To: "hostB", Structural: true}, // hostB failing impacts procX
+			{ID: "s1", Type: model.RelSameAs, From: "vmA", To: "hostB",
+				Attributes: []model.KeyValue{{Key: "confidence", Value: model.DoubleValue(0.95)}, {Key: "basis", Value: sv("hyperv-kvp")}}},
+		},
+	}
+	s := New(g, &fakeStore{})
+
+	// Ask about vmA — the alias hostB's dependents must be in the blast radius.
+	_, out, err := s.impactOf(context.Background(), nil, ImpactOfInput{EntityID: "vmA"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 1 || out.Aliases != 1 || len(out.Impacted) != 1 || out.Impacted[0].ID != "procX" {
+		t.Fatalf("impact_of(vmA) = total %d aliases %d impacted %+v, want procX via the hostB alias", out.Total, out.Aliases, out.Impacted)
+	}
+
+	// Symmetric: asking about hostB folds in vmA and reaches the same dependents.
+	_, out, err = s.impactOf(context.Background(), nil, ImpactOfInput{EntityID: "hostB"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Total != 1 || out.Aliases != 1 || out.Impacted[0].ID != "procX" {
+		t.Fatalf("impact_of(hostB) = total %d aliases %d, want procX with vmA folded", out.Total, out.Aliases)
+	}
+}
+
+// TestGetEntityCanonical pins ADR 0020 Lot B: get_entity surfaces the read-time
+// canonical group — transitive over same_as edges at/above the threshold, with
+// low-confidence edges excluded and no group when none qualifies.
+func TestGetEntityCanonical(t *testing.T) {
+	sa := func(id string, from, to model.EntityID, conf float64, basis string) model.Relation {
+		return model.Relation{ID: model.RelationID(id), Type: model.RelSameAs, From: from, To: to,
+			Attributes: []model.KeyValue{{Key: "confidence", Value: model.DoubleValue(conf)}, {Key: "basis", Value: sv(basis)}}}
+	}
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			"vmA":    {ID: "vmA", Type: model.TypeComputeVM},
+			"hostB":  {ID: "hostB", Type: model.TypeHost},
+			"hostC":  {ID: "hostC", Type: model.TypeHost},
+			"noiseN": {ID: "noiseN", Type: model.TypeHost},
+		},
+		deleted: map[model.EntityID]bool{},
+		relations: []model.Relation{
+			sa("l1", "vmA", "hostB", 0.95, "hyperv-kvp"),     // vmA == hostB
+			sa("l2", "hostB", "hostC", 0.95, "serial_match"), // hostB == hostC (transitive)
+			sa("l3", "vmA", "noiseN", 0.5, "name_guess"),     // below threshold -> excluded
+		},
+	}
+	s := New(g, &fakeStore{})
+	_, out, err := s.getEntity(context.Background(), nil, GetEntityInput{EntityID: "vmA"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Canonical == nil {
+		t.Fatal("expected a canonical group for vmA")
+	}
+	got := map[string]bool{}
+	for _, a := range out.Canonical.Aliases {
+		got[a.ID] = true
+	}
+	if !got["hostB"] || !got["hostC"] {
+		t.Errorf("aliases = %+v, want hostB + hostC (transitive)", out.Canonical.Aliases)
+	}
+	if got["noiseN"] {
+		t.Error("a below-threshold same_as must not collapse into the canonical group")
+	}
+
+	// An entity whose only same_as is below threshold has no canonical group.
+	_, out2, err := s.getEntity(context.Background(), nil, GetEntityInput{EntityID: "noiseN"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out2.Canonical != nil {
+		t.Errorf("noiseN: only a below-threshold link, want no canonical group, got %+v", out2.Canonical)
+	}
+}
+
+// TestFindPathAliasAware pins ADR 0020 Lot B for find_path: a strong same_as
+// connects a path (shown as a same_as hop), a below-threshold one does not.
+func TestFindPathAliasAware(t *testing.T) {
+	sa := func(id string, from, to model.EntityID, conf float64) model.Relation {
+		return model.Relation{ID: model.RelationID(id), Type: model.RelSameAs, From: from, To: to,
+			Attributes: []model.KeyValue{{Key: "confidence", Value: model.DoubleValue(conf)}, {Key: "basis", Value: sv("hyperv-kvp")}}}
+	}
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			"vmA":   {ID: "vmA", Type: model.TypeComputeVM},
+			"vmW":   {ID: "vmW", Type: model.TypeComputeVM},
+			"hostB": {ID: "hostB", Type: model.TypeHost},
+			"procX": {ID: "procX", Type: model.TypeProcess},
+		},
+		deleted: map[model.EntityID]bool{},
+		relations: []model.Relation{
+			{ID: "r1", Type: model.RelRunsOn, From: "procX", To: "hostB", Structural: true},
+			sa("s1", "vmA", "hostB", 0.95), // strong alias -> traversable
+			sa("s2", "vmW", "hostB", 0.5),  // weak alias -> not traversable
+		},
+	}
+	s := New(g, &fakeStore{})
+
+	_, out, err := s.findPath(context.Background(), nil, FindPathInput{FromID: "vmA", ToID: "procX"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !out.Reachable {
+		t.Fatal("vmA should reach procX through the strong same_as alias")
+	}
+	sawSameAs := false
+	for _, h := range out.Path {
+		if h.ViaRelation == model.RelSameAs {
+			sawSameAs = true
+		}
+	}
+	if !sawSameAs {
+		t.Errorf("path should cross a same_as hop: %+v", out.Path)
+	}
+
+	_, out2, err := s.findPath(context.Background(), nil, FindPathInput{FromID: "vmW", ToID: "procX"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out2.Reachable {
+		t.Error("vmW's only link is a below-threshold same_as; procX must be unreachable")
+	}
+}
+
+// TestDescribeType pins #137: the per-type zoom answers from the live graph —
+// observed keys with usage, empirical relation shapes, and the relation-kind
+// view with endpoint shapes and impact flow.
+func TestDescribeType(t *testing.T) {
+	s := newTestServer()
+	ctx := context.Background()
+
+	_, out, err := s.describeType(ctx, nil, DescribeTypeInput{Type: "host"})
+	if err != nil {
+		t.Fatalf("describeType(host): %v", err)
+	}
+	if out.Kind != "entity" || out.Count != 2 {
+		t.Fatalf("host = kind %s count %d, want entity/2", out.Kind, out.Count)
+	}
+	if len(out.IdentityKeys) == 0 || out.IdentityKeys[0].Key != "host.name" || out.IdentityKeys[0].Seen != 2 {
+		t.Errorf("identity keys = %+v, want host.name seen 2x", out.IdentityKeys)
+	}
+	if len(out.AttributeKeys) == 0 || out.AttributeKeys[0].Key != "os.type" || out.AttributeKeys[0].Example == "" {
+		t.Errorf("attribute keys = %+v, want os.type with example", out.AttributeKeys)
+	}
+	// hosts participate in runs_on (incoming from process) and connected_to.
+	var runsOn *RelationParticipation
+	for i := range out.Relations {
+		if out.Relations[i].RelationType == "runs_on" && out.Relations[i].Direction == "incoming" {
+			runsOn = &out.Relations[i]
+		}
+	}
+	if runsOn == nil || runsOn.Count != 1 || len(runsOn.PeerTypes) != 1 || runsOn.PeerTypes[0].Type != "process" {
+		t.Fatalf("runs_on participation = %+v", out.Relations)
+	}
+	if len(out.Samples) == 0 || out.Description == "" {
+		t.Error("samples and description must be present")
+	}
+
+	// Relation kind: endpoint shapes observed empirically + impact direction.
+	_, rel, err := s.describeType(ctx, nil, DescribeTypeInput{Type: "runs_on"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rel.Kind != "relation" || !rel.Registered || rel.Count != 1 || !rel.Structural {
+		t.Fatalf("runs_on = %+v", rel)
+	}
+	if rel.ImpactFlow != "to_from" {
+		t.Errorf("runs_on impact = %s, want to_from", rel.ImpactFlow)
+	}
+	if len(rel.EndpointShapes) != 1 || rel.EndpointShapes[0].FromType != "process" || rel.EndpointShapes[0].ToType != "host" {
+		t.Errorf("shapes = %+v, want process->host", rel.EndpointShapes)
+	}
+
+	// A registered-but-empty type still answers; garbage errors with the hint.
+	_, empty, err := s.describeType(ctx, nil, DescribeTypeInput{Type: "network.route"})
+	if err != nil {
+		t.Fatalf("registered empty type: %v", err)
+	}
+	if empty.Count != 0 || empty.Kind != "entity" {
+		t.Errorf("network.route = %+v", empty)
+	}
+	if _, _, gerr := s.describeType(ctx, nil, DescribeTypeInput{Type: "no.such.type"}); gerr == nil || !strings.Contains(gerr.Error(), "describe_schema") {
+		t.Errorf("unknown type error = %v", gerr)
+	}
+}
+
+// TestTelemetryKeysOwnershipOnly pins #312: a join key may only be inherited
+// from the entity that OWNS this one. Observation (monitors) and peer
+// (depends_on) hops must contribute nothing — inheriting through them hands
+// back the observer's or the peer's telemetry as if it described the subject,
+// which is how a `db` entity came to report the monitoring agent's
+// service.name in production.
+func TestTelemetryKeysOwnershipOnly(t *testing.T) {
+	agent := model.Entity{
+		ID:         "01AGENT",
+		Type:       "service.instance",
+		Identity:   []model.KeyValue{{Key: "service.instance.id", Value: model.StringValue("agent-1")}},
+		Attributes: []model.KeyValue{{Key: "service.name", Value: model.StringValue("senhub-agent")}},
+	}
+	database := model.Entity{
+		ID:       "01DB",
+		Type:     "db",
+		Identity: []model.KeyValue{{Key: "db.instance.id", Value: model.StringValue("postgresql:7459")}},
+	}
+	endpoint := model.Entity{
+		ID:       "01EP",
+		Type:     "network.endpoint",
+		Identity: []model.KeyValue{{Key: "server.address", Value: model.StringValue("10.0.0.9")}},
+	}
+	device := model.Entity{
+		ID:       "01DEV",
+		Type:     "network.device",
+		Identity: []model.KeyValue{{Key: "network.device.id", Value: model.StringValue("engine:1")}},
+	}
+	route := model.Entity{
+		ID:       "01ROUTE",
+		Type:     "network.route",
+		Identity: []model.KeyValue{{Key: "route.destination", Value: model.StringValue("10.0.0.0/8")}},
+	}
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			agent.ID: agent, database.ID: database, endpoint.ID: endpoint,
+			device.ID: device, route.ID: route,
+		},
+		deleted: map[model.EntityID]bool{},
+		relations: []model.Relation{
+			{ID: "r-mon", Type: model.RelMonitors, From: agent.ID, To: database.ID, Structural: true},
+			{ID: "r-dep", Type: model.RelDependsOn, From: agent.ID, To: endpoint.ID, Structural: true},
+			{ID: "r-route", Type: model.RelHasRoute, From: device.ID, To: route.ID, Structural: true},
+		},
+	}
+	s := New(g, &fakeStore{})
+	ctx := context.Background()
+
+	keysOf := func(id string) map[string]TelemetryKey {
+		t.Helper()
+		_, out, err := s.telemetryKeys(ctx, nil, TelemetryKeysInput{EntityID: id})
+		if err != nil {
+			t.Fatalf("telemetryKeys(%s): %v", id, err)
+		}
+		by := map[string]TelemetryKey{}
+		for _, k := range out.Keys {
+			by[k.Key] = k
+		}
+		return by
+	}
+
+	// Observation: the database keeps its own key and inherits nothing.
+	dbKeys := keysOf("01DB")
+	if _, leaked := dbKeys["service.name"]; leaked {
+		t.Error("db inherited the observing agent's service.name through monitors")
+	}
+	if _, leaked := dbKeys["service.instance.id"]; leaked {
+		t.Error("db inherited the observing agent's service.instance.id through monitors")
+	}
+	own, ok := dbKeys["db.instance.id"]
+	if !ok || own.Source != "identity" {
+		t.Errorf("db must report its own db.instance.id from identity, got %+v", dbKeys)
+	}
+	if own.Note == "" {
+		t.Error("db.instance.id must carry the per-datapoint caveat")
+	}
+
+	// Peer: the endpoint is not described by the service that depends on it.
+	if epKeys := keysOf("01EP"); len(epKeys) != 0 {
+		t.Errorf("network.endpoint inherited keys through depends_on: %+v", epKeys)
+	}
+
+	// Ownership, incoming direction: the route does inherit from the device
+	// that holds it.
+	routeKeys := keysOf("01ROUTE")
+	devID, ok := routeKeys["network.device.id"]
+	if !ok {
+		t.Fatalf("route must inherit its device's network.device.id, got %+v", routeKeys)
+	}
+	if !strings.Contains(devID.Source, "via has_route") {
+		t.Errorf("network.device.id source = %q, want inherited via has_route", devID.Source)
+	}
+}
+
+// TestEmptyAnswerNamesWhatWasSearched is #364: two consumers, two months apart,
+// asked which processes ran on a fleet by filtering service.instance, got a
+// clean zero, and concluded no Windows machine was represented. A process is a
+// service.listener here, under process.executable.name. Both types exist, both
+// are plausible, and the wrong one answers zero rather than erroring.
+//
+// The issue proposed a paragraph of guidance. Prose in the instructions does
+// not reach a reader at the moment they hold a zero and draw a conclusion from
+// it; the answer does.
+func TestEmptyAnswerNamesWhatWasSearched(t *testing.T) {
+	ctx := context.Background()
+	s := newTestServer()
+
+	// The trap itself: a plausible key asked of the wrong type.
+	_, out, err := s.findEntities(ctx, nil, FindEntitiesInput{
+		Type:  model.TypeServiceInstance,
+		Match: map[string]string{"process.pid": "4242"},
+	})
+	if err != nil {
+		t.Fatalf("find: %v", err)
+	}
+	if len(out.Entities) != 0 {
+		t.Fatalf("expected an empty result to exercise the explanation, got %d", len(out.Entities))
+	}
+	if out.NoMatch == "" {
+		t.Fatal("an empty answer carried no explanation: a clean zero to a well-formed question is the defect")
+	}
+	if !strings.Contains(out.NoMatch, model.TypeServiceInstance) {
+		t.Errorf("the explanation does not name the type that was searched: %q", out.NoMatch)
+	}
+	if !strings.Contains(out.NoMatch, "process.pid") {
+		t.Errorf("the explanation does not name the key that was filtered on: %q", out.NoMatch)
+	}
+
+	// A key no type carries must say so rather than point at a sibling.
+	_, out2, err := s.findEntities(ctx, nil, FindEntitiesInput{
+		Match: map[string]string{"no.such.key.anywhere": "x"},
+	})
+	if err != nil {
+		t.Fatalf("find: %v", err)
+	}
+	if !strings.Contains(out2.NoMatch, "No entity type in this graph carries") {
+		t.Errorf("a key absent everywhere should say so: %q", out2.NoMatch)
+	}
+
+	// And a result that matched must not carry the explanation at all.
+	_, out3, err := s.findEntities(ctx, nil, FindEntitiesInput{Type: model.TypeHost})
+	if err != nil {
+		t.Fatalf("find: %v", err)
+	}
+	if len(out3.Entities) > 0 && out3.NoMatch != "" {
+		t.Errorf("a result that matched carries a no-match explanation: %q", out3.NoMatch)
+	}
+}
+
+// TestWindowBeforeTheHorizonSaysSo is #397. The retention horizon was already
+// on every answer as graph.oldest_answerable, and that was not enough: nothing
+// compared it to the window the caller asked for, so a window reaching before
+// it came back short with no statement that it had been cut. It cost a morning
+// of wrong conclusions, including a transport outage reported to another team
+// that never happened — with the horizon sitting in the payload the whole time.
+//
+// Carrying a fact is not the same as drawing the conclusion from it, and the
+// consumer this product is for cannot ask a follow-up question.
+func TestWindowBeforeTheHorizonSaysSo(t *testing.T) {
+	ctx := context.Background()
+	s := newTestServer()
+	// A horizon one hour in the past: anything older was pruned.
+	horizon := s.now().Add(-time.Hour)
+	s.store = horizonStore{EventReader: s.store, horizon: horizon}
+
+	// Wholly before the horizon: a zero here is retention, not absence.
+	_, out, err := s.recentChanges(ctx, nil, RecentChangesInput{
+		From: formatTime(s.now().Add(-5 * time.Hour)),
+		To:   formatTime(s.now().Add(-4 * time.Hour)),
+	})
+	if err != nil {
+		t.Fatalf("recent_changes: %v", err)
+	}
+	if !strings.Contains(out.Covered, "EMPTY BY RETENTION") {
+		t.Errorf("a window entirely before the horizon did not say so: %q", out.Covered)
+	}
+
+	// Straddling it: the answer must say which shorter period it can speak for.
+	_, out2, err := s.recentChanges(ctx, nil, RecentChangesInput{Window: "3h"})
+	if err != nil {
+		t.Fatalf("recent_changes: %v", err)
+	}
+	if !strings.Contains(out2.Covered, "PARTIAL BY RETENTION") {
+		t.Errorf("a window straddling the horizon did not say so: %q", out2.Covered)
+	}
+	if !strings.Contains(out2.Covered, formatTime(horizon)) {
+		t.Errorf("the warning does not name the horizon, so a caller cannot correct the window: %q", out2.Covered)
+	}
+
+	// Wholly within reach: no warning at all, or it becomes noise.
+	_, out3, err := s.recentChanges(ctx, nil, RecentChangesInput{Window: "5m"})
+	if err != nil {
+		t.Fatalf("recent_changes: %v", err)
+	}
+	if strings.Contains(out3.Covered, "RETENTION") {
+		t.Errorf("a window within the horizon warned anyway: %q", out3.Covered)
+	}
+
+	// graph_diff carries it too: a diff from before the horizon compares against
+	// a baseline, not against reality at that instant.
+	_, d, err := s.graphDiff(ctx, nil, GraphDiffInput{Window: "3h"})
+	if err != nil {
+		t.Fatalf("graph_diff: %v", err)
+	}
+	if !strings.Contains(d.Covered, "RETENTION") {
+		t.Errorf("graph_diff did not declare the horizon: %q", d.Covered)
+	}
+}
+
+// horizonStore wraps the test store to report a retention horizon.
+type horizonStore struct {
+	EventReader
+	horizon time.Time
+}
+
+func (h horizonStore) PruneHorizon() time.Time { return h.horizon }
+
+// TestNotFoundAtAnInstantNamesTheRightReason is #381. An as_of read of an
+// entity created later failed with a message offering one reason — deletion
+// with an evicted tombstone — and offering it always. Every clause that
+// mattered was wrong: nothing was deleted, no tombstone was evicted, and the
+// one true reason, that the instant precedes the entity's creation, was never
+// mentioned. It was read as a retention defect by everyone in the chain.
+//
+// "Not found" was correct. A wrong explanation is worse than none, because it
+// is actionable.
+func TestNotFoundAtAnInstantNamesTheRightReason(t *testing.T) {
+	s := newTestServer()
+
+	// Exists now, asked for at an instant: the message must say so and must not
+	// blame deletion.
+	err := s.notFoundMsg("01HOST_WEB", "2026-01-01T00:00:00Z")
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "EXISTS NOW") {
+		t.Errorf("the message does not say the entity exists now: %q", msg)
+	}
+	if strings.Contains(msg, "tombstone may have been evicted") {
+		t.Errorf("the message still blames deletion for an entity that exists: %q", msg)
+	}
+	if !strings.Contains(msg, "before this entity was created") {
+		t.Errorf("the message does not offer the true reason: %q", msg)
+	}
+
+	// Unknown handle at an instant: no claim that it exists now, and the horizon
+	// is pointed at rather than deletion asserted. The handle is written in
+	// fingerprint form because the test graph resolves any bare string.
+	msg2 := s.notFoundMsg("host:0000000000000000000000000000dead", "2026-01-01T00:00:00Z").Error()
+	if strings.Contains(msg2, "EXISTS NOW") {
+		t.Errorf("an unknown handle was reported as existing now: %q", msg2)
+	}
+	if !strings.Contains(msg2, "oldest_answerable") {
+		t.Errorf("the message does not point at the retention horizon: %q", msg2)
+	}
+
+	// No instant asked for: the original message, which was right for that case.
+	msg3 := s.notFoundMsg("host:0000000000000000000000000000dead", "").Error()
+	if !strings.Contains(msg3, "tombstone") {
+		t.Errorf("a present-tense miss lost its explanation: %q", msg3)
+	}
+}
+
+// TestPartialInlineIdentitySaysWhy pins an absence that did not say which kind
+// it was, reported by a consumer session building a path view.
+//
+// An inline identity handle must carry EVERY key of the identity: resolution
+// compares the whole set, so a subset matches nothing. That is the safe
+// behavior — it can never resolve to one of several siblings at random — but
+// the caller read "no entity found", which is indistinguishable from "that
+// entity does not exist". For a host's interface the first key is the owner's
+// host.id, shared by every sibling interface on that host, so a one-key handle
+// looks entirely reasonable to write.
+func TestPartialInlineIdentitySaysWhy(t *testing.T) {
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			"if1": {ID: "if1", Type: model.TypeNetworkInterface, Identity: []model.KeyValue{
+				{Key: "host.id", Value: sv("h1")},
+				{Key: "network.interface.name", Value: sv("eth0")},
+			}},
+		},
+		deleted: map[model.EntityID]bool{},
+	}
+	s := New(g, &fakeStore{})
+
+	// A one-key handle for a two-key identity.
+	_, _, err := s.getEntity(context.Background(), nil, GetEntityInput{EntityID: "network.interface:host.id=h1"})
+	if err == nil {
+		t.Fatal("a partial inline identity resolved; it must not, since it cannot tell sibling interfaces apart")
+	}
+	for _, want := range []string{"EVERY key", "identity_fingerprint", "find_entities"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("the error does not mention %q, so a caller cannot tell an incomplete handle from a missing entity: %v", want, err)
+		}
+	}
+
+	// The negative control: a COMPLETE handle resolves, so the hint must not fire
+	// on a working call, and a genuinely unknown entity of the same type must not
+	// be told its handle was incomplete.
+	if _, _, cerr := s.getEntity(context.Background(), nil,
+		GetEntityInput{EntityID: "network.interface:host.id=h1,network.interface.name=eth0"}); cerr != nil {
+		t.Errorf("a complete inline identity failed to resolve: %v", cerr)
+	}
+	_, _, err = s.getEntity(context.Background(), nil,
+		GetEntityInput{EntityID: "network.interface:host.id=h9,network.interface.name=eth9"})
+	if err == nil {
+		t.Fatal("an unknown entity resolved")
+	}
+	if strings.Contains(err.Error(), "EVERY key") {
+		t.Errorf("a COMPLETE handle for a missing entity was told its handle was incomplete: %v", err)
+	}
+}
+
+// TestServiceEndpointIsOfferedOnlyToACheckedListener guards the design choice
+// behind conditionalJoinKeys: service.endpoint is the identity of EVERY
+// listener, but only a listener an active check targets has a series carrying
+// it — the probe builds its series tags from the id of the entity it monitors.
+//
+// Offering it to all of them would be a PARTIAL false promise: it works often
+// enough to be trusted, then returns an empty filter. The graph holds the fact
+// that decides, so the key is withheld where it cannot work rather than offered
+// everywhere with a caveat to read.
+func TestServiceEndpointIsOfferedOnlyToACheckedListener(t *testing.T) {
+	checked := model.Entity{
+		ID: "01LISTEN_CHECKED", Type: "service.listener",
+		Identity: []model.KeyValue{{Key: "service.endpoint", Value: model.StringValue("h1:443/tcp")}},
+	}
+	bare := model.Entity{
+		ID: "01LISTEN_BARE", Type: "service.listener",
+		Identity: []model.KeyValue{{Key: "service.endpoint", Value: model.StringValue("h1:8080/tcp")}},
+	}
+	probe := model.Entity{
+		ID: "01PROBE", Type: "service.instance",
+		Identity: []model.KeyValue{{Key: "service.instance.id", Value: model.StringValue("probe-1")}},
+	}
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{checked.ID: checked, bare.ID: bare, probe.ID: probe},
+		deleted:  map[model.EntityID]bool{},
+		relations: []model.Relation{
+			// the probe monitors ONE of the two listeners
+			{ID: "rel-mon", Type: "monitors", From: probe.ID, To: checked.ID, Structural: true},
+		},
+	}
+	s := New(g, &fakeStore{})
+	ctx := context.Background()
+
+	has := func(id string) bool {
+		_, out, err := s.telemetryKeys(ctx, nil, TelemetryKeysInput{EntityID: id})
+		if err != nil {
+			t.Fatalf("telemetryKeys(%s): %v", id, err)
+		}
+		for _, k := range out.Keys {
+			if k.Key == "service.endpoint" {
+				if k.Note == "" {
+					t.Errorf("%s: the key is offered with no note; a conditional key must say what carries it", id)
+				}
+				return true
+			}
+		}
+		return false
+	}
+
+	if !has("01LISTEN_CHECKED") {
+		t.Error("a listener an active check targets is not offered service.endpoint, so its own series cannot be found")
+	}
+	if has("01LISTEN_BARE") {
+		t.Error("a listener no check targets is offered service.endpoint: that filter returns nothing, which is the partial false promise this design exists to avoid")
+	}
+}
+
+// TestCanonicalNamesTheBeliefItCouldNotUse pins #544 on the read side: an entity
+// whose only same_as evidence is unreadable must not answer like an entity with
+// no alias at all.
+//
+// Before this, canonicalGroup returned nil in both cases. The producer believed
+// it had published an identity join, the consumer read two separate entities,
+// and no surface said a belief had been refused — a failure that is one per
+// machine and scales with the fleet, since the Azure model emits one same_as per
+// VM and a re-key emits one per host.
+func TestCanonicalNamesTheBeliefItCouldNotUse(t *testing.T) {
+	belief := func(id string, from, to model.EntityID, attrs ...model.KeyValue) model.Relation {
+		return model.Relation{ID: model.RelationID(id), Type: model.RelSameAs, From: from, To: to, Attributes: attrs}
+	}
+	conf := func(v float64) model.KeyValue {
+		return model.KeyValue{Key: "confidence", Value: model.DoubleValue(v)}
+	}
+
+	for _, tc := range []struct {
+		name       string
+		attrs      []model.KeyValue
+		wantReason string
+	}{
+		{"no confidence at all", []model.KeyValue{{Key: "basis", Value: sv("vm_id_match")}}, "no_confidence"},
+		{"confidence is a string", []model.KeyValue{{Key: "confidence", Value: sv("0.95")}}, "confidence_not_numeric"},
+		{"confidence above one", []model.KeyValue{conf(1.5)}, "confidence_out_of_range"},
+		{"confidence below zero", []model.KeyValue{conf(-0.1)}, "confidence_out_of_range"},
+	} {
+		g := &fakeGraph{
+			entities: map[model.EntityID]model.Entity{
+				"vmA":   {ID: "vmA", Type: model.TypeComputeVM},
+				"hostB": {ID: "hostB", Type: model.TypeHost},
+			},
+			deleted:   map[model.EntityID]bool{},
+			relations: []model.Relation{belief("s1", "vmA", "hostB", tc.attrs...)},
+		}
+		s := New(g, &fakeStore{})
+		got := s.canonicalGroup(g, "vmA")
+		if got == nil {
+			t.Errorf("%s: canonical block is nil, so an unreadable belief reads exactly like no alias", tc.name)
+			continue
+		}
+		if len(got.Aliases) != 0 {
+			t.Errorf("%s: aliases = %+v, want none — an unreadable belief must never group anything", tc.name, got.Aliases)
+		}
+		if len(got.Inert) != 1 || got.Inert[0].Reason != tc.wantReason {
+			t.Errorf("%s: inert = %+v, want one entry with reason %q", tc.name, got.Inert, tc.wantReason)
+		}
+	}
+
+	// The basis survives an unreadable confidence, because it is the half a human
+	// or an LLM can still act on.
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			"vmA": {ID: "vmA", Type: model.TypeComputeVM}, "hostB": {ID: "hostB", Type: model.TypeHost},
+		},
+		deleted:   map[model.EntityID]bool{},
+		relations: []model.Relation{belief("s1", "vmA", "hostB", model.KeyValue{Key: "basis", Value: sv("vm_id_match")})},
+	}
+	if got := New(g, &fakeStore{}).canonicalGroup(g, "vmA"); got == nil || len(got.Inert) != 1 || got.Inert[0].Basis != "vm_id_match" {
+		t.Errorf("basis lost on an inert belief: %+v", got)
+	}
+
+	// A readable belief BELOW the threshold is not inert: the producer said "weak"
+	// on purpose, and the threshold is the server's to set. Reporting it here
+	// would turn a deliberate statement into a defect.
+	weak := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			"vmA": {ID: "vmA", Type: model.TypeComputeVM}, "hostB": {ID: "hostB", Type: model.TypeHost},
+		},
+		deleted:   map[model.EntityID]bool{},
+		relations: []model.Relation{belief("s1", "vmA", "hostB", conf(0.4))},
+	}
+	if got := New(weak, &fakeStore{}).canonicalGroup(weak, "vmA"); got != nil {
+		t.Errorf("a weak but readable belief was reported as inert: %+v", got)
+	}
+
+	// And an entity with genuinely nothing still answers nil, so the block does
+	// not appear on every entity in the graph.
+	bare := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{"vmA": {ID: "vmA", Type: model.TypeComputeVM}},
+		deleted:  map[model.EntityID]bool{},
+	}
+	if got := New(bare, &fakeStore{}).canonicalGroup(bare, "vmA"); got != nil {
+		t.Errorf("an entity with no belief at all returned a block: %+v", got)
+	}
+}
+
+// TestCanonicalMemberStatesAreDistinguishable pins the engagement owed before
+// 0.23: a canonical member that is deleted, one this graph never held, and one
+// that simply failed to render used to be the SAME answer — an id with an empty
+// type and label.
+//
+// Both non-live cases really happen. canonical.Walk follows same_as edges without
+// checking their far end, so a belief can outlive the entity it pointed at
+// (deleted) or name one that never arrived (unresolvable). Telling them apart
+// matters: a retracted alias is evidence the thing existed, an unresolvable one
+// is a producer naming something nobody ever sent.
+func TestCanonicalMemberStatesAreDistinguishable(t *testing.T) {
+	strong := func(id string, from, to model.EntityID) model.Relation {
+		return model.Relation{ID: model.RelationID(id), Type: model.RelSameAs, From: from, To: to,
+			Attributes: []model.KeyValue{{Key: "confidence", Value: model.DoubleValue(0.99)}}}
+	}
+	g := &fakeGraph{
+		entities: map[model.EntityID]model.Entity{
+			"root":  {ID: "root", Type: model.TypeHost},
+			"alive": {ID: "alive", Type: model.TypeComputeVM},
+			"gone":  {ID: "gone", Type: model.TypeComputeVM},
+			// "ghost" is deliberately absent: the belief names an id nothing holds.
+		},
+		deleted: map[model.EntityID]bool{"gone": true},
+		relations: []model.Relation{
+			strong("s1", "root", "alive"),
+			strong("s2", "root", "gone"),
+			strong("s3", "root", "ghost"),
+		},
+	}
+
+	got := New(g, &fakeStore{}).canonicalGroup(g, "root")
+	if got == nil {
+		t.Fatal("canonical block is nil with three strong beliefs")
+	}
+	want := map[string]string{"alive": "live", "gone": "deleted", "ghost": "unresolvable"}
+	if len(got.Aliases) != len(want) {
+		t.Fatalf("aliases = %+v, want %d members", got.Aliases, len(want))
+	}
+	for _, a := range got.Aliases {
+		w, known := want[a.ID]
+		if !known {
+			t.Errorf("unexpected member %q", a.ID)
+			continue
+		}
+		if a.State != w {
+			t.Errorf("member %q state = %q, want %q", a.ID, a.State, w)
+		}
+		// type and label are filled only for a live member, and the state is what
+		// says why they are empty for the other two.
+		if (a.State == "live") != (a.Type != "") {
+			t.Errorf("member %q: state %q with type %q — type must be filled iff live", a.ID, a.State, a.Type)
+		}
+	}
+}

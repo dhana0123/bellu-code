@@ -1,0 +1,66 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  # Never cancel on main. Every merge shares the ref, so in a burst of merges each
+  # one cancelled the previous one's run and only the last merged tree was ever
+  # tested — which is how main went red on 2026-10-14 with six green branches
+  # behind it: the branch checks passed, the merged tree did not, and nothing
+  # looked at the difference. On a pull request superseding is still right: a
+  # force-push means the previous tree no longer exists.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  golangci:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Report the toolchain that actually builds
+        # setup-go@v5 reads only the `go` directive from go.mod, so the step
+        # above installs and prints 1.26.9 while the build switches to the
+        # `toolchain` version. Without this line the log contradicts the
+        # toolchain the binaries are built with (GO-2026-6809).
+        run: |
+          go version
+          (cd pkg/emit && go version)
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          # Build golangci-lint from source with the runner's Go toolchain
+          # (install-mode: goinstall) instead of downloading the prebuilt
+          # binary. The prebuilt v2.12.2 is compiled with go1.25 and refuses
+          # to lint a module targeting go 1.26 ("the Go language version used
+          # to build golangci-lint is lower than the targeted Go version"),
+          # failing at config load before analysing any code. Compiling from
+          # source here makes build version == target (1.26), so it loads.
+          # Keep the version pinned for reproducibility.
+          version: v2.12.2
+          install-mode: goinstall
+
+      # pkg/emit is a nested module (ADR 0027): the root run does not reach
+      # it, so the SDK gets its own pass. Same version/install-mode rationale
+      # as above.
+      - name: Run golangci-lint (pkg/emit module)
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.12.2
+          install-mode: goinstall
+          working-directory: pkg/emit

@@ -1,0 +1,38 @@
+# 2026/11/12 07:29:36.574382 [TestPropertyValidateRejectsChainedRules] [rapid] draw kind: "identifier"
+# 2026/11/12 07:29:36.574389 [TestPropertyValidateRejectsChainedRules] [rapid] draw mid: "a"
+# 2026/11/12 07:29:36.574391 [TestPropertyValidateRejectsChainedRules] [rapid] draw pre: "a"
+# 2026/11/12 07:29:36.574394 [TestPropertyValidateRejectsChainedRules] [rapid] draw suf: "a"
+# 2026/11/12 07:29:36.574395 [TestPropertyValidateRejectsChainedRules] [rapid] draw a: "a"
+# 2026/11/12 07:29:36.574398 [TestPropertyValidateRejectsChainedRules] [rapid] draw b: "a"
+# 2026/11/12 07:29:36.574399 [TestPropertyValidateRejectsChainedRules] [rapid] draw swap: false
+# 2026/11/12 07:29:36.574404 [TestPropertyValidateRejectsChainedRules] chained rules accepted: [{Kind:identifier From:Qa To:a Scope:[] Exact:false} {Kind:identifier From:aaa To:Za Scope:[] Exact:false}]
+# 
+v0.4.8#15816175153791012368
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0

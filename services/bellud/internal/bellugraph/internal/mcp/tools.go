@@ -1,0 +1,1130 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+package mcp
+
+import (
+	"context"
+	"encoding/base64"
+	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
+
+	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/model"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/store"
+)
+
+// --- find_entities ---
+
+// FindEntitiesInput filters the entity set.
+type FindEntitiesInput struct {
+	Type      string            `json:"type,omitempty" jsonschema:"restrict to this entity type (omit for all types)"`
+	Match     map[string]string `json:"match,omitempty" jsonschema:"attribute key/value pairs every result must have (string comparison, against identity and attributes)"`
+	Limit     int               `json:"limit,omitempty" jsonschema:"maximum entities to return (default 50, max 200)"`
+	AsOf      string            `json:"as_of,omitempty" jsonschema:"RFC 3339 instant: read the graph as it was then (event-time), instead of now — COSTLY: this is a full REPLAY of the event log from the origin into a fresh graph, not a filter. Its cost tracks the size of this tenant's log, NOT how far back you asked: two minutes costs the same as twenty-four hours. Folds are bounded process-wide (NumCPU/2 at once) across every tenant and surface, so several queue behind each other and behind other readers. One per displayed row will take an instance down. A live read is in memory and entity_history is a linear range read: neither is in this class"`
+	Verbosity string            `json:"verbosity,omitempty" jsonschema:"compact returns only id/type/label (cheap to scan many); full (default) adds identity and attributes"`
+	After     string            `json:"after,omitempty" jsonschema:"continue a previous page: pass the next_cursor the previous answer returned. Without it a type holding more entities than the limit CANNOT be enumerated at all — the limit is capped at 200 and there is no offset. Pages are ordered by identity_fingerprint, which every replica computes identically, so a sequence of pages survives a failover; but the graph is live, so an entity created or deleted between two pages appears or vanishes accordingly — a page sequence is not a snapshot"`
+}
+
+// FindEntitiesOutput carries the matching entities.
+type FindEntitiesOutput struct {
+	Graph     GraphMeta `json:"graph" jsonschema:"what the answering graph holds and how fresh it is; read this before treating absence as fact"`
+	Entities  []Entity  `json:"entities"`
+	Total     int       `json:"total" jsonschema:"number of entities matching the filter before the limit was applied"`
+	Truncated bool      `json:"truncated" jsonschema:"true if more entities matched than were returned"`
+	// NextCursor is the handle that makes the rest reachable. Before it existed,
+	// an answer declared total and truncated and then offered no way to obtain
+	// what it had just named: a tenant with 236 network.endpoint could return
+	// 200, and the remaining 36 were unreachable by any sequence of calls. For a
+	// type carrying no attributes there was not even a filter to slice on.
+	NextCursor string `json:"next_cursor,omitempty" jsonschema:"pass this as after to get the next page; absent when this page is the last"`
+	// Truncation is the sentence form of Truncated. A bare boolean beside a
+	// number was discarded by two separate consumers on the same day, one of
+	// whom was actively looking for exactly that information and then reported
+	// the signal as missing. A flag only reaches a reader already looking for
+	// the flag.
+	Truncation string `json:"truncation,omitempty" jsonschema:"set when the answer is incomplete: how many of how many, and that the rest is reachable with after=next_cursor. Absent means this answer is complete"`
+	// NoMatch is set only on an empty result and names what was actually
+	// searched, plus the types that DO carry the keys the filter asked for. An
+	// empty answer to a well-formed question is the failure this product keeps
+	// working to remove: two consumers two months apart asked which processes
+	// ran on a fleet by looking at service.instance, got a clean zero, and
+	// concluded no Windows machine was represented. A process is a
+	// service.listener here, under process.executable.name.
+	NoMatch string `json:"no_match,omitempty" jsonschema:"set only when nothing matched: what was searched, and which other types carry the keys you filtered on. An empty answer usually means the fact lives on another type, not that the fleet lacks the thing"`
+}
+
+func (s *Server) findEntities(ctx context.Context, _ *mcpsdk.CallToolRequest, in FindEntitiesInput) (*mcpsdk.CallToolResult, FindEntitiesOutput, error) {
+	compact, err := parseVerbosity(in.Verbosity)
+	if err != nil {
+		return nil, FindEntitiesOutput{}, err
+	}
+	g, err := s.graphAt(ctx, in.AsOf)
+	if err != nil {
+		return nil, FindEntitiesOutput{}, err
+	}
+	limit := clampLimit(in.Limit)
+	// Without an attribute filter the projection pages for us and materializes
+	// only the page. With one, every candidate must be examined before the page
+	// bound, so the whole ordered set is needed — filtering a bounded page would
+	// return fewer than the limit with no reason given, and hide later matches
+	// behind earlier non-matches.
+	if len(in.Match) == 0 {
+		// A malformed cursor is refused, never treated as the beginning: that
+		// would silently re-serve page one and read as an empty tail.
+		afterFP := ""
+		if in.After != "" {
+			fp, derr := decodeCursor(in.After)
+			if derr != nil {
+				return nil, FindEntitiesOutput{}, fmt.Errorf("invalid after %q: pass the next_cursor from the previous answer verbatim", in.After)
+			}
+			afterFP = fp
+		}
+		page, next, total := g.PageEntitiesByFingerprint(in.Type, afterFP, limit)
+		out := FindEntitiesOutput{Total: total, Truncated: next != ""}
+		if next != "" {
+			out.NextCursor = encodeCursor(next)
+			out.Truncation = fmt.Sprintf(
+				"%d of %d returned; the rest is reachable by calling again with after=%q, and only that way — the limit is capped at %d and there is no offset",
+				len(page), total, out.NextCursor, maxLimit)
+		}
+		out.Entities = make([]Entity, len(page))
+		for i, e := range page {
+			out.Entities[i] = entityOutV(e, false, compact)
+			s.attachProducers(&out.Entities[i], e.ID, compact, in.AsOf)
+		}
+		if len(page) == 0 {
+			out.NoMatch = noMatchReason(g, in.Type, in.Match)
+		}
+		out.Graph = s.graphMeta(g, in.AsOf)
+		return nil, out, nil
+	}
+	all := g.ListEntitiesByFingerprint(in.Type)
+	matched := make([]model.Entity, 0, len(all))
+	for _, e := range all {
+		if matches(e, in.Match) {
+			matched = append(matched, e)
+		}
+	}
+	total := len(matched)
+	matched, cursor, err := pageByFingerprint(matched, in.After, limit)
+	if err != nil {
+		return nil, FindEntitiesOutput{}, err
+	}
+	out := FindEntitiesOutput{Total: total, Truncated: cursor != "", NextCursor: cursor}
+	if cursor != "" {
+		out.Truncation = fmt.Sprintf(
+			"%d of %d returned; the rest is reachable by calling again with after=%q, and only that way — the limit is capped at %d and there is no offset",
+			len(matched), total, cursor, maxLimit)
+	}
+	out.Entities = make([]Entity, len(matched))
+	for i, e := range matched {
+		out.Entities[i] = entityOutV(e, false, compact)
+		s.attachProducers(&out.Entities[i], e.ID, compact, in.AsOf)
+	}
+	if len(matched) == 0 {
+		out.NoMatch = noMatchReason(g, in.Type, in.Match)
+	}
+	out.Graph = s.graphMeta(g, in.AsOf)
+	return nil, out, nil
+}
+
+// noMatchReason says what an empty answer actually covered. It is mechanical on
+// purpose: #364's own suggestion was a paragraph of guidance, and prose in the
+// instructions does not reach the reader at the moment they hold a clean zero
+// and draw a conclusion from it. What reaches them is the answer itself.
+//
+// It reports the searched scope, and — the part that resolves the trap — which
+// types in this graph actually carry the keys the filter asked for.
+func noMatchReason(g Graph, typ string, match map[string]string) string {
+	var b strings.Builder
+	counts := g.CountByType()
+	if typ != "" {
+		b.WriteString("nothing matched among the " + strconv.Itoa(counts[typ]) + " live " + typ + " entities")
+		if counts[typ] == 0 {
+			b.WriteString(" (this graph holds none of that type at all)")
+		}
+	} else {
+		b.WriteString("nothing matched across all " + strconv.Itoa(g.EntityCount()) + " live entities")
+	}
+	if len(match) == 0 {
+		b.WriteString(". ")
+		b.WriteString(emptyAnswerAdvice)
+		return b.String()
+	}
+
+	keys := make([]string, 0, len(match))
+	for k := range match {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	b.WriteString(", filtering on " + strings.Join(keys, ", "))
+
+	// Which types carry each key, regardless of value: that is the question the
+	// reader is really asking and cannot see from a zero.
+	for _, k := range keys {
+		carriers := typesCarryingKey(g, k)
+		switch {
+		case len(carriers) == 0:
+			b.WriteString(". No entity type in this graph carries " + k + " at all")
+		case typ != "" && len(carriers) == 1 && carriers[0] == typ:
+			b.WriteString(". " + k + " exists on " + typ + ", so the key is right and the value is not present")
+		default:
+			b.WriteString(". " + k + " is carried by " + strings.Join(carriers, ", ") + " — ask describe_type on those before concluding the fact is absent")
+		}
+	}
+	b.WriteString(". ")
+	b.WriteString(emptyAnswerAdvice)
+	return b.String()
+}
+
+const emptyAnswerAdvice = "An empty answer here means this filter found nothing, not that the fleet lacks the thing: the same fact often lives on another entity type under another key."
+
+// typesCarryingKey lists the entity types that carry a key, in this graph, as
+// observed rather than as declared. It samples the same way describe_type does:
+// the question is what the data has, not what the registry allows.
+func typesCarryingKey(g Graph, key string) []string {
+	seen := map[string]bool{}
+	for typ := range g.CountByType() {
+		for _, e := range g.ListEntities(typ) {
+			if hasKey(e, key) {
+				seen[typ] = true
+				break
+			}
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for t := range seen {
+		out = append(out, t)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func hasKey(e model.Entity, key string) bool {
+	for _, kv := range e.Identity {
+		if kv.Key == key {
+			return true
+		}
+	}
+	for _, kv := range e.Attributes {
+		if kv.Key == key {
+			return true
+		}
+	}
+	return false
+}
+
+// --- get_entity ---
+
+// GetEntityInput names the entity to fetch.
+type GetEntityInput struct {
+	EntityID  string `json:"entity_id" jsonschema:"the entity to fetch, by identity_fingerprint (preferred, stable across replicas), by identity written inline as type:key=value, or by id"`
+	AsOf      string `json:"as_of,omitempty" jsonschema:"RFC 3339 instant: read the entity as it was then (event-time), instead of now — COSTLY: this is a full REPLAY of the event log from the origin into a fresh graph, not a filter. Its cost tracks the size of this tenant's log, NOT how far back you asked: two minutes costs the same as twenty-four hours. Folds are bounded process-wide (NumCPU/2 at once) across every tenant and surface, so several queue behind each other and behind other readers. One per displayed row will take an instance down. A live read is in memory and entity_history is a linear range read: neither is in this class"`
+	Verbosity string `json:"verbosity,omitempty" jsonschema:"compact returns only id/type/label; full (default) adds identity and attributes"`
+}
+
+// GetEntityOutput carries the entity and any operator annotations (an overlay,
+// not producer truth — see annotate_entity).
+type GetEntityOutput struct {
+	Graph       GraphMeta       `json:"graph" jsonschema:"what the answering graph holds and how fresh it is; read this before treating absence as fact"`
+	Resolution  *Resolution     `json:"resolution,omitempty" jsonschema:"how often this entity is observed, and what that means for reading any timestamp about it; absent when no live producer declares a cadence"`
+	Entity      Entity          `json:"entity"`
+	Annotations *AnnotationOut  `json:"annotations,omitempty" jsonschema:"operator-added notes on this entity (not producer truth); absent when none. REPLICA-LOCAL: annotations live in a sidecar that log shipping does not replicate, so an absent block means EITHER no note exists OR this replica is not the one that received the write. Absence is therefore not proof; compare bellu_graph_annotations_entities across the pair"`
+	Canonical   *CanonicalGroup `json:"canonical,omitempty" jsonschema:"read-time identity overlay (ADR 0020): other entities that high-confidence same_as edges assert are the same real thing; absent when none. The entities are NOT merged — this is a derived view over the belief edges."`
+}
+
+func (s *Server) getEntity(ctx context.Context, _ *mcpsdk.CallToolRequest, in GetEntityInput) (*mcpsdk.CallToolResult, GetEntityOutput, error) {
+	if in.EntityID == "" {
+		return nil, GetEntityOutput{}, fmt.Errorf("an entity id is required")
+	}
+	compact, err := parseVerbosity(in.Verbosity)
+	if err != nil {
+		return nil, GetEntityOutput{}, err
+	}
+	g, err := s.graphAt(ctx, in.AsOf)
+	if err != nil {
+		return nil, GetEntityOutput{}, err
+	}
+	id, ok := g.ResolveHandle(in.EntityID)
+	if !ok {
+		return nil, GetEntityOutput{}, s.notFoundMsg(in.EntityID, in.AsOf)
+	}
+	e, ok, deleted := g.GetEntity(id)
+	if !ok {
+		return nil, GetEntityOutput{}, s.notFoundMsg(in.EntityID, in.AsOf)
+	}
+	return nil, GetEntityOutput{
+		Graph:       s.graphMeta(g, in.AsOf),
+		Resolution:  s.resolutionFor(id, in.AsOf),
+		Entity:      s.entityWithProducers(e, deleted, compact, in.AsOf),
+		Annotations: s.annotationFor(string(id)),
+		Canonical:   s.canonicalGroup(g, id),
+	}, nil
+}
+
+// --- get_neighbors ---
+
+// GetNeighborsInput parameterises the traversal.
+type GetNeighborsInput struct {
+	EntityID     string `json:"entity_id" jsonschema:"the entity to traverse outward from, by identity_fingerprint (preferred, stable across replicas), by identity written inline as type:key=value, or by id"`
+	RelationType string `json:"relation_type,omitempty" jsonschema:"only follow relations of this type (omit to follow any)"`
+	MaxDepth     int    `json:"max_depth,omitempty" jsonschema:"how many relation hops to traverse, 1 to 5 (default 1); same name as find_path and impact_of"`
+	After        string `json:"after,omitempty" jsonschema:"continue a previous page: pass the next_cursor the previous answer returned. Without it a node with more reachable neighbors than the limit CANNOT be fully explored — the limit is capped at 200 and there is no offset. Pages run closest-first (depth, then identity_fingerprint), an order every replica computes identically; the graph is live, so a neighbor that appears or vanishes between pages is reflected accordingly"`
+	Limit        int    `json:"limit,omitempty" jsonschema:"maximum neighbors to return (default 50, max 200); the closest are kept and totals always cover everything"`
+	AsOf         string `json:"as_of,omitempty" jsonschema:"RFC 3339 instant: traverse the graph as it was then (event-time), instead of now — COSTLY: this is a full REPLAY of the event log from the origin into a fresh graph, not a filter. Its cost tracks the size of this tenant's log, NOT how far back you asked: two minutes costs the same as twenty-four hours. Folds are bounded process-wide (NumCPU/2 at once) across every tenant and surface, so several queue behind each other and behind other readers. One per displayed row will take an instance down. A live read is in memory and entity_history is a linear range read: neither is in this class"`
+	Verbosity    string `json:"verbosity,omitempty" jsonschema:"compact returns only id/type/label per neighbor; full (default) adds identity and attributes"`
+}
+
+// Neighbor is a reachable entity plus the edge facts that reached it: the
+// relation type, its direction, and the hop distance from the start (#115).
+type Neighbor struct {
+	Entity
+	ViaRelation string `json:"via_relation" jsonschema:"relation type of the edge that first reached this entity"`
+	Direction   string `json:"direction" jsonschema:"outgoing if that edge points from the previous hop to this entity, incoming otherwise"`
+	Depth       int    `json:"depth" jsonschema:"hop distance from the start entity"`
+	// Provenance of the EDGE, not of the entity: the entity's own asserted_by /
+	// collected_by live on the embedded Entity.
+	ViaAssertedBy  []string `json:"via_asserted_by" jsonschema:"the producers asserting that EDGE right now (the entity's own producers are in asserted_by)"`
+	ViaCollectedBy []string `json:"via_collected_by" jsonschema:"the collection methods (instrumentation scopes) recorded on the edge's SOURCE entity, which an embedded relation INHERITS - not the method that observed the link. An edge observed by a different method than its source entity carries its source's method anyway, so this cannot tell you which method observed the link, and a methods inventory built from entities cannot show a collector that produces only relations: such a collector has no entity to carry its name. Two edges of one type are not the same claim either - an adjacency protocol STATES a link, a forwarding table lets one be INFERRED - and this field cannot draw that distinction for you. One producer running several methods contributes all of them, the liveness reference being keyed on the speaker: the producer AND the method. An EMPTY list means the source entity's producers recorded no scope; NULL means not rendered here, which is the case on an as-of read - via_provenance then says so in words"`
+	// ViaProvenance is the sentence form of the two nulls above. A reader that
+	// crosses two null fields concludes "not available in this view" only if
+	// something says so; the fields themselves cannot.
+	ViaProvenance string `json:"via_provenance,omitempty" jsonschema:"present only when the edge's producer lists are withheld rather than empty: it says in words why, and what it costs you. Absent means the lists above can be read as they are"`
+	// ResolvedEntity is the read-time binding of an observed network.endpoint to
+	// the canonical host/service.listener it denotes (#184). The stored edge
+	// still targets the endpoint; this is a derived overlay, never persisted.
+	ResolvedEntity *Entity `json:"resolved_entity,omitempty" jsonschema:"for an observed network.endpoint, the canonical service.listener/host it resolves to; absent when the peer is external/off-fleet or unresolved"`
+}
+
+// GetNeighborsOutput carries the reachable entities with their edges.
+type GetNeighborsOutput struct {
+	Graph     GraphMeta  `json:"graph" jsonschema:"what the answering graph holds and how fresh it is; read this before treating absence as fact"`
+	Neighbors []Neighbor `json:"neighbors"`
+	Count     int        `json:"count" jsonschema:"neighbors returned (after the limit)"`
+	// NextCursor makes the rest of a wide neighborhood reachable. Before it, a
+	// node with more neighbors than the limit could not be fully explored at
+	// all: the answer named the total and offered no way to reach past it.
+	NextCursor string `json:"next_cursor,omitempty" jsonschema:"pass this as after to get the next page, closest-first; absent when this page is the last"`
+	// Truncation is the sentence form of Truncated, because a bare flag beside
+	// a number has twice failed to reach a reader who was looking for it.
+	Truncation string `json:"truncation,omitempty" jsonschema:"set when the neighborhood is wider than this answer: how many of how many, and that the rest is reachable with after=next_cursor. Absent means complete"`
+	Total      int    `json:"total" jsonschema:"neighbors reachable within max_depth before the limit was applied"`
+	Truncated  bool   `json:"truncated" jsonschema:"true if more neighbors were reachable than returned; raise the limit or narrow relation_type"`
+}
+
+func (s *Server) getNeighbors(ctx context.Context, _ *mcpsdk.CallToolRequest, in GetNeighborsInput) (*mcpsdk.CallToolResult, GetNeighborsOutput, error) {
+	if in.EntityID == "" {
+		return nil, GetNeighborsOutput{}, fmt.Errorf("an entity_id is required")
+	}
+	compact, err := parseVerbosity(in.Verbosity)
+	if err != nil {
+		return nil, GetNeighborsOutput{}, err
+	}
+	depth := in.MaxDepth
+	if depth <= 0 {
+		depth = 1
+	}
+	if depth > maxDepth {
+		return nil, GetNeighborsOutput{}, fmt.Errorf("max_depth %d exceeds the maximum of %d; try a smaller depth", in.MaxDepth, maxDepth)
+	}
+	limit := clampLimit(in.Limit)
+	g, err := s.graphAt(ctx, in.AsOf)
+	if err != nil {
+		return nil, GetNeighborsOutput{}, err
+	}
+	start, ok := g.ResolveHandle(in.EntityID)
+	if !ok {
+		return nil, GetNeighborsOutput{}, s.notFoundMsg(in.EntityID, in.AsOf)
+	}
+	if _, ok, _ := g.GetEntity(start); !ok {
+		return nil, GetNeighborsOutput{}, s.notFoundMsg(in.EntityID, in.AsOf)
+	}
+	// BFS through the edge view so each neighbor carries how it was reached;
+	// the first (shallowest) edge to reach an entity wins, like a shortest path.
+	visited := map[model.EntityID]struct{}{start: {}}
+	frontier := []model.EntityID{start}
+	out := GetNeighborsOutput{Neighbors: []Neighbor{}}
+	for d := 1; d <= depth && len(frontier) > 0; d++ {
+		var next []model.EntityID
+		for _, cur := range frontier {
+			edges := edgesOf(g, cur, in.RelationType)
+			for i := range edges {
+				e := &edges[i]
+				if _, seen := visited[e.other]; seen {
+					continue
+				}
+				visited[e.other] = struct{}{}
+				next = append(next, e.other)
+				ent, _, _ := g.GetEntity(e.other)
+				nb := Neighbor{
+					Entity:      entityOutV(ent, false, compact),
+					ViaRelation: e.rel.Type,
+					Direction:   e.direction,
+					Depth:       d,
+				}
+				s.attachEdgeProvenance(&nb, e.rel.ID, in.AsOf)
+				if ent.Type == model.TypeNetworkEndpoint {
+					if resolved, ok := resolveEndpoint(g, ent); ok {
+						ro := entityOutV(resolved, false, compact)
+						nb.ResolvedEntity = &ro
+					}
+				}
+				out.Neighbors = append(out.Neighbors, nb)
+			}
+		}
+		frontier = next
+	}
+	// Digest then cap: the full reachable set is counted, the closest `limit`
+	// (BFS order is shallowest-first) are returned — matching find_entities and
+	// impact_of, so get_neighbors is no longer the one list tool without a digest.
+	out.Total = len(out.Neighbors)
+	// Ordered by (depth, identity_fingerprint). Depth first keeps the property
+	// that made this answer useful — the closest neighbors matter most — and the
+	// fingerprint breaks ties into a total order that every replica computes the
+	// same way. Paging on the fingerprint alone would have destroyed the
+	// shallowest-first ordering to gain nothing.
+	sort.SliceStable(out.Neighbors, func(i, j int) bool {
+		if out.Neighbors[i].Depth != out.Neighbors[j].Depth {
+			return out.Neighbors[i].Depth < out.Neighbors[j].Depth
+		}
+		return out.Neighbors[i].IdentityFingerprint < out.Neighbors[j].IdentityFingerprint
+	})
+	page, cursor, perr := pageNeighbors(out.Neighbors, in.After, limit)
+	if perr != nil {
+		return nil, GetNeighborsOutput{}, perr
+	}
+	out.Neighbors, out.NextCursor, out.Truncated = page, cursor, cursor != ""
+	if cursor != "" {
+		out.Truncation = fmt.Sprintf(
+			"%d of %d reachable neighbors returned, closest first; the rest is reachable by calling again with after=%q, and only that way",
+			len(page), out.Total, cursor)
+	}
+	out.Count = len(out.Neighbors)
+	out.Graph = s.graphMeta(g, in.AsOf)
+	return nil, out, nil
+}
+
+// --- entity_history ---
+
+// EntityHistoryInput bounds the timeline.
+type EntityHistoryInput struct {
+	EntityID  string `json:"entity_id" jsonschema:"the entity whose timeline to return, by identity_fingerprint (preferred, stable across replicas), by identity written inline as type:key=value, or by id"`
+	Since     string `json:"since,omitempty" jsonschema:"RFC 3339 lower bound on event-time (inclusive)"`
+	Until     string `json:"until,omitempty" jsonschema:"RFC 3339 upper bound on event-time (inclusive)"`
+	AsKnownAt string `json:"as_known_at,omitempty" jsonschema:"RFC 3339 audit cut-off: include only changes BelluGraph had recorded by this instant"`
+	// Budget controls (#115): the timeline is heartbeat-dominated on a live
+	// instance, so heartbeats are excluded and the result is bounded by default.
+	ChangeType        string `json:"change_type,omitempty" jsonschema:"only changes of this type, e.g. entity.state_changed or relation.removed (omit for all)"`
+	IncludeHeartbeats bool   `json:"include_heartbeats,omitempty" jsonschema:"include entity.unchanged heartbeats (excluded by default; they dominate raw timelines)"`
+	Limit             int    `json:"limit,omitempty" jsonschema:"maximum changes to return (default 50, max 200); when truncated the newest are kept"`
+}
+
+// EntityHistoryOutput carries the timeline, oldest first.
+type EntityHistoryOutput struct {
+	Graph      GraphMeta   `json:"graph" jsonschema:"what the answering graph holds and how fresh it is; read this before treating absence as fact"`
+	Resolution *Resolution `json:"resolution,omitempty" jsonschema:"how finely these timestamps may be read; absent when no live producer declares a cadence"`
+	// TimelineScope warns that this timeline covers ONE incarnation. History is
+	// indexed by the node-local id, and an entity that returns after the
+	// resurrection window is minted a fresh one — so an entity that flaps shows
+	// a short, calm timeline while the flapping itself is invisible here. It is
+	// set when the timeline opens on a creation, which is when earlier
+	// incarnations could exist and be missing.
+	TimelineScope string   `json:"timeline_scope,omitempty" jsonschema:"what this timeline does NOT cover; read it before concluding the entity has a short history"`
+	Changes       []Change `json:"changes"`
+	Count         int      `json:"count" jsonschema:"number of changes returned"`
+	ChangeDigest
+}
+
+func (s *Server) entityHistory(ctx context.Context, _ *mcpsdk.CallToolRequest, in EntityHistoryInput) (*mcpsdk.CallToolResult, EntityHistoryOutput, error) {
+	if in.EntityID == "" {
+		return nil, EntityHistoryOutput{}, fmt.Errorf("an entity_id is required")
+	}
+	since, err := parseOptTime(in.Since, "since")
+	if err != nil {
+		return nil, EntityHistoryOutput{}, err
+	}
+	until, err := parseOptTime(in.Until, "until")
+	if err != nil {
+		return nil, EntityHistoryOutput{}, err
+	}
+	known, err := parseOptTime(in.AsKnownAt, "as_known_at")
+	if err != nil {
+		return nil, EntityHistoryOutput{}, err
+	}
+	filter, err := newChangeFilter(in.ChangeType, in.IncludeHeartbeats)
+	if err != nil {
+		return nil, EntityHistoryOutput{}, err
+	}
+	limit := clampLimit(in.Limit)
+	// History is read from the log by id, so a fingerprint is resolved against
+	// the live graph first (ADR 0035). A fingerprint whose entity has left the
+	// projection entirely still passes through as-is and simply finds nothing,
+	// which is the same answer an evicted id gets.
+	histID, ok := s.graph.ResolveHandle(in.EntityID)
+	if !ok {
+		return nil, EntityHistoryOutput{}, s.notFoundMsg(in.EntityID, "")
+	}
+	evs, err := s.store.ReadByEntity(ctx, histID)
+	if err != nil {
+		return nil, EntityHistoryOutput{}, fmt.Errorf("reading history: %w", err)
+	}
+	// entity_history takes no as_of: it is a linear range read of the log, and
+	// the cadence it reports is the live one, which the block already says.
+	out := EntityHistoryOutput{Resolution: s.resolutionFor(histID, "")}
+	filtered := evs[:0:0]
+	for _, ev := range evs {
+		et, rt := ev.Times()
+		if !since.IsZero() && et.Before(since) {
+			continue
+		}
+		if !until.IsZero() && et.After(until) {
+			continue
+		}
+		if !known.IsZero() && rt.After(known) {
+			continue
+		}
+		kept, heartbeat := filter.keep(ev)
+		if heartbeat {
+			out.HeartbeatsExcluded++
+		}
+		if !kept {
+			continue
+		}
+		out.tally(ev)
+		filtered = append(filtered, ev)
+	}
+	sort.SliceStable(filtered, func(i, j int) bool {
+		ei, _ := filtered[i].Times()
+		ej, _ := filtered[j].Times()
+		return ei.Before(ej)
+	})
+	out.Total = len(filtered)
+	// A timeline that opens on a creation may be one incarnation of an older
+	// identity: history is keyed by the node-local id, and a re-mint starts a
+	// fresh one. Say so rather than let a three-event answer read as "nothing
+	// ever happened to this" — an entity that flapped nine times in three days
+	// looked exactly that calm here.
+	if len(filtered) > 0 && filtered[0].Entity != nil && filtered[0].Entity.ChangeType == model.EntityCreated {
+		created, _ := filtered[0].Times()
+		out.TimelineScope = "this timeline covers ONE incarnation of the entity, opening at its creation on " +
+			created.UTC().Format(time.RFC3339) + ". History is keyed by the id local to this node, and an entity that returns after " +
+			"the resurrection window is minted a new one — so if this identity existed before that instant, those events are under a " +
+			"different id and are NOT here. A short, calm timeline is therefore not evidence of a calm entity. To see across " +
+			"incarnations, ask recent_changes with from/to over the period and match on the identity."
+	}
+	if len(filtered) > limit {
+		// keep the newest changes; the slice stays sorted oldest first.
+		filtered = filtered[len(filtered)-limit:]
+		out.Truncated = true
+	}
+	out.Count = len(filtered)
+	out.Changes = make([]Change, len(filtered))
+	for i, ev := range filtered {
+		out.Changes[i] = changeOut(ev)
+	}
+	// A since that reaches before the retention horizon returns a short timeline
+	// for a reason the caller cannot see from the events themselves.
+	if !since.IsZero() {
+		upper := until
+		if upper.IsZero() {
+			upper = s.now()
+		}
+		if w := s.horizonWarning(since, upper); w != "" {
+			if out.TimelineScope == "" {
+				out.TimelineScope = w
+			} else {
+				out.TimelineScope = w + " ALSO: " + out.TimelineScope
+			}
+		}
+	}
+	out.finishDigest()
+	out.Graph = s.graphMeta(s.graph, "")
+	return nil, out, nil
+}
+
+// --- recent_changes ---
+
+// RecentChangesInput selects a window and kind of change.
+type RecentChangesInput struct {
+	Window string `json:"window,omitempty" jsonschema:"a positive Go duration looking back from now, e.g. 15m, 2h, 24h (default 1h); for a window in the past give from/to instead"`
+	// From/To target a past window directly. Reaching an incident from an hours-long
+	// window used to be impossible here: the limit keeps the NEWEST changes, so an
+	// event two hours back was absent from a window that claimed to cover it, and
+	// the answer read as "nothing happened" (#346).
+	From string `json:"from,omitempty" jsonschema:"RFC 3339 start instant — use instead of window to investigate a past window (e.g. the ten minutes before an alert)"`
+	To   string `json:"to,omitempty" jsonschema:"RFC 3339 end instant (default now; only valid with from)"`
+	Kind string `json:"kind,omitempty" jsonschema:"filter: entity, relation, structural, or all (default all)"`
+	// Budget controls (#115): a live window is heartbeat-dominated, so
+	// heartbeats are excluded and the result is bounded by default.
+	ChangeType        string            `json:"change_type,omitempty" jsonschema:"only changes of this type, e.g. entity.created or relation.removed (omit for all)"`
+	Scope             string            `json:"scope,omitempty" jsonschema:"only changes observed by this instrumentation scope — one per collection method, e.g. senhub-agent/snmp-route. This is how you answer which of several producers is losing entities. COSTS MORE than the other filters: the scope is not in the time index, so each candidate in the window must be decoded to test it; narrow the window when using it. Exact match, no wildcards"`
+	Match             map[string]string `json:"match,omitempty" jsonschema:"only changes to entities carrying every one of these key=value pairs, matched against identifying AND descriptive attributes. Tested against the entity AS THE EVENT SAW IT, not as it is now — so an entity DELETED during the window still matches on the attribute it died with, which is usually the one you are looking for. RELATION changes never match an attribute filter (they carry no entity) and are excluded while this is set. COSTS MORE: an attribute is not in the time index, so each candidate must be decoded; narrow the window when using it"`
+	IncludeHeartbeats bool              `json:"include_heartbeats,omitempty" jsonschema:"include entity.unchanged heartbeats (excluded by default; they dominate raw windows)"`
+	Limit             int               `json:"limit,omitempty" jsonschema:"maximum changes to return (default 50, max 200); the newest are kept"`
+}
+
+// RecentChangesOutput carries the changes, newest first.
+type RecentChangesOutput struct {
+	Graph   GraphMeta `json:"graph" jsonschema:"what the answering graph holds and how fresh it is; read this before treating absence as fact"`
+	Changes []Change  `json:"changes"`
+	Count   int       `json:"count" jsonschema:"number of changes returned"`
+	// WindowFrom/WindowTo name the window that was actually read, so an answer
+	// is never mistaken for one about a different span.
+	WindowFrom string `json:"window_from" jsonschema:"RFC 3339 start of the window actually read"`
+	WindowTo   string `json:"window_to" jsonschema:"RFC 3339 end of the window actually read"`
+	// Covered is set only when the limit truncated the answer: it states, in
+	// words, which slice of the window came back and how to reach the rest.
+	Covered string `json:"covered,omitempty" jsonschema:"set when truncated: which part of the requested window this answer actually covers, and how to get the rest"`
+	ChangeDigest
+}
+
+func (s *Server) recentChanges(ctx context.Context, _ *mcpsdk.CallToolRequest, in RecentChangesInput) (*mcpsdk.CallToolResult, RecentChangesOutput, error) {
+	if in.Window == "" && in.From == "" {
+		in.Window = "1h"
+	}
+	from, to, err := s.diffBounds(GraphDiffInput{Window: in.Window, From: in.From, To: in.To})
+	if err != nil {
+		return nil, RecentChangesOutput{}, err
+	}
+	kind := strings.ToLower(strings.TrimSpace(in.Kind))
+	switch kind {
+	case "", "all", "entity", "relation", "structural":
+	default:
+		return nil, RecentChangesOutput{}, fmt.Errorf("invalid kind %q: use entity, relation, structural, or all", in.Kind)
+	}
+	filter, err := newChangeFilterFull(in.ChangeType, in.Scope, in.Match, in.IncludeHeartbeats)
+	if err != nil {
+		return nil, RecentChangesOutput{}, err
+	}
+	limit := clampLimit(in.Limit)
+	out := RecentChangesOutput{Changes: []Change{}}
+	out.WindowFrom, out.WindowTo = formatTime(from), formatTime(to)
+	// Walk the time index newest-first and classify from the tag, so an event a
+	// filter excludes is skipped without a point lookup or a decode. A window is
+	// heartbeat-dominated — millions of exclusions per hour at fleet scale — and
+	// this read used to pay full resolution for every one of them (#351). Only
+	// the entries that land in the returned page are resolved.
+	err = s.store.ScanTimeIndex(ctx, from, to.Add(time.Nanosecond), true, func(e store.TimeIndexEntry) error {
+		ct, structural := e.ChangeType, e.Structural
+		var ev model.Event
+		resolved := false
+		if !e.Tagged {
+			// Pre-tagging row: classification requires the record, as it always
+			// did. Retention ages these out; new writes never take this path.
+			rev, ok, rerr := s.store.Resolve(e.Seq)
+			if rerr != nil || !ok {
+				return rerr
+			}
+			ev, resolved = rev, true
+			ct = eventChangeType(ev)
+			structural = ev.Relation != nil && ev.Relation.Relation.Structural
+		}
+		if !keepKindClass(ct, structural, kind) {
+			return nil
+		}
+		kept, heartbeat := filter.keepClass(ct)
+		if heartbeat {
+			out.HeartbeatsExcluded++
+		}
+		if !kept {
+			return nil
+		}
+		// A scope filter cannot be answered from the index, so it resolves here —
+		// BEFORE Total is counted and before the page bound. Testing it on the
+		// bounded page instead would keep the newest changes of any scope and then
+		// discard most of them, hiding older changes from the requested scope
+		// behind newer ones from another.
+		if filter.needsRecord() {
+			if !resolved {
+				rev, ok, rerr := s.store.Resolve(e.Seq)
+				if rerr != nil || !ok {
+					return rerr
+				}
+				ev, resolved = rev, true
+			}
+			if !filter.keepScope(ev) {
+				return nil
+			}
+		}
+		out.Total++
+		out.tallyClass(ct)
+		if len(out.Changes) < limit {
+			if !resolved {
+				rev, ok, rerr := s.store.Resolve(e.Seq)
+				if rerr != nil || !ok {
+					return rerr
+				}
+				ev = rev
+			}
+			out.Changes = append(out.Changes, changeOut(ev))
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, RecentChangesOutput{}, fmt.Errorf("reading changes: %w", err)
+	}
+	out.Truncated = out.Total > limit
+	out.Count = len(out.Changes)
+	// Retention first: a window reaching before the horizon is short for a
+	// reason the caller cannot see, and that reason outranks truncation.
+	if w := s.horizonWarning(from, to); w != "" {
+		out.Covered = w
+	}
+	if out.Truncated && len(out.Changes) > 0 {
+		// The limit keeps the NEWEST changes, so a truncated answer silently
+		// covers only the tail of the window it was asked for — which is how a
+		// graph holding the answer reads as a graph that has none (#346). Say
+		// which slice was actually returned, and how to get the rest.
+		oldest := out.Changes[len(out.Changes)-1].EventTime
+		trunc := fmt.Sprintf(
+			"PARTIAL: %d of %d matching changes returned, covering %s to %s — NOT the whole window you asked for (%s to %s). "+
+				"%d older changes in the window are not shown. To see them, ask again with from/to bounding the sub-window you care about "+
+				"(that is how you investigate the minutes before an incident), or narrow with kind/change_type.",
+			out.Count, out.Total, oldest, out.WindowTo, out.WindowFrom, out.WindowTo, out.Total-out.Count)
+		if out.Covered == "" {
+			out.Covered = trunc
+		} else {
+			// Both cuts apply: say so in the order a reader must act on them.
+			out.Covered += " AND " + trunc
+		}
+	}
+	out.finishDigest()
+	out.Graph = s.graphMeta(s.graph, "")
+	return nil, out, nil
+}
+
+// keepKindClass applies the kind filter over the classification alone, so an
+// index scan can apply it without resolving the event.
+func keepKindClass(ct model.ChangeType, structural bool, kind string) bool {
+	switch kind {
+	case "entity":
+		return ct.IsEntity()
+	case "relation":
+		return ct.IsRelation()
+	case "structural":
+		return structural
+	default:
+		return true
+	}
+}
+
+// ChangeDigest summarizes the full match set of a timeline tool so the model
+// can budget follow-ups without paging through everything: how many changes
+// matched in total, whether the returned slice was truncated, how many
+// heartbeats were excluded, and the matching changes by type (#115).
+type ChangeDigest struct {
+	Total              int         `json:"total" jsonschema:"changes matching the filters before the limit was applied"`
+	Truncated          bool        `json:"truncated" jsonschema:"true if more changes matched than were returned; narrow the window or filters, or raise the limit"`
+	HeartbeatsExcluded int         `json:"heartbeats_excluded,omitempty" jsonschema:"entity.unchanged heartbeats excluded (set include_heartbeats to see them)"`
+	ByChangeType       []TypeCount `json:"by_change_type,omitempty" jsonschema:"matching changes per change type, before the limit"`
+}
+
+func (d *ChangeDigest) tally(ev model.Event) {
+	d.tallyClass(eventChangeType(ev))
+}
+
+// tallyClass is tally over the change type alone — the index-scan form.
+func (d *ChangeDigest) tallyClass(c model.ChangeType) {
+	ct := c.String()
+	for i := range d.ByChangeType {
+		if d.ByChangeType[i].Type == ct {
+			d.ByChangeType[i].Count++
+			return
+		}
+	}
+	d.ByChangeType = append(d.ByChangeType, TypeCount{Type: ct, Count: 1})
+}
+
+func (d *ChangeDigest) finishDigest() {
+	sort.Slice(d.ByChangeType, func(i, j int) bool {
+		if d.ByChangeType[i].Count != d.ByChangeType[j].Count {
+			return d.ByChangeType[i].Count > d.ByChangeType[j].Count
+		}
+		return d.ByChangeType[i].Type < d.ByChangeType[j].Type
+	})
+}
+
+// changeFilter is the shared per-change budget filter: an explicit change_type
+// wins (asking for entity.unchanged explicitly includes heartbeats); otherwise
+// heartbeats are excluded unless opted in.
+type changeFilter struct {
+	changeType        model.ChangeType
+	scope             string
+	match             map[string]string
+	includeHeartbeats bool
+}
+
+func newChangeFilter(changeType string, includeHeartbeats bool) (changeFilter, error) {
+	return newChangeFilterScoped(changeType, "", includeHeartbeats)
+}
+
+// newChangeFilterScoped adds the instrumentation-scope filter (#394).
+//
+// The scope cannot be tested from the time index: the index carries the change
+// type and the structural flag, which is what lets a heartbeat-dominated window
+// be walked without decoding millions of records (#351). So a scope filter has
+// to resolve each candidate, and it is the one filter here that costs decoding.
+//
+// It is still applied BEFORE the page bound and before Total is counted, not
+// after. Filtering the page after bounding would keep the newest N changes of
+// any scope and then discard most of them: the answer would hold fewer than the
+// limit with no reason given, and older changes from the requested scope would
+// be invisible behind newer ones from another. That is the truncation-that-lies
+// defect, bought for a performance win.
+func newChangeFilterScoped(changeType, scope string, includeHeartbeats bool) (changeFilter, error) {
+	return newChangeFilterFull(changeType, scope, nil, includeHeartbeats)
+}
+
+// newChangeFilterFull adds the attribute filter (#380).
+//
+// The attribute is tested against the entity AS THE EVENT SAW IT, not against
+// the live projection, and that choice is the whole design.
+//
+// Resolving the matching id set from the live graph first — the shape the issue
+// proposed — answers "changes to entities that carry this attribute NOW". An
+// entity deleted during the window is no longer in the projection, so its
+// changes would vanish from the filtered view. For an incident that is exactly
+// backwards: the entities worth looking at are the ones that died. A filter that
+// silently dropped every deletion would reproduce, inside the feature meant to
+// fix a partial answer, the defect of a partial answer.
+//
+// Testing the event's own snapshot avoids the trap instead of handling it. A
+// deletion event carries the last-known state, so an entity that dies mid-window
+// still matches on the attribute it died with — and no store-format change is
+// needed, which is what the issue priced this feature at.
+//
+// The cost is decoding: an attribute is not in the index tag. So this filter,
+// like the scope filter, resolves each candidate — and it is applied before the
+// page bound, never on the bounded page.
+func newChangeFilterFull(changeType, scope string, match map[string]string, includeHeartbeats bool) (changeFilter, error) {
+	ct, err := parseChangeType(changeType)
+	if err != nil {
+		return changeFilter{}, err
+	}
+	return changeFilter{changeType: ct, scope: scope, match: match, includeHeartbeats: includeHeartbeats}, nil
+}
+
+// needsRecord reports whether this filter can decide from the index alone.
+func (f changeFilter) needsRecord() bool { return f.scope != "" || len(f.match) > 0 }
+
+// keepScope tests the resolved record against the scope and attribute filters.
+func (f changeFilter) keepScope(ev model.Event) bool {
+	if f.scope != "" && eventScope(ev) != f.scope {
+		return false
+	}
+	if len(f.match) > 0 {
+		// A relation change carries no entity, so it cannot answer a question
+		// about entity attributes. It is excluded rather than guessed at — and
+		// the tool says so, because an exclusion a caller does not know about is
+		// the partial answer this feature exists to prevent.
+		if ev.Entity == nil {
+			return false
+		}
+		if !ev.Entity.Entity.MatchAll(f.match) {
+			return false
+		}
+	}
+	return true
+}
+
+func eventScope(ev model.Event) string {
+	switch {
+	case ev.Entity != nil:
+		return ev.Entity.Scope
+	case ev.Relation != nil:
+		return ev.Relation.Scope
+	}
+	return ""
+}
+
+func (f changeFilter) keep(ev model.Event) (kept, heartbeat bool) {
+	return f.keepClass(eventChangeType(ev))
+}
+
+// keepClass is keep over the change type alone — the index-scan form.
+func (f changeFilter) keepClass(ct model.ChangeType) (kept, heartbeat bool) {
+	if f.changeType != model.ChangeUnspecified {
+		return ct == f.changeType, false
+	}
+	if ct == model.EntityUnchanged && !f.includeHeartbeats {
+		return false, true
+	}
+	return true, false
+}
+
+func parseChangeType(s string) (model.ChangeType, error) {
+	if s == "" {
+		return model.ChangeUnspecified, nil
+	}
+	for c := model.EntityCreated; c <= model.RelationAttributeChanged; c++ {
+		if c.String() == s {
+			return c, nil
+		}
+	}
+	return 0, fmt.Errorf("invalid change_type %q: use one of entity.created, entity.deleted, "+
+		"entity.attribute_updated, entity.state_changed, entity.unchanged, relation.added, "+
+		"relation.removed, or relation.attribute_changed", s)
+}
+
+func eventChangeType(ev model.Event) model.ChangeType {
+	switch {
+	case ev.Entity != nil:
+		return ev.Entity.ChangeType
+	case ev.Relation != nil:
+		return ev.Relation.ChangeType
+	default:
+		return model.ChangeUnspecified
+	}
+}
+
+// pageByFingerprint returns one page of a fingerprint-ordered slice and the
+// cursor for the next, empty when the page is the last.
+//
+// It exists because an answer used to declare what it was withholding and then
+// offer no way to obtain it: a tenant holding 236 entities of one type returned
+// 200, and the remaining 36 were unreachable by any sequence of calls — and for
+// a type carrying no attributes there was not even a filter to slice on. A read
+// surface that cannot enumerate is broken, not merely bounded.
+//
+// The cursor is the last returned fingerprint, opaque so a caller cannot build
+// one by hand and depend on its shape. An offset was rejected: the projection is
+// live, so an offset over a changing set silently skips and repeats entities,
+// which is the quiet wrongness this whole surface works to remove. Resuming
+// AFTER a key cannot skip or repeat anything that still exists — it can only
+// reflect that the graph moved, which is the truth.
+func pageByFingerprint(all []model.Entity, after string, limit int) ([]model.Entity, string, error) {
+	// all arrives already ordered by fingerprint, read from the projection's hash
+	// index. Nothing is hashed here: ordering a page of fifty by recomputing
+	// every candidate's fingerprint cost 11k allocations where 1k sufficed, and
+	// doing it inside a sort comparator cost 278k, which the bench gate caught.
+	if after != "" {
+		fp, derr := decodeCursor(after)
+		if derr != nil {
+			return nil, "", fmt.Errorf("invalid after %q: pass the next_cursor from the previous answer verbatim", after)
+		}
+		i := sort.Search(len(all), func(i int) bool { return all[i].IdentityHash() > fp })
+		all = all[i:]
+	}
+	if len(all) <= limit {
+		return all, "", nil
+	}
+	page := all[:limit]
+	return page, encodeCursor(page[len(page)-1].IdentityHash()), nil
+}
+
+// encodeCursor/decodeCursor keep the cursor opaque. Base64 of the fingerprint:
+// a caller that reads it and starts composing cursors has coupled itself to an
+// ordering we must then preserve forever.
+func encodeCursor(fp string) string { return base64.RawURLEncoding.EncodeToString([]byte(fp)) }
+
+func decodeCursor(c string) (string, error) {
+	b, err := base64.RawURLEncoding.DecodeString(c)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// pageNeighbors pages a (depth, fingerprint)-ordered neighbor list.
+//
+// The cursor carries both halves because depth leads the order: resuming on the
+// fingerprint alone would re-serve every shallower neighbor whose fingerprint
+// sorts after the cursor. A neighbor that vanished between two pages is simply
+// absent from the later one — the graph is live, and a page sequence is not a
+// snapshot.
+func pageNeighbors(all []Neighbor, after string, limit int) ([]Neighbor, string, error) {
+	key := func(n Neighbor) string { return fmt.Sprintf("%09d\u0000%s", n.Depth, n.IdentityFingerprint) }
+	if after != "" {
+		want, derr := decodeCursor(after)
+		if derr != nil {
+			return nil, "", fmt.Errorf("invalid after %q: pass the next_cursor from the previous answer verbatim", after)
+		}
+		i := 0
+		for i < len(all) && key(all[i]) <= want {
+			i++
+		}
+		all = all[i:]
+	}
+	if len(all) <= limit {
+		return all, "", nil
+	}
+	page := all[:limit]
+	return page, encodeCursor(key(page[len(page)-1])), nil
+}
+
+func clampLimit(limit int) int {
+	switch {
+	case limit <= 0:
+		return defaultLimit
+	case limit > maxLimit:
+		return maxLimit
+	}
+	return limit
+}
+
+// --- describe_schema ---
+
+// DescribeSchemaInput optionally pins the instant to describe.
+type DescribeSchemaInput struct {
+	AsOf string `json:"as_of,omitempty" jsonschema:"RFC 3339 instant: describe the graph as it was then (event-time), instead of now — COSTLY: this is a full REPLAY of the event log from the origin into a fresh graph, not a filter. Its cost tracks the size of this tenant's log, NOT how far back you asked: two minutes costs the same as twenty-four hours. Folds are bounded process-wide (NumCPU/2 at once) across every tenant and surface, so several queue behind each other and behind other readers. One per displayed row will take an instance down. A live read is in memory and entity_history is a linear range read: neither is in this class"`
+}
+
+// TypeCount pairs a type name with the number of instances in the graph.
+type TypeCount struct {
+	Type  string `json:"type"`
+	Count int    `json:"count"`
+	// DisplayNameAbsent marks a type BelluGraph has DECIDED not to give a display
+	// name, so one call is enough to check every type present (#408). Unset
+	// means the type has one, and an entity of that type returning none is a
+	// gap rather than a decision.
+	DisplayNameAbsent bool `json:"display_name_absent,omitempty" jsonschema:"true when this type deliberately has NO display_name; ask describe_type for the reason. When false the type has one, so an entity missing it is a gap, not a decision"`
+}
+
+// GovernanceAttributeInfo advertises one cross-cutting governance attribute key
+// that may appear on any entity and can be filtered via find_entities.
+type GovernanceAttributeInfo struct {
+	Key     string   `json:"key"`
+	Summary string   `json:"summary"`
+	Example string   `json:"example,omitempty"`
+	Values  []string `json:"values,omitempty" jsonschema:"well-known values when the key is an open enum"`
+	Semconv bool     `json:"semconv" jsonschema:"true when this is a standard OTel semantic-convention key reused verbatim"`
+	Was     []string `json:"was,omitempty" jsonschema:"spellings this key used to have; data emitted before the rename still carries them and is not rewritten, so filter on both when reading history"`
+}
+
+// DescribeSchemaOutput summarizes the graph's contents.
+type DescribeSchemaOutput struct {
+	Graph          GraphMeta   `json:"graph" jsonschema:"what the answering graph holds and how fresh it is; read this before treating absence as fact"`
+	Description    string      `json:"description" jsonschema:"a natural-language summary of what this BelluGraph instance currently knows"`
+	EntityTypes    []TypeCount `json:"entity_types"`
+	RelationTypes  []TypeCount `json:"relation_types"`
+	TotalEntities  int         `json:"total_entities"`
+	TotalRelations int         `json:"total_relations"`
+	// GovernanceAttributes is the advisory cross-cutting vocabulary (ownership,
+	// criticality, location, lifecycle) that may decorate any entity; it is
+	// constant, not derived from the graph, so the consumer learns what it can
+	// filter on even before any producer emits these keys.
+	GovernanceAttributes []GovernanceAttributeInfo `json:"governance_attributes" jsonschema:"operator-supplied descriptive attributes that may appear on any entity and can be filtered via find_entities (advisory; an entity carries them only if its producer emits them)"`
+}
+
+func (s *Server) describeSchema(ctx context.Context, _ *mcpsdk.CallToolRequest, in DescribeSchemaInput) (*mcpsdk.CallToolResult, DescribeSchemaOutput, error) {
+	g, err := s.graphAt(ctx, in.AsOf)
+	if err != nil {
+		return nil, DescribeSchemaOutput{}, err
+	}
+	entTypes := sortedCounts(g.CountByType())
+	// Only entity types can declare they have no display name; sortedCounts is
+	// shared with relation types, so the flag is set here rather than in it.
+	for i := range entTypes {
+		if _, declared := model.DisplayNameAbsentReason(entTypes[i].Type); declared {
+			entTypes[i].DisplayNameAbsent = true
+		}
+	}
+	relTypes := sortedCounts(relationCounts(g.ListRelations("", "", "")))
+	out := DescribeSchemaOutput{
+		EntityTypes:          entTypes,
+		RelationTypes:        relTypes,
+		TotalEntities:        g.EntityCount(),
+		TotalRelations:       g.RelationCount(),
+		GovernanceAttributes: governanceVocabulary(),
+	}
+	out.Description = describe(out)
+	out.Graph = s.graphMeta(g, in.AsOf)
+	return nil, out, nil
+}
+
+// governanceVocabulary maps the model's advisory governance registry to the
+// wire shape. It is constant — the same on an empty graph as on a full one.
+func governanceVocabulary() []GovernanceAttributeInfo {
+	src := model.GovernanceAttributes()
+	out := make([]GovernanceAttributeInfo, len(src))
+	for i, a := range src {
+		out[i] = GovernanceAttributeInfo{
+			Key:     a.Key,
+			Summary: a.Summary,
+			Example: a.Example,
+			Values:  a.Values,
+			Semconv: a.Semconv,
+			Was:     a.Was,
+		}
+	}
+	return out
+}
+
+func relationCounts(rels []model.Relation) map[string]int {
+	m := make(map[string]int)
+	for _, r := range rels {
+		m[r.Type]++
+	}
+	return m
+}
+
+func sortedCounts(m map[string]int) []TypeCount {
+	out := make([]TypeCount, 0, len(m))
+	for t, n := range m {
+		out = append(out, TypeCount{Type: t, Count: n})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Count != out[j].Count {
+			return out[i].Count > out[j].Count
+		}
+		return out[i].Type < out[j].Type
+	})
+	return out
+}
+
+func describe(o DescribeSchemaOutput) string {
+	if o.TotalEntities == 0 {
+		return "This BelluGraph instance is empty: no entities have been observed yet."
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "This BelluGraph instance tracks %d entities across %d types",
+		o.TotalEntities, len(o.EntityTypes))
+	if len(o.EntityTypes) > 0 {
+		b.WriteString(" (")
+		b.WriteString(joinCounts(o.EntityTypes))
+		b.WriteString(")")
+	}
+	if o.TotalRelations > 0 {
+		fmt.Fprintf(&b, ", connected by %d relations across %d types (%s)",
+			o.TotalRelations, len(o.RelationTypes), joinCounts(o.RelationTypes))
+	} else {
+		b.WriteString(", with no relations recorded yet")
+	}
+	b.WriteString(".")
+	if len(o.GovernanceAttributes) > 0 {
+		fmt.Fprintf(&b, " Any entity may also carry %d cross-cutting governance attributes (ownership, criticality, location, lifecycle) you can filter on — see governance_attributes.",
+			len(o.GovernanceAttributes))
+	}
+	return b.String()
+}
+
+func joinCounts(tcs []TypeCount) string {
+	parts := make([]string, len(tcs))
+	for i, tc := range tcs {
+		parts[i] = fmt.Sprintf("%d %s", tc.Count, tc.Type)
+	}
+	return strings.Join(parts, ", ")
+}
+
+// --- shared helpers ---
+
+func parseOptTime(s, field string) (time.Time, error) {
+	if s == "" {
+		return time.Time{}, nil
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid %s %q: use an RFC 3339 timestamp like 2026-05-29T14:00:00Z", field, s)
+	}
+	// The persisted time index encodes event_time as unsigned nanoseconds, so
+	// a pre-epoch instant would wrap above every real key and read the whole
+	// log; reject it here instead of migrating the on-disk encoding.
+	if t.Before(time.Unix(0, 0)) {
+		return time.Time{}, fmt.Errorf("invalid %s %q: RFC 3339 timestamps before 1970-01-01T00:00:00Z are not supported", field, s)
+	}
+	return t, nil
+}

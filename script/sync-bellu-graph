@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Vendor a pinned upstream Toise commit into services/bellud/internal/bellugraph.
+# Usage: script/sync-bellu-graph [-record] [-regen auto|skip|required] <40-hex-commit>
+set -euo pipefail
+root="$(cd "$(dirname "$0")/.." && pwd)"
+export PATH="$PATH:/usr/local/go/bin"
+cd "$root/services/bellud"
+exec go run ./cmd/sync-bellu-graph "$@"

@@ -1,0 +1,486 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+package config
+
+import (
+	"bytes"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestHardeningDefaults(t *testing.T) {
+	d := Default()
+	if !d.GraphQLIntrospection || !d.Playground || !d.DebugUI || d.Production {
+		t.Errorf("dev defaults: introspection=%v playground=%v debugUI=%v production=%v, want true/true/true/false",
+			d.GraphQLIntrospection, d.Playground, d.DebugUI, d.Production)
+	}
+}
+
+// TestSnapshotOnByDefault pins #164: snapshots default to 5m so the liveness
+// memento survives restarts out of the box; a 0 default left the sweeper
+// backstop silently restart-amnesiac.
+func TestSnapshotOnByDefault(t *testing.T) {
+	if d := Default(); d.SnapshotInterval.D() != 5*time.Minute {
+		t.Errorf("default snapshot_interval = %v, want 5m", d.SnapshotInterval.D())
+	}
+}
+
+func TestProductionLockdownWinsOverToggles(t *testing.T) {
+	// --production forces all three off, even if a toggle tries to re-enable.
+	cfg, err := Load([]string{"--production", "--playground=true"}, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.GraphQLIntrospection || cfg.Playground || cfg.DebugUI {
+		t.Errorf("production lockdown: introspection=%v playground=%v debugUI=%v, want all false",
+			cfg.GraphQLIntrospection, cfg.Playground, cfg.DebugUI)
+	}
+}
+
+func TestIndividualToggleWithoutProduction(t *testing.T) {
+	cfg, err := Load([]string{"--playground=false"}, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Playground {
+		t.Error("playground should be off")
+	}
+	if !cfg.GraphQLIntrospection || !cfg.DebugUI {
+		t.Error("the other surfaces should stay on without --production")
+	}
+}
+
+func TestAllowedOriginsParsing(t *testing.T) {
+	cfg, err := Load(nil, env(map[string]string{"BELLU_GRAPH_ALLOWED_ORIGINS": "https://a.example, https://b.example , "}))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(cfg.AllowedOrigins) != 2 || cfg.AllowedOrigins[0] != "https://a.example" || cfg.AllowedOrigins[1] != "https://b.example" {
+		t.Errorf("allowed origins = %v, want [https://a.example https://b.example]", cfg.AllowedOrigins)
+	}
+}
+
+func TestAuthAndTLSConfig(t *testing.T) {
+	cfg, err := Load([]string{"--tls-cert-file", "/c.pem", "--tls-key-file", "/k.pem"},
+		env(map[string]string{"BELLU_GRAPH_AUTH_TOKENS": "tok1, tok2 , "}))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(cfg.AuthTokens) != 2 || cfg.AuthTokens[0] != "tok1" || cfg.AuthTokens[1] != "tok2" {
+		t.Errorf("auth tokens = %v, want [tok1 tok2]", cfg.AuthTokens)
+	}
+	if !cfg.TLSEnabled() {
+		t.Error("TLSEnabled should be true with both cert and key set")
+	}
+	if c2, _ := Load([]string{"--tls-cert-file", "/c.pem"}, env(nil)); c2.TLSEnabled() {
+		t.Error("TLSEnabled needs both cert AND key")
+	}
+	if d := Default(); d.TLSEnabled() || len(d.AuthTokens) != 0 {
+		t.Error("defaults: no TLS, no tokens")
+	}
+}
+
+func TestLogConfig(t *testing.T) {
+	d := Default()
+	if d.LogFormat != "text" || d.LogLevel != "info" {
+		t.Errorf("log defaults = %q / %q, want text / info", d.LogFormat, d.LogLevel)
+	}
+	if (Config{LogLevel: "debug"}).SlogLevel() != slog.LevelDebug {
+		t.Error("debug should map to slog.LevelDebug")
+	}
+	if (Config{LogLevel: "nonsense"}).SlogLevel() != slog.LevelInfo {
+		t.Error("unknown level should fall back to info")
+	}
+	var buf bytes.Buffer
+	slog.New((Config{LogFormat: "json", LogLevel: "info"}).NewLogHandler(&buf)).Info("hi", "k", "v")
+	if !strings.Contains(buf.String(), `"msg":"hi"`) {
+		t.Errorf("json handler output = %q, want JSON", buf.String())
+	}
+	cfg, err := Load(nil, env(map[string]string{"BELLU_GRAPH_LOG_FORMAT": "json", "BELLU_GRAPH_LOG_LEVEL": "warn"}))
+	if err != nil || cfg.LogFormat != "json" || cfg.LogLevel != "warn" {
+		t.Errorf("env log config = %q/%q err=%v", cfg.LogFormat, cfg.LogLevel, err)
+	}
+}
+
+// env builds a getenv function backed by a map, so tests resolve config without
+// touching the real process environment.
+func env(m map[string]string) func(string) string {
+	return func(k string) string { return m[k] }
+}
+
+func writeFile(t *testing.T, body string) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), "bellugraph.yaml")
+	if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+		t.Fatalf("write temp config: %v", err)
+	}
+	return p
+}
+
+func TestDefault(t *testing.T) {
+	d := Default()
+	if d.Listen != "127.0.0.1:8080" || d.OTLPListen != "127.0.0.1:4317" {
+		t.Errorf("default listeners = %q / %q", d.Listen, d.OTLPListen)
+	}
+	if d.CompactionInterval.D() != time.Hour || d.RetentionMaxAge.D() != 0 {
+		t.Errorf("default retention = %v / %v", d.CompactionInterval.D(), d.RetentionMaxAge.D())
+	}
+}
+
+// TestLoadPrecedence is the core contract: defaults < file < env < flags, each
+// layer overriding only what it sets.
+func TestLoadPrecedence(t *testing.T) {
+	path := writeFile(t, `
+listen: 10.0.0.1:9000
+data_dir: /var/lib/bellugraph
+relation_buffer_ttl: 1m
+`)
+	getenv := env(map[string]string{
+		"BELLU_GRAPH_DATA_DIR":            "/srv/bellugraph", // env overrides the file
+		"BELLU_GRAPH_RELATION_BUFFER_TTL": "2m",         // env overrides the file...
+	})
+	// ...and a flag overrides env for relation-buffer-ttl.
+	args := []string{"--config", path, "--relation-buffer-ttl", "3m"}
+
+	cfg, err := Load(args, getenv)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Listen != "10.0.0.1:9000" {
+		t.Errorf("listen = %q, want the file value (no env/flag set it)", cfg.Listen)
+	}
+	if cfg.DataDir != "/srv/bellugraph" {
+		t.Errorf("data_dir = %q, want the env value (env overrides file)", cfg.DataDir)
+	}
+	if cfg.RelationBufferTTL.D() != 3*time.Minute {
+		t.Errorf("relation_buffer_ttl = %v, want 3m (flag overrides env+file)", cfg.RelationBufferTTL.D())
+	}
+	// A field nobody set keeps the built-in default.
+	if cfg.OTLPListen != "127.0.0.1:4317" {
+		t.Errorf("otlp_listen = %q, want the default", cfg.OTLPListen)
+	}
+}
+
+// TestTLSTerminatedUpstreamReachesConfig pins that the declaration is settable
+// by all three layers, which is the whole of what it has to do — it changes no
+// behavior, only what the instance is entitled to claim about its exposure.
+//
+// A declaration that cannot be set where the deployment is described is a
+// declaration nobody makes: a container install configures through the
+// environment, a packaged one through the file, and a shell through the flag.
+func TestTLSTerminatedUpstreamReachesConfig(t *testing.T) {
+	if d := Default(); d.TLSTerminatedUpstream {
+		t.Error("the declaration defaults to set: an unspoken claim is not a claim")
+	}
+	path := writeFile(t, "tls_terminated_upstream: true\n")
+	for _, c := range []struct {
+		name   string
+		args   []string
+		getenv func(string) string
+	}{
+		{"file", []string{"--config", path}, env(nil)},
+		{"env", nil, env(map[string]string{"BELLU_GRAPH_TLS_TERMINATED_UPSTREAM": "true"})},
+		{"flag", []string{"--tls-terminated-upstream"}, env(nil)},
+	} {
+		cfg, err := Load(c.args, c.getenv)
+		if err != nil {
+			t.Fatalf("%s: Load: %v", c.name, err)
+		}
+		if !cfg.TLSTerminatedUpstream {
+			t.Errorf("%s: tls_terminated_upstream did not reach the config", c.name)
+		}
+	}
+	// It is a declaration, not a TLS setting: it must not make TLSEnabled lie,
+	// because that is what decides whether the listeners actually serve TLS.
+	cfg, err := Load([]string{"--tls-terminated-upstream"}, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.TLSEnabled() {
+		t.Error("declaring upstream termination made TLSEnabled report true: the process would be expected to serve TLS it has no certificate for")
+	}
+}
+
+func TestLoadConfigPathFromEnv(t *testing.T) {
+	path := writeFile(t, "listen: 192.168.0.1:7000\n")
+	cfg, err := Load(nil, env(map[string]string{"BELLU_GRAPH_CONFIG": path}))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.Listen != "192.168.0.1:7000" {
+		t.Errorf("listen = %q, want the file (path from BELLU_GRAPH_CONFIG)", cfg.Listen)
+	}
+}
+
+func TestLoadRejectsUnknownKey(t *testing.T) {
+	path := writeFile(t, "listne: typo\n") // misspelled key
+	if _, err := Load([]string{"--config", path}, env(nil)); err == nil {
+		t.Error("want an error for an unknown config key, got nil")
+	}
+}
+
+func TestLoadRejectsBadEnvDuration(t *testing.T) {
+	_, err := Load(nil, env(map[string]string{"BELLU_GRAPH_RETENTION_MAX_AGE": "forever"}))
+	if err == nil {
+		t.Error("want an error for a malformed duration env var, got nil")
+	}
+}
+
+func TestLoadParsesFileDurations(t *testing.T) {
+	path := writeFile(t, "retention_compaction_interval: 1h30m\n")
+	cfg, err := Load([]string{"--config", path}, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.CompactionInterval.D() != 90*time.Minute {
+		t.Errorf("compaction interval = %v, want 1h30m", cfg.CompactionInterval.D())
+	}
+}
+
+func TestLoadMissingFileIsError(t *testing.T) {
+	if _, err := Load([]string{"--config", "/no/such/file.yaml"}, env(nil)); err == nil {
+		t.Error("want an error for a missing --config file, got nil")
+	}
+}
+
+// TestValidateRejectsSilentMisconfigurations pins #115: configurations that
+// would start but not do what they say must fail at load.
+func TestValidateRejectsSilentMisconfigurations(t *testing.T) {
+	base := Default()
+	cases := []struct {
+		name   string
+		mutate func(*Config)
+	}{
+		{"half-set TLS (cert only)", func(c *Config) { c.TLSCertFile = "/x/cert.pem" }},
+		{"half-set TLS (key only)", func(c *Config) { c.TLSKeyFile = "/x/key.pem" }},
+		{"retention without compaction", func(c *Config) { c.RetentionMaxAge = Duration(time.Hour); c.CompactionInterval = 0 }},
+		{"unknown log level", func(c *Config) { c.LogLevel = "verbose" }},
+		{"unknown log format", func(c *Config) { c.LogFormat = "logfmt" }},
+		{"negative max_tenants", func(c *Config) { c.MaxTenants = -1 }},
+		{"empty allowlist entry", func(c *Config) { c.TenantAllowlist = []string{""} }},
+		{"whitespace allowlist entry", func(c *Config) { c.TenantAllowlist = []string{"ten ant"} }},
+		{"unknown tenant_trust_mode", func(c *Config) { c.TenantTrustMode = "wishful" }},
+		{"mTLS client CA without server TLS", func(c *Config) { c.TLSClientCAFile = "/x/ca.pem" }},
+		{"ingest_mtls_only without client CA", func(c *Config) { c.IngestMTLSOnly = true }},
+		{"backup_dir without interval", func(c *Config) { c.BackupDir = "/x/backups" }},
+		{"log_shipping_dir without interval", func(c *Config) { c.LogShipDir = "/x/segments" }},
+		{"s3 bucket without endpoint", func(c *Config) {
+			c.LogShipS3Bucket = "b"
+			c.LogShipInterval = Duration(time.Hour)
+		}},
+		{"s3 bucket without interval", func(c *Config) {
+			c.LogShipS3Bucket = "b"
+			c.LogShipS3Endpoint = "e"
+		}},
+		{"s3 bucket and dir both set", func(c *Config) {
+			c.LogShipS3Bucket = "b"
+			c.LogShipS3Endpoint = "e"
+			c.LogShipDir = "/x/segments"
+			c.LogShipInterval = Duration(time.Hour)
+		}},
+		{"identity threshold above 1", func(c *Config) { c.IdentityThreshold = 1.5 }},
+		{"identity threshold zero", func(c *Config) { c.IdentityThreshold = 0 }},
+		{"bad tenant_read_tokens pair", func(c *Config) { c.TenantReadTokens = []string{"no-colon"} }},
+	}
+	for _, tc := range cases {
+		cfg := base
+		tc.mutate(&cfg)
+		if err := cfg.Validate(); err == nil {
+			t.Errorf("%s: Validate accepted it", tc.name)
+		}
+	}
+	if err := base.Validate(); err != nil {
+		t.Errorf("default config must validate: %v", err)
+	}
+	// "warning" is a valid level (alias for warn): SlogLevel maps it, so Validate
+	// must not reject it.
+	warn := base
+	warn.LogLevel = "warning"
+	if err := warn.Validate(); err != nil {
+		t.Errorf("log_level \"warning\" must validate (SlogLevel maps it): %v", err)
+	}
+	// ingest_mtls_only is valid with a verified client cert AND a read
+	// authenticator: decoupling ingest auth from read auth must not leave reads open.
+	mtls := base
+	mtls.TLSCertFile, mtls.TLSKeyFile, mtls.TLSClientCAFile = "/x/cert.pem", "/x/key.pem", "/x/ca.pem"
+	mtls.IngestMTLSOnly = true
+	mtls.ReadTokens = []string{"r3ad"}
+	if err := mtls.Validate(); err != nil {
+		t.Errorf("ingest_mtls_only with mTLS + a read token must validate: %v", err)
+	}
+	// ...but with no read authenticator the read surfaces are open — reject.
+	noRead := mtls
+	noRead.ReadTokens = nil
+	if err := noRead.Validate(); err == nil {
+		t.Error("ingest_mtls_only with no read authenticator must be rejected (reads would be open)")
+	}
+	// ...and it is incompatible with derive-only (a client cert carries no tenant).
+	derive := mtls
+	derive.TenantTrustMode = "derive-only"
+	if err := derive.Validate(); err == nil {
+		t.Error("ingest_mtls_only + derive-only must be rejected (ingest cannot enforce per-tenant isolation)")
+	}
+}
+
+// TestTenantTokensMap pins the "tenant:token" parsing: canonical tenant ids
+// only, non-empty tokens, malformed pairs are hard errors.
+func TestTenantTokensMap(t *testing.T) {
+	cfg := Default()
+	cfg.TenantTokens = []string{"acme:s3cret", "acme:other", "globex:tok"}
+	m, err := cfg.TenantTokensMap()
+	if err != nil {
+		t.Fatalf("valid pairs: %v", err)
+	}
+	if len(m["acme"]) != 2 || len(m["globex"]) != 1 {
+		t.Errorf("parsed map = %v", m)
+	}
+	for _, bad := range []string{"notoken", ":empty-tenant", "acme:", "../esc:tok", "a/b:tok"} {
+		cfg.TenantTokens = []string{bad}
+		if _, err := cfg.TenantTokensMap(); err == nil {
+			t.Errorf("pair %q accepted, want error", bad)
+		}
+		if err := cfg.Validate(); err == nil {
+			t.Errorf("Validate accepted pair %q", bad)
+		}
+	}
+}
+
+// TestLoadColdSkipsRuntimeValidation pins the cold-subcommand fix: a shipping
+// target without an interval is a run()-time misconfiguration that Load (server)
+// rejects, but LoadCold (checkpoint/restore-log/…) must resolve — those tools
+// never ship, they only need the resolved target.
+func TestLoadColdSkipsRuntimeValidation(t *testing.T) {
+	getenv := env(map[string]string{"BELLU_GRAPH_LOG_SHIPPING_S3_BUCKET": "b"})
+	if _, err := Load(nil, getenv); err == nil {
+		t.Error("Load must reject a shipping bucket with no interval")
+	}
+	cfg, err := LoadCold(nil, getenv)
+	if err != nil {
+		t.Fatalf("LoadCold must resolve without the runtime validation: %v", err)
+	}
+	if cfg.LogShipS3Bucket != "b" {
+		t.Errorf("LoadCold lost the bucket: %q", cfg.LogShipS3Bucket)
+	}
+}
+
+// TestTenantNamesMap is #361: a tenant id must be the one identifier every
+// backend accepts, and the Victoria family takes nothing but an integer — so
+// ids are 1, 3, 5. That is the right key and a poor label, and every surface
+// said "tenant 3" where a human says "imagroupe".
+//
+// The parsing is strict on purpose. A label that does not appear reads as "this
+// tenant has no name", so a typo would be indistinguishable from a deliberate
+// omission — the same confusion between an absence and a decision that this
+// project keeps removing elsewhere.
+func TestTenantNamesMap(t *testing.T) {
+	ok := Config{TenantNames: []string{"1", "3:imagroupe", "5:LNA Sante"}}
+	ok.TenantNames = []string{"3:imagroupe", "5:LNA Sante"}
+	m, err := ok.TenantNamesMap()
+	if err != nil {
+		t.Fatalf("valid pairs rejected: %v", err)
+	}
+	if m["3"] != "imagroupe" || m["5"] != "LNA Sante" {
+		t.Errorf("parsed %v, want 3=imagroupe and 5=LNA Sante", m)
+	}
+	if _, named := m["1"]; named {
+		t.Error("an unlisted tenant was given a name")
+	}
+
+	for _, bad := range []struct {
+		name  string
+		pairs []string
+	}{
+		{"no separator", []string{"3 imagroupe"}},
+		{"empty name", []string{"3:"}},
+		{"same tenant twice", []string{"3:one", "3:two"}},
+		{"non-canonical id", []string{"../3:imagroupe"}},
+		{"name too long", []string{"3:" + strings.Repeat("x", 65)}},
+	} {
+		if _, err := (Config{TenantNames: bad.pairs}).TenantNamesMap(); err == nil {
+			t.Errorf("%s: accepted %v, want a hard error at boot", bad.name, bad.pairs)
+		}
+	}
+
+	// Nothing resolves a name back to an id: there is no reverse lookup to call,
+	// which is what keeps a label from becoming a second identity.
+	if m2, _ := (Config{TenantNames: []string{"3:imagroupe"}}).TenantNamesMap(); m2["imagroupe"] != "" {
+		t.Error("a name resolved as if it were a tenant id")
+	}
+}
+
+// TestUnauthenticatedWritesDefaultsOnAndProductionForcesItOff covers both halves
+// of the choice this knob encodes. On by default: a zero-config instance on a
+// trusted network keeps the one write its operator has, instead of losing it
+// silently at an upgrade. Forced off by the hardening profile, and the profile
+// wins over an explicit re-enable, like every other lockdown toggle — a hardened
+// instance must refuse a write from a caller carrying no write scope.
+func TestUnauthenticatedWritesDefaultsOnAndProductionForcesItOff(t *testing.T) {
+	if !Default().AllowUnauthenticatedWrites {
+		t.Error("the default must keep the trusted-network write, or an upgrade removes it in silence")
+	}
+
+	cfg, err := Load(nil, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.AllowUnauthenticatedWrites {
+		t.Error("with no flag and no production profile, the write stays allowed")
+	}
+
+	cfg, err = Load([]string{"--production", "--allow-unauthenticated-writes=true"}, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.AllowUnauthenticatedWrites {
+		t.Error("the production lockdown must win over an explicit re-enable")
+	}
+}
+
+// TestProductionLockdownNamesWhatItOverrode covers the silence a recette asked
+// about. The lockdown winning is deliberate; winning without a word is what let
+// a deployment carry debug_ui: true for weeks while its operator believed the
+// interface was served. Resolution now reports what it took away, so the
+// startup line can name it.
+func TestProductionLockdownNamesWhatItOverrode(t *testing.T) {
+	cfg, err := Load([]string{"--production"}, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	// The dev defaults have all four on, so all four are overridden.
+	want := map[string]bool{
+		"graphql_introspection": true, "playground": true,
+		"debug_ui": true, "allow_unauthenticated_writes": true,
+	}
+	if len(cfg.ProductionOverrides) != len(want) {
+		t.Fatalf("overrides = %v, want the %d default-on toggles", cfg.ProductionOverrides, len(want))
+	}
+	for _, name := range cfg.ProductionOverrides {
+		if !want[name] {
+			t.Errorf("unexpected override %q", name)
+		}
+	}
+
+	// Nothing to say when the toggles were already off: the list reports what
+	// was taken away, not what the profile would have taken.
+	cfg, err = Load([]string{"--production", "--playground=false", "--debug-ui=false",
+		"--graphql-introspection=false", "--allow-unauthenticated-writes=false"}, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(cfg.ProductionOverrides) != 0 {
+		t.Errorf("nothing was on, yet overrides = %v", cfg.ProductionOverrides)
+	}
+
+	// And without the profile there is nothing to override.
+	cfg, err = Load(nil, env(nil))
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(cfg.ProductionOverrides) != 0 {
+		t.Errorf("no production profile, yet overrides = %v", cfg.ProductionOverrides)
+	}
+}

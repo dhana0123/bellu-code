@@ -1,0 +1,633 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+package mcp
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/model"
+)
+
+// Attribute is a single typed attribute rendered for an LLM: the key, its value
+// as a string, and the value's type so the model knows how to read it.
+type Attribute struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+	Type  string `json:"type" jsonschema:"the value's type: string, int, double, or bool"`
+}
+
+// Entity is an entity rendered for an LLM. Label is a short human-readable
+// summary derived from the identifying attributes so the model can refer to the
+// entity without re-deriving it.
+type Entity struct {
+	ID                  string `json:"id" jsonschema:"this replica's local id for the entity (a ULID); it differs between replicas and is re-minted after a long silence, so prefer identity_fingerprint to carry between calls"`
+	IdentityFingerprint string `json:"identity_fingerprint" jsonschema:"the handle that names the entity itself, derived from its identifying attributes; every replica computes the same one, and any tool taking an entity id takes this instead"`
+	Type                string `json:"type" jsonschema:"the entity type, e.g. host, process, network_interface"`
+	DisplayName         string `json:"display_name,omitempty" jsonschema:"what a human calls this entity - dash172 for a host, senhub-ping for a container - or absent when nothing observed on it reads better than its identity; render it as-is, and never group, join or match on it: a display name drifts when a thing is renamed, identity_fingerprint does not"`
+	Label               string `json:"label" jsonschema:"a one-line summary for scanning: the type, the display name, then the identifying attributes; not a key and not meant to be shown on its own - use display_name to render and identity_fingerprint to match"`
+	// Identity and Attributes follow the list rule stated on Attributes: an empty
+	// list and a null are two different answers, and neither is an absent field.
+	Identity   []Attribute `json:"identity" jsonschema:"the identifying attributes that together identify this entity. null in compact verbosity, where it is not rendered"`
+	Attributes []Attribute `json:"attributes" jsonschema:"descriptive, non-identifying attributes. An EMPTY list means this entity has none - which is the normal, documented case for a network.endpoint, where populating more would mint a false identity. NULL means not rendered here: compact verbosity. The two are different answers and the field is never absent, because an absent field made 'no attributes' indistinguishable from 'not rendered' on a majority of entities"`
+	Deleted    bool        `json:"deleted" jsonschema:"true if the entity has been observed deleted"`
+	// AssertedBy names the producers currently asserting this entity. One name
+	// means one source said it; several mean they agree on its existence, not
+	// on its attribute values, which the last writer sets. Absent in compact
+	// verbosity and when no cadence source is wired.
+	AssertedBy []string `json:"asserted_by" jsonschema:"the producers asserting this entity right now, so a suspect value has someone to go and ask; several names mean they agree it EXISTS, not that they agree on its attributes - the last writer sets those. An EMPTY list means no NAMED producer asserts it right now — which is NOT the same as nobody asserting it: a producer that sent no identity of its own is deliberately not named here, because naming it would invent one. When that is the case, the provenance field says so in words; read it before concluding the entity is unclaimed. NULL means not rendered here and is NOT an answer about the entity: compact verbosity, no live-reference source wired, or an as-of read - a past instant does not rebuild the live reference table, so this is deliberately WITHHELD rather than filled with today's answer. The provenance field then says so in words"`
+
+	// CollectedBy names the collection methods currently asserting this entity.
+	// AssertedBy is who sends it; this is how it was gathered — the grain the
+	// producer contract makes normative, and the one a producer debugs in.
+	// Provenance carries a sentence only when the empty lists above would
+	// mislead: something asserts this entity and sent no identity. A flag would
+	// not be read, and a reader should not have to cross two empty fields with
+	// a live interval to work it out.
+	Provenance string `json:"provenance,omitempty" jsonschema:"present only when the lists above would mislead, and it names which case in words: something asserts this entity ANONYMOUSLY (a live read), or the lists are WITHHELD because this is an as-of read of a past instant. Absent means the lists can be read as they are"`
+
+	CollectedBy []string `json:"collected_by" jsonschema:"the collection methods (instrumentation scopes) asserting this entity right now, e.g. senhub-agent/snmp-route. asserted_by is WHO sends it; this is HOW it was gathered. Two scopes mean two methods see the same thing, which is a different situation from one method reported by two agents. A producer running several methods reports ALL of them, since the reference count is keyed by the speaker - the producer and the method - so this is the set of methods asserting the entity, including several of one agent (#455). An EMPTY list means no asserting producer recorded a scope; NULL means not rendered here, which is NOT an answer about the entity: compact verbosity, or an as-of read, where it is deliberately withheld rather than answered from the live table - the provenance field then says so in words"`
+}
+
+// Relation is a typed directed edge rendered for an LLM.
+type Relation struct {
+	ID         string      `json:"id"`
+	Type       string      `json:"type" jsonschema:"the relation type, e.g. runs_on, connected_to"`
+	FromID     string      `json:"from_id" jsonschema:"logical id of the source entity"`
+	ToID       string      `json:"to_id" jsonschema:"logical id of the target entity"`
+	Structural bool        `json:"structural" jsonschema:"true if appearance/disappearance of this edge is significant (alert-worthy)"`
+	Attributes []Attribute `json:"attributes"`
+}
+
+// Change is one classified event rendered for an LLM. It is bi-temporal:
+// EventTime is when a producer OBSERVED the fact, RecordedAt is when BelluGraph
+// learned it (ADR 0005). Exactly one of Entity or Relation is set.
+//
+// Not "when the fact became true", which is what this comment and the schema
+// below both said until 2026-10-14. Nothing observes the instant a fact becomes
+// true: a producer polls, so the change happened somewhere in the interval
+// BEFORE its event_time. That is the whole reason get_entity and entity_history
+// carry a resolution block, and the reason two changes closer together than the
+// producer's cadence carry no ordering at all — a real review once concluded
+// "the service returned before the address moved" from two observations 47 s
+// apart under a 30 s cadence.
+//
+// Which makes the wrong wording worse here than anywhere else: this string is
+// the schema an LLM is handed for the one field every causal conclusion rests
+// on, and it induced exactly the misreading the resolution block was built to
+// prevent.
+type Change struct {
+	EventID string `json:"event_id"`
+	// CommitSeq groups the events of ONE producer observation. Two changes with
+	// the same value were committed together; two with different values were
+	// not. Zero means unknown (an event older than the field), never "its own
+	// commit".
+	CommitSeq uint64 `json:"commit_seq,omitempty" jsonschema:"groups the events of ONE producer observation: two changes sharing this value were committed together by the same producer in one append, and two with different values were not. Pair them on EQUALITY, with no tolerance window — recorded_at is set per event and may differ inside one commit. A route deleted and a route created sharing a commit_seq is one observation of a changed route; whether that means a gateway change is YOUR conclusion, not BelluGraph's. Absent on events older than this field, where absence means unknown rather than a commit of its own. CHECK THE GROUP BEFORE PAIRING: a restored log re-stamps this field in batches of a thousand, so after a disaster recovery a group holds unrelated changes. The discriminator is the SPREAD of recorded_at inside the group — a real commit was written at one instant, so its events differ by microseconds, while a restored batch keeps each event original recorded_at, spread over hours. More than a second of spread means a restore artifact: do not pair, and say that is why. Neither the size of the group nor the number of producers in it discriminates — a mass liveness expiry is one real commit holding hundreds of events from several producers"`
+
+	// Scope names the collection method that observed this change — one
+	// instrumentation scope per method, which is where the producer contract puts
+	// provenance. On a liveness expiry it is the scope that went SILENT, not an
+	// author of the deletion.
+	Scope       string   `json:"scope,omitempty" jsonschema:"the instrumentation scope that observed this change — one per collection method, e.g. senhub-agent/snmp-route. On a liveness_expiry it names the collector that STOPPED speaking, not the author of the deletion (BelluGraph expired it). Use it to answer which of several producers is losing entities. Absent when the producer sent no scope name or on older events"`
+	ChangeType  string   `json:"change_type" jsonschema:"the taxonomy name, e.g. entity.created, relation.added"`
+	EventTime   string   `json:"event_time" jsonschema:"RFC 3339; when a producer OBSERVED this change — NOT when it became true. A producer polls, so the change happened somewhere in the interval before this instant: get_entity and entity_history carry a resolution block giving that producer's cadence. Two changes closer together than the cadence carry no guaranteed ordering, and no causal conclusion may be drawn from a gap that small, including against an external clock"`
+	RecordedAt  string   `json:"recorded_at" jsonschema:"RFC 3339; when BelluGraph recorded the change"`
+	ChangedKeys []string `json:"changed_keys" jsonschema:"the attribute keys that changed, for update/state-change events"`
+	// DeleteReason is the producer's open-enum motive on an entity.delete (e.g.
+	// terminated, expired, evicted); empty when none was given or for non-delete
+	// changes. Omitted from the payload when empty.
+	DeleteReason string `json:"delete_reason,omitempty" jsonschema:"why an entity was deleted, e.g. terminated/expired/evicted; open enum, may be empty"`
+	// DeleteSource attributes the AUTHOR of a disappearance: producer (explicit
+	// delete or removal-by-absence), liveness_expiry (BelluGraph's backstop reaped it
+	// after a missed heartbeat), or cascade (an endpoint died and took the edge).
+	// Distinct from DeleteReason, which is producer-supplied verbatim. Empty =
+	// unknown (event predates provenance), never to be read as producer.
+	DeleteSource string `json:"delete_source,omitempty" jsonschema:"who authored the disappearance: producer, liveness_expiry (missed heartbeat) or cascade (endpoint died); empty on older events"`
+	// Disappearance is DeleteSource written out as a sentence. A bare enum next
+	// to a field named like a cause invites the one reading no consumer should
+	// make — that a human deleted something — so the payload carries the
+	// meaning, not just the code (#346).
+	Disappearance string    `json:"disappearance,omitempty" jsonschema:"delete_source in plain language, including what it does NOT mean"`
+	Entity        *Entity   `json:"entity,omitempty"`
+	Relation      *Relation `json:"relation,omitempty"`
+}
+
+// disappearanceGloss renders a delete_source as a sentence a reader cannot
+// misread. Every gloss states the negative explicitly: none of these sources
+// means an operator deleted anything, and consumers have concluded exactly that
+// from the bare enum — three invented human operations, asserted at high
+// confidence, in one incident (#346).
+// A reason changes what the producer case MEANS, so the gloss takes it. A
+// producer that reports a deletion because it stopped looking is making the
+// opposite claim from one that watched the thing end, and the bare gloss
+// asserted the latter for both: an agent began reporting "I stopped watching
+// this device" and the sentence a consumer reads still said the producer had
+// reported it gone. The reason sat beside it in the payload, which is not where
+// anyone looks.
+//
+// BelluGraph does not interpret the value: the reason is an OPEN enum, producer
+// vocabulary, and guessing at a word we do not define is how a reader ends up
+// trusting our paraphrase over the producer's own term. So a reason is quoted
+// and the reading is widened, never narrowed.
+func disappearanceGloss(src model.DeleteSource, reason string) string {
+	switch src {
+	case model.DeleteSourceProducer:
+		if reason != "" {
+			return "the producer reported this gone and gave the reason " + strconv.Quote(reason) + ". " +
+				"READ THE REASON BEFORE CONCLUDING THE THING ENDED: a producer may report a disappearance because it stopped observing, " +
+				"which says nothing about whether the resource still exists. The word is the producer's own and BelluGraph does not interpret it. " +
+				"Nothing here says a human removed anything."
+		}
+		return "the producer reported this gone — it either sent an explicit delete or stopped listing the entity it had been reporting. " +
+			"This is an observation about the world, NOT an operator action: nothing here says a human removed anything."
+	case model.DeleteSourceLivenessExpiry:
+		return "no news — the producer went silent past the interval it declared, so BelluGraph expired the entity. " +
+			"The thing may well still be running: this describes the observation ending, NOT the resource ending."
+	case model.DeleteSourceCascade:
+		return "collateral — an entity this edge touched disappeared, so the edge went with it. " +
+			"Look at the entity that died for the real event; this row is a consequence, not a cause."
+	default:
+		return ""
+	}
+}
+
+func valueString(v model.Value) (str, typ string) {
+	switch v.Kind() {
+	case model.KindInt:
+		return v.Display(), "int"
+	case model.KindDouble:
+		return v.Display(), "double"
+	case model.KindBool:
+		return v.Display(), "bool"
+	case model.KindArray:
+		return v.Display(), "array"
+	case model.KindKvlist:
+		return v.Display(), "kvlist"
+	default:
+		return v.Display(), "string"
+	}
+}
+
+func attrsOut(kvs []model.KeyValue) []Attribute {
+	out := make([]Attribute, len(kvs))
+	for i, kv := range kvs {
+		val, typ := valueString(kv.Value)
+		out[i] = Attribute{Key: kv.Key, Value: val, Type: typ}
+	}
+	return out
+}
+
+// label builds a compact, human-readable identifier: the type, the entity's
+// display name when it has one, then its identifying attributes — e.g.
+// "host dash172 host.id=6ccc0dcc-...". The name comes first because this is what
+// a caller scanning many entities reads, and an identity is often a UUID or a
+// digest; the identity stays in full because the name is not a key (#378).
+func label(e model.Entity) string {
+	var b strings.Builder
+	b.WriteString(e.Type)
+	if name := model.LabelName(e); name != "" {
+		b.WriteByte(' ')
+		b.WriteString(name)
+	}
+	for _, kv := range e.Identity {
+		val, _ := valueString(kv.Value)
+		b.WriteByte(' ')
+		b.WriteString(kv.Key)
+		b.WriteByte('=')
+		b.WriteString(val)
+	}
+	return b.String()
+}
+
+func entityOut(e model.Entity, deleted bool) Entity {
+	return entityOutV(e, deleted, false)
+}
+
+// entityOutV renders an entity at the requested verbosity. Compact drops the
+// identity and descriptive attribute lists, keeping the id, type, label and
+// deleted flag — the slim shape an LLM asks for to scan many entities cheaply,
+// then re-fetches one in full. Full is the default and unchanged.
+func entityOutV(e model.Entity, deleted, compact bool) Entity {
+	out := Entity{
+		ID:                  string(e.ID),
+		IdentityFingerprint: e.IdentityHash(),
+		Type:                e.Type,
+		DisplayName:         model.DisplayName(e),
+		Label:               label(e),
+		Deleted:             deleted,
+	}
+	// attrsOut returns a non-nil slice, so full verbosity always renders a list —
+	// an empty one when the entity has no descriptive attributes, which is a
+	// fact and not a gap. Compact leaves both nil, which renders null: the field
+	// is present either way, and its value says which of the two answers it is.
+	if !compact {
+		out.Identity = attrsOut(e.Identity)
+		out.Attributes = attrsOut(e.Attributes)
+	}
+	return out
+}
+
+// verbosity values for the read tools' optional `verbosity` input.
+const (
+	verbosityFull    = "full"
+	verbosityCompact = "compact"
+)
+
+// parseVerbosity reads the optional verbosity input. Empty defaults to full
+// (backward-compatible); an unknown value is a friendly error.
+func parseVerbosity(v string) (compact bool, err error) {
+	switch v {
+	case "", verbosityFull:
+		return false, nil
+	case verbosityCompact:
+		return true, nil
+	default:
+		return false, fmt.Errorf("unknown verbosity %q: use %q or %q", v, verbosityFull, verbosityCompact)
+	}
+}
+
+func relationOut(r model.Relation) Relation {
+	return Relation{
+		ID:         string(r.ID),
+		Type:       r.Type,
+		FromID:     string(r.From),
+		ToID:       string(r.To),
+		Structural: r.Structural,
+		Attributes: attrsOut(r.Attributes),
+	}
+}
+
+func changeOut(ev model.Event) Change {
+	c := Change{ChangedKeys: []string{}}
+	switch {
+	case ev.Entity != nil:
+		ee := ev.Entity
+		c.EventID = ee.EventID
+		c.CommitSeq = ee.CommitSeq
+		c.Scope = ee.Scope
+		c.ChangeType = ee.ChangeType.String()
+		c.EventTime = formatTime(ee.EventTime)
+		c.RecordedAt = formatTime(ee.RecordedAt)
+		if ee.ChangedKeys != nil {
+			c.ChangedKeys = ee.ChangedKeys
+		}
+		c.DeleteReason = ee.DeleteReason
+		c.DeleteSource = string(ee.DeleteSource)
+		c.Disappearance = disappearanceGloss(ee.DeleteSource, ee.DeleteReason)
+		ent := entityOut(ee.Entity, ee.ChangeType == model.EntityDeleted)
+		c.Entity = &ent
+	case ev.Relation != nil:
+		re := ev.Relation
+		c.EventID = re.EventID
+		c.CommitSeq = re.CommitSeq
+		c.Scope = re.Scope
+		c.ChangeType = re.ChangeType.String()
+		c.EventTime = formatTime(re.EventTime)
+		c.RecordedAt = formatTime(re.RecordedAt)
+		if re.ChangedKeys != nil {
+			c.ChangedKeys = re.ChangedKeys
+		}
+		c.DeleteSource = string(re.DeleteSource)
+		c.Disappearance = disappearanceGloss(re.DeleteSource, "")
+		rel := relationOut(re.Relation)
+		c.Relation = &rel
+	}
+	return c
+}
+
+func formatTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format(time.RFC3339Nano)
+}
+
+// matches reports whether every wanted key/value is present (as a string-equal
+// attribute) in the entity's identity or attributes. The shared predicate lives
+// on the model so the GraphQL entities query filters identically.
+func matches(e model.Entity, want map[string]string) bool {
+	return e.MatchAll(want)
+}
+
+// GraphMeta is the provenance block every read answer carries: what the
+// answering graph holds, how fresh its log is, and how far back it can answer.
+// Three operator agents independently asked for the same thing before any of
+// them would trust an answer (#346): a consumer's job is arbitrating between
+// disagreeing sources, and a source that does not state its own scope and
+// freshness cannot enter the arbitration — it gets hand-verified once, then
+// bypassed. Absence is not evidence of absence, and this block is where an
+// answer says how much absence it can even speak for.
+type GraphMeta struct {
+	// Tenant names the tenant THIS answer was built from. It is not an echo of
+	// what the caller asked for: in derive-only tenancy the tenant comes from
+	// the credential and a client-supplied X-Scope-OrgID is ignored, so the two
+	// can differ and only this one is the truth about the data below.
+	// TenantName is the operator's label for that tenant, when one is configured.
+	// It is decoration: compare Tenant, render TenantName.
+	TenantName string `json:"tenant_name,omitempty" jsonschema:"the operator's human label for that tenant, when configured — render this, but compare the tenant id: no name resolves back to a tenant"`
+	Tenant     string `json:"tenant,omitempty" jsonschema:"the tenant this answer was built from — NOT an echo of your request: a scoped credential decides the tenant and your X-Scope-OrgID may have been ignored. Compare it with what you asked for before concluding anything about the data"`
+	Entities   int    `json:"entities" jsonschema:"entities the answering graph holds"`
+	Relations  int    `json:"relations" jsonschema:"relations the answering graph holds"`
+	// NewestEvent dates the log, not the projection: a live graph with a stale
+	// log means producers stopped talking, which is itself the finding.
+	NewestEvent string `json:"newest_event,omitempty" jsonschema:"RFC 3339 event time of the newest event in this tenant's log; how fresh this instance is"`
+	// OldestAnswerable is the prune horizon: an as_of read before it is refused
+	// rather than answered wrongly.
+	OldestAnswerable string `json:"oldest_answerable,omitempty" jsonschema:"RFC 3339 prune horizon; history and as_of reads reach no further back"`
+	// AsOf is set when this answer reads a past instant rather than now.
+	AsOf string `json:"as_of,omitempty" jsonschema:"set when this answer describes the graph as of a past instant, not the present"`
+}
+
+// graphMeta assembles the provenance block from the graph that actually
+// answered (live or an as-of fold) and the tenant's log.
+func (s *Server) graphMeta(g Graph, asOf string) GraphMeta {
+	m := GraphMeta{Tenant: s.tenant, TenantName: s.tenantName, Entities: g.EntityCount(), Relations: g.RelationCount(), AsOf: asOf}
+	if t, ok, err := s.store.NewestEventTime(); err == nil && ok {
+		m.NewestEvent = formatTime(t)
+	}
+	if h := s.store.PruneHorizon(); !h.IsZero() {
+		m.OldestAnswerable = formatTime(h)
+	}
+	return m
+}
+
+// asOfWithheldProducers is the sentence an as-of read carries in place of the
+// producer lists. It names the consequence rather than flagging a state,
+// because a reader crossing two null fields works out "not available" and not
+// "the question has no answer on this surface".
+const asOfWithheldProducers = "this answer reads a PAST instant, so the producer fields are WITHHELD (null), not empty: " +
+	"who asserts a thing is live state, and replaying the log does not rebuild it. The only value BelluGraph could put here is " +
+	"TODAY's answer to a question you asked about then — a false attribution, not an approximation — so it puts none. " +
+	"Nothing in this answer says who asserted this at that instant, and that is not recoverable on this surface. " +
+	"The attributes and relations ARE the past state: only provenance and cadence are withheld. Omit as_of to ask who asserts it now."
+
+// asOfWithheldEdge is the same statement for the edge that reached a neighbor.
+const asOfWithheldEdge = "this answer reads a PAST instant, so the edge's producer fields are WITHHELD (null), not empty: " +
+	"who asserts an EDGE is live state that replaying the log does not rebuild, and the only available value would be " +
+	"today's. The edge itself IS the past state; its provenance is not. Omit as_of to ask who asserts it now."
+
+// attachEdgeProvenance fills a neighbor's edge provenance from the engine's
+// per-producer reference counts. An as-of read fills nothing: a fold has no
+// live references to read, and an empty list there would read as "nobody
+// asserts this edge" rather than "not available in this view".
+//
+// That intent is as old as the fields and it was never wired: the guard tested
+// s.cadence == nil, which is never true on an as-of read, because the cadence
+// is wired once per server and not per request. So the schema promised the
+// withholding in four places while the code answered from the live table (#528).
+func (s *Server) attachEdgeProvenance(nb *Neighbor, id model.RelationID, asOf string) {
+	if s.cadence == nil {
+		return
+	}
+	if asOf != "" {
+		nb.ViaProvenance = asOfWithheldEdge
+		return
+	}
+	nb.ViaAssertedBy = emptyIfNil(s.cadence.RelationAssertingProducers(id))
+	nb.ViaCollectedBy = emptyIfNil(s.cadence.RelationAssertingScopes(id))
+}
+
+// emptyIfNil renders "asked and nobody" as an empty list rather than as null,
+// which is reserved for "not rendered here". The two must not look alike.
+func emptyIfNil(v []string) []string {
+	if v == nil {
+		return []string{}
+	}
+	return v
+}
+
+// attachProducers fills AssertedBy and CollectedBy from the engine's per-producer
+// references: who sends this entity, and how it was collected. Compact verbosity
+// omits both, like identity and attributes — that mode exists to scan many
+// entities cheaply, and provenance is a question asked about one.
+func (s *Server) attachProducers(out *Entity, id model.EntityID, compact bool, asOf string) {
+	if s.cadence == nil || compact {
+		return
+	}
+	if asOf != "" {
+		out.Provenance = asOfWithheldProducers
+		return
+	}
+	out.AssertedBy = emptyIfNil(s.cadence.AssertingProducers(id))
+	out.CollectedBy = emptyIfNil(s.cadence.AssertingScopes(id))
+
+	// An empty asserted_by covers two situations and the worse one renders as
+	// the better. Nothing asserts the entity — it survives on a zero deadline
+	// (#363) — or something asserts it and sent no identity, which is a live
+	// claim nobody can be asked about and no named speaker can ever release.
+	// A production host sat in a customer graph in the second state for eight
+	// weeks, reading as the first (#507).
+	if len(out.AssertedBy) == 0 {
+		if ar, ok := s.cadence.(anonymousReferenceReader); ok {
+			if n := ar.AnonymousReferences(id); n > 0 {
+				out.Provenance = "asserted_by is empty and that does NOT mean unclaimed: " +
+					fmt.Sprintf("%d %s", n, plural("reference", "references", n)) + " on this entity carry no producer identity. " +
+					"Something is asserting it and sent no name, so there is nobody to ask about a suspect value, " +
+					"and no named producer can ever release it — only a delete that also carries no identity reaches it. " +
+					"Treat this as a PRODUCER DEFECT to report, not as an entity nobody wants."
+			}
+		}
+	}
+}
+
+// anonymousReferenceReader is satisfied by the change engine. Optional, so a
+// reader without it still compiles and simply loses the distinction.
+type anonymousReferenceReader interface {
+	AnonymousReferences(id model.EntityID) int
+}
+
+// entityWithProducers renders an entity and names who is asserting it.
+func (s *Server) entityWithProducers(e model.Entity, deleted, compact bool, asOf string) Entity {
+	out := entityOutV(e, deleted, compact)
+	s.attachProducers(&out, e.ID, compact, asOf)
+	return out
+}
+
+// notFoundMsg explains a handle that did not resolve, and the explanation
+// depends on whether an instant was asked for (#381).
+//
+// The old message offered one reason — deletion with an evicted tombstone — and
+// offered it always. For an as_of read of something created later, every clause
+// that mattered was wrong: nothing was deleted, no tombstone was evicted, and
+// the one true reason was never mentioned. It was read as a retention defect by
+// everyone in the chain, including me. "Not found" was correct; the explanation
+// was not, and a wrong explanation is worse than none because it is actionable.
+//
+// The discriminator costs nothing: resolve the same handle against the CURRENT
+// graph. Resolving there and not at the instant means the entity exists and did
+// not then, which is almost always "you asked before it was created".
+func (s *Server) notFoundMsg(handle, asOf string) error {
+	if asOf != "" && s.graph != nil {
+		if _, ok := s.graph.ResolveHandle(handle); ok {
+			return fmt.Errorf("no entity found for handle %q AT %s — but it EXISTS NOW. Nothing was deleted and no tombstone was evicted: you asked for an instant before this entity was created, or before the identity it carries today. Ask entity_history for its timeline to see when it appeared, or drop as_of to read it as it is now", handle, asOf)
+		}
+		return fmt.Errorf("no entity found for handle %q at %s, and none now either; use find_entities to discover entities. If the instant is older than the retention horizon the answer cannot be built at all — graph.oldest_answerable on any answer gives that horizon", handle, asOf)
+	}
+	if hint := partialIdentityHint(handle); hint != "" {
+		return fmt.Errorf("no entity found for handle %q. %s", handle, hint)
+	}
+	return fmt.Errorf("no entity found for handle %q; use find_entities to discover entities — if it was deleted a while ago its tombstone may have been evicted, but entity_history still has its past", handle)
+}
+
+// partialIdentityHint returns why an inline identity handle could not resolve
+// when the reason is that it carries FEWER keys than the type's identity, or ""
+// when the handle is not of that shape.
+//
+// An inline identity must carry EVERY key of the identity: resolution compares
+// the whole set, so a subset matches nothing — safely, since it can never
+// resolve to one of several siblings at random. But the caller then reads "no
+// entity found", which is an absence that does not say which kind it is: the
+// entity may exist and the handle be incomplete. A consumer reported exactly
+// that confusion for a host interface, whose first key is the owner's host.id
+// and is therefore shared by every sibling interface on that host.
+//
+// The hint is derived from the handle alone, without consulting the graph: the
+// types whose identity has more than one key are known, and naming the missing
+// count is enough to redirect the caller. It never claims the entity exists.
+func partialIdentityHint(handle string) string {
+	typ, rest, ok := strings.Cut(handle, ":")
+	if !ok || !strings.Contains(rest, "=") {
+		return "" // an id or a fingerprint, not an inline identity
+	}
+	want, known := multiKeyIdentitySizes[typ]
+	if !known {
+		return ""
+	}
+	given := strings.Count(rest, ",") + 1
+	if given >= want {
+		return ""
+	}
+	return fmt.Sprintf("an inline identity must carry EVERY key of the identity, and %s is keyed on %d; "+
+		"this handle gives %d, and a subset resolves to nothing rather than to one of several siblings. "+
+		"Prefer identity_fingerprint, which every replica computes identically and which survives a failover; "+
+		"or use find_entities with a match filter to discover the full identity", typ, want, given)
+}
+
+// multiKeyIdentitySizes is how many keys each multi-key identity carries, for
+// the hint above. A type absent here is single-keyed, so a one-key handle for it
+// is complete and its failure to resolve means something else.
+var multiKeyIdentitySizes = map[string]int{
+	model.TypeNetworkInterface: 2, // {owner, network.interface.name}
+	model.TypeNetworkNeighbor:  2, // {observer, mac}
+	model.TypeComputeVM:        2, // {host.id, vmid}
+	model.TypeProcess:          2, // {process.pid, process.creation.time}
+	model.TypeNetworkRoute:     3, // {owner, route.destination, next_hop.ip}
+}
+
+// horizonWarning compares a requested window against the retention horizon and
+// states the part that cannot be answered, or "" when the window is wholly
+// within reach.
+//
+// The horizon was already on every answer as graph.oldest_answerable, and that
+// was not enough: nothing compared it to the window the caller asked for, so a
+// window reaching before it came back short with no statement that it had been
+// cut. It cost a morning of wrong conclusions and a transport outage reported to
+// another team that never happened — with the horizon sitting in the payload the
+// whole time. Carrying a fact is not the same as drawing the conclusion from it,
+// and the consumer that cannot ask a follow-up question needs the conclusion.
+func (s *Server) horizonWarning(from, to time.Time) string {
+	if s.store == nil {
+		return ""
+	}
+	h := s.store.PruneHorizon()
+	if h.IsZero() || !from.Before(h) {
+		return ""
+	}
+	if !to.After(h) {
+		return "EMPTY BY RETENTION, not by absence: the whole window you asked for (" +
+			formatTime(from) + " to " + formatTime(to) + ") lies before the retention horizon " +
+			formatTime(h) + ". Those events were pruned and cannot be counted. A zero here is NOT evidence that nothing happened."
+	}
+	return "PARTIAL BY RETENTION: your window starts at " + formatTime(from) +
+		", before the retention horizon " + formatTime(h) +
+		". Events older than the horizon were pruned, so this answer can only cover " +
+		formatTime(h) + " to " + formatTime(to) + ". Counts below are for that shorter period, not for the window you asked for."
+}
+
+// Resolution states how finely an answer's timestamps may be read. BelluGraph's
+// event_time is when a PRODUCER OBSERVED a fact, not when the fact became true,
+// so the truth lies somewhere in the interval before it. Two changes closer
+// together than the interval carry no ordering information at all.
+//
+// It is carried as a sentence and not only as a number for the same reason
+// delete_source is (#346): a bare duration next to nanosecond timestamps invites
+// the reading it exists to prevent. A real incident review concluded "the
+// service returned 47 s BEFORE the address moved, so the two are unrelated" from
+// two event_times 47 s apart, under a 30 s cadence — the gap was shorter than
+// the resolution and meant nothing.
+// noLivenessPromise is the Meaning for an entity no producer promised to
+// refresh. It is one sentence doing the job delete_source's gloss does: a
+// consumer that cannot ask a follow-up question needs the consequence spelled
+// out, not a missing field to interpret.
+const noLivenessPromise = "no producer declared a refresh interval for this entity, so BelluGraph has no liveness promise to hold it to: its presence here means it was observed at least once and never explicitly deleted, and it will NOT expire on its own however long its producers stay silent. Read it as \"something asserted this and nothing has contradicted it\", not as \"a producer vouched for this recently\". The timestamps carry no resolution bound either, so no ordering or causal conclusion may be drawn from how close two of them are. BelluGraph does not invent a default interval: that would be a promise no producer made."
+
+type Resolution struct {
+	ObservationInterval string `json:"observation_interval" jsonschema:"the liveness interval this entity's producers declared, e.g. 30s — an UPPER BOUND on the uncertainty, deliberately padded above the real reporting cadence, never below it; the literal \"none\" means NO producer promised a refresh, so the entity never expires on its own and its presence is not evidence of recency; the literal \"unknown\" means this is an as-of read of a past instant and the bound that applied THEN is not recoverable, so none is quoted - read meaning, the two are different answers"`
+	Meaning             string `json:"meaning" jsonschema:"what that implies for reading the timestamps in this answer, including what they cannot tell you"`
+}
+
+// resolutionFor renders the resolution block for an entity. When no producer
+// declares an interval it says so instead of returning nothing (#363): an
+// entity nobody promised to refresh never expires, and a reader cannot tell it
+// apart from one asserted a minute ago unless the answer admits it. Saying
+// nothing was the earlier behavior and it was the defect, not the honesty — the
+// honesty is refusing to invent a bound, which this still does.
+// implausiblePromiseReader is satisfied by the change engine. It is an optional
+// interface rather than a Cadence method so a reader without it still compiles
+// and simply loses the distinction.
+type implausiblePromiseReader interface {
+	ImplausiblePromise(id model.EntityID) (time.Duration, string, bool)
+}
+
+func (s *Server) resolutionFor(id model.EntityID, asOf string) *Resolution {
+	if s.cadence == nil {
+		return nil
+	}
+	// A cadence is live state too. The interval its producers declare today was
+	// not necessarily the bound that applied at the instant asked for, and the
+	// healthy branch below already admits it "is not recoverable for past
+	// observations" — so quoting it beside a past state states a bound that was
+	// never measured. Withholding it is the honest answer, and it must still
+	// say what that costs the reader (#528).
+	if asOf != "" {
+		return &Resolution{
+			ObservationInterval: "unknown",
+			Meaning: "this answer reads a PAST instant and a cadence is live state: the interval its producers declare TODAY " +
+				"is not the bound that applied then, and the bound that did apply is not recoverable. So none is given, rather " +
+				"than one that would look authoritative. Read every event_time here as UNBOUNDED in uncertainty: draw no " +
+				"ordering from how close two of them are, and no causal conclusion at all. Omit as_of for the real interval now.",
+		}
+	}
+	interval, ok := s.cadence.ObservationInterval(id)
+	if !ok {
+		// Two different situations end up here, and they must not read alike:
+		// nobody promised a cadence, or somebody promised an impossible one and
+		// it was refused. The second is a producer defect, and reporting it as
+		// the first hides it behind a legitimate-looking answer — which is how
+		// a host sat in production for 56 days quoting a 153-year bound.
+		if pr, ok := s.cadence.(implausiblePromiseReader); ok {
+			if declared, producer, bad := pr.ImplausiblePromise(id); bad {
+				who := producer
+				if who == "" {
+					who = "an unidentified producer"
+				}
+				return &Resolution{
+					ObservationInterval: "none",
+					Meaning: "no usable cadence, and NOT because none was promised: " + who + " declared " + declared.String() +
+						", which cannot be a promise to speak again and was refused. So this entity has no cadence at all — " +
+						"treat every event_time on it as unbounded in uncertainty, draw no ordering from any gap, and read the figure above as a PRODUCER DEFECT to report, not as a property of the thing described.",
+				}
+			}
+		}
+		return &Resolution{ObservationInterval: "none", Meaning: noLivenessPromise}
+	}
+	return &Resolution{
+		ObservationInterval: interval.String(),
+		Meaning: "every event_time here is when a producer OBSERVED the fact, not when it became true. This is the liveness interval its producers DECLARED, which is padded above their real reporting cadence — so it is an upper bound on the uncertainty, never an under-statement: the change happened somewhere within " +
+			interval.String() + " before its event_time, often much closer. Two changes less than " + interval.String() +
+			" apart therefore carry no guaranteed ordering, and a causal conclusion drawn from a gap that small — including against an external clock — needs evidence from outside BelluGraph. " +
+			"This is the coarsest declared interval among the producers referencing this entity right now; it is not recoverable for past observations.",
+	}
+}

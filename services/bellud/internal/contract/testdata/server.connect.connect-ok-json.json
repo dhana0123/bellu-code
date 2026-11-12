@@ -1,0 +1,16 @@
+{
+  "operationId": "server.connect",
+  "name": "connect-ok-json",
+  "method": "GET",
+  "path": "/auth/connect/<CODE>",
+  "request": {
+    "headers": {
+      "accept": "application/json"
+    }
+  },
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "token": "<TOKEN>"
+  }
+}

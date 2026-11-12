@@ -1,0 +1,57 @@
+# Example bellugraph-server configuration.
+#
+# Run with:  bellugraph-server --config /etc/bellugraph/bellugraph-server.yaml
+#       or:  BELLU_GRAPH_CONFIG=/etc/bellugraph/bellugraph-server.yaml bellugraph-server
+#
+# Precedence (lowest to highest): defaults < this file < BELLU_GRAPH_* env vars < flags.
+# Every key is OPTIONAL; an omitted key keeps its built-in default (shown below).
+# Durations are Go-duration strings: "30s", "5m", "1h30m". Unknown keys are an
+# error, so a typo fails loudly instead of being ignored.
+
+# --- Network -----------------------------------------------------------------
+# No authentication by default: keep these on loopback / a trusted network, or
+# enable auth + TLS below (and --production) before exposing them.
+listen: 127.0.0.1:8080        # GraphQL/HTTP + MCP + debug UI    (env: BELLU_GRAPH_LISTEN)
+otlp_listen: 127.0.0.1:4317   # OTLP/gRPC ingestion             (env: BELLU_GRAPH_OTLP_LISTEN)
+
+# --- Storage -----------------------------------------------------------------
+data_dir: bellugraph-data          # Pebble event-log directory       (env: BELLU_GRAPH_DATA_DIR)
+
+# --- Liveness & reconciliation ----------------------------------------------
+# How long to hold an out-of-order edge waiting for its endpoints (0 = disabled).
+relation_buffer_ttl: 30s              # env: BELLU_GRAPH_RELATION_BUFFER_TTL
+# How often to expire entities past their heartbeat interval (0 = disabled).
+liveness_sweep_interval: 30s          # env: BELLU_GRAPH_LIVENESS_SWEEP_INTERVAL
+
+# --- Retention ---------------------------------------------------------------
+retention_max_age: 0                  # max age of retained events; 0 = unlimited
+                                      #   env: BELLU_GRAPH_RETENTION_MAX_AGE
+retention_compaction_interval: 1h     # heartbeat-coalescing compaction cadence
+                                      #   env: BELLU_GRAPH_RETENTION_COMPACTION_INTERVAL
+snapshot_interval: 5m                 # projection snapshot cadence for fast restart;
+                                      #   also persists liveness refs across restarts;
+                                      #   0 = disabled  (env: BELLU_GRAPH_SNAPSHOT_INTERVAL)
+
+# --- Logging -----------------------------------------------------------------
+log_format: text                      # "text" or "json"   (env: BELLU_GRAPH_LOG_FORMAT)
+log_level: info                       # debug|info|warn|error (env: BELLU_GRAPH_LOG_LEVEL)
+
+# --- Hardening ---------------------------------------------------------------
+# production: true forces the three toggles below off (lockdown), winning over them.
+production: false                     # env: BELLU_GRAPH_PRODUCTION
+graphql_introspection: true           # env: BELLU_GRAPH_GRAPHQL_INTROSPECTION
+playground: true                      # serve /playground   (env: BELLU_GRAPH_PLAYGROUND)
+debug_ui: true                        # serve the debug UI at /  (env: BELLU_GRAPH_DEBUG_UI)
+allowed_origins: []                   # browser Origin allowlist (WS/CORS); [] = same-origin
+                                      #   env: BELLU_GRAPH_ALLOWED_ORIGINS (comma-separated)
+
+# --- Auth & TLS (both off by default) ----------------------------------------
+# Bearer tokens are SECRETS — set them via BELLU_GRAPH_AUTH_TOKENS (env), never here:
+#   BELLU_GRAPH_AUTH_TOKENS="tok-a,tok-b" bellugraph-server ...
+# Clients then send  Authorization: Bearer <token>  (HTTP and gRPC).
+tls_cert_file: ""                     # PEM cert; with the key, serves TLS  (env: BELLU_GRAPH_TLS_CERT_FILE)
+tls_key_file: ""                      # PEM private key                     (env: BELLU_GRAPH_TLS_KEY_FILE)
+
+# Note: --mcp-stdio (serve only MCP over stdio, for Claude Desktop) is a run mode,
+# not a steady-state config; pass it as a flag when you need it.
+# The server also exposes /healthz (liveness) and /readyz (readiness) on `listen`.

@@ -1,0 +1,17 @@
+{
+  "operationId": "server.connect",
+  "name": "connect-bad-code",
+  "method": "GET",
+  "path": "/auth/connect/not-a-real-code",
+  "request": {
+    "headers": {
+      "accept": "application/json"
+    }
+  },
+  "status": 401,
+  "contentType": "application/json",
+  "body": {
+    "_tag": "UnauthorizedError",
+    "message": "Pairing link expired or already used"
+  }
+}

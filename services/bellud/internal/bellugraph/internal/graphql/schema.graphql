@@ -1,0 +1,777 @@
+directive @goField(
+  forceResolver: Boolean
+  name: String
+  omittable: Boolean
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+"""
+The kind of a typed attribute value: a string, a 64-bit integer, a double, a
+boolean, or — since descriptive attributes carry the full AnyValue (ADR 0004) —
+an array or a nested map, each given as a compact JSON encoding in `value`.
+
+An identifying attribute is always a scalar; only a descriptive one can be an
+array or a map.
+"""
+enum ValueType {
+  STRING
+  INT
+  DOUBLE
+  BOOL
+  "An array AnyValue; `value` is its compact JSON encoding."
+  ARRAY
+  "A nested map (kvlist) AnyValue; `value` is its compact JSON encoding."
+  KVLIST
+}
+
+"""
+A single attribute: a key paired with a typed value. The value is rendered as a
+string for transport; `type` tells you how to interpret it (e.g. the string
+`"8"` with type INT is the integer 8). Example: { key: "status", value: "up",
+type: STRING }.
+"""
+type Attribute {
+  "The attribute key, e.g. `host.name` or `status`."
+  key: String!
+  "The value rendered as a string. Interpret it according to `type`."
+  value: String!
+  "How to interpret `value`."
+  type: ValueType!
+}
+
+"""
+The classification of a change, per the Bellu Graph Engine change taxonomy. Use this to ask
+'what kind of change happened', e.g. filter recent changes to state flips or to
+structural relation changes.
+"""
+enum ChangeType {
+  """
+  The entity was first OBSERVED at this event — not "it did not exist before".
+  This graph is exactly as complete as its producers, so absence is never
+  evidence of absence: the thing may have been running, unobserved, for months.
+
+  It is also emitted when an entity comes BACK. Re-asserted within the
+  resurrection grace window it reclaims its original id, and after its tombstone
+  was evicted it appears under a new one; either way the change type is this.
+  """
+  ENTITY_CREATED
+  "The entity existed and is now soft-deleted; the log retains its history."
+  ENTITY_DELETED
+  """
+  **Never emitted.** Under exact identity matching (ADR 0018) an identity change
+  is a different entity, so the engine has no reason to produce this. The value
+  is retained to replay logs written before that rule and cannot be removed
+  without breaking them. Do not write a handler waiting for it.
+  """
+  ENTITY_IDENTITY_CHANGED
+  "A descriptive (non-identifying) attribute changed."
+  ENTITY_ATTRIBUTE_UPDATED
+  "A state-flagged attribute (oper_state, admin_state, status) flipped value."
+  ENTITY_STATE_CHANGED
+  "A heartbeat: the entity is alive but nothing changed."
+  ENTITY_UNCHANGED
+  "A new relation (edge) appeared."
+  RELATION_ADDED
+  "A relation (edge) disappeared."
+  RELATION_REMOVED
+  "Relation metadata mutated."
+  RELATION_ATTRIBUTE_CHANGED
+}
+
+"""
+An infrastructure entity (a host, process, network interface, address, route,
+or service listener) aligned with the OpenTelemetry entity data model. It
+carries two handles: `identityFingerprint`, which names the entity itself and
+is the one to keep, and `id`, which is local to the answering replica.
+"""
+type Entity {
+  """
+  This replica's local identifier for the entity (a ULID). It differs between
+  replicas and is re-minted when an entity returns after a long silence, so it
+  is a detail of the answering node, not a durable reference — prefer
+  `identityFingerprint` to carry between calls or to store (ADR 0035).
+  """
+  id: ID!
+  """
+  The handle that names the entity itself, derived from its type and
+  identifying attributes. Every replica computes the same value without
+  coordinating, so it survives a failover and a re-mint. Anywhere this schema
+  takes an entity id it also takes a fingerprint, and the identity itself
+  written inline as `type:key=value` (comma-separated for a multi-key
+  identity) — which reaches the entity without a lookup first (ADR 0035).
+  """
+  identityFingerprint: String!
+  """
+  What a human calls this entity — `dash172` for a host, `senhub-ping` for a
+  container — or empty when nothing observed on it reads better than its
+  identity. Render it as-is: it is the display value, and it is the only field
+  meant to be shown on its own.
+
+  It is NOT a key. A display name drifts — a host is renamed while its
+  `host.id` does not — so nothing may group, join or match on it. Use
+  `identityFingerprint` for that. The two exist separately so that neither
+  invites the other's use (ADR 0035).
+  """
+  displayName: String!
+  "Entity type, e.g. `host`, `process`, `network.interface`."
+  type: String!
+  "Identifying attributes — their values together identify the entity."
+  identity: [Attribute!]!
+  "Descriptive (non-identifying) attributes, e.g. `status`, `os`."
+  attributes: [Attribute!]!
+  "URL versioning the entity definition (may be empty)."
+  schemaUrl: String!
+  "True if the entity has been soft-deleted (its history is retained)."
+  deleted: Boolean!
+  """
+  Operator annotations attached out-of-band, or null if the entity has none.
+
+  **Replica-local.** Annotations live in a per-tenant sidecar that log shipping
+  does not replicate, so null means EITHER no note exists OR this replica is not
+  the one that received the write. Absence is not proof. The notes an operator
+  most wants during maintenance are exactly those written before the primary went
+  down, and the reader is then served by the replica that may lack them. An
+  operator can compare `bellu_graph_annotations_entities` across the pair.
+  These are an overlay kept in a per-tenant sidecar — never producer truth and
+  never part of the event log.
+  """
+  annotations: Annotation @goField(forceResolver: true)
+
+  """
+  The producers asserting this entity right now — who sends it.
+
+  Several names mean they agree it EXISTS, not that they agree on its attributes:
+  the last writer sets those. A suspect value therefore has someone to go and ask.
+
+  **An `asOf` query answers this from the LIVE table, not from the instant you
+  asked for.** Who asserts a thing is live state and the fold does not rebuild
+  it, so on a past-instant read this field states who asserts the entity TODAY —
+  a false attribution, not an approximation. The MCP surface withholds it on an
+  `asOf` read; this surface does not yet (bellugraph#528). Do not conclude anything
+  about who asserted an entity at a past instant from a GraphQL `asOf` query.
+  """
+  assertedBy: [String!]! @goField(forceResolver: true)
+  """
+  A sentence naming what an empty `assertedBy` actually means, or null when
+  there is nothing to say.
+
+  An empty `assertedBy` covers two situations: nothing asserts the entity, and
+  it survives on a zero deadline; or something asserts it and sent no producer
+  identity — a live claim nobody can be asked about, and one no named producer
+  can ever release. This field is non-null only in the second case, and says
+  so. The MCP surface carries the same distinction in its provenance field.
+
+  **Live state, like `assertedBy`: an `asOf` query answers it from today's
+  table, not from the instant asked for.**
+  """
+  provenance: String @goField(forceResolver: true)
+
+  """
+  The collection methods asserting this entity right now — how it was gathered.
+
+  One instrumentation scope per method (`senhub-agent/snmp-route`, ...), which is
+  the grain the producer contract makes normative and the one a producer debugs
+  in. `assertedBy` is who sends it; this is how. **Two scopes mean two methods see
+  the same thing, which is a different situation from one method reported by two
+  agents** — and those two cases were indistinguishable from the outside.
+
+  Empty when no asserting producer recorded a scope, which reads as not recorded
+  rather than as a collector with no name.
+
+  **Live state, like `assertedBy`: an `asOf` query answers it from today's table
+  and not from the instant asked for (bellugraph#528).**
+  """
+  collectedBy: [String!]! @goField(forceResolver: true)
+  """
+  How finely any timestamp about this entity may be read, or null when no live
+  producer declares a cadence. Ask for it before comparing event times.
+  """
+  resolution: Resolution @goField(forceResolver: true)
+}
+
+"""
+The resolution of Bellu Graph Engine's timestamps for one entity.
+
+`eventTime` is when a producer OBSERVED a fact, never when the fact became true.
+`observationInterval` is the liveness interval the producers DECLARED, padded
+above their real reporting cadence — an upper bound on the uncertainty, never an
+under-statement. Two changes closer together than that interval carry no
+guaranteed ordering, and a causal conclusion drawn from such a gap — including
+against an external clock — needs evidence from outside Bellu Graph Engine.
+
+The meaning is carried as a sentence, not only as a number, for the reason
+`delete_source` is (#346): a bare duration beside nanosecond timestamps invites
+exactly the misreading it exists to prevent.
+"""
+type Resolution {
+  "The liveness interval this entity's producers declared, e.g. `30s`. An upper bound on the uncertainty, not their real reporting cadence."
+  observationInterval: String!
+  "What that implies for reading timestamps, including what they cannot tell you."
+  meaning: String!
+}
+
+"""
+One entity in a canonical group: an alias asserted to be the same real thing as
+the entity queried.
+"""
+type CanonicalMember {
+  "Logical id of the alias."
+  id: ID!
+  """
+  Its entity type, or empty when `state` is not `live`. Read `state` to learn
+  which: an empty type on its own cannot say whether the alias was deleted, was
+  never held, or merely failed to render.
+  """
+  type: String!
+  "A readable rendering (`type key=value …`), or empty when `state` is not `live`."
+  label: String!
+  """
+  Whether this member is still there, and if not, in which way. Read it before
+  treating an alias as a usable entity.
+
+  - `live` — held and not deleted; `type` and `label` are filled.
+  - `deleted` — held as a tombstone: it existed, a producer or a cascade removed
+    it, and the belief that named it is still asserted. The group deliberately
+    keeps it, because dropping it would make a retracted alias look like one that
+    was never claimed.
+  - `unresolvable` — the belief names an id this graph holds no entity for at
+    all. The walk follows `same_as` edges without checking their far end, so an
+    edge can outlive the entity it pointed at, or name one that never arrived.
+
+  The three were one empty string until 0.23, and this field exists because a
+  consumer could not tell them apart — the same confusion between an absence and
+  an answer that the rest of this schema exists to remove.
+  """
+  state: CanonicalMemberState!
+}
+
+"""
+Whether a canonical group member is still there, and if not, in which way.
+The same vocabulary backs the MCP `get_entity` overlay, so both surfaces answer
+with the same words.
+"""
+enum CanonicalMemberState {
+  "Held and not deleted."
+  live
+  "Held as a tombstone: it existed and was removed, and the belief still names it."
+  deleted
+  "The belief names an id this graph holds no entity for."
+  unresolvable
+}
+
+"""
+One supporting `same_as` belief edge, with the producer's provenance.
+"""
+type SameAsLink {
+  "Logical id of the source entity."
+  from: ID!
+  "Logical id of the target entity."
+  to: ID!
+  "The producer's stated probability that the endpoints are the same thing."
+  confidence: Float!
+  "The evidence given for the belief, e.g. `hyperv-kvp` (may be empty)."
+  basis: String!
+}
+
+"""
+The read-time identity overlay of ADR 0020: the entities that high-confidence
+`same_as` edges assert are the same real thing as the one queried, plus the
+edges justifying it.
+
+It is never stored. The exact entities stay separate in the graph, and evidence
+below the server's confidence threshold is kept but does not collapse anything —
+a wrong merge answers confidently about the wrong machine, which is worse than a
+visible gap. The same walk and threshold back the MCP `get_entity` overlay, so
+both surfaces answer identically.
+"""
+type CanonicalGroup {
+  "The other entities in the group, sorted by id (never includes the entity queried)."
+  aliases: [CanonicalMember!]!
+  "The `same_as` edges supporting the group, sorted by endpoint."
+  links: [SameAsLink!]!
+}
+
+"""
+A single operator annotation: a key paired with a free-text value. Unlike an
+`Attribute`, an annotation value is always a string and carries no `ValueType`.
+"""
+type AnnotationEntry {
+  "The annotation key, e.g. `owner` or `runbook`."
+  key: String!
+  "The free-text value."
+  value: String!
+}
+
+"""
+The operator annotations on an entity: out-of-band notes an operator attached,
+kept in a per-tenant sidecar and never mixed into producer truth or the log.
+"""
+type Annotation {
+  "The annotation entries, sorted by key."
+  values: [AnnotationEntry!]!
+  "Who set them, if recorded (may be empty)."
+  author: String
+  "When they were last updated (RFC 3339), or empty if never set."
+  updatedAt: String
+}
+
+"""
+A typed, directed edge between two entities (referenced by their logical ids).
+`structural: true` means the relation's appearance/disappearance is significant
+(suitable for alerting), e.g. `runs_on`, `has_interface`.
+"""
+type Relation {
+  "Deterministic identifier derived from type and endpoints."
+  id: ID!
+  "Relation type, e.g. `runs_on`, `has_interface`, `listens_on`."
+  type: String!
+  "Logical id of the source entity."
+  fromId: ID!
+  "Logical id of the target entity."
+  toId: ID!
+  "Optional edge metadata, e.g. `port` on `listens_on`."
+  attributes: [Attribute!]!
+  "Whether the relation is structural (its add/remove is significant)."
+  structural: Boolean!
+  """
+  The producers asserting this EDGE right now. An edge survives while any of them
+  asserts it, so one producer's silence never retracts another's edge.
+
+  **Live state: an `asOf` query answers this from today's table, not from the
+  instant asked for (bellugraph#528).** The edge itself is the past state; who asserts
+  it is not. Draw no conclusion about a past instant's provenance from here.
+  """
+  assertedBy: [String!]! @goField(forceResolver: true)
+  """
+  The collection methods (instrumentation scopes) recorded on this edge's SOURCE
+  entity, which an embedded relation INHERITS — **not** the method that observed
+  the link. An edge observed by a different method than its source entity carries
+  its source's method anyway, so this field cannot tell you which method observed
+  the link; and a methods inventory built from entities cannot show a collector
+  that produces only relations, since such a collector has no entity to carry its
+  name.
+
+  **Two edges of one type are not the same claim either.** An adjacency protocol
+  *states* a link; a forwarding table or an address cache lets one be *inferred*.
+  Both arrive as `connected_to`, and this field cannot draw that distinction for
+  you — it names how the source entity was gathered, not how the link was seen.
+
+  One producer running several methods contributes **all** of them, the liveness
+  reference being keyed on the speaker — the producer AND the method — so read
+  this as a set of methods, several of which may belong to one agent.
+
+  Empty when the source entity's producers recorded no scope, which reads as not
+  recorded rather than as no collector.
+
+  **Live state: an `asOf` query answers it from today's table, not from the
+  instant asked for.**
+  """
+  collectedBy: [String!]! @goField(forceResolver: true)
+
+}
+
+"""
+A qualified, bi-temporal change event from the log. Exactly one of `entity` or
+`relation` is set.
+
+`eventTime` is when a producer OBSERVED the fact, **never** when the fact became
+true: a producer polls, so the change happened somewhere in the interval before
+this instant. See `Resolution`, which carries that producer's cadence — two
+changes closer together than it carry no guaranteed ordering, and no causal
+conclusion may be drawn from a gap that small, including against an external
+clock.
+
+`recordedAt` is when Bellu Graph Engine recorded it. They differ for late or retroactive
+events — query history in eventTime space, audit with recordedAt.
+"""
+type ChangeEvent {
+  "Event identifier (a ULID, time-sortable)."
+  id: ID!
+  "The classification of this change."
+  changeType: ChangeType!
+  "When a producer OBSERVED the fact, not when it became true (RFC 3339) — see Resolution."
+  eventTime: String!
+  "When Bellu Graph Engine recorded the event (RFC 3339)."
+  recordedAt: String!
+  """
+  Groups the events of ONE producer observation.
+
+  Two changes sharing this value were committed together, in a single durable
+  append by one producer; two with different values were not. Pair them on
+  **equality, with no tolerance window** — `recordedAt` is set per event and may
+  differ inside one commit, so a time-based pairing needs a guess about clock
+  granularity and this does not.
+
+  **Check the group before pairing.** A restored log re-stamps this field in
+  batches of a thousand, so after a disaster recovery a group holds unrelated
+  changes. The discriminator is the **spread of `recordedAt` inside the group**: a
+  real commit was written at one instant, so its events differ by microseconds,
+  while a restored batch keeps each event's original `recordedAt`, spread over
+  hours. More than a second of spread means a restore artifact — do not pair, and
+  say that is why. Neither the size of the group nor the number of producers in it
+  discriminates: a mass liveness expiry is one real commit holding hundreds of
+  events from several producers.
+
+  A route deleted and a route created sharing a `commitSeq` is one observation of
+  a route that changed. **Whether that means a gateway change is your conclusion,
+  not Bellu Graph Engine's**: the engine stores facts, and two such events can also be
+  unrelated observations that happened to be committed together by the same
+  producer.
+
+  Null on events written before this field existed, where null means unknown
+  rather than "a commit of its own".
+  """
+  commitSeq: String
+
+  """
+  The collection method that observed this change.
+
+  One instrumentation scope per method (`senhub-agent/snmp-route`,
+  `senhub-agent/snmp-fdb`, ...), which is where the producer contract puts
+  provenance — deliberately, rather than on a `source` attribute.
+
+  **On a liveness expiry this names the collector that STOPPED speaking**, not an
+  author of the deletion: Bellu Graph Engine expired the entity, and the scope is the one that
+  had been asserting it. That is the reading the question needs — "which of my
+  collection methods is losing its entities" was unanswerable before, and it is
+  the first question anyone asks of a graph fed by more than one source.
+
+  Null when the producer sent no scope name, and on events written before this
+  field existed.
+  """
+  scope: String
+  "Bellu Graph Engine schema version of the event, e.g. `1.0`."
+  schemaVersion: String!
+  "For attribute/state changes, the keys that changed."
+  changedKeys: [String!]!
+  """
+  For an entity.deleted event, the producer's motive (entity.delete.reason):
+  an OPEN enum (e.g. `terminated`, `expired`, `evicted`, `user_requested`,
+  `scaled_down`) kept verbatim. Null when none was given or for non-delete
+  events.
+  """
+  deleteReason: String
+  """
+  For entity.deleted / relation.removed, who AUTHORED the disappearance:
+  `producer` (explicit delete or removal-by-absence), `liveness_expiry`
+  (Bellu Graph Engine's backstop reaped it after a missed heartbeat), or `cascade` (an
+  endpoint died and took the edge with it). Consumer-authored provenance,
+  distinct from deleteReason (which stays producer-supplied verbatim). Null
+  on non-removal events and on events recorded before schema 1.1 — an absent
+  source means UNKNOWN, never `producer`.
+  """
+  deleteSource: String
+  """
+  Only meaningful on a subscription stream: events dropped just before this one
+  because the subscriber could not keep up. Positive means you have a gap —
+  re-query the current state and resume. Always 0 on query results.
+  """
+  dropped: Int!
+  "The entity this event is about, if it is an entity event."
+  entity: Entity
+  "The relation this event is about, if it is a relation event."
+  relation: Relation
+}
+
+"Relay-style pagination metadata."
+type PageInfo {
+  "True if more results follow the current page."
+  hasNextPage: Boolean!
+  "Opaque cursor of the last edge; pass as `after` to fetch the next page."
+  endCursor: String
+}
+
+type EntityEdge {
+  cursor: String!
+  node: Entity!
+}
+
+"A paginated list of entities."
+type EntityConnection {
+  edges: [EntityEdge!]!
+  pageInfo: PageInfo!
+  "Total number of entities matching the filter, across all pages."
+  totalCount: Int!
+}
+
+type RelationEdge {
+  cursor: String!
+  node: Relation!
+}
+
+"A paginated list of relations."
+type RelationConnection {
+  edges: [RelationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ChangeEdge {
+  cursor: String!
+  node: ChangeEvent!
+}
+
+"""
+The direction a change page runs in.
+
+It is declared because the two change pages on this surface run in OPPOSITE
+directions — `entityHistory` oldest-first, `recentChanges` newest-first — and
+they share this connection type. A consumer holding one could not tell which,
+and the mistake is silent: an ordered list of events looks complete whichever
+end was cut off.
+"""
+enum ChangeOrder {
+  "Oldest event first; the page's LAST edge is its most recent."
+  OLDEST_FIRST
+  "Newest event first; the page's FIRST edge is its most recent."
+  NEWEST_FIRST
+}
+
+"A paginated list of change events."
+type ChangeConnection {
+  edges: [ChangeEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+
+  "Which end of the matching set this page starts from. See `ChangeOrder`."
+  order: ChangeOrder!
+
+  """
+  Whether the most recent matching event is inside this page.
+
+  `pageInfo.hasNextPage` answers "is there more"; this answers **"is the newest
+  event in what I am holding"**, which is the question a reader actually acts on.
+  They are not the same question, and the difference has produced a confident
+  wrong conclusion: `entityHistory` pages oldest-first, so a reader who asks for
+  a generous page and takes the last element believes they hold the newest event
+  while holding one that can be days old. `hasNextPage: true` was present and
+  technically honest the whole time.
+  """
+  holdsNewest: Boolean!
+
+  """
+  Whether the oldest matching event is inside this page.
+
+  The mirror of `holdsNewest`, and the one that matters on `recentChanges`: that
+  page runs newest-first, so what a truncation removes is the far end of the
+  window — the beginning of an incident rather than its tail.
+  """
+  holdsOldest: Boolean!
+}
+
+"Filter for the entities query."
+input EntityFilter {
+  "Restrict to this entity type, e.g. `host`."
+  type: String
+  """
+  Keep only entities where every given key equals the given value, matched
+  against both identifying and descriptive attributes (AND semantics). Mirrors
+  the MCP `find_entities` match — use it to filter on governance attributes such
+  as `service.criticality` or `entity.owner.team`.
+  """
+  match: [AttributeMatch!]
+}
+
+"One attribute key/value equality, used by EntityFilter.match."
+input AttributeMatch {
+  key: String!
+  value: String!
+}
+
+"Filter for the relations query."
+input RelationFilter {
+  "Restrict to this relation type, e.g. `runs_on`."
+  type: String
+  "Restrict to relations originating from this entity id."
+  fromId: ID
+  "Restrict to relations targeting this entity id."
+  toId: ID
+}
+
+"""
+What this answer was built from: which tenant, how much it holds, how fresh it
+is, and how far back it can be asked.
+
+`tenant` is NOT an echo of your request. In derive-only tenancy the tenant comes
+from the credential and a client-supplied `X-Scope-OrgID` is ignored, so a
+request naming one tenant is answered from another — correctly, and silently.
+Compare this field with what you asked for before concluding anything about the
+data.
+"""
+type GraphScope {
+  "The tenant this answer was built from. Empty on a single-tenant instance."
+  tenant: String
+  "The operator's human label for that tenant, when one is configured. Render this; compare `tenant`. No name resolves back to a tenant, so it can never become a second identity for the same thing."
+  tenantName: String
+  "Entities the answering graph holds."
+  entities: Int!
+  "Relations the answering graph holds."
+  relations: Int!
+  "Event time of the newest event in this tenant's log: how fresh this instance is. A live graph with a stale log means producers stopped talking, which is itself the finding."
+  newestEvent: String
+  "The retention horizon. History and asOf reads reach no further back, and a window starting before it cannot be answered in full."
+  oldestAnswerable: String
+
+  """
+  The past instant this scope describes, or null when it describes the present.
+
+  Under `asOf` the counts above come from the folded graph, not the live one: an
+  answer about a past instant whose scope describes the present is the mute
+  source this block exists to end, wearing a provenance block.
+  """
+  asOf: String
+}
+
+type Query {
+  """
+  What this answer was built from: the tenant served, the size of the graph, its
+  freshness and its retention horizon. Read `tenant` before concluding anything
+  about data you asked for by tenant: a scoped credential decides it, and your
+  header may have been ignored.
+  """
+  graphScope(asOf: String): GraphScope!
+
+  """
+  Fetch a single entity by its logical id. Returns null if unknown. Provide
+  `asOf` (RFC 3339) to read the entity as it was at that instant (event-time).
+
+  **`asOf` is a full REPLAY of the event log from the origin into a fresh graph,
+  not a filter.** Its cost tracks the size of this tenant's log, not how far back
+  you asked: two minutes costs the same as twenty-four hours. Folds are bounded
+  process-wide to NumCPU/2 at once, across every tenant and every surface, so
+  several queue behind each other and behind other readers of the instance. One
+  per displayed row will take an instance down — a before/after display of thirty
+  lines is thirty replays. A live read is in memory and `entityHistory` is a
+  linear range read over the log; neither is in this class.
+  """
+  entity(id: ID!, asOf: String): Entity
+
+  """
+  List entities (current state) in ascending id order (ULIDs are time-sortable,
+  so this is oldest-first), with Relay pagination. Use `first` (default 50,
+  **maximum 200**) and `after` (an `endCursor` from a previous page). Provide
+  `asOf` (RFC 3339) to list the graph as it was at that instant.
+
+  **`asOf` is a full REPLAY of the event log from the origin into a fresh graph,
+  not a filter.** Its cost tracks the size of this tenant's log, not how far back
+  you asked: two minutes costs the same as twenty-four hours. Folds are bounded
+  process-wide to NumCPU/2 at once, across every tenant and every surface, so
+  several queue behind each other and behind other readers of the instance. One
+  per displayed row will take an instance down — a before/after display of thirty
+  lines is thirty replays. A live read is in memory and `entityHistory` is a
+  linear range read over the log; neither is in this class.
+
+  A `first` above 200 is an **error**, not a smaller page: being served fewer
+  than asked without being told is how a partial answer gets read as a complete
+  one. Read `totalCount` and `pageInfo.hasNextPage` to know whether you hold
+  everything.
+  """
+  entities(filter: EntityFilter, first: Int = 50, after: String, asOf: String): EntityConnection!
+
+  """
+  List relations (current state) with Relay pagination. `first` defaults to 50
+  and is capped at 200; asking for more is an error rather than a smaller page.
+  Provide `asOf` (RFC 3339) to list the graph as it was at that instant.
+
+  **`asOf` is a full REPLAY of the event log from the origin into a fresh graph,
+  not a filter.** Its cost tracks the size of this tenant's log, not how far back
+  you asked: two minutes costs the same as twenty-four hours. Folds are bounded
+  process-wide to NumCPU/2 at once, across every tenant and every surface, so
+  several queue behind each other and behind other readers of the instance. One
+  per displayed row will take an instance down — a before/after display of thirty
+  lines is thirty replays. A live read is in memory and `entityHistory` is a
+  linear range read over the log; neither is in this class.
+  """
+  relations(filter: RelationFilter, first: Int = 50, after: String, asOf: String): RelationConnection!
+
+  """
+  The timeline of change events for one entity. `since`/`until` (RFC 3339) bound
+  the query in eventTime space — when a producer OBSERVED each change, not when
+  it became true. Provide `asKnownAt` (RFC 3339) to
+  switch to the audit view: only events Bellu Graph Engine had recorded by that instant.
+  `entity.unchanged` heartbeats are excluded unless `includeHeartbeats` is set,
+  matching the MCP `entity_history` tool — they dominate a raw timeline.
+
+  **This timeline pages oldest-first, and `first` is capped at 200.** Asking for
+  more is an error rather than a smaller page: a caller who requested five
+  hundred, received two hundred and took the last element read a three-hour-old
+  event as the newest, on a host that had emitted twice in the previous forty
+  minutes. `pageInfo.hasNextPage` answers "is there more", not "what you hold is
+  not the end". To reach the recent end directly, bound the query with `since`,
+  or use the MCP `entity_history` tool, which keeps the NEWEST changes when it
+  truncates.
+  """
+  entityHistory(id: ID!, since: String, until: String, asKnownAt: String, includeHeartbeats: Boolean! = false, first: Int = 100, after: String): ChangeConnection!
+
+  """
+  Recent change events across all entities within `window` (a Go duration like
+  `15m`, `2h`, `24h`), newest-first, with Relay pagination. `window` defaults to
+  `1h` when neither it nor `from` is given — the default lives in the resolver
+  rather than in this signature, so that supplying `window` can be told apart
+  from omitting it, and giving both ways of naming a window is an error instead
+  of a silent preference. `entity.unchanged` heartbeats are excluded unless `includeHeartbeats`
+  is set — both matching the MCP `recent_changes` tool, so the same question
+  asked over either surface takes the same shape, the same defaults, and the
+  same answer. Heartbeats dominate a live window; raw timelines want them,
+  change review does not.
+
+  Give `from`/`to` (RFC 3339 instants) instead of `window` to investigate a PAST
+  window — the minutes before an alert, a maintenance campaign. A wide `window`
+  plus `first` keeps only the NEWEST changes, so an event hours back is simply
+  absent from an answer that claims to cover it; bounding the window is how you
+  avoid concluding that nothing happened.
+  """
+  recentChanges(window: String, from: String, to: String, scope: String, match: [AttributeMatch!], includeHeartbeats: Boolean! = false, first: Int = 100, after: String): ChangeConnection!
+
+  """
+  The canonical group of an entity: everything believed to be the same real
+  thing as it, over `same_as` edges at or above the server's confidence
+  threshold, transitively. Returns null when the entity is unknown or has no
+  qualifying alias — an entity that is only itself has no group.
+
+  It is a top-level query rather than a field on `Entity` so that `asOf`
+  (RFC 3339) selects the graph the belief is read from: a group is derived from
+  edges, and those edges change over time like any other.
+  """
+  canonical(id: ID!, asOf: String): CanonicalGroup
+}
+
+"""
+Server-side filter for a change subscription: only matching events are
+delivered, so a consumer watching one type does not receive everything.
+"""
+input ChangeFilter {
+  "Only events about entities of this type (entityChanged)."
+  entityType: String
+  "Only events about relations of this type (relationChanged)."
+  relationType: String
+  "Only this change classification."
+  changeType: ChangeType
+  "Only structural relation changes — alert-worthy topology (relationChanged)."
+  structuralOnly: Boolean
+}
+
+"A single annotation to merge: an empty `value` removes that key."
+input AnnotationInput {
+  "The annotation key."
+  key: String!
+  "The free-text value; empty removes the key."
+  value: String!
+}
+
+type Mutation {
+  """
+  Attach operator annotations to an entity, merging onto any existing ones (an
+  empty value removes that key). Annotations are an overlay kept in a per-tenant
+  sidecar — never producer truth and never part of the event log. Requires a
+  write-capable bearer token (full or tenant-scoped); a read-only token is
+  refused. Returns the merged annotation.
+  """
+  annotateEntity(id: ID!, annotations: [AnnotationInput!]!): Annotation!
+}
+
+type Subscription {
+  "Stream entity change events as they are classified."
+  entityChanged(filter: ChangeFilter): ChangeEvent!
+  "Stream relation change events as they are classified."
+  relationChanged(filter: ChangeFilter): ChangeEvent!
+}

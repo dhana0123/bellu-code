@@ -1,0 +1,643 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+package ingest
+
+import (
+	"context"
+	"net"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
+
+	"go.opentelemetry.io/collector/pdata/pcommon"
+	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/change"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/model"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/projection"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/store"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/tenant"
+)
+
+var t0 = time.Unix(1_700_000_000, 0).UTC()
+
+// startReceiver wires a real store + projection + engine behind an OTLP gRPC
+// receiver on a loopback port and returns an OTLP logs client plus the graph.
+// Extra dial options (e.g. a default call compressor) let a test exercise the
+// wire path real producers use.
+func startReceiver(t *testing.T, dialOpts ...grpc.DialOption) (plogotlp.GRPCClient, *projection.Graph, *store.Store) {
+	t.Helper()
+	st, err := store.Open(t.TempDir(), store.DefaultConfig())
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+
+	g := projection.New()
+	eng := change.New(g, st, change.WithClock(func() time.Time { return t0 }))
+	rec := NewReceiver(eng, nil)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	go func() { _ = rec.Serve(lis) }()
+	t.Cleanup(rec.Stop)
+
+	opts := append([]grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}, dialOpts...)
+	conn, err := grpc.NewClient(lis.Addr().String(), opts...)
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	return plogotlp.NewGRPCClient(conn), g, st
+}
+
+func export(t *testing.T, c plogotlp.GRPCClient, ld plog.Logs) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := c.Export(ctx, plogotlp.NewExportRequestFromLogs(ld)); err != nil {
+		t.Fatalf("export: %v", err)
+	}
+}
+
+func entityRecord(sl plog.ScopeLogs, eventName, entType string, ident, attrs map[string]string) {
+	lr := sl.LogRecords().AppendEmpty()
+	lr.SetTimestamp(pcommon.NewTimestampFromTime(t0))
+	lr.SetEventName(eventName)
+	a := lr.Attributes()
+	a.PutStr(attrEntityType, entType)
+	idm := a.PutEmptyMap(attrEntityID)
+	for k, v := range ident {
+		idm.PutStr(k, v)
+	}
+	if attrs != nil {
+		am := a.PutEmptyMap(attrEntityDesc)
+		for k, v := range attrs {
+			am.PutStr(k, v)
+		}
+	}
+}
+
+func TestReceiverEntityAndRelation(t *testing.T) {
+	client, g, _ := startReceiver(t)
+
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	// the host exists before the process that embeds a runs_on -> host edge.
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, map[string]string{"status": "up"})
+	embeddedEntity(sl, t0, model.TypeProcess, map[string]string{"pid": "100"},
+		[]relDesc{{relType: model.RelRunsOn, toType: model.TypeHost, toID: map[string]string{"host.id": "h1"}}})
+	// a non-entity log record must be ignored
+	sl.LogRecords().AppendEmpty().Body().SetStr("unrelated log line")
+
+	export(t, client, ld)
+
+	if g.EntityCount() != 2 {
+		t.Errorf("entities = %d, want 2", g.EntityCount())
+	}
+	if g.RelationCount() != 1 {
+		t.Errorf("relations = %d, want 1", g.RelationCount())
+	}
+	// the host carries its descriptive attribute
+	id, found := g.MatchIdentity(model.TypeHost, []model.KeyValue{{Key: "host.id", Value: model.StringValue("h1")}})
+	if !found {
+		t.Fatal("host not found in projection")
+	}
+	host, ok, _ := g.GetEntity(id)
+	if !ok || len(host.Attributes) != 1 || host.Attributes[0].Key != "status" {
+		t.Errorf("host attributes = %+v, want [status]", host.Attributes)
+	}
+}
+
+// TestReceiverAcceptsGzip guards the gzip decompressor registration: real
+// producers (the OTel SDK, senhub-agent) compress exports with gzip by
+// default, and gRPC-Go does not install the codec unless the encoding package
+// is imported. Without it, a gzip'd export fails at the transport with
+// "Decompressor is not installed" before reaching the handler.
+//
+// The codec lives in a process-wide registry, so this test deliberately
+// references it by name only ("gzip") and does NOT import the encoding
+// package: the sole thing registering gzip in the test binary is the
+// production blank import in receiver.go. Drop that import and this test
+// fails to even compress the request — exactly the regression we guard.
+func TestReceiverAcceptsGzip(t *testing.T) {
+	client, g, _ := startReceiver(t, grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")))
+
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+
+	export(t, client, ld)
+
+	if g.EntityCount() != 1 {
+		t.Errorf("entities = %d, want 1 (gzip'd export must reach the handler)", g.EntityCount())
+	}
+}
+
+func TestReceiverEntityDelete(t *testing.T) {
+	client, g, _ := startReceiver(t)
+
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	export(t, client, ld)
+	if g.EntityCount() != 1 {
+		t.Fatalf("after create: %d entities, want 1", g.EntityCount())
+	}
+
+	del := plog.NewLogs()
+	dsl := del.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(dsl, evEntityDelete, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	export(t, client, del)
+	if g.EntityCount() != 0 {
+		t.Errorf("after delete: %d live entities, want 0", g.EntityCount())
+	}
+}
+
+// embeddedEntity appends an entity-state record carrying an embedded
+// `entity.relationships` array (the OTel spec form, PR #4836) to sl.
+func embeddedEntity(sl plog.ScopeLogs, when time.Time, typ string, id map[string]string, rels []relDesc) {
+	lr := sl.LogRecords().AppendEmpty()
+	lr.SetTimestamp(pcommon.NewTimestampFromTime(when))
+	lr.SetEventName(evEntityState)
+	a := lr.Attributes()
+	a.PutStr(attrEntityType, typ)
+	idm := a.PutEmptyMap(attrEntityID)
+	for k, v := range id {
+		idm.PutStr(k, v)
+	}
+	if rels != nil {
+		slv := a.PutEmptySlice(attrEntityRelationships)
+		for _, d := range rels {
+			m := slv.AppendEmpty().SetEmptyMap()
+			m.PutStr(relDescType, d.relType)
+			m.PutStr(relDescEntityType, d.toType)
+			tid := m.PutEmptyMap(relDescEntityID)
+			for k, v := range d.toID {
+				tid.PutStr(k, v)
+			}
+		}
+	}
+}
+
+// TestReceiverEmbeddedRelationships exercises the spec's embedded relationship
+// model end-to-end: a relation embedded on an entity-state event is ingested, and
+// re-emitting the source without it removes the relation.
+func TestReceiverEmbeddedRelationships(t *testing.T) {
+	client, g, _ := startReceiver(t)
+
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	embeddedEntity(sl, t0, model.TypeServiceInstance, map[string]string{"service.instance.id": "s1"},
+		[]relDesc{{relType: model.RelRunsOn, toType: model.TypeHost, toID: map[string]string{"host.id": "h1"}}})
+	export(t, client, ld)
+
+	if g.RelationCount() != 1 {
+		t.Fatalf("RelationCount = %d, want 1 (embedded runs_on)", g.RelationCount())
+	}
+	if n := len(g.ListRelations(model.RelRunsOn, "", "")); n != 1 {
+		t.Errorf("runs_on relations = %d, want 1", n)
+	}
+
+	// Re-emit s1 with no relationships — the runs_on is removed by absence.
+	ld2 := plog.NewLogs()
+	sl2 := ld2.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	embeddedEntity(sl2, t0.Add(time.Minute), model.TypeServiceInstance, map[string]string{"service.instance.id": "s1"}, nil)
+	export(t, client, ld2)
+
+	if g.RelationCount() != 0 {
+		t.Errorf("RelationCount = %d after dropping the embedded relationship, want 0", g.RelationCount())
+	}
+}
+
+// TestReceiverRemovalByAbsenceAfterTargetDeleted reproduces the #110 poison
+// pill: a source asserts an embedded relation, the target is deleted (the
+// cascade removes the edge), then the source drops the descriptor from its next
+// export. Per the contract that removal-by-absence is a no-op — the export must
+// succeed and the reconciler state must not replay the failure forever.
+func TestReceiverRemovalByAbsenceAfterTargetDeleted(t *testing.T) {
+	client, g, _ := startReceiver(t)
+
+	// 1. host h1 + service s1 with embedded runs_on -> h1.
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	embeddedEntity(sl, t0, model.TypeServiceInstance, map[string]string{"service.instance.id": "s1"},
+		[]relDesc{{relType: model.RelRunsOn, toType: model.TypeHost, toID: map[string]string{"host.id": "h1"}}})
+	export(t, client, ld)
+	if g.RelationCount() != 1 {
+		t.Fatalf("after assert: RelationCount = %d, want 1", g.RelationCount())
+	}
+
+	// 2. delete h1: the engine cascades the edge away.
+	del := plog.NewLogs()
+	dsl := del.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(dsl, evEntityDelete, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	export(t, client, del)
+	if g.RelationCount() != 0 {
+		t.Fatalf("after target delete: RelationCount = %d, want 0 (cascade)", g.RelationCount())
+	}
+
+	// 3. s1 re-emits WITHOUT the descriptor: the removal diff targets an edge
+	// whose endpoint no longer resolves — this export and every following one
+	// must succeed (the bug failed them all until restart).
+	for i := 0; i < 2; i++ {
+		ld := plog.NewLogs()
+		sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+		embeddedEntity(sl, t0.Add(time.Duration(i+1)*time.Minute), model.TypeServiceInstance,
+			map[string]string{"service.instance.id": "s1"}, nil)
+		export(t, client, ld)
+	}
+	if g.EntityCount() != 1 {
+		t.Errorf("EntityCount = %d, want 1 (s1 alive, h1 deleted)", g.EntityCount())
+	}
+}
+
+// TestReceiverRejectsInvalidRecordPerRecord pins the #109 boundary contract: a
+// batch mixing valid records with an unknown-type record persists the valid
+// ones, rejects the bad one alone via OTLP partial success (no transport
+// error, so the producer does not retry), and leaves the projection equal to a
+// replay of the durable log.
+func TestReceiverRejectsInvalidRecordPerRecord(t *testing.T) {
+	client, g, st := startReceiver(t)
+
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	entityRecord(sl, evEntityState, "not.a.registered.type", map[string]string{"x": "1"}, nil)
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h2"}, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	resp, err := client.Export(ctx, plogotlp.NewExportRequestFromLogs(ld))
+	if err != nil {
+		t.Fatalf("export errored (must be partial success, not failure): %v", err)
+	}
+	ps := resp.PartialSuccess()
+	if ps.RejectedLogRecords() != 1 {
+		t.Errorf("RejectedLogRecords = %d, want 1", ps.RejectedLogRecords())
+	}
+	if ps.ErrorMessage() == "" {
+		t.Error("partial success must carry the validation error message")
+	}
+
+	if g.EntityCount() != 2 {
+		t.Fatalf("EntityCount = %d, want 2 (valid siblings persisted)", g.EntityCount())
+	}
+	// The projection must equal a replay of the durable log: nothing applied or
+	// broadcast that was not appended.
+	g2 := projection.New()
+	if err := g2.Replay(st); err != nil {
+		t.Fatalf("replay: %v", err)
+	}
+	if g2.EntityCount() != g.EntityCount() || g2.RelationCount() != g.RelationCount() {
+		t.Errorf("projection diverged from replay(log): entities %d/%d relations %d/%d",
+			g.EntityCount(), g2.EntityCount(), g.RelationCount(), g2.RelationCount())
+	}
+
+	// A later valid export from the same producer keeps working.
+	ld2 := plog.NewLogs()
+	sl2 := ld2.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl2, evEntityState, model.TypeHost, map[string]string{"host.id": "h3"}, nil)
+	export(t, client, ld2)
+	if g.EntityCount() != 3 {
+		t.Errorf("EntityCount = %d after follow-up export, want 3", g.EntityCount())
+	}
+}
+
+// TestReceiverRejectsUnknownEmbeddedRelationTypePerRecord pins the #163
+// boundary contract: an embedded relationship descriptor with an unregistered
+// relationship.type is rejected per record via OTLP partial success instead of
+// reaching the store, where its Event.Validate failure failed the whole batch
+// as codes.Unavailable — the producer retried the identical export forever and
+// none of its valid siblings ever persisted.
+func TestReceiverRejectsUnknownEmbeddedRelationTypePerRecord(t *testing.T) {
+	client, g, st := startReceiver(t)
+
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	embeddedEntity(sl, t0, model.TypeServiceInstance, map[string]string{"service.instance.id": "s1"},
+		[]relDesc{{relType: "acme.made.up", toType: model.TypeHost, toID: map[string]string{"host.id": "h1"}}})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	resp, err := client.Export(ctx, plogotlp.NewExportRequestFromLogs(ld))
+	if err != nil {
+		t.Fatalf("export errored (must be partial success, not failure): %v", err)
+	}
+	ps := resp.PartialSuccess()
+	if ps.RejectedLogRecords() != 1 {
+		t.Errorf("RejectedLogRecords = %d, want 1", ps.RejectedLogRecords())
+	}
+	if !strings.Contains(ps.ErrorMessage(), "acme.made.up") {
+		t.Errorf("partial-success message must name the unknown type, got %q", ps.ErrorMessage())
+	}
+	if g.EntityCount() != 2 {
+		t.Fatalf("EntityCount = %d, want 2 (both entities persisted)", g.EntityCount())
+	}
+	if g.RelationCount() != 0 {
+		t.Errorf("RelationCount = %d, want 0 (the bad edge must not be staged)", g.RelationCount())
+	}
+	// The projection must equal a replay of the durable log: the rejection
+	// happened before staging, not after a partial apply.
+	g2 := projection.New()
+	if err := g2.Replay(st); err != nil {
+		t.Fatalf("replay: %v", err)
+	}
+	if g2.EntityCount() != g.EntityCount() || g2.RelationCount() != g.RelationCount() {
+		t.Errorf("projection diverged from replay(log): entities %d/%d relations %d/%d",
+			g.EntityCount(), g2.EntityCount(), g.RelationCount(), g2.RelationCount())
+	}
+
+	// The producer is not poison-pilled: a follow-up export with a registered
+	// relation type goes through end to end.
+	ld2 := plog.NewLogs()
+	sl2 := ld2.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	embeddedEntity(sl2, t0.Add(time.Minute), model.TypeServiceInstance, map[string]string{"service.instance.id": "s1"},
+		[]relDesc{{relType: model.RelRunsOn, toType: model.TypeHost, toID: map[string]string{"host.id": "h1"}}})
+	export(t, client, ld2)
+	if g.RelationCount() != 1 {
+		t.Errorf("RelationCount = %d after follow-up export, want 1", g.RelationCount())
+	}
+}
+
+// TestAcceptUnknownEmbeddedRelationType pins the open-vocabulary side of #163:
+// with accept_unknown_types on, a shape-valid embedded relationship of an
+// unregistered type is ingested end to end (boundary AND store backstop), not
+// rejected.
+func TestAcceptUnknownEmbeddedRelationType(t *testing.T) {
+	cfg := store.DefaultConfig()
+	cfg.AcceptUnknownTypes = true
+	st, err := store.Open(t.TempDir(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	g := projection.New()
+	eng := change.New(g, st, change.WithClock(func() time.Time { return t0 }))
+	rec := NewRoutedReceiver(func(string) (*change.Engine, error) { return eng, nil }, nil, nil, true, nil)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() { _ = rec.Serve(lis) }()
+	t.Cleanup(rec.Stop)
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	client := plogotlp.NewGRPCClient(conn)
+
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	embeddedEntity(sl, t0, model.TypeServiceInstance, map[string]string{"service.instance.id": "s1"},
+		[]relDesc{{relType: "acme.custom.link", toType: model.TypeHost, toID: map[string]string{"host.id": "h1"}}})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	resp, err := client.Export(ctx, plogotlp.NewExportRequestFromLogs(ld))
+	if err != nil {
+		t.Fatalf("open-vocabulary export: %v", err)
+	}
+	if got := resp.PartialSuccess().RejectedLogRecords(); got != 0 {
+		t.Errorf("rejected = %d, want 0: %s", got, resp.PartialSuccess().ErrorMessage())
+	}
+	if g.RelationCount() != 1 {
+		t.Fatalf("RelationCount = %d, want 1 (the unknown-type edge)", g.RelationCount())
+	}
+	if n := len(g.ListRelations("acme.custom.link", "", "")); n != 1 {
+		t.Errorf("acme.custom.link relations = %d, want 1", n)
+	}
+}
+
+// TestExportStatusCodes pins the OTLP retryability contract (#111): transient
+// append failures must surface as codes.Unavailable (retryable) and permanent
+// caller errors as codes.InvalidArgument (not retried), never codes.Unknown.
+func TestExportStatusCodes(t *testing.T) {
+	g := projection.New()
+	ap := &failingAppender{fail: true}
+	eng := change.New(g, ap, change.WithClock(func() time.Time { return t0 }))
+	rec := NewReceiver(eng, nil)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	go func() { _ = rec.Serve(lis) }()
+	t.Cleanup(rec.Stop)
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	client := plogotlp.NewGRPCClient(conn)
+
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_, err = client.Export(ctx, plogotlp.NewExportRequestFromLogs(ld))
+	if status.Code(err) != codes.Unavailable {
+		t.Errorf("append failure -> %v, want codes.Unavailable (retryable)", status.Code(err))
+	}
+
+	// Invalid tenant metadata is a permanent caller error.
+	badCtx := metadata.AppendToOutgoingContext(ctx, "x-scope-orgid", "../escape")
+	_, err = client.Export(badCtx, plogotlp.NewExportRequestFromLogs(ld))
+	if status.Code(err) != codes.InvalidArgument {
+		t.Errorf("invalid X-Scope-OrgID -> %v, want codes.InvalidArgument", status.Code(err))
+	}
+
+	// The retry after a healed store succeeds and reconverges.
+	ap.fail = false
+	if _, err := client.Export(ctx, plogotlp.NewExportRequestFromLogs(ld)); err != nil {
+		t.Fatalf("retry after heal: %v", err)
+	}
+	if g.EntityCount() != 1 {
+		t.Errorf("EntityCount = %d after retry, want 1", g.EntityCount())
+	}
+}
+
+// TestIngestCounters pins #113: the hot-path counters answer "is ingest
+// healthy?" — exports by outcome, records by result, tenant rejections.
+func TestIngestCounters(t *testing.T) {
+	st, err := store.Open(t.TempDir(), store.DefaultConfig())
+	if err != nil {
+		t.Fatalf("store: %v", err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	eng := change.New(projection.New(), st, change.WithClock(func() time.Time { return t0 }))
+	m := NewMetrics()
+	rec := NewRoutedReceiver(func(string) (*change.Engine, error) { return eng, nil }, nil, m, false, nil)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	go func() { _ = rec.Serve(lis) }()
+	t.Cleanup(rec.Stop)
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatalf("dial: %v", err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	client := plogotlp.NewGRPCClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// One export: a handled entity, an ignored non-entity record, a rejected
+	// unknown-type record.
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, model.TypeHost, map[string]string{"host.id": "h1"}, nil)
+	sl.LogRecords().AppendEmpty().Body().SetStr("just a log line")
+	entityRecord(sl, evEntityState, "not.a.type", map[string]string{"x": "1"}, nil)
+	if _, err := client.Export(ctx, plogotlp.NewExportRequestFromLogs(ld)); err != nil {
+		t.Fatalf("export: %v", err)
+	}
+	// And one rejected export: invalid tenant metadata.
+	badCtx := metadata.AppendToOutgoingContext(ctx, "x-scope-orgid", "../nope")
+	if _, err := client.Export(badCtx, plogotlp.NewExportRequestFromLogs(ld)); err == nil {
+		t.Fatal("invalid tenant must error")
+	}
+
+	counts := map[string]float64{}
+	for _, c := range m.Collectors() {
+		ch := make(chan prometheus.Metric, 16)
+		c.Collect(ch)
+		close(ch)
+		for pm := range ch {
+			var d dto.Metric
+			if err := pm.Write(&d); err != nil {
+				t.Fatal(err)
+			}
+			key := pm.Desc().String()
+			for _, l := range d.GetLabel() {
+				key += "|" + l.GetValue()
+			}
+			counts[key] = d.GetCounter().GetValue()
+		}
+	}
+	get := func(substr, label string) float64 {
+		for k, v := range counts {
+			if strings.Contains(k, substr) && (label == "" || strings.HasSuffix(k, "|"+label)) {
+				return v
+			}
+		}
+		t.Fatalf("metric %s{%s} not found in %v", substr, label, counts)
+		return 0
+	}
+	if v := get("bellu_graph_ingest_exports_total", "ok"); v != 1 {
+		t.Errorf("exports{ok} = %v, want 1", v)
+	}
+	if v := get("bellu_graph_ingest_exports_total", "error"); v != 1 {
+		t.Errorf("exports{error} = %v, want 1", v)
+	}
+	if v := get("bellu_graph_ingest_records_total", "handled|"+tenant.Default); v != 1 {
+		t.Errorf("records{handled} = %v, want 1", v)
+	}
+	if v := get("bellu_graph_ingest_records_total", "ignored|"+tenant.Default); v != 1 {
+		t.Errorf("records{ignored} = %v, want 1", v)
+	}
+	if v := get("bellu_graph_ingest_records_total", "rejected|"+tenant.Default); v != 1 {
+		t.Errorf("records{rejected} = %v, want 1", v)
+	}
+	if v := get("bellu_graph_ingest_tenant_rejections_total", ""); v != 1 {
+		t.Errorf("tenant_rejections = %v, want 1", v)
+	}
+}
+
+// TestAcceptUnknownTypes pins #141: with the open vocabulary on, an unknown
+// entity type with a sound shape is ingested end to end (boundary AND store
+// backstop) and counted; shape garbage is still rejected; the strict default
+// keeps rejecting unknown types per record.
+func TestAcceptUnknownTypes(t *testing.T) {
+	cfg := store.DefaultConfig()
+	cfg.AcceptUnknownTypes = true
+	st, err := store.Open(t.TempDir(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	g := projection.New()
+	eng := change.New(g, st, change.WithClock(func() time.Time { return t0 }))
+	m := NewMetrics()
+	rec := NewRoutedReceiver(func(string) (*change.Engine, error) { return eng, nil }, nil, m, true, nil)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	go func() { _ = rec.Serve(lis) }()
+	t.Cleanup(rec.Stop)
+	conn, err := grpc.NewClient(lis.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	client := plogotlp.NewGRPCClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// An unknown but well-shaped type lands in the graph and is counted.
+	ld := plog.NewLogs()
+	sl := ld.ResourceLogs().AppendEmpty().ScopeLogs().AppendEmpty()
+	entityRecord(sl, evEntityState, "acme.satellite.dish", map[string]string{"dish.serial": "D-7"}, map[string]string{"azimuth": "42"})
+	// Shape garbage (empty identity) is still rejected per record.
+	lr := sl.LogRecords().AppendEmpty()
+	lr.SetEventName(evEntityState)
+	lr.Attributes().PutStr(attrEntityType, "acme.satellite.dish")
+	lr.Attributes().PutEmptyMap(attrEntityID)
+	resp, err := client.Export(ctx, plogotlp.NewExportRequestFromLogs(ld))
+	if err != nil {
+		t.Fatalf("open-vocabulary export: %v", err)
+	}
+	if resp.PartialSuccess().RejectedLogRecords() != 1 {
+		t.Errorf("rejected = %d, want 1 (the shapeless record): %s", resp.PartialSuccess().RejectedLogRecords(), resp.PartialSuccess().ErrorMessage())
+	}
+	if g.EntityCount() != 1 {
+		t.Fatalf("EntityCount = %d, want 1 (the well-shaped unknown type)", g.EntityCount())
+	}
+	if got := g.CountByType()["acme.satellite.dish"]; got != 1 {
+		t.Errorf("CountByType = %d, want 1", got)
+	}
+	if v := counterValue(t, m.unknownTypes.WithLabelValues(tenant.Default)); v != 1 {
+		t.Errorf("unknown-type counter = %v, want 1", v)
+	}
+
+	// Replay sanity: the persisted unknown-type event rebuilds identically.
+	g2 := projection.New()
+	if err := g2.Replay(st); err != nil {
+		t.Fatalf("replay: %v", err)
+	}
+	if g2.CountByType()["acme.satellite.dish"] != 1 {
+		t.Error("unknown-type entity lost on replay")
+	}
+}
+
+func counterValue(t *testing.T, c prometheus.Counter) float64 {
+	t.Helper()
+	var d dto.Metric
+	if err := c.Write(&d); err != nil {
+		t.Fatal(err)
+	}
+	return d.GetCounter().GetValue()
+}

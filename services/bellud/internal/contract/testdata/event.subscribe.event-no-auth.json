@@ -1,0 +1,15 @@
+{
+  "operationId": "event.subscribe",
+  "name": "event-no-auth",
+  "method": "GET",
+  "path": "/api/event",
+  "request": {
+    "headers": {}
+  },
+  "status": 401,
+  "contentType": "application/json",
+  "body": {
+    "_tag": "UnauthorizedError",
+    "message": "Authentication required"
+  }
+}

@@ -1,0 +1,366 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+package model
+
+import (
+	"fmt"
+	"time"
+
+	bellugraphv1 "github.com/bellu/bellucode/services/bellud/internal/bellugraph/proto/bellugraph/v1"
+)
+
+// SchemaVersion is the current BelluGraph event schema version. It is independent of
+// the OpenTelemetry spec version. See ADR 0015. 1.1 added the consumer-authored
+// DeleteSource provenance on delete/removal events (additive; 1.0 events read
+// back with an unknown source).
+const SchemaVersion = "1.1"
+
+// DeleteSource attributes the AUTHOR of a disappearance event. It is
+// consumer-authored provenance (ADR 0033), deliberately distinct from the
+// producer-supplied DeleteReason: BelluGraph never writes into the producer's field,
+// and the producer's open enum (which legitimately includes "expired") never
+// masquerades as BelluGraph's own expiry. The zero value means "unknown" — an event
+// written before schema 1.1 — and must never be re-labeled as producer.
+type DeleteSource string
+
+const (
+	// DeleteSourceUnknown marks a pre-1.1 event; not a synonym for producer.
+	DeleteSourceUnknown DeleteSource = ""
+	// DeleteSourceProducer is a producer-authored disappearance: an explicit
+	// entity.delete, or an edge dropped by absence on the source's re-emit.
+	DeleteSourceProducer DeleteSource = "producer"
+	// DeleteSourceLivenessExpiry is BelluGraph's liveness backstop: no producer
+	// re-asserted the entity/edge within its entity.report.interval.
+	DeleteSourceLivenessExpiry DeleteSource = "liveness_expiry"
+	// DeleteSourceCascade is the removal of an incident edge because one of its
+	// endpoint entities was deleted (edges die with their node).
+	DeleteSourceCascade DeleteSource = "cascade"
+)
+
+// EntityEvent is a classified change about an entity. It is bi-temporal: see
+// ADR 0005.
+type EntityEvent struct {
+	// EventID is a ULID identifying this event.
+	EventID string
+	// ChangeType classifies the change (must be an entity.* type).
+	ChangeType ChangeType
+	// Entity is the entity state carried by the event.
+	Entity Entity
+	// EventTime is the VALID-TIME axis: when the fact holds in the world, as the
+	// producer reports it. The value a producer can actually supply on that axis
+	// is its OBSERVATION instant — it polls, it does not witness the transition —
+	// so the fact became true somewhere in the interval before this, and that
+	// interval is what the read surfaces publish as a resolution.
+	//
+	// The two statements are not interchangeable and the difference has already
+	// cost a wrong conclusion: a review read two observations 47 s apart under a
+	// 30 s cadence as an ordering. Documents across this repository still say
+	// only the first half (see the issue opened on 2026-10-14); the consumer-facing
+	// surfaces say the second, which is the one a reader acts on.
+	EventTime time.Time
+	// RecordedAt is when BelluGraph recorded the event (ingestion).
+	RecordedAt time.Time
+
+	// CommitSeq groups the events of ONE producer observation: every event of a
+	// single durable append carries the sequence number of that append's first
+	// event. Two events with the same CommitSeq were committed together; two
+	// with different values were not.
+	//
+	// It exists because the grouping was a fact BelluGraph held and no consumer could
+	// reach (#407). A gateway change is deliberately a route deleted plus a route
+	// created, and the engine commits both in one batch — but RecordedAt is set
+	// per event, so not even equality on it is guaranteed to hold within a
+	// commit, and every consumer had to invent its own tolerance window.
+	//
+	// Set by the store at append time, not by the caller: the commit is the
+	// store's own unit, so every writer gets a consistent value without having
+	// to remember one. Zero means unknown (an event written before the field
+	// existed), never "a commit of its own".
+	CommitSeq uint64
+
+	// Scope is the instrumentation scope that observed this change — one scope per
+	// collection method (senhub-agent/snmp-route, senhub-agent/snmp-fdb, ...).
+	//
+	// The producer contract makes the instrumentation scope the carrier of
+	// provenance, deliberately, rather than a source attribute on the entity. No
+	// read surface could reach it (#394), so "which of my collection methods is
+	// losing its entities" was unanswerable.
+	//
+	// On a liveness expiry this is the scope that HAD been asserting the entity
+	// and went silent — not an author of the deletion, which is BelluGraph itself.
+	// That is the reading the question needs: which collector stopped speaking.
+	//
+	// Empty when the producer sent no scope name, and on older events.
+	Scope string
+	// SchemaVersion is the schema version of this event.
+	SchemaVersion string
+	// ChangedKeys lists the attribute keys that changed, for
+	// attribute_updated/state_changed events.
+	ChangedKeys []string
+	// DeleteReason is the producer-supplied motive for a delete
+	// (entity.delete.reason), an open enum kept verbatim as a free string. Empty
+	// for non-delete events and for deletes that carried no reason.
+	DeleteReason string
+	// DeleteSource attributes the author of an entity_deleted event
+	// (producer / liveness_expiry / cascade); unknown on pre-1.1 events.
+	DeleteSource DeleteSource
+}
+
+// RelationEvent is a classified change about a relation. Bi-temporal: ADR 0005.
+type RelationEvent struct {
+	EventID    string
+	ChangeType ChangeType
+	Relation   Relation
+	EventTime  time.Time
+	RecordedAt time.Time
+
+	// CommitSeq groups the events of one producer observation; see EntityEvent.
+	CommitSeq uint64
+
+	// Scope is the instrumentation scope that observed this change; see
+	// EntityEvent. Empty when unknown.
+	Scope         string
+	SchemaVersion string
+	ChangedKeys   []string
+	// DeleteSource attributes the author of a relation_removed event
+	// (producer / liveness_expiry / cascade); unknown on pre-1.1 events.
+	DeleteSource DeleteSource
+}
+
+// Event is the envelope stored in the append-only log. Exactly one of Entity or
+// Relation is non-nil.
+type Event struct {
+	Entity   *EntityEvent
+	Relation *RelationEvent
+}
+
+// Validate checks the entity event's invariants.
+func (e EntityEvent) Validate() error { return e.validate(true) }
+
+// ValidateShape is Validate with the entity's vocabulary check relaxed (#141).
+func (e EntityEvent) ValidateShape() error { return e.validate(false) }
+
+func (e EntityEvent) validate(vocabulary bool) error {
+	if e.ChangeType == ChangeUnspecified {
+		return ErrChangeTypeUnset
+	}
+	if !e.ChangeType.IsEntity() {
+		return fmt.Errorf("%w: %s is not an entity change", ErrChangeTypeMismatch, e.ChangeType)
+	}
+	if err := commonEventChecks(e.EventTime, e.RecordedAt, e.SchemaVersion); err != nil {
+		return err
+	}
+	if err := e.Entity.validate(vocabulary); err != nil {
+		return fmt.Errorf("entity: %w", err)
+	}
+	return nil
+}
+
+// Validate checks the relation event's invariants.
+func (r RelationEvent) Validate() error { return r.validate(true) }
+
+// ValidateShape is Validate with the relation's vocabulary check relaxed (#141).
+func (r RelationEvent) ValidateShape() error { return r.validate(false) }
+
+func (r RelationEvent) validate(vocabulary bool) error {
+	if r.ChangeType == ChangeUnspecified {
+		return ErrChangeTypeUnset
+	}
+	if !r.ChangeType.IsRelation() {
+		return fmt.Errorf("%w: %s is not a relation change", ErrChangeTypeMismatch, r.ChangeType)
+	}
+	if err := commonEventChecks(r.EventTime, r.RecordedAt, r.SchemaVersion); err != nil {
+		return err
+	}
+	if err := r.Relation.validate(vocabulary); err != nil {
+		return fmt.Errorf("relation: %w", err)
+	}
+	return nil
+}
+
+func commonEventChecks(eventTime, recordedAt time.Time, schemaVersion string) error {
+	if eventTime.IsZero() {
+		return ErrZeroEventTime
+	}
+	if recordedAt.IsZero() {
+		return ErrZeroRecordedAt
+	}
+	if schemaVersion == "" {
+		return ErrEmptySchemaVersion
+	}
+	return nil
+}
+
+func nanoOf(t time.Time) int64 {
+	if t.IsZero() {
+		return 0
+	}
+	return t.UnixNano()
+}
+
+func timeOf(nano int64) time.Time {
+	if nano == 0 {
+		return time.Time{}
+	}
+	return time.Unix(0, nano).UTC()
+}
+
+func (s DeleteSource) toProto() bellugraphv1.DeleteSource {
+	switch s {
+	case DeleteSourceProducer:
+		return bellugraphv1.DeleteSource_DELETE_SOURCE_PRODUCER
+	case DeleteSourceLivenessExpiry:
+		return bellugraphv1.DeleteSource_DELETE_SOURCE_LIVENESS_EXPIRY
+	case DeleteSourceCascade:
+		return bellugraphv1.DeleteSource_DELETE_SOURCE_CASCADE
+	default:
+		return bellugraphv1.DeleteSource_DELETE_SOURCE_UNSPECIFIED
+	}
+}
+
+func deleteSourceFromProto(p bellugraphv1.DeleteSource) DeleteSource {
+	switch p {
+	case bellugraphv1.DeleteSource_DELETE_SOURCE_PRODUCER:
+		return DeleteSourceProducer
+	case bellugraphv1.DeleteSource_DELETE_SOURCE_LIVENESS_EXPIRY:
+		return DeleteSourceLivenessExpiry
+	case bellugraphv1.DeleteSource_DELETE_SOURCE_CASCADE:
+		return DeleteSourceCascade
+	default:
+		return DeleteSourceUnknown
+	}
+}
+
+// ToProto converts the entity event to its protobuf representation.
+func (e EntityEvent) ToProto() *bellugraphv1.EntityEvent {
+	return &bellugraphv1.EntityEvent{
+		EventId:            e.EventID,
+		ChangeType:         e.ChangeType.toProto(),
+		Entity:             e.Entity.ToProto(),
+		EventTimeUnixNano:  nanoOf(e.EventTime),
+		RecordedAtUnixNano: nanoOf(e.RecordedAt),
+		CommitSeq:          e.CommitSeq,
+		Scope:              e.Scope,
+		SchemaVersion:      e.SchemaVersion,
+		ChangedKeys:        e.ChangedKeys,
+		DeleteReason:       e.DeleteReason,
+		DeleteSource:       e.DeleteSource.toProto(),
+	}
+}
+
+// EntityEventFromProto converts a protobuf entity event to the domain type.
+func EntityEventFromProto(p *bellugraphv1.EntityEvent) EntityEvent {
+	if p == nil {
+		return EntityEvent{}
+	}
+	return EntityEvent{
+		EventID:       p.GetEventId(),
+		ChangeType:    changeTypeFromProto(p.GetChangeType()),
+		Entity:        EntityFromProto(p.GetEntity()),
+		EventTime:     timeOf(p.GetEventTimeUnixNano()),
+		RecordedAt:    timeOf(p.GetRecordedAtUnixNano()),
+		CommitSeq:     p.GetCommitSeq(),
+		Scope:         p.GetScope(),
+		SchemaVersion: p.GetSchemaVersion(),
+		ChangedKeys:   p.GetChangedKeys(),
+		DeleteReason:  p.GetDeleteReason(),
+		DeleteSource:  deleteSourceFromProto(p.GetDeleteSource()),
+	}
+}
+
+// ToProto converts the relation event to its protobuf representation.
+func (r RelationEvent) ToProto() *bellugraphv1.RelationEvent {
+	return &bellugraphv1.RelationEvent{
+		EventId:            r.EventID,
+		ChangeType:         r.ChangeType.toProto(),
+		Relation:           r.Relation.ToProto(),
+		EventTimeUnixNano:  nanoOf(r.EventTime),
+		RecordedAtUnixNano: nanoOf(r.RecordedAt),
+		CommitSeq:          r.CommitSeq,
+		Scope:              r.Scope,
+		SchemaVersion:      r.SchemaVersion,
+		ChangedKeys:        r.ChangedKeys,
+		DeleteSource:       r.DeleteSource.toProto(),
+	}
+}
+
+// RelationEventFromProto converts a protobuf relation event to the domain type.
+func RelationEventFromProto(p *bellugraphv1.RelationEvent) RelationEvent {
+	if p == nil {
+		return RelationEvent{}
+	}
+	return RelationEvent{
+		EventID:       p.GetEventId(),
+		ChangeType:    changeTypeFromProto(p.GetChangeType()),
+		Relation:      RelationFromProto(p.GetRelation()),
+		EventTime:     timeOf(p.GetEventTimeUnixNano()),
+		RecordedAt:    timeOf(p.GetRecordedAtUnixNano()),
+		CommitSeq:     p.GetCommitSeq(),
+		Scope:         p.GetScope(),
+		SchemaVersion: p.GetSchemaVersion(),
+		ChangedKeys:   p.GetChangedKeys(),
+		DeleteSource:  deleteSourceFromProto(p.GetDeleteSource()),
+	}
+}
+
+// ToProto converts the event envelope to its protobuf representation.
+func (e Event) ToProto() *bellugraphv1.Event {
+	switch {
+	case e.Entity != nil:
+		return &bellugraphv1.Event{Event: &bellugraphv1.Event_EntityEvent{EntityEvent: e.Entity.ToProto()}}
+	case e.Relation != nil:
+		return &bellugraphv1.Event{Event: &bellugraphv1.Event_RelationEvent{RelationEvent: e.Relation.ToProto()}}
+	default:
+		return &bellugraphv1.Event{}
+	}
+}
+
+// EventFromProto converts a protobuf event envelope to the domain type.
+func EventFromProto(p *bellugraphv1.Event) Event {
+	if p == nil {
+		return Event{}
+	}
+	switch x := p.GetEvent().(type) {
+	case *bellugraphv1.Event_EntityEvent:
+		ev := EntityEventFromProto(x.EntityEvent)
+		return Event{Entity: &ev}
+	case *bellugraphv1.Event_RelationEvent:
+		ev := RelationEventFromProto(x.RelationEvent)
+		return Event{Relation: &ev}
+	default:
+		return Event{}
+	}
+}
+
+// Validate checks the envelope contains exactly one valid event.
+func (e Event) Validate() error { return e.validateEnvelope(true) }
+
+// ValidateShape is Validate with vocabulary membership relaxed (#141).
+func (e Event) ValidateShape() error { return e.validateEnvelope(false) }
+
+func (e Event) validateEnvelope(vocabulary bool) error {
+	switch {
+	case e.Entity != nil && e.Relation != nil:
+		return fmt.Errorf("%w: envelope has both entity and relation events", ErrChangeTypeMismatch)
+	case e.Entity != nil:
+		return e.Entity.validate(vocabulary)
+	case e.Relation != nil:
+		return e.Relation.validate(vocabulary)
+	default:
+		return ErrMissingEntity
+	}
+}
+
+// Times returns the event's bi-temporal pair: when the fact became true
+// (event time) and when BelluGraph recorded it (ADR 0005). The zero Event yields
+// zero times. Shared by every read surface so the pair is extracted one way.
+func (e Event) Times() (eventTime, recordedAt time.Time) {
+	switch {
+	case e.Entity != nil:
+		return e.Entity.EventTime, e.Entity.RecordedAt
+	case e.Relation != nil:
+		return e.Relation.EventTime, e.Relation.RecordedAt
+	default:
+		return time.Time{}, time.Time{}
+	}
+}

@@ -1,0 +1,1167 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "opencode HttpApi",
+    "version": "0.0.1",
+    "description": "Experimental HttpApi surface for selected instance routes."
+  },
+  "paths": {
+    "/api/experimental/graph/changes": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.changes",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "RFC 3339 lower bound (inclusive)."
+            },
+            "required": false
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "RFC 3339 upper bound (exclusive)."
+            },
+            "required": false
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Filter by entity or relation type."
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Maximum number of items to return (1-1000)."
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.ChangePage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.ChangePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "List graph changes within a time window. Experimental: may change without compatibility guarantees.",
+        "summary": "List graph changes"
+      }
+    },
+    "/api/experimental/graph/diff": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.diff",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "RFC 3339 start timestamp."
+            },
+            "required": true
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "RFC 3339 end timestamp."
+            },
+            "required": true
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Filter by entity type."
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Maximum number of items to return (1-1000)."
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.Diff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.Diff"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "Compare the graph between two points in time. Experimental: may change without compatibility guarantees.",
+        "summary": "Diff graph"
+      }
+    },
+    "/api/experimental/graph/entities": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.find",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Filter by entity type."
+            },
+            "required": false
+          },
+          {
+            "name": "match",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Match against entity id, label, or attributes."
+            },
+            "required": false
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "RFC 3339 timestamp; read the graph as it was valid at this time."
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Maximum number of items to return (1-1000)."
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.EntityPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.EntityPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "Search graph entities by type or text. Experimental: may change without compatibility guarantees.",
+        "summary": "Find graph entities"
+      }
+    },
+    "/api/experimental/graph/entities/{id}": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.entity",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "RFC 3339 timestamp; read the graph as it was valid at this time."
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.Entity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "Get one graph entity by id. Experimental: may change without compatibility guarantees.",
+        "summary": "Get graph entity"
+      }
+    },
+    "/api/experimental/graph/entities/{id}/history": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.history",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "RFC 3339 lower bound (inclusive)."
+            },
+            "required": false
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "RFC 3339 upper bound (exclusive)."
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Maximum number of items to return (1-1000)."
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.ChangePage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.ChangePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "List changes recorded for a graph entity. Experimental: may change without compatibility guarantees.",
+        "summary": "Get entity history"
+      }
+    },
+    "/api/experimental/graph/entities/{id}/neighbors": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.neighbors",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Graph.Direction"
+            },
+            "required": false
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Filter by relation type."
+            },
+            "required": false
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "RFC 3339 timestamp; read the graph as it was valid at this time."
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Maximum number of items to return (1-1000)."
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.EdgePage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.EdgePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "List edges connected to a graph entity. Experimental: may change without compatibility guarantees.",
+        "summary": "List entity neighbors"
+      }
+    },
+    "/api/experimental/graph/schema": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.schema",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.SchemaSummary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.SchemaSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "Summarize entity and relation types in the graph. Experimental: may change without compatibility guarantees.",
+        "summary": "Get graph schema"
+      }
+    },
+    "/api/experimental/graph/status": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.status",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.Status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.Status"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "Report graph engine and child process state. Experimental: may change without compatibility guarantees.",
+        "summary": "Get graph status"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Graph.Attributes": {
+        "type": "object"
+      },
+      "Graph.Change": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/Graph.ChangeKind"
+          },
+          "subject": {
+            "$ref": "#/components/schemas/Graph.ChangeSubject"
+          },
+          "entity": {
+            "type": "string",
+            "minLength": 1
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1
+          },
+          "relation_type": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recorded_at": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "kind",
+          "subject",
+          "observed_at",
+          "recorded_at"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.ChangeKind": {
+        "type": "string",
+        "enum": [
+          "added",
+          "changed",
+          "removed"
+        ]
+      },
+      "Graph.ChangePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.Change"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "truncated",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.ChangeSubject": {
+        "type": "string",
+        "enum": [
+          "entity",
+          "relation"
+        ]
+      },
+      "Graph.ChildState": {
+        "type": "string",
+        "enum": [
+          "starting",
+          "ready",
+          "restarting",
+          "degraded",
+          "stopped"
+        ]
+      },
+      "Graph.Diff": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1
+          },
+          "added": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.Entity"
+            }
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.Entity"
+            }
+          },
+          "removed": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "added",
+          "changed",
+          "removed",
+          "truncated"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.Direction": {
+        "type": "string",
+        "enum": [
+          "out",
+          "in",
+          "both"
+        ]
+      },
+      "Graph.Edge": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Graph.Direction"
+          },
+          "hops": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "type",
+          "direction",
+          "hops"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.EdgePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.Edge"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "truncated",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.EngineState": {
+        "type": "string",
+        "enum": [
+          "disabled",
+          "starting",
+          "ready",
+          "failed"
+        ]
+      },
+      "Graph.Entity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string"
+          },
+          "attributes": {
+            "$ref": "#/components/schemas/Graph.Attributes"
+          },
+          "observed_at": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recorded_at": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "attributes",
+          "observed_at",
+          "recorded_at"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.EntityPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.Entity"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "truncated",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.SchemaSummary": {
+        "type": "object",
+        "properties": {
+          "entity_types": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.SchemaType"
+            }
+          },
+          "relation_types": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.SchemaType"
+            }
+          }
+        },
+        "required": [
+          "entity_types",
+          "relation_types"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.SchemaType": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "name",
+          "count"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.Status": {
+        "type": "object",
+        "properties": {
+          "engine": {
+            "$ref": "#/components/schemas/Graph.EngineState"
+          },
+          "ts_child": {
+            "$ref": "#/components/schemas/Graph.ChildState"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "engine",
+          "ts_child"
+        ],
+        "additionalProperties": false
+      },
+      "InvalidRequestErrorEncoded": {
+        "type": "object",
+        "properties": {
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "InvalidRequestError"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "_tag",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ServiceUnavailableErrorEncoded": {
+        "type": "object",
+        "properties": {
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "ServiceUnavailableError"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "_tag",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "UnauthorizedErrorEncoded": {
+        "type": "object",
+        "properties": {
+          "_tag": {
+            "type": "string",
+            "enum": [
+              "UnauthorizedError"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "_tag",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

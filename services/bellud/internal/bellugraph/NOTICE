@@ -1,0 +1,6 @@
+Bellu Graph Engine
+
+This directory contains software derived from Toise (https://github.com/toise-dev/toise),
+synced at commit d59d2880169da9bc89584167490892d6e86bbd84,
+licensed under the Apache License, Version 2.0 (see LICENSE).
+Files were renamed and modified by the Bellu project.

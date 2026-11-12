@@ -1,0 +1,21 @@
+{
+  "operationId": "event.subscribe",
+  "name": "event-stream-ok",
+  "method": "GET",
+  "path": "/api/event",
+  "request": {
+    "headers": {
+      "accept": "text/event-stream",
+      "authorization": "<AUTH:event-stream-ok>"
+    }
+  },
+  "status": 200,
+  "contentType": "text/event-stream",
+  "events": [
+    {
+      "type": "server.connected",
+      "id": "<ID>",
+      "data": {}
+    }
+  ]
+}

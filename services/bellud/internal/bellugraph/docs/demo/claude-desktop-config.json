@@ -1,0 +1,13 @@
+{
+  "//": "Sample Claude Desktop configuration for the Bellu Graph Engine MCP server (ADR 0011). Copy the 'bellugraph' entry into your claude_desktop_config.json (mcpServers), replacing the absolute paths. Claude Desktop launches bellugraph-server as a subprocess and speaks MCP over stdio; --mcp-stdio disables the HTTP and OTLP servers so the process is a pure local MCP server reading the given data directory.",
+  "mcpServers": {
+    "bellugraph": {
+      "command": "/usr/local/bin/bellugraph-server",
+      "args": [
+        "--mcp-stdio",
+        "--data-dir",
+        "/var/lib/bellugraph/bellugraph-data"
+      ]
+    }
+  }
+}

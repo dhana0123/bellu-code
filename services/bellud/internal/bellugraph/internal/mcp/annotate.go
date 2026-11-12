@@ -1,0 +1,92 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+package mcp
+
+import (
+	"context"
+	"fmt"
+
+	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/annotations"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/audit"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/auth"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/model"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/tenant"
+)
+
+// AnnotateEntityInput sets operator annotations on an entity.
+type AnnotateEntityInput struct {
+	EntityID    string            `json:"entity_id" jsonschema:"the entity to annotate, by identity_fingerprint (preferred, stable across replicas), by identity written inline as type:key=value, or by id"`
+	Annotations map[string]string `json:"annotations" jsonschema:"key/value notes to merge onto the entity; an empty value removes that key"`
+}
+
+// AnnotationOut is an entity's operator annotation rendered for an LLM.
+type AnnotationOut struct {
+	Values    map[string]string `json:"values"`
+	Author    string            `json:"author,omitempty"`
+	UpdatedAt string            `json:"updated_at,omitempty"`
+}
+
+// AnnotateEntityOutput carries the merged annotation.
+type AnnotateEntityOutput struct {
+	Annotation AnnotationOut `json:"annotation"`
+}
+
+func annotationOut(a annotations.Annotation) AnnotationOut {
+	return AnnotationOut{Values: a.Values, Author: a.Author, UpdatedAt: formatTime(a.UpdatedAt)}
+}
+
+// annotateEntity attaches operator annotations to an entity. These are an
+// overlay, NOT producer truth: they live in the per-tenant sidecar, never the
+// event log. It is the one write the read surface exposes, so it requires a
+// write-capable (full or tenant-scoped) token — a read-only token is refused.
+func (s *Server) annotateEntity(ctx context.Context, _ *mcpsdk.CallToolRequest, in AnnotateEntityInput) (*mcpsdk.CallToolResult, AnnotateEntityOutput, error) {
+	if s.ann == nil {
+		return nil, AnnotateEntityOutput{}, fmt.Errorf("annotations are not enabled on this server")
+	}
+	if !auth.CanWrite(ctx) {
+		return nil, AnnotateEntityOutput{}, fmt.Errorf("this caller may not annotate: a write needs a write-capable credential (a full or tenant-scoped token), and where none can be presented it needs allow_unauthenticated_writes, which the production profile forces off and no credential can override")
+	}
+	if in.EntityID == "" {
+		return nil, AnnotateEntityOutput{}, fmt.Errorf("an entity_id is required")
+	}
+	if len(in.Annotations) == 0 {
+		return nil, AnnotateEntityOutput{}, fmt.Errorf("at least one annotation key is required (an empty value removes a key)")
+	}
+	entID, ok := s.graph.ResolveHandle(in.EntityID)
+	if !ok {
+		return nil, AnnotateEntityOutput{}, fmt.Errorf("no entity for handle %q; annotate a known entity (use find_entities)", in.EntityID)
+	}
+	e, ok, _ := s.graph.GetEntity(entID)
+	if !ok {
+		return nil, AnnotateEntityOutput{}, fmt.Errorf("no entity for handle %q; annotate a known entity (use find_entities)", in.EntityID)
+	}
+	a, err := s.ann.SetAt(e.IdentityHash(), string(entID), in.Annotations, "", s.now())
+	if err != nil {
+		return nil, AnnotateEntityOutput{}, err
+	}
+	s.audit.Record(audit.Event{
+		Time: s.now(), Tenant: tenant.FromContext(ctx), Surface: "mcp",
+		Action: "annotate_entity", Target: in.EntityID,
+	})
+	return nil, AnnotateEntityOutput{Annotation: annotationOut(a)}, nil
+}
+
+// annotationFor returns an entity's annotation for read surfacing, or nil when
+// it has none or annotations are not enabled.
+func (s *Server) annotationFor(id string) *AnnotationOut {
+	if s.ann == nil {
+		return nil
+	}
+	key := id
+	if e, ok, _ := s.graph.GetEntity(model.EntityID(id)); ok {
+		key = e.IdentityHash()
+	}
+	a, ok, err := s.ann.GetAt(key, id)
+	if err != nil || !ok {
+		return nil
+	}
+	out := annotationOut(a)
+	return &out
+}

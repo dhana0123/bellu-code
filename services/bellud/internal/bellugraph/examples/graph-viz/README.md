@@ -1,0 +1,121 @@
+# graph-viz — live graph explorer
+
+A small, dependency-free **example consumer** of the Bellu Graph Engine GraphQL API: a
+single static HTML page that draws the entity/relation graph and updates it in
+real time.
+
+> This is an **example client**, not part of `bellugraph-server`. It talks to Bellu Graph Engine
+> only over the public GraphQL surface, exactly like any third-party consumer
+> would. Nothing here is compiled into the server binary.
+
+![dark force-directed graph of hosts, interfaces, services and the relations between them](./screenshot.png)
+
+## What it shows
+
+- A force-directed node-link graph (via [vis-network], loaded from a CDN with
+  Subresource Integrity).
+- Nodes coloured by entity `type`, with a clickable legend to filter types.
+- A header **`labels: names / ids`** toggle (see [Readable labels](#readable-labels)).
+- Edges labelled by relation `type`, arrowed from source to target.
+- A side panel with the selected entity's identity and attributes.
+- A live feed of recent changes; nodes pulse as they update.
+
+## How it works
+
+1. **Initial load** — one GraphQL query for `entities` + `relations` populates
+   the graph.
+2. **Live updates** — it opens a WebSocket (`graphql-transport-ws`) and
+   subscribes to `entityChanged` and `relationChanged`; each change event is
+   applied incrementally.
+3. **Resilience** — automatic reconnect with backoff; if the WebSocket can't be
+   established it falls back to periodic polling (status pill shows
+   `live (ws)` / `polling (ws off)` / `reconnecting…`).
+
+All entity-supplied strings (identity values, attributes, type names) are
+HTML-escaped before rendering.
+
+## Running it
+
+The page calls a **same-origin** `/graphql` by default, so the simplest setup is
+to serve `index.html` behind the same reverse proxy that fronts `bellugraph-server`
+(so both `index.html` and `/graphql` — including the WebSocket upgrade — share an
+origin). That is how it is wired in front of a real deployment.
+
+To point it at a Bellu Graph Engine instance on another origin, pass the endpoint explicitly:
+
+```
+index.html?api=https://my-bellugraph.example.com/graphql
+```
+
+(Cross-origin use requires the server/proxy to allow it; same-origin needs no
+extra configuration.)
+
+Seed some data first if your instance is empty — e.g. run `bellugraph-demo`, or point
+an OpenTelemetry producer (such as `bellugraph-probe`) at the server.
+
+## Readable labels
+
+Entity identities are precise but not friendly — a host is a UUID, a listener is
+`<host-uuid>:port`. The header **`labels`** button toggles node labels between:
+
+- **names** (default) — the human-readable name each type carries: `host.name`,
+  `service.name`, `interface.name`, `route.destination`, a listener's
+  `process.executable.name`, the address itself, …
+- **ids** — the raw technical identity.
+
+The tooltip always shows the full identity and the internal id, so names never hide
+precision. The choice is remembered in `localStorage`.
+
+## Multi-tenancy
+
+A single Bellu Graph Engine instance can serve [multiple tenants with isolated graphs][adr25].
+Pick one with `?tenant=<id>` (or the `tenant` box in the header):
+
+```
+index.html?tenant=acme
+```
+
+It is sent as the `X-Scope-OrgID` header on queries. A browser can't set a header
+on a WebSocket, so for the live subscription it is also appended as `?tenant=`,
+which a translating proxy maps to the header (the
+[Mimir/Loki](https://grafana.com/docs/mimir/latest/) de-facto convention). Absent,
+you read the server's `default` tenant.
+
+[adr25]: ../../docs/architecture/adr/0025-multi-tenancy.md
+
+## Inferred links
+
+The engine stores facts only and never merges entities by heuristic, so an IP that a
+producer emits as a plain attribute — a `service.listener`'s bind address, a
+`network.endpoint`'s `server.address`, a `network.route`'s next hop — is **not**
+linked to the `network.address` entity for that IP. The same address then appears
+smeared across several disconnected nodes.
+
+The header **`inferred`** toggle (off by default) overlays **dashed, derived edges**
+from each IP-bearing entity to the matching `network.address` node, so the graph
+reads as connected. These edges are a **consumer-side reading aid, not stored
+relations** — the right fix is for the producer to assert the relationship.
+Addresses that are **host-local rather than global join points** are skipped:
+wildcard (`0.0.0.0`), loopback (`127.0.0.0/8`, `::`), link-local (`169.254.0.0/16`),
+and the **Docker default bridge** (`172.17.0.0/16`) — the same `172.17.0.1` gateway
+exists on every host, so joining through it would falsely connect containers on
+different machines. (Other RFC 1918 ranges can be genuinely routable, so the real
+fix for any host-local address is producer-side: don't emit it as a shared entity.)
+
+## Attribute filter
+
+The header **`attr`** box highlights nodes whose identity or descriptive attributes
+match and **dims the rest** — type a key (`entity.owner.team`), a `key=value`
+(`service.criticality=critical`), or a free substring. It is a read-time view over
+the data already fetched, so it works on whatever attributes producers emit (the
+governance vocabulary, the per-type AT keys, anything). A match count shows next to
+the stats; the box turns amber when nothing matches.
+
+## Notes
+
+- `bellugraph-server` has no authentication by default; enable its native bearer-token
+  auth and TLS (or put auth on a fronting proxy) if you expose this beyond a
+  trusted network.
+- Real-time updates rely on GraphQL subscriptions over WebSocket.
+
+[vis-network]: https://visjs.github.io/vis-network/

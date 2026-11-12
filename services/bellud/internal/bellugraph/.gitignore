@@ -1,0 +1,48 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.out
+coverage.html
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependency directory (we use modules; vendored deps are not committed)
+vendor/
+
+# Build artifacts
+bin/
+dist/
+# MkDocs build output (docs site is built/published by mike, never committed)
+/docs/user-guide/site/
+# Binaries produced by `go build ./cmd/...` at the module root
+/bellugraph
+/bellugraph-demo
+/bellugraph-probe
+# Compiled binary of the throwaway Pebble PoC (scratch module)
+/scratch/pebble-poc/pebble-poc
+
+# Local data directories (Pebble event log written by bellugraph-server / demos)
+/bellugraph-data/
+/bellugraph-demo-data/
+/live-data/
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local environment
+.env
+.env.local

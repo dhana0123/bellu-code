@@ -1,0 +1,1276 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+// Command bellugraph-server is the main entry point for the BelluGraph server. It opens
+// the event log, rebuilds the in-memory projection, starts the OTLP/gRPC
+// ingestion receiver and an HTTP server, and runs until interrupted. The HTTP
+// server exposes the GraphQL API at /graphql, the MCP server at /mcp (Streamable
+// HTTP), the /healthz (liveness) and /readyz (readiness) probes, and Prometheus
+// /metrics. The GraphQL playground (/playground), the debug UI (/), and GraphQL
+// introspection are on by default but can be gated off individually or all at once
+// with --production. The MCP server can alternatively be run over stdio with
+// --mcp-stdio (for Claude Desktop).
+//
+// The servers default to loopback addresses and no authentication — the
+// trusted-network posture (ADR 0014). For exposed deployments, bearer-token auth
+// and TLS are opt-in (ADR 0024), and --production locks down the development
+// surfaces. The graph is scoped per tenant by the X-Scope-OrgID metadata, each
+// tenant living under <data-dir>/<tenant>/ (ADR 0025).
+package main
+
+import (
+	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"flag"
+	"fmt"
+	"log/slog"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+
+	"github.com/99designs/gqlgen/graphql/playground"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/annotations"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/audit"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/auth"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/change"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/config"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/debugui"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/graphql"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/graphql/resolvers"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/ingest"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/logship"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/mcp"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/metrics"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/model"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/oidc"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/ops"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/registry"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/store"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/tenant"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/version"
+)
+
+func main() {
+	// Before anything else, and before any configuration is read: an operator
+	// verifying what they are about to deploy cannot be made to start it to find
+	// out. Until this existed, the version lived only in the boot line on stdout
+	// and in bellu_graph_build_info on /metrics — both of which require a running
+	// server, and neither of which answers "what is this file on disk".
+	if versionRequested(os.Args[1:]) {
+		fmt.Println(version.String())
+		return
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "checkpoint" {
+		if err := runCheckpoint(os.Args[2:], os.Getenv); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "drop-snapshot" {
+		if err := runDropSnapshot(os.Args[2:], os.Getenv); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "delete-tenant" {
+		if err := runDeleteTenant(os.Args[2:], os.Getenv); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "restore-log" {
+		if err := runRestoreLog(os.Args[2:], os.Getenv); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	cfg, err := config.Load(os.Args[1:], os.Getenv)
+	if errors.Is(err, config.ErrHelp) {
+		os.Exit(0)
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+
+	storeCfg := store.DefaultConfig()
+	storeCfg.RetentionMaxAge = cfg.RetentionMaxAge.D()
+	storeCfg.CompactionInterval = cfg.CompactionInterval.D()
+	storeCfg.AcceptUnknownTypes = cfg.AcceptUnknownTypes
+
+	logger := slog.New(cfg.NewLogHandler(os.Stderr))
+	if err := run(cfg, storeCfg, logger); err != nil {
+		logger.Error("server failed", "err", err)
+		os.Exit(1)
+	}
+}
+
+// ingestTLSConfig returns the OTLP ingest listener's TLS config: a clone of base
+// (the server certificate) plus, when clientCAFile is set, required and verified
+// client-certificate auth — optional mTLS for ingest (ADR 0028) — against that
+// PEM CA bundle. An empty clientCAFile returns base's clone unchanged. The HTTP
+// read surfaces are unaffected (they authenticate by bearer/OIDC, not certs).
+func ingestTLSConfig(base *tls.Config, clientCAFile string) (*tls.Config, error) {
+	conf := base.Clone()
+	if clientCAFile == "" {
+		return conf, nil
+	}
+	caPEM, err := os.ReadFile(clientCAFile)
+	if err != nil {
+		return nil, fmt.Errorf("reading TLS client CA %s: %w", clientCAFile, err)
+	}
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(caPEM) {
+		return nil, fmt.Errorf("TLS client CA %s contains no usable certificates", clientCAFile)
+	}
+	conf.ClientCAs = pool
+	conf.ClientAuth = tls.RequireAndVerifyClientCert
+	return conf, nil
+}
+
+func run(cfg config.Config, storeCfg store.Config, logger *slog.Logger) error {
+	// Per-tenant retention bounds parse before anything opens: a malformed pair
+	// must refuse to boot rather than prune someone's history to the wrong bound.
+	tenantRetention, err := cfg.TenantRetentionMap()
+	if err != nil {
+		return err
+	}
+	// One {store, projection, engine} stack per tenant under <data-dir>/<tenant>/
+	// (ADR 0025). A legacy single-tenant data dir is migrated to the default tenant
+	// on open; existing tenants and the default are opened up front.
+	reg, err := registry.OpenWithLimits(cfg.DataDir, storeCfg, cfg.RelationBufferTTL.D(), registry.Limits{
+		AutoCreate: cfg.TenantAutoCreate,
+		Allowlist:  cfg.TenantAllowlist,
+		MaxTenants: cfg.MaxTenants,
+	}, logger)
+	if err != nil {
+		return fmt.Errorf("opening tenant registry: %w", err)
+	}
+	if cfg.ResurrectionGrace != 0 {
+		reg.SetResurrectionGrace(cfg.ResurrectionGrace.D())
+	}
+	defer func() { _ = reg.Close() }()
+
+	// Both producer-defect reporters are installed here, before the OTLP
+	// receiver accepts an observation and before the metrics registry is
+	// assembled further down: a reporter installed after the receiver serves
+	// loses whatever happens in between, and one installed after the registry
+	// opened its persisted tenants used to lose them entirely (#525).
+	//
+	// A refused liveness promise is a PRODUCER defect its operator cannot see
+	// from inside the graph: the entity simply ends up with no cadence, which
+	// reads like an honest absence. The series is the only way anyone learns.
+	promises := metrics.NewPromises()
+	reg.SetPromiseReporter(promises.Refused)
+	// An edge discarded for a missing endpoint leaves NO trace in the graph —
+	// no relation, no target, nothing attempted. A tenant lost 47327 of them in
+	// ten days before anyone looked at the right log.
+	discards := metrics.NewDiscards()
+	reg.SetDiscardReporter(discards.Dropped)
+
+	// The refusal of two competing aliases is correct and invisible: neither is
+	// chosen, so every edge that resolved through that value stops resolving,
+	// and the reader sees an adjacency that never came back.
+	aliasConflicts := metrics.NewAliasConflicts()
+	reg.SetIdentityAliasConflictReporter(aliasConflicts.Refused)
+
+	// Final snapshot at graceful shutdown, declared right after the close so it
+	// runs just before it (after the maintenance loops have joined and ingest
+	// has stopped): producer references acquired since the last periodic
+	// snapshot would otherwise be lost, leaving permanent zombies for producers
+	// that die during the downtime (#139). Per-tenant failures are logged, never
+	// allowed to abort the shutdown.
+	if cfg.SnapshotInterval.D() > 0 {
+		defer func() {
+			for _, st := range reg.Stacks() {
+				if serr := writeTenantSnapshot(st, logger); serr != nil {
+					logger.Error("final snapshot at shutdown failed", "tenant", st.Tenant, "err", serr)
+				}
+			}
+		}()
+	}
+
+	engineFor := func(t string) (*change.Engine, error) {
+		st, ferr := reg.For(t)
+		if ferr != nil {
+			return nil, ferr
+		}
+		return st.Engine, nil
+	}
+
+	// Optional bearer-token auth and TLS on the data surfaces (ADR 0024). Both
+	// off by default — the trusted-network posture (ADR 0014) is unchanged.
+	scopedTokens, err := cfg.TenantTokensMap()
+	if err != nil {
+		return err
+	}
+	scopedRead, err := cfg.TenantReadTokensMap()
+	if err != nil {
+		return err
+	}
+	scopedIngest, err := cfg.TenantIngestTokensMap()
+	if err != nil {
+		return err
+	}
+	authn := auth.NewWithRoles(cfg.AuthTokens, cfg.ReadTokens, cfg.IngestTokens, scopedTokens).
+		WithScopedRoleTokens(scopedRead, scopedIngest) // per-tenant RBAC (ADR 0028)
+	authn.SetTenantTrustMode(cfg.DeriveOnlyTenancy()) // ADR 0028 anti-spoofing; off by default
+	authn.SetIngestMTLSOnly(cfg.IngestMTLSOnly)       // #262: ingest gated by mTLS, reads by scoped token
+	if len(cfg.ProductionOverrides) > 0 {
+		// Say it once, naming the settings: the lockdown wins on purpose, but an
+		// operator who wrote one of these lines has to learn it was overridden
+		// from us rather than from a behavior they did not expect.
+		logger.Warn("the production profile overrode settings that were on: they cannot be re-enabled while production is set, so drop it and set the individual toggles if that is really wanted",
+			"overridden", strings.Join(cfg.ProductionOverrides, ","))
+	}
+	authn.SetUnauthenticatedWrites(cfg.AllowUnauthenticatedWrites)
+	// Declared here, before the discovery below builds the verifier: the stdio
+	// server is wired in between and has to know a credential is expected.
+	authn.SetOIDCDeclared(cfg.OIDCEnabled())
+
+	if cfg.MCPStdio {
+		// stdio carries no per-request tenant metadata, so it serves the default
+		// tenant only (ADR 0025).
+		st, ferr := reg.For(tenant.Default)
+		if ferr != nil {
+			return fmt.Errorf("opening default tenant: %w", ferr)
+		}
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		// stdio runs no HTTP middleware, so nothing would record a write decision
+		// and CanWrite would refuse every annotation. A stdio caller can present no
+		// credential at all, so it writes only where unauthenticated writes are
+		// allowed AND nothing authenticates: once an operator configures tokens or
+		// OIDC they have asked for writes to carry a credential, and a transport
+		// that cannot carry one must not become the way around that.
+		//
+		// The decision is asked of the authenticator itself, so this transport and
+		// the HTTP middleware cannot drift apart — which is why the stdio server
+		// is wired after it is built and not before.
+		//
+		// Every credential path must therefore be DECLARED on the authenticator
+		// above this point, even one whose verifier is built further down. The
+		// first shape of this read the OIDC verifier, which discovery had not
+		// created yet, concluded that nothing authenticated, and granted writes
+		// on an OIDC-only deployment.
+		//
+		// NOT GUARANTEED, and worth knowing before adding a credential path:
+		// that ordering is a convention held by this comment, not by the
+		// compiler. A path declared BELOW this point would reopen exactly the
+		// same hole, silently. Closing it for good means taking the declarations
+		// as constructor arguments instead of setters, so a half-declared
+		// authenticator cannot be built at all.
+		stdioWrites := authn.UnauthenticatedWritesAllowed()
+		ctx = auth.WithWritable(ctx, stdioWrites)
+		logger.Info("serving MCP over stdio", "data_dir", cfg.DataDir, "tenant", tenant.Default,
+			"writes", stdioWrites)
+		if serveErr := mcp.New(st.Graph, st.Store).SetTenant(st.Tenant).SetCadence(st.Engine).SetAnnotations(st.Annotations).SetIdentityThreshold(cfg.IdentityThreshold).ServeStdio(ctx); serveErr != nil && !errors.Is(serveErr, context.Canceled) {
+			return fmt.Errorf("mcp stdio: %w", serveErr)
+		}
+		return nil
+	}
+
+	if cfg.OIDCEnabled() {
+		// OIDC/JWT verification on the read surfaces (ADR 0028). Discovery hits the
+		// issuer once at startup; off unless an issuer is configured.
+		dctx, dcancel := context.WithTimeout(context.Background(), 20*time.Second)
+		verifier, oerr := oidc.New(dctx, oidc.Config{
+			Issuer: cfg.OIDCIssuer, Audience: cfg.OIDCAudience,
+			TenantClaim: cfg.OIDCTenantClaim, RoleClaim: cfg.OIDCRoleClaim,
+		})
+		dcancel()
+		if oerr != nil {
+			return oerr
+		}
+		authn.SetOIDC(verifier)
+		logger.Info("OIDC verification enabled on read surfaces", "issuer", cfg.OIDCIssuer)
+	}
+	var grpcOpts []grpc.ServerOption
+	if cfg.OTLPMaxRecvBytes > 0 {
+		// The 4 MiB gRPC default refused a 5,000-host inventory sent as one
+		// export, whole, while nothing documented where batching stops (#351).
+		grpcOpts = append(grpcOpts, grpc.MaxRecvMsgSize(cfg.OTLPMaxRecvBytes))
+	}
+	if authn.Enabled() {
+		grpcOpts = append(grpcOpts,
+			grpc.UnaryInterceptor(authn.UnaryInterceptor()),
+			grpc.StreamInterceptor(authn.StreamInterceptor()))
+	}
+	var tlsConf *tls.Config
+	if cfg.TLSEnabled() {
+		// Explicit TLS posture (#144): minimum 1.2, and the certificate is
+		// re-read per handshake so a renewed cert (certbot & friends) is
+		// picked up without a restart. The load error surfaces at startup.
+		if _, terr := tls.LoadX509KeyPair(cfg.TLSCertFile, cfg.TLSKeyFile); terr != nil {
+			return fmt.Errorf("loading TLS credentials: %w", terr)
+		}
+		tlsConf = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+			GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+				cert, lerr := tls.LoadX509KeyPair(cfg.TLSCertFile, cfg.TLSKeyFile)
+				if lerr != nil {
+					return nil, lerr
+				}
+				return &cert, nil
+			},
+		}
+		// The OTLP ingest listener gets its own TLS config so optional mTLS
+		// (client-certificate auth, ADR 0028) applies to ingest only — the HTTP
+		// read surfaces stay on bearer/OIDC, not client certs. Off unless a client
+		// CA is configured.
+		ingestTLS, terr := ingestTLSConfig(tlsConf, cfg.TLSClientCAFile)
+		if terr != nil {
+			return terr
+		}
+		if cfg.TLSClientCAFile != "" {
+			logger.Info("mTLS enabled on OTLP ingest", "client_ca", cfg.TLSClientCAFile)
+		}
+		grpcOpts = append(grpcOpts, grpc.Creds(credentials.NewTLS(ingestTLS)))
+	}
+
+	ingestMetrics := ingest.NewMetrics()
+	maint := metrics.NewMaintenance()
+	authFailures := metrics.NewAuthFailures()
+	authn.OnFailure(authFailures.Inc)
+	queryMetrics := metrics.NewQueryMetrics() // per-MCP-tool call/duration, shared across tenants
+
+	// An exposed listener without auth or TLS, and shipping that leaves readable,
+	// deserve a loud line at startup: the trusted-network defaults are loopback
+	// and TLS, and leaving them is a choice that should look like one (#115).
+	//
+	// The same list feeds a gauge. The log line alone was not enough: three of
+	// these conditions sat in a production log for months, each one true and
+	// correct, because nobody reads a WARN at boot. A metric can carry an alert.
+	exposure := metrics.NewExposure()
+	insecure := insecureConditions(cfg, authn.Enabled())
+	for _, c := range insecure {
+		switch c.Surface {
+		case "listener":
+			// Name what is actually missing, and advise only that. The line used to
+			// read "auth and/or TLS are off" and recommend both while reporting
+			// auth:true, so an operator who had already done half of it was told to
+			// do it again — which is how a reader learns to stop reading a warning.
+			logger.Warn("listener is not loopback and "+listenerRemedy(c.Reason)+" (ADR 0024)",
+				"addr", c.Addr, "reason", c.Reason,
+				"auth", authn.Enabled(), "tls", cfg.TLSEnabled(),
+				"tls_terminated_upstream", cfg.TLSTerminatedUpstream)
+		case "log_shipping":
+			logger.Warn("log shipping is unencrypted: log_shipping_s3_use_ssl is off and the endpoint is not loopback, so every tenant's event log leaves this host readable on the wire — set log_shipping_s3_use_ssl, or point the endpoint at loopback or an address on a link you trust",
+				"endpoint", c.Addr, "public_ip", c.Reason == "cleartext_public")
+		}
+	}
+	if cfg.TLSTerminatedUpstream {
+		// Said once, at INFO, because a suppressed control must still be visible in
+		// the place an operator looks first. The metric carries it for alerting.
+		logger.Info("tls_terminated_upstream is declared: the no_tls exposure condition is suppressed on non-loopback listeners, on the operator's statement that a reverse proxy terminates TLS and the listeners are not reachable without it. Auth conditions are unaffected")
+	}
+	exposure.Report(insecure, configDeclarations(cfg))
+
+	// errc carries a fatal serve error from either server. A receiver that dies
+	// after startup MUST reach it: otherwise the process keeps serving HTTP,
+	// /readyz stays green, and ingestion is silently dead while the liveness
+	// sweep starts expiring entities (#112). Exiting lets the supervisor restart.
+	errc := make(chan error, 2)
+
+	receiver := ingest.NewRoutedReceiver(engineFor, authn.AllowedForTenantGRPC, ingestMetrics, cfg.AcceptUnknownTypes, logger, grpcOpts...)
+	if cfg.DeriveOnlyTenancy() {
+		// derive-only: a scoped token's tenant is derived and locked, ignoring a
+		// client X-Scope-OrgID / tenant.id resource attribute (ADR 0028).
+		receiver.SetTenantResolver(authn.EffectiveTenantGRPC)
+	}
+	lis, err := net.Listen("tcp", cfg.OTLPListen)
+	if err != nil {
+		return fmt.Errorf("otlp listen on %s: %w", cfg.OTLPListen, err)
+	}
+	go func() {
+		if serveErr := receiver.Serve(lis); serveErr != nil {
+			errc <- fmt.Errorf("otlp receiver: %w", serveErr)
+		}
+	}()
+	defer receiver.Stop()
+
+	// Audit sink for operator writes (ADR 0028): an append-only JSON-line file,
+	// off unless configured. One sink, shared across the per-tenant handlers.
+	var auditor *audit.Auditor
+	if cfg.AuditLog != "" {
+		f, ferr := os.OpenFile(cfg.AuditLog, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+		if ferr != nil {
+			return fmt.Errorf("opening audit log %s: %w", cfg.AuditLog, ferr)
+		}
+		defer f.Close()
+		auditor = audit.New(f, logger)
+		logger.Info("audit log enabled", "path", cfg.AuditLog)
+	}
+
+	// Tenant labels: presentational only (#361), and already validated at boot by
+	// the config, so a malformed pair never reaches here.
+	tenantNames, err := cfg.TenantNamesMap()
+	if err != nil {
+		return fmt.Errorf("tenant_names: %w", err)
+	}
+
+	// The GraphQL, MCP and debug-UI surfaces are scoped per tenant: a router builds
+	// one handler per tenant on first use, bound to that tenant's stack, and
+	// dispatches by the X-Scope-OrgID header (ADR 0025).
+	graphqlRouter := newTenantRouter(reg, logger, func(st *registry.Stack) (http.Handler, error) {
+		res := &resolvers.Resolver{
+			Tenant:     st.Tenant,
+			TenantName: tenantNames[st.Tenant],
+			Graph:      st.Graph, Store: st.Store, Engine: st.Engine,
+			Annotations: st.Annotations, Audit: auditor,
+			IdentityThreshold: cfg.IdentityThreshold,
+		}
+		return graphql.NewHandler(res, graphql.Config{
+			AllowedOrigins:       cfg.AllowedOrigins,
+			DisableIntrospection: !cfg.GraphQLIntrospection,
+		}), nil
+	})
+	mcpRouter := newTenantRouter(reg, logger, func(st *registry.Stack) (http.Handler, error) {
+		return mcp.New(st.Graph, st.Store).SetTenant(st.Tenant).SetTenantName(tenantNames[st.Tenant]).SetCadence(st.Engine).SetObserver(queryMetrics).SetAnnotations(st.Annotations).SetAuditor(auditor).SetIdentityThreshold(cfg.IdentityThreshold).HTTPHandler(), nil
+	})
+	if cfg.DeriveOnlyTenancy() || cfg.OIDCEnabled() {
+		// Route to the effective tenant: a derive-only scoped token's own tenant,
+		// or an OIDC identity's claim tenant — ignoring the client X-Scope-OrgID
+		// (ADR 0028). The auth middleware authorizes against the same tenant.
+		graphqlRouter.resolve = authn.EffectiveTenantHTTP
+		mcpRouter.resolve = authn.EffectiveTenantHTTP
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/graphql", graphqlRouter)
+	mux.Handle("/mcp", mcpRouter)
+	mux.Handle("/healthz", ops.Healthz())
+	mux.Handle("/readyz", ops.Readyz(func() error {
+		for _, st := range reg.Stacks() {
+			if herr := st.Store.Healthy(); herr != nil {
+				return fmt.Errorf("tenant %s: %w", st.Tenant, herr)
+			}
+		}
+		return nil
+	}, func(err error) {
+		// The reason the probe does not write: it names the failing tenant and
+		// the storage engine's error, and /readyz answers strangers.
+		if err != nil {
+			logger.Error("not ready: a tenant store is unhealthy", "err", err)
+			return
+		}
+		logger.Info("ready again: every tenant store answers")
+	}))
+	quarantined := metrics.NewQuarantinedTenants()
+	if q := reg.Quarantined(); len(q) > 0 {
+		quarantined.Set(float64(len(q)))
+		logger.Warn("tenants quarantined at boot (stores failed to open, left on disk for recovery)", "count", len(q), "tenants", q)
+	}
+	openTenants := metrics.NewOpenTenants(func() float64 { return float64(reg.TenantCount()) })
+	metricsExtra := append(ingestMetrics.Collectors(), authFailures, quarantined, openTenants)
+	metricsExtra = append(metricsExtra, maint.Collectors()...)
+	metricsExtra = append(metricsExtra, exposure.Collectors()...)
+	metricsExtra = append(metricsExtra, promises.Collectors()...)
+	metricsExtra = append(metricsExtra, discards.Collectors()...)
+	metricsExtra = append(metricsExtra, aliasConflicts.Collectors()...)
+	metricsExtra = append(metricsExtra, queryMetrics.Collectors()...)
+	// Annotation counts per tenant, so a replica-local overlay is at least
+	// measurable (#365): log shipping replicates the log, not the sidecar, so a
+	// difference between the pair is real and otherwise silent.
+	metricsExtra = append(metricsExtra, metrics.NewAnnotationCounts(func() map[string]int {
+		out := map[string]int{}
+		for _, st := range reg.Stacks() {
+			if st.Annotations == nil {
+				continue
+			}
+			n, err := st.Annotations.Count()
+			if err != nil {
+				// A sidecar that cannot be read is reported as absent from the
+				// map rather than as zero: zero would read as "no notes here",
+				// which is the very confusion this metric exists to remove.
+				logger.Warn("counting annotations", "tenant", st.Tenant, "error", err)
+				continue
+			}
+			out[st.Tenant] = n
+		}
+		return out
+	}))
+	// The scrape surface is filtered per caller: a global token reads every
+	// tenant's series (what the operator's single scrape needs), a tenant-scoped
+	// one reads only its own. Unfiltered, one answer named every client on the
+	// instance and its ingest volume (#463).
+	scrapeCollector := metrics.NewCollector(
+		aggregateGraph{reg}, aggregateStore{reg}, version.Version, version.Commit)
+	// Without this the series publishes at zero for ever, and a control that can
+	// never fire reads as coverage.
+	scrapeCollector.SetAnonymousReferenceCounter(aggregateEngines{reg})
+	mux.Handle("/metrics", metrics.ScopedHandler(authn.MetricsScope, scrapeCollector, metricsExtra...))
+	if cfg.Playground {
+		mux.Handle("/playground", playground.Handler("Bellu Graph Engine", "/graphql"))
+	}
+	if cfg.DebugUI {
+		// The tenant switcher exists only where tenant selection is already
+		// client-controlled. Under claim-derived tenancy the claim resolver stays
+		// in charge, the ?tenant= parameter is never consulted, and the tenant
+		// list is not offered — a scoped reader must not learn which other
+		// tenants exist (ADR 0028).
+		var listTenants func() []string
+		if !cfg.DeriveOnlyTenancy() && !cfg.OIDCEnabled() {
+			listTenants = func() []string {
+				stacks := reg.Stacks()
+				ids := make([]string, len(stacks))
+				for i, st := range stacks {
+					ids[i] = st.Tenant
+				}
+				return ids
+			}
+		}
+		debugRouter := newTenantRouter(reg, logger, func(st *registry.Stack) (http.Handler, error) {
+			h, derr := debugui.New(st.Graph, st.Store, st.Tenant, listTenants)
+			if derr != nil {
+				return nil, derr
+			}
+			return h.SetTenantName(tenantNames[st.Tenant]), nil
+		})
+		if cfg.DeriveOnlyTenancy() || cfg.OIDCEnabled() {
+			debugRouter.resolve = authn.EffectiveTenantHTTP
+		} else {
+			debugRouter.resolve = tenant.FromHTTPWithQuery
+		}
+		mux.Handle("/", debugRouter)
+	}
+	// Auth wraps the data surfaces; the liveness probes stay public because a
+	// probe must answer before anything is configured. The scrape no longer
+	// does: its series are labeled by tenant, so an open /metrics handed any
+	// caller the list of clients and their volumes (#463). metrics_public
+	// restores the old behavior for the length of an upgrade, so that landing
+	// this does not blind a scrape that has no bearer yet.
+	public := map[string]bool{"/healthz": true, "/readyz": true}
+	if cfg.MetricsPublic {
+		public["/metrics"] = true
+	}
+	// The scrape authenticates but targets no tenant: it is filtered to what the
+	// token may see, so the per-tenant authorization must not run on it.
+	authn.SetTenantExemptPaths(map[string]bool{"/metrics": true})
+	logger.Info("scrape surface", "path", "/metrics",
+		"authenticated", !cfg.MetricsPublic, "per_tenant_scope", !cfg.MetricsPublic)
+	// CORS sits OUTSIDE auth, because a preflight carries no Authorization
+	// header: a browser asks whether it may send one before it sends it. An
+	// empty allowlist makes this a no-op, so same-origin stays the default.
+	handler := graphql.CORSMiddleware(cfg.AllowedOrigins, authn.HTTPMiddleware(public)(mux))
+	httpSrv := &http.Server{
+		Addr:              cfg.Listen,
+		Handler:           handler,
+		ReadHeaderTimeout: 10 * time.Second,
+		TLSConfig:         tlsConf,
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	// The maintenance loops below append, prune, and snapshot against the tenant
+	// stores; they must be joined before the deferred reg.Close() closes pebble
+	// under them (DB.Close is unsafe concurrently with any other method —
+	// "panic: pebble: closed" at SIGTERM otherwise, #112). LIFO defers: cancel,
+	// join the loops, then receiver.Stop and reg.Close run.
+	var wg sync.WaitGroup
+	defer func() {
+		stop()
+		wg.Wait()
+	}()
+
+	if sweep := cfg.LivenessSweepInterval.D(); sweep > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ticker := time.NewTicker(sweep)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					for _, st := range reg.Stacks() {
+						_ = maint.Observe("sweep", st.Tenant, func() error {
+							res, err := st.Engine.Sweep()
+							if res.Total() > 0 {
+								logger.Info("liveness sweep expired stale records", "tenant", st.Tenant,
+									"entities", res.Entities, "relations", res.Relations)
+							}
+							return err
+						})
+					}
+				}
+			}
+		}()
+	}
+
+	// Compaction: coalesce heartbeat runs, and — when a retention max-age is set —
+	// prune events older than it to bound on-disk growth (the current-state
+	// projection is preserved). Runs per tenant. See ADR 0013, #45.
+	if storeCfg.CompactionInterval > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ticker := time.NewTicker(storeCfg.CompactionInterval)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					for _, st := range reg.Stacks() {
+						if err := maint.Observe("coalesce", st.Tenant, func() error {
+							n, cerr := st.Store.CoalesceHeartbeats()
+							if cerr != nil {
+								return cerr
+							}
+							if n > 0 {
+								logger.Info("coalesced heartbeat records", "tenant", st.Tenant, "removed", n)
+							}
+							return nil
+						}); err != nil {
+							logger.Error("heartbeat coalescing failed", "tenant", st.Tenant, "err", err)
+						}
+						// Retention resolves per tenant: a listed tenant is pruned
+						// to its own bound, an unlisted one to the global default —
+						// retention is what a multi-tenant offer prices (#350).
+						maxAge := storeCfg.RetentionMaxAge
+						if d, ok := tenantRetention[st.Tenant]; ok {
+							maxAge = d
+						}
+						if maxAge > 0 {
+							cutoff := time.Now().Add(-maxAge)
+							if err := maint.Observe("prune", st.Tenant, func() error {
+								ev, by, perr := st.Store.PruneOlderThan(cutoff)
+								if perr != nil {
+									return perr
+								}
+								if ev > 0 {
+									logger.Info("pruned events past retention", "tenant", st.Tenant, "events", ev, "bytes", by, "older_than", maxAge.String())
+								}
+								return nil
+							}); err != nil {
+								logger.Error("retention pruning failed", "tenant", st.Tenant, "err", err)
+							}
+						}
+					}
+				}
+			}
+		}()
+	}
+
+	scheme := "http"
+	if cfg.TLSEnabled() {
+		scheme = "https"
+	}
+	// Periodic projection snapshot for fast restart: replay only the tail since the
+	// snapshot on the next start. The reference sequence is read before sampling the
+	// graph, so the replayed tail overlaps idempotently rather than skips (#49).
+	// The snapshot also carries the liveness memento (#139): with sweeping on but
+	// snapshots off, producer refs die with every restart and a producer that was
+	// merely quiet across the restart leaves zombies — worth a loud line.
+	if snap := cfg.SnapshotInterval.D(); snap > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ticker := time.NewTicker(snap)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					for _, st := range reg.Stacks() {
+						if err := maint.Observe("snapshot", st.Tenant, func() error {
+							return writeTenantSnapshot(st, logger)
+						}); err != nil {
+							logger.Error("snapshot write failed", "tenant", st.Tenant, "err", err)
+						}
+					}
+				}
+			}
+		}()
+	} else if cfg.LivenessSweepInterval.D() > 0 {
+		logger.Warn("liveness sweeping is on but snapshots are disabled: producer references will NOT survive restarts, so entities of producers that die while the server is down are never expired — set snapshot_interval (default 5m)")
+	}
+
+	// Periodic online backups (ADR 0029): every interval, checkpoint each tenant's
+	// event log (Pebble's lock-free checkpoint) into <backup-dir>/<timestamp>/<tenant>
+	// for an operator to sync off-node. Off unless backup_dir + backup_interval set.
+	if cfg.BackupDir != "" && cfg.BackupInterval.D() > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ticker := time.NewTicker(cfg.BackupInterval.D())
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					dest := filepath.Join(cfg.BackupDir, time.Now().UTC().Format("20060102T150405Z"))
+					for _, st := range reg.Stacks() {
+						if err := maint.Observe("backup", st.Tenant, func() error {
+							return st.Store.Checkpoint(filepath.Join(dest, st.Tenant))
+						}); err != nil {
+							logger.Error("backup checkpoint failed", "tenant", st.Tenant, "dest", dest, "err", err)
+						}
+					}
+					logger.Info("backup written", "dest", dest, "tenants", len(reg.Stacks()))
+				}
+			}
+		}()
+		logger.Info("scheduled backups enabled", "dir", cfg.BackupDir, "interval", cfg.BackupInterval.D())
+	}
+
+	// Continuous log shipping (ADR 0029): every interval, export each tenant's new
+	// event-log tail as an immutable segment — the finer-RPO complement to the full
+	// checkpoint backup. The target is a directory (mounted bucket/NFS/rsync) or an
+	// S3-compatible store; the cursor is derived from the sink, so it survives
+	// restarts without local state. Off unless a target + interval are set.
+	if cfg.LogShipEnabled() {
+		sink, serr := buildLogSink(cfg)
+		if serr != nil {
+			return fmt.Errorf("log shipping: %w", serr)
+		}
+		target := cfg.LogShipDir
+		if cfg.LogShipS3Enabled() {
+			target = "s3://" + cfg.LogShipS3Bucket
+		}
+		shipper := logship.New(sink)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ticker := time.NewTicker(cfg.LogShipInterval.D())
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					for _, st := range reg.Stacks() {
+						if err := maint.Observe("logship", st.Tenant, func() error {
+							n, err := shipper.Ship(ctx, st.Tenant, st.Store)
+							if err == nil && n > 0 {
+								logger.Info("log segment shipped", "tenant", st.Tenant, "events", n)
+							}
+							return err
+						}); err != nil {
+							logger.Error("log shipping failed", "tenant", st.Tenant, "err", err)
+						}
+						// Operator annotations ride the same store (#348): each
+						// node pushes what it wrote and pulls what the other
+						// wrote, last-writer-wins, tombstones included — the
+						// cluster's nodes converge without ever talking to each
+						// other, and a single-node deployment simply gains an
+						// annotation backup.
+						if st.Annotations != nil {
+							if err := maint.Observe("annsync", st.Tenant, func() error {
+								pushed, pulled, serr := annotations.SyncOnce(ctx, st.Annotations, sink, "annotations/"+st.Tenant)
+								if serr == nil && pushed+pulled > 0 {
+									logger.Info("annotations synced", "tenant", st.Tenant, "pushed", pushed, "pulled", pulled)
+								}
+								return serr
+							}); err != nil {
+								logger.Error("annotation sync failed", "tenant", st.Tenant, "err", err)
+							}
+						}
+					}
+				}
+			}
+		}()
+		logger.Info("log shipping enabled", "target", target, "interval", cfg.LogShipInterval.D())
+	}
+
+	fmt.Printf("Bellu Graph Engine %s — the living map of your infrastructure\n", version.String())
+	logger.Info("bellugraph-server ready",
+		"graphql", scheme+"://"+cfg.Listen+"/graphql",
+		"mcp", scheme+"://"+cfg.Listen+"/mcp",
+		"metrics", scheme+"://"+cfg.Listen+"/metrics",
+		"otlp_grpc", cfg.OTLPListen,
+		"data_dir", cfg.DataDir,
+		"tenants", len(reg.Stacks()),
+		"tls", cfg.TLSEnabled(),
+		"auth", authn.Enabled(),
+		"unauthenticated_writes", cfg.AllowUnauthenticatedWrites && !authn.Enabled(),
+		"production", cfg.Production)
+
+	go func() {
+		if cfg.TLSEnabled() {
+			// Cert/key come from TLSConfig.GetCertificate; empty args keep them
+			// off the legacy path.
+			errc <- httpSrv.ListenAndServeTLS("", "")
+		} else {
+			errc <- httpSrv.ListenAndServe()
+		}
+	}()
+
+	select {
+	case err := <-errc:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("serve: %w", err)
+		}
+		return nil
+	case <-ctx.Done():
+		logger.Info("shutting down")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := httpSrv.Shutdown(shutdownCtx); err != nil {
+			// Long-lived streams (the MCP SSE listening stream, GraphQL WS
+			// subscriptions) never drain on their own, so Shutdown's grace
+			// always elapses when a client is connected. Cutting them is the
+			// intended outcome of a deploy, not a failure: fall through to
+			// Close and exit clean (#130).
+			if errors.Is(err, context.DeadlineExceeded) {
+				logger.Info("shutdown grace elapsed with streams still open; closing them")
+				if cerr := httpSrv.Close(); cerr != nil {
+					return fmt.Errorf("closing http server: %w", cerr)
+				}
+				return nil
+			}
+			return fmt.Errorf("http shutdown: %w", err)
+		}
+		return nil
+	}
+}
+
+// writeTenantSnapshot writes one projection snapshot for st: the reference
+// sequence is read before sampling the graph so the replayed tail overlaps
+// idempotently (#49), and the liveness memento rides along (#139). A failed
+// liveness blob degrades to a snapshot without it rather than no snapshot.
+func writeTenantSnapshot(st *registry.Stack, logger *slog.Logger) error {
+	seq := st.Store.Sequence()
+	events := st.Graph.SnapshotEvents(time.Now())
+	liveness, lerr := st.Engine.LivenessBlob()
+	if lerr != nil {
+		logger.Error("liveness snapshot failed; writing snapshot without it", "tenant", st.Tenant, "err", lerr)
+	}
+	if werr := st.Store.WriteSnapshot(seq, events, liveness); werr != nil {
+		return werr
+	}
+	logger.Info("wrote projection snapshot", "tenant", st.Tenant, "snapshot_seq", seq, "events", len(events))
+	return nil
+}
+
+// runCheckpoint takes a consistent Pebble checkpoint of every tenant store
+// into <dst>/<tenant> — the operator-facing trigger for Store.Checkpoint the
+// docs promise (#115). The data dir resolves with the server's precedence
+// (defaults < config file < BELLU_GRAPH_* env < flags), and the stores are opened
+// strictly read-only: a backup must never mint or alter what it backs up, so
+// a missing data dir or one holding no tenant stores is a hard error instead
+// of an empty "success" (#162). It is a cold-backup tool: run it while
+// bellugraph-server is stopped (a running server holds the pebble lock, and the
+// open fails cleanly).
+func runCheckpoint(args []string, getenv func(string) string) error {
+	fs := flag.NewFlagSet("bellugraph-server checkpoint", flag.ContinueOnError)
+	configPath := fs.String("config", "", "path to a YAML config file (env: BELLU_GRAPH_CONFIG)")
+	dataDir := fs.String("data-dir", "", "directory of the tenant event logs (env: BELLU_GRAPH_DATA_DIR)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return fmt.Errorf("usage: bellugraph-server checkpoint [--config file] [--data-dir dir] <destination-dir>")
+	}
+	dst := fs.Arg(0)
+
+	var cfgArgs []string
+	if *configPath != "" {
+		cfgArgs = append(cfgArgs, "--config="+*configPath)
+	}
+	if *dataDir != "" {
+		cfgArgs = append(cfgArgs, "--data-dir="+*dataDir)
+	}
+	cfg, err := config.LoadCold(cfgArgs, getenv)
+	if err != nil {
+		return fmt.Errorf("resolving configuration: %w", err)
+	}
+
+	stores, err := registry.OpenExisting(cfg.DataDir, store.DefaultConfig(), slog.Default())
+	if err != nil {
+		return fmt.Errorf("opening tenant stores: %w", err)
+	}
+	defer func() {
+		for _, ts := range stores {
+			_ = ts.Store.Close()
+		}
+	}()
+	for _, ts := range stores {
+		out := filepath.Join(dst, ts.Tenant)
+		if cerr := ts.Store.Checkpoint(out); cerr != nil {
+			return fmt.Errorf("tenant %s: %w", ts.Tenant, cerr)
+		}
+		fmt.Printf("checkpointed tenant %s -> %s\n", ts.Tenant, out)
+	}
+	return nil
+}
+
+// runDropSnapshot deletes the persisted projection snapshot of every tenant
+// store so the next start replays the full log — the recovery path for a corrupt
+// snapshot that fails to read (the server falls back to full replay and warns;
+// dropping it stops the warning and lets a fresh snapshot be written). The event
+// log is untouched. Cold tool: run it while bellugraph-server is stopped (a running
+// server holds the pebble lock and the open fails cleanly).
+func runDropSnapshot(args []string, getenv func(string) string) error {
+	fs := flag.NewFlagSet("bellugraph-server drop-snapshot", flag.ContinueOnError)
+	configPath := fs.String("config", "", "path to a YAML config file (env: BELLU_GRAPH_CONFIG)")
+	dataDir := fs.String("data-dir", "", "directory of the tenant event logs (env: BELLU_GRAPH_DATA_DIR)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 0 {
+		return fmt.Errorf("usage: bellugraph-server drop-snapshot [--config file] [--data-dir dir]")
+	}
+
+	var cfgArgs []string
+	if *configPath != "" {
+		cfgArgs = append(cfgArgs, "--config="+*configPath)
+	}
+	if *dataDir != "" {
+		cfgArgs = append(cfgArgs, "--data-dir="+*dataDir)
+	}
+	cfg, err := config.LoadCold(cfgArgs, getenv)
+	if err != nil {
+		return fmt.Errorf("resolving configuration: %w", err)
+	}
+
+	stores, err := registry.OpenExistingWritable(cfg.DataDir, store.DefaultConfig(), slog.Default())
+	if err != nil {
+		return fmt.Errorf("opening tenant stores: %w", err)
+	}
+	defer func() {
+		for _, ts := range stores {
+			_ = ts.Store.Close()
+		}
+	}()
+	for _, ts := range stores {
+		if derr := ts.Store.DropSnapshot(); derr != nil {
+			return fmt.Errorf("tenant %s: %w", ts.Tenant, derr)
+		}
+		fmt.Printf("dropped snapshot for tenant %s\n", ts.Tenant)
+	}
+	return nil
+}
+
+// runDeleteTenant removes a tenant's entire on-disk stack (event log + snapshot)
+// from the data dir — the operator-facing tenant-deletion procedure (#166). It is
+// destructive and a COLD tool: run it with bellugraph-server stopped (a running server
+// holds the pebble lock and serves the tenant). The default tenant cannot be
+// deleted. MaxTenants then has room for a new one.
+func runDeleteTenant(args []string, getenv func(string) string) error {
+	fs := flag.NewFlagSet("bellugraph-server delete-tenant", flag.ContinueOnError)
+	configPath := fs.String("config", "", "path to a YAML config file (env: BELLU_GRAPH_CONFIG)")
+	dataDir := fs.String("data-dir", "", "directory of the tenant event logs (env: BELLU_GRAPH_DATA_DIR)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return fmt.Errorf("usage: bellugraph-server delete-tenant [--config file] [--data-dir dir] <tenant-id>")
+	}
+	id, ok := tenant.Sanitize(fs.Arg(0))
+	if !ok {
+		return fmt.Errorf("invalid tenant id %q", fs.Arg(0))
+	}
+	if id == tenant.Default {
+		return fmt.Errorf("the %q tenant cannot be deleted", tenant.Default)
+	}
+
+	var cfgArgs []string
+	if *configPath != "" {
+		cfgArgs = append(cfgArgs, "--config="+*configPath)
+	}
+	if *dataDir != "" {
+		cfgArgs = append(cfgArgs, "--data-dir="+*dataDir)
+	}
+	cfg, err := config.LoadCold(cfgArgs, getenv)
+	if err != nil {
+		return fmt.Errorf("resolving configuration: %w", err)
+	}
+	dir := filepath.Join(cfg.DataDir, id)
+	if _, serr := os.Stat(dir); serr != nil {
+		return fmt.Errorf("tenant %q not found under %s: %w", id, cfg.DataDir, serr)
+	}
+	// Take the tenant's Pebble lock before removing anything: a running server
+	// holds it, so this fails cleanly instead of deleting files out from under
+	// an open DB (which would leave a phantom in-memory tenant and a corrupt dir).
+	// Same guard the checkpoint / drop-snapshot subcommands use.
+	lock, lerr := store.Open(dir, store.DefaultConfig())
+	if lerr != nil {
+		return fmt.Errorf("tenant %q is in use (is the server running?): %w", id, lerr)
+	}
+	if cerr := lock.Close(); cerr != nil {
+		return fmt.Errorf("releasing tenant %q lock: %w", id, cerr)
+	}
+	if rerr := os.RemoveAll(dir); rerr != nil {
+		return fmt.Errorf("removing tenant %q: %w", id, rerr)
+	}
+	fmt.Printf("deleted tenant %s (%s)\n", id, dir)
+	return nil
+}
+
+// runRestoreLog rebuilds tenant event logs from shipped segments (logship,
+// ADR 0029) into a data dir: for each tenant under --from (or just --tenant) it
+// replays the contiguous segments and re-appends the events into a fresh
+// per-tenant store, faithfully reconstructing the log (the bi-temporal facts ride
+// on the events; the projection rebuilds on the next server start). It refuses to
+// write into a store that already holds events, so it never clobbers or
+// duplicates an existing log — restore into an empty/new data dir. COLD tool: run
+// it with bellugraph-server stopped.
+func runRestoreLog(args []string, getenv func(string) string) error {
+	fs := flag.NewFlagSet("bellugraph-server restore-log", flag.ContinueOnError)
+	configPath := fs.String("config", "", "path to a YAML config file (env: BELLU_GRAPH_CONFIG)")
+	dataDir := fs.String("data-dir", "", "destination data dir to reconstruct into (env: BELLU_GRAPH_DATA_DIR)")
+	from := fs.String("from", "", "read segments from this directory; default: the configured shipping target (log_shipping_dir or the S3 bucket)")
+	only := fs.String("tenant", "", "restore only this tenant (default: every tenant found at the source)")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	var cfgArgs []string
+	if *configPath != "" {
+		cfgArgs = append(cfgArgs, "--config="+*configPath)
+	}
+	if *dataDir != "" {
+		cfgArgs = append(cfgArgs, "--data-dir="+*dataDir)
+	}
+	cfg, err := config.LoadCold(cfgArgs, getenv)
+	if err != nil {
+		return fmt.Errorf("resolving configuration: %w", err)
+	}
+
+	// Source: an explicit --from directory, else the configured shipping target —
+	// S3 when a bucket is set, otherwise log_shipping_dir. Restore from wherever you
+	// ship to, or from a local copy (a mirror, or a checkpoint of the segments).
+	var sink logship.Sink
+	switch {
+	case *from != "":
+		sink, err = logship.NewFileSink(*from)
+	case cfg.LogShipS3Enabled() || cfg.LogShipDir != "":
+		sink, err = buildLogSink(cfg)
+	default:
+		return fmt.Errorf("no source: pass --from <dir>, or configure a shipping target (log_shipping_dir or log_shipping_s3_bucket)")
+	}
+	if err != nil {
+		return err
+	}
+	shipper := logship.New(sink)
+	ctx := context.Background()
+
+	var tenants []string
+	if *only != "" {
+		id, ok := tenant.Sanitize(*only)
+		if !ok {
+			return fmt.Errorf("invalid tenant id %q", *only)
+		}
+		tenants = []string{id}
+	} else if tenants, err = shipper.Tenants(ctx); err != nil {
+		return err
+	}
+	if len(tenants) == 0 {
+		return fmt.Errorf("no shipped segments found under %s", *from)
+	}
+	if err := os.MkdirAll(cfg.DataDir, 0o755); err != nil {
+		return fmt.Errorf("creating data dir %s: %w", cfg.DataDir, err)
+	}
+	for _, id := range tenants {
+		if err := restoreTenantLog(ctx, shipper, cfg.DataDir, id); err != nil {
+			return fmt.Errorf("tenant %s: %w", id, err)
+		}
+	}
+	return nil
+}
+
+func restoreTenantLog(ctx context.Context, shipper *logship.Shipper, dataDir, id string) error {
+	// A restore reconstructs previously-accepted events; it does not re-police
+	// vocabulary, so relax the type check (the events passed it once already).
+	scfg := store.DefaultConfig()
+	scfg.AcceptUnknownTypes = true
+	st, err := store.Open(filepath.Join(dataDir, id), scfg)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = st.Close() }()
+	if st.Sequence() > 0 {
+		return fmt.Errorf("destination store already holds %d events; restore into an empty data dir", st.Sequence())
+	}
+
+	const batchSize = 1000
+	batch := make([]model.Event, 0, batchSize)
+	count := 0
+	flush := func() error {
+		if len(batch) == 0 {
+			return nil
+		}
+		if aerr := st.Append(batch...); aerr != nil {
+			return aerr
+		}
+		batch = batch[:0]
+		return nil
+	}
+	if rerr := shipper.Replay(ctx, id, func(ev model.Event) error {
+		batch = append(batch, ev)
+		count++
+		if len(batch) >= batchSize {
+			return flush()
+		}
+		return nil
+	}); rerr != nil {
+		return rerr
+	}
+	if ferr := flush(); ferr != nil {
+		return ferr
+	}
+	fmt.Printf("restored tenant %s -> %s (%d events)\n", id, filepath.Join(dataDir, id), count)
+	return nil
+}
+
+// buildLogSink picks the log-shipping sink from config: an S3-compatible store
+// when a bucket is set (works against AWS S3 and MinIO/Ceph/R2/… alike),
+// otherwise a directory.
+func buildLogSink(cfg config.Config) (logship.Sink, error) {
+	if cfg.LogShipS3Enabled() {
+		return logship.NewS3Sink(logship.S3Config{
+			Endpoint:  cfg.LogShipS3Endpoint,
+			Bucket:    cfg.LogShipS3Bucket,
+			Region:    cfg.LogShipS3Region,
+			Prefix:    cfg.LogShipS3Prefix,
+			AccessKey: cfg.LogShipS3AccessKey,
+			SecretKey: cfg.LogShipS3SecretKey,
+			UseSSL:    cfg.LogShipS3UseSSL,
+		})
+	}
+	return logship.NewFileSink(cfg.LogShipDir)
+}
+
+// versionRequested reports whether the first argument asks for the version.
+// Only the first: a --version buried after other flags is more likely a typo in
+// a unit file than a request, and silently printing a version instead of
+// serving would look exactly like a crash loop.
+func versionRequested(args []string) bool {
+	if len(args) == 0 {
+		return false
+	}
+	switch args[0] {
+	case "--version", "-version", "version", "-v":
+		return true
+	}
+	return false
+}
+
+// insecureConditions lists the configuration choices that leave data readable
+// or unauthenticated on the network. One list feeds both the startup warnings
+// and the gauge, so the two can never disagree about what is exposed.
+func insecureConditions(cfg config.Config, authEnabled bool) []metrics.Condition {
+	var out []metrics.Condition
+	// TLS counts as present when the operator declares it is terminated in front
+	// of these listeners. That declaration is theirs to make and ours to publish
+	// (configDeclarations); it cannot be derived here, because the address this
+	// process binds is the whole of what it can see — not the port publication,
+	// not the namespace, not where TLS ends.
+	tlsPresent := cfg.TLSEnabled() || cfg.TLSTerminatedUpstream
+	if !authEnabled || !tlsPresent {
+		reason := "no_auth_no_tls"
+		switch {
+		case authEnabled:
+			reason = "no_tls"
+		case tlsPresent:
+			reason = "no_auth"
+		}
+		for _, addr := range []string{cfg.Listen, cfg.OTLPListen} {
+			if addr != "" && !loopbackAddr(addr) {
+				out = append(out, metrics.Condition{Surface: "listener", Addr: addr, Reason: reason})
+			}
+		}
+	}
+	// An unauthenticated write is an exposure in its own right, and it is not
+	// covered by the no_auth condition above: that one fires on a listener with
+	// no credential path at all, while this fires whenever an anonymous caller
+	// may MUTATE the graph — including on an instance whose reads are
+	// authenticated. A WARN at boot would not do: this is the shape that sat
+	// unnoticed in production for four releases.
+	if cfg.AllowUnauthenticatedWrites && !authEnabled && cfg.Listen != "" && !loopbackAddr(cfg.Listen) {
+		out = append(out, metrics.Condition{Surface: "write", Addr: cfg.Listen, Reason: "unauthenticated_writes"})
+	}
+	if cleartextShipping(cfg) {
+		reason := "cleartext"
+		if publicIPEndpoint(cfg.LogShipS3Endpoint) {
+			reason = "cleartext_public"
+		}
+		out = append(out, metrics.Condition{Surface: "log_shipping", Addr: cfg.LogShipS3Endpoint, Reason: reason})
+	}
+	return out
+}
+
+// configDeclarations lists what the operator has stated about the perimeter, on
+// or off, so the statement is published rather than only honored. Every
+// declaration is listed whichever way it is set: a series that exists only when
+// the declaration is on makes its absence mean both "not declared" and "not
+// scraped", and a reader asking why an instance reports no conditions needs to
+// tell "nothing is exposed" from "someone said nothing is exposed".
+func configDeclarations(cfg config.Config) []metrics.Declaration {
+	return []metrics.Declaration{
+		{Name: "tls_terminated_upstream", On: cfg.TLSTerminatedUpstream},
+		{Name: "allow_unauthenticated_writes", On: cfg.AllowUnauthenticatedWrites},
+	}
+}
+
+// listenerRemedy says what is missing on an exposed listener, and only that.
+func listenerRemedy(reason string) string {
+	switch reason {
+	case "no_auth":
+		return "requires no authentication — set BELLU_GRAPH_AUTH_TOKENS (TLS is configured)"
+	case "no_tls":
+		return "serves without TLS — configure TLS, or declare BELLU_GRAPH_TLS_TERMINATED_UPSTREAM if a reverse proxy terminates it and these listeners are not reachable without passing through it"
+	default:
+		return "requires no authentication and serves without TLS — set BELLU_GRAPH_AUTH_TOKENS and configure TLS"
+	}
+}
+
+// cleartextShipping reports whether log shipping would put segments on the wire
+// readable: S3 shipping on, TLS off, and a target that is not this host.
+func cleartextShipping(cfg config.Config) bool {
+	if !cfg.LogShipS3Enabled() || cfg.LogShipS3UseSSL {
+		return false
+	}
+	// No endpoint is no wire: LogShipS3Enabled only asks for a bucket, and a
+	// bucket alone never reaches a store.
+	return cfg.LogShipS3Endpoint != "" && !loopbackAddr(cfg.LogShipS3Endpoint)
+}
+
+// publicIPEndpoint reports whether addr's host is an IP that is neither
+// loopback nor private: cleartext sent there does not merely stay unencrypted
+// inside a perimeter, it leaves the perimeter. A hostname answers false — that
+// takes a resolution this does not do.
+func publicIPEndpoint(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && !ip.IsLoopback() && !ip.IsPrivate() && !ip.IsLinkLocalUnicast()
+}
+
+// loopbackAddr reports whether addr binds a loopback interface.
+func loopbackAddr(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return false
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}

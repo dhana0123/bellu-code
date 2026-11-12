@@ -1,0 +1,248 @@
+// Package collectors runs in-process graph collectors: it schedules them,
+// scrubs every batch through the redaction guard, and appends it to the engine.
+package collectors
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sort"
+	"sync"
+	"time"
+
+	"github.com/bellu/bellucode/services/bellud/internal/graph"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
+	"github.com/bellu/bellucode/services/bellud/internal/redact"
+)
+
+// Collector produces the full current observation for its scope.
+type Collector interface {
+	Name() string
+	Interval() time.Duration
+	// Collect returns the full current observation; the engine derives
+	// added/changed/removed by diffing against the projection.
+	Collect(ctx context.Context) (graph.Batch, error)
+}
+
+const (
+	// TickTimeout bounds one Collect+Apply cycle.
+	TickTimeout = 30 * time.Second
+	// StatusCollector is the batch source used for collector_status entities.
+	StatusCollector = "collector_status"
+
+	minBackoff = time.Minute
+	maxBackoff = 15 * time.Minute
+)
+
+// Status values recorded in collector_status.
+const (
+	StatusOK      = "ok"
+	StatusError   = "error"
+	StatusTimeout = "timeout"
+	StatusLeak    = "leak"
+)
+
+// Logger is the subset of *log.Logger the runner needs.
+type Logger interface{ Println(v ...any) }
+
+type nopLogger struct{}
+
+func (nopLogger) Println(...any) {}
+
+type state struct {
+	status    string
+	lastError string
+	lastRun   time.Time
+	// logging backoff
+	nextLog time.Time
+	backoff time.Duration
+}
+
+// Runner schedules collectors and feeds their batches to the engine.
+type Runner struct {
+	engine     graph.Engine
+	guard      redact.Guard
+	collectors []Collector
+	log        Logger
+	now        func() time.Time
+	timeout    time.Duration
+
+	mu     sync.Mutex // guards states and serializes status writes
+	states map[string]*state
+
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
+}
+
+// Option customizes a Runner.
+type Option func(*Runner)
+
+// WithLogger sets the logger (default: discard).
+func WithLogger(l Logger) Option { return func(r *Runner) { r.log = l } }
+
+// WithGuard overrides the redaction guard (default: redact.New()).
+func WithGuard(g redact.Guard) Option { return func(r *Runner) { r.guard = g } }
+
+// WithClock overrides the time source.
+func WithClock(now func() time.Time) Option { return func(r *Runner) { r.now = now } }
+
+// WithTickTimeout overrides the per-tick timeout (default 30s).
+func WithTickTimeout(d time.Duration) Option { return func(r *Runner) { r.timeout = d } }
+
+// New builds a runner. The engine is only used through Ingest().Apply.
+func New(e graph.Engine, cols []Collector, opts ...Option) *Runner {
+	r := &Runner{
+		engine: e, guard: redact.New(), collectors: cols,
+		log: nopLogger{}, now: time.Now, timeout: TickTimeout,
+		states: map[string]*state{},
+	}
+	for _, o := range opts {
+		o(r)
+	}
+	for _, c := range cols {
+		r.states[c.Name()] = &state{}
+	}
+	return r
+}
+
+// Start launches one goroutine per collector. It is a no-op without collectors.
+func (r *Runner) Start(ctx context.Context) {
+	ctx, r.cancel = context.WithCancel(ctx)
+	for _, c := range r.collectors {
+		r.wg.Add(1)
+		go r.loop(ctx, c)
+	}
+}
+
+// Stop cancels all collectors and waits for in-flight ticks to finish.
+func (r *Runner) Stop() {
+	if r.cancel != nil {
+		r.cancel()
+	}
+	r.wg.Wait()
+}
+
+func (r *Runner) loop(ctx context.Context, c Collector) {
+	defer r.wg.Done()
+	iv := c.Interval()
+	if iv <= 0 {
+		iv = 30 * time.Second
+	}
+	for {
+		r.RunOnce(ctx, c)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(iv):
+		}
+	}
+}
+
+// RunOnce executes one tick for c, records its status, and logs failures with
+// backoff. Failures never propagate to other collectors.
+func (r *Runner) RunOnce(ctx context.Context, c Collector) error {
+	tctx, cancel := context.WithTimeout(ctx, r.timeout)
+	err := r.tick(tctx, c)
+	timedOut := errors.Is(tctx.Err(), context.DeadlineExceeded) && ctx.Err() == nil
+	cancel()
+	if ctx.Err() != nil && err != nil {
+		return err // shutting down: do not record a spurious failure
+	}
+	status, msg := StatusOK, ""
+	switch {
+	case err == nil:
+	case errors.Is(err, redact.ErrSecretLeak):
+		status, msg = StatusLeak, err.Error()
+	case timedOut || errors.Is(err, context.DeadlineExceeded):
+		status, msg = StatusTimeout, "tick exceeded "+r.timeout.String()
+	default:
+		status, msg = StatusError, err.Error()
+	}
+	r.record(ctx, c.Name(), status, msg)
+	return err
+}
+
+// tick is Algorithm E: collect, scrub, leak-check, apply.
+func (r *Runner) tick(ctx context.Context, c Collector) (err error) {
+	b, err := c.Collect(ctx)
+	if err != nil {
+		return err
+	}
+	if b.Collector == "" {
+		b.Collector = c.Name()
+	}
+	defer func() { // guard failure discards the batch
+		if p := recover(); p != nil {
+			err = fmt.Errorf("redaction guard failed: %v", p)
+		}
+	}()
+	b = r.guard.Scrub(b)
+	if rule, leaked := r.guard.FirstLeak(b); leaked || r.guard.Leaks(b) {
+		// Audit line: collector and rule id only.
+		r.log.Println("audit: secret leak blocked collector=" + c.Name() + " rule=" + rule)
+		return redact.ErrSecretLeak
+	}
+	_, err = r.engine.Ingest().Apply(ctx, b)
+	return err
+}
+
+func (r *Runner) record(ctx context.Context, name, status, msg string) {
+	now := r.now()
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	st := r.states[name]
+	if st == nil {
+		st = &state{}
+		r.states[name] = st
+	}
+	st.status, st.lastError, st.lastRun = status, msg, now
+	if status == StatusOK {
+		st.backoff, st.nextLog = 0, time.Time{}
+	} else if !now.Before(st.nextLog) {
+		r.log.Println("collector", name, status+":", msg)
+		st.backoff = min(max(st.backoff*2, minBackoff), maxBackoff)
+		st.nextLog = now.Add(st.backoff)
+	}
+	if err := r.writeStatus(ctx); err != nil && ctx.Err() == nil {
+		r.log.Println("collector_status write failed:", err)
+	}
+}
+
+// writeStatus appends all collectors' statuses as a separate batch so each
+// collector's own full-observation batches are unaffected. Caller holds r.mu.
+func (r *Runner) writeStatus(ctx context.Context) error {
+	names := make([]string, 0, len(r.states))
+	for n := range r.states {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+	b := graph.Batch{Collector: StatusCollector, ObservedAt: r.now()}
+	for _, n := range names {
+		st := r.states[n]
+		if st.lastRun.IsZero() {
+			continue
+		}
+		b.Entities = append(b.Entities, entity(n, st))
+	}
+	if len(b.Entities) == 0 {
+		return nil
+	}
+	b = r.guard.Scrub(b)
+	if r.guard.Leaks(b) {
+		return redact.ErrSecretLeak
+	}
+	_, err := r.engine.Ingest().Apply(ctx, b)
+	return err
+}
+
+func entity(name string, st *state) batch.Entity {
+	return batch.Entity{
+		Type:     "collector_status",
+		Identity: map[string]string{"collector": name},
+		Attributes: map[string]any{
+			"status":     st.status,
+			"last_error": st.lastError,
+			"last_run":   st.lastRun.UTC().Format(time.RFC3339Nano),
+		},
+	}
+}

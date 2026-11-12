@@ -1,0 +1,93 @@
+# Troubleshooting
+
+Common issues when bringing up `bellugraph-server` and feeding it OTLP entity events.
+
+## Entities disappear shortly after appearing
+
+**Cause.** A producer declared an `entity.report.interval` but heartbeats *slower*
+than that interval, so the liveness sweep expires the entity between heartbeats.
+
+**Fix.** Re-assert entities comfortably **more often** than the declared
+interval. With `bellugraph-probe`, keep `--heartbeat` well below `--interval`
+(e.g. `--interval 60s --heartbeat 6s`). See
+[Liveness](ingestion.md#liveness-explicit-delete-interval-backstop).
+
+## Nothing shows up at all
+
+- **Wrong port or transport.** Ingestion is OTLP/**gRPC** on `127.0.0.1:4317` by
+  default — not HTTP. Check `otlp_listen`.
+- **Records aren't entity events.** Bellu Graph Engine only ingests `LogRecord`s whose
+  `EventName` is `entity.state` or `entity.delete`; everything else is ignored.
+  Verify the producer sets `EventName`, not a payload attribute.
+- **Unknown entity/relation type.** `entity.type` and `relationship.type` must be
+  in Bellu Graph Engine's registry; unknown types are rejected. Check the server logs.
+
+## A relationship's endpoint isn't found
+
+Endpoints resolve by **exact identity** against a *live* entity. If a descriptor's
+target `entity.id` doesn't match a known entity's current identity, the edge can't
+attach.
+
+- With the reconciliation buffer **enabled** (default), an edge whose endpoint
+  hasn't arrived yet is **parked** and retried, and dropped with a `Warn` only
+  once the hold expires. Out-of-order delivery is fine.
+- **The hold is not `relation_buffer_ttl` alone.** It is the greater of that TTL
+  and the **source's own re-emit interval** when the producer reports one, so a
+  parked edge always gets at least one full cycle for its endpoint to arrive.
+  With a producer re-emitting every 360s and the default 30s TTL, the hold is
+  360s — a derived value, not a constant: lower the producer's interval and the
+  hold shortens with it.
+- With it **disabled** (`relation_buffer_ttl: 0`), a missing endpoint is a
+  retriable ingest error.
+
+Make sure the target's identity in the descriptor matches exactly (same keys,
+same values, as strings).
+
+## Identity attributes silently missing
+
+**`entity.id` (identity) must be flat scalars** — only `string` / `int64` /
+`double` / `bool` leaves are kept; a nested map in an identity is dropped and
+**logged as a `Warn`** naming the key. Pre-flatten with dotted keys:
+`{"server.address": "10.0.0.1"}`, never `{"server": {"address": "10.0.0.1"}}`.
+(`entity.description`, unlike identity, keeps the full AnyValue — arrays and nested
+maps are preserved; only unsupported leaves like `bytes` are dropped and surfaced.)
+See [Identity is scalar; description is full AnyValue](ingestion.md#identity-is-scalar-description-is-full-anyvalue).
+
+## Two distinct things merged into one
+
+The flip side of exact identity: if two entities accidentally share an
+identifying key, they collapse into one. Treat identity keys as a **contract**
+with your producers — pick attributes stable for the entity's lifetime, and keep
+volatile values (current IP, port) as descriptive attributes. See
+[Two identities, not one](data-model.md#two-identities-not-one).
+
+## GraphQL queries time out or are rejected
+
+The server is hardened with guardrails:
+
+- **Complexity cap** (default `1000`) rejects overly broad selections.
+- **10s per-request timeout** returns HTTP `503` with an actionable message.
+
+Request only the fields you need, keep `first:` modest and page with cursors, and
+split large traversals. See
+[Guardrails and limits](querying/graphql.md#guardrails-and-limits).
+
+## Browser can't open a WebSocket subscription
+
+Cross-origin WebSocket upgrades are refused unless the `Origin` is allow-listed;
+non-browser clients (no `Origin`) are allowed. Serve your client same-origin, or
+allow-list its origin.
+
+## Can't reach the server from another machine
+
+By design: all listeners bind to **loopback** (`127.0.0.1`) by default, and there
+is **no authentication** unless you enable it. Binding to `0.0.0.0` is an explicit
+choice — do it only on a trusted, network-isolated segment, or turn on
+bearer-token auth and TLS first. See
+[Authentication & TLS](configuration.md#authentication-tls).
+
+## Still stuck?
+
+Open an issue at
+[github.com/bellu/bellucode/services/bellud/internal/bellugraph/issues](https://github.com/bellu/bellucode/services/bellud/internal/bellugraph/issues)
+with the server logs and your producer's export shape.

@@ -1,0 +1,126 @@
+name: Release
+
+# Fires on a server version tag (v-prefixed from v0.6.0, e.g. v0.6.0; see
+# ADR 0027). The tag/release is cut by the release-manager flow; this workflow
+# attaches the build artifacts. SDK tags (pkg/emit/vX.Y.Z) do NOT trigger it:
+# GitHub's "*" glob does not cross "/", so only top-level server tags match.
+# Asset and image names carry the ref name verbatim (bellu_graph_v0.6.0_..., ghcr
+# tag v0.6.0), matching what `git describe` stamps into the binary.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  binaries:
+    name: Binaries (${{ matrix.goos }}/${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          check-latest: true
+
+      - name: Report the toolchain that actually builds
+        # setup-go@v5 reads only the `go` directive from go.mod, so the step
+        # above installs and prints 1.26.9 while the build switches to the
+        # `toolchain` version. Without this line the log contradicts the
+        # toolchain the binaries are built with (GO-2026-6809).
+        run: |
+          go version
+          (cd pkg/emit && go version)
+
+      - name: Build and package
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          COMMIT=$(git rev-parse --short HEAD)
+          LDFLAGS="-s -w -X github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/version.Version=${VERSION} -X github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/version.Commit=${COMMIT}"
+          DIST="bellu_graph_${VERSION}_${GOOS}_${GOARCH}"
+          mkdir -p "dist/${DIST}"
+          go build -ldflags "${LDFLAGS}" -o "dist/${DIST}/bellugraph-server" ./cmd/bellugraph-server
+          go build -ldflags "${LDFLAGS}" -o "dist/${DIST}/bellugraph-probe" ./cmd/bellugraph-probe
+          cp README.md LICENSE CHANGELOG.md "dist/${DIST}/"
+          tar -C dist -czf "dist/${DIST}.tar.gz" "${DIST}"
+          sha256sum "dist/${DIST}.tar.gz" | sed "s| .*| ${DIST}.tar.gz|" > "dist/${DIST}.tar.gz.sha256"
+
+      - name: Attach to the GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # A pre-release tag carries a "-" suffix (e.g. v0.9.0-beta, v0.6.0-rc1).
+          # Mark its Release as a prerelease so GitHub does not surface it as
+          # "Latest" — mirrors the :latest guard on the container image below.
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dist/*.tar.gz
+            dist/*.tar.gz.sha256
+
+  image:
+    name: Container image (ghcr.io)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        run: |
+          set -euo pipefail
+          tags="ghcr.io/bellugraph-dev/bellugraph:${GITHUB_REF_NAME}"
+          # Only move :latest for a stable release; a prerelease tag (with a
+          # "-" suffix, e.g. v0.6.0-rc1) still matches v*.*.* and would
+          # otherwise repoint :latest at a prerelease image.
+          if [[ "${GITHUB_REF_NAME}" != *-* ]]; then
+            tags="${tags}"$'\n'"ghcr.io/bellugraph-dev/bellugraph:latest"
+          fi
+          {
+            echo "tags<<EOF"
+            echo "${tags}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Build and push (multi-arch)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ github.sha }}

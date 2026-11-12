@@ -1,0 +1,377 @@
+# Configuration
+
+`bellugraph-server` resolves its configuration from four layers. From **lowest to
+highest precedence**:
+
+1. **Built-in defaults** — loopback listeners, `bellugraph-data` data dir, no
+   retention cap. Running with nothing set behaves exactly as the historical
+   flag defaults.
+2. **YAML file** — `--config <path>` or the `BELLU_GRAPH_CONFIG` environment variable.
+3. **Environment variables** — `BELLU_GRAPH_*`. Override the file. **Secrets belong
+   here** (never on the command line).
+4. **Command-line flags** — override everything; useful for ad-hoc overrides.
+
+Each layer overrides only what it sets, so you can keep a committed base file and
+override one value with an env var or a flag for a one-off run. See
+[ADR 0023](https://github.com/bellu/bellucode/services/bellud/internal/bellugraph/blob/main/docs/architecture/adr/0023-layered-configuration.md)
+for the rationale.
+
+## Settings
+
+| YAML key | Env var | Flag | Default | Meaning |
+| --- | --- | --- | --- | --- |
+| `listen` | `BELLU_GRAPH_LISTEN` | `--listen` | `127.0.0.1:8080` | GraphQL/HTTP + MCP + debug UI address |
+| `otlp_listen` | `BELLU_GRAPH_OTLP_LISTEN` | `--otlp-listen` | `127.0.0.1:4317` | OTLP/gRPC ingestion address |
+| `otlp_max_recv_bytes` | `BELLU_GRAPH_OTLP_MAX_RECV_BYTES` | `--otlp-max-recv-bytes` | `0` *(= gRPC's 4 MiB)* | maximum size in bytes of one OTLP export accepted on ingest; an oversized export is refused whole (`ResourceExhausted`). Producers batching a large inventory must chunk below this. |
+| `data_dir` | `BELLU_GRAPH_DATA_DIR` | `--data-dir` | `bellugraph-data` | Pebble event-log directory |
+| `relation_buffer_ttl` | `BELLU_GRAPH_RELATION_BUFFER_TTL` | `--relation-buffer-ttl` | `30s` | hold an out-of-order edge waiting for its endpoints (`0` = disabled) |
+| `liveness_sweep_interval` | `BELLU_GRAPH_LIVENESS_SWEEP_INTERVAL` | `--liveness-sweep-interval` | `30s` | how often to expire entities past their heartbeat interval (`0` = disabled) |
+| `resurrection_grace` | `BELLU_GRAPH_RESURRECTION_GRACE` | `--resurrection-grace` | `15m` | how long a deleted entity's identity keeps its logical id if the producer returns; past it the same identity is minted a fresh id and its timeline splits (`0`/absent = the 15m default, negative = no time bound). Requires a restart to change. See [the resurrection window](ingestion.md#coming-back-the-15-minute-resurrection-window). |
+| `retention_max_age` | `BELLU_GRAPH_RETENTION_MAX_AGE` | `--retention-max-age` | `0` | max age of retained events (`0` = unlimited) |
+| `tenant_retention_max_age` | `BELLU_GRAPH_TENANT_RETENTION_MAX_AGE` | — | *(empty)* | per-tenant retention bounds as `tenant:duration` pairs (e.g. `acme:2160h`); an unlisted tenant keeps `retention_max_age`, a listed one is pruned to its own bound even when the global one is `0`. Storage becomes a per-tenant variable — see [storage sizing](operations/storage-sizing.md). Requires a restart to change. |
+| `retention_compaction_interval` | `BELLU_GRAPH_RETENTION_COMPACTION_INTERVAL` | `--retention-compaction-interval` | `1h` | heartbeat-coalescing compaction cadence |
+| `snapshot_interval` | `BELLU_GRAPH_SNAPSHOT_INTERVAL` | `--snapshot-interval` | `5m` | projection snapshot cadence for fast restart and liveness survival across restarts (`0` = disabled) |
+| `backup_dir` | `BELLU_GRAPH_BACKUP_DIR` | `--backup-dir` | (empty) | directory for periodic online backups (with `backup_interval`); empty = off (ADR 0029) |
+| `backup_interval` | `BELLU_GRAPH_BACKUP_INTERVAL` | `--backup-interval` | `0` | interval between online backups of every tenant's event log (`0` = off) |
+| `log_shipping_dir` | `BELLU_GRAPH_LOG_SHIPPING_DIR` | `--log-shipping-dir` | (empty) | directory to ship event-log segments to (with `log_shipping_interval`); may be a mounted bucket/NFS; empty = off (ADR 0029) |
+| `log_shipping_interval` | `BELLU_GRAPH_LOG_SHIPPING_INTERVAL` | `--log-shipping-interval` | `0` | interval between event-log segment ships of every tenant (`0` = off) |
+| `log_shipping_s3_bucket` | `BELLU_GRAPH_LOG_SHIPPING_S3_BUCKET` | — | (empty) | ship segments to this S3 bucket instead of a directory (selects S3 mode); AWS S3 or any S3-compatible store (ADR 0029) |
+| `log_shipping_s3_endpoint` | `BELLU_GRAPH_LOG_SHIPPING_S3_ENDPOINT` | — | (empty) | S3 endpoint `host[:port]`, no scheme (e.g. `s3.amazonaws.com`, `minio.internal:9000`) |
+| `log_shipping_s3_region` | `BELLU_GRAPH_LOG_SHIPPING_S3_REGION` | — | (empty) | optional S3 region; ignored by many compatible stores |
+| `log_shipping_s3_prefix` | `BELLU_GRAPH_LOG_SHIPPING_S3_PREFIX` | — | (empty) | optional key prefix under the bucket |
+| `log_shipping_s3_use_ssl` | `BELLU_GRAPH_LOG_SHIPPING_S3_USE_SSL` | — | `true` | use HTTPS to the endpoint |
+| (secret) | `BELLU_GRAPH_LOG_SHIPPING_S3_ACCESS_KEY` | — | (empty) | S3 access key — env-only (never config file or flag) |
+| (secret) | `BELLU_GRAPH_LOG_SHIPPING_S3_SECRET_KEY` | — | (empty) | S3 secret key — env-only |
+| `identity_confidence_threshold` | `BELLU_GRAPH_IDENTITY_CONFIDENCE_THRESHOLD` | `--identity-confidence-threshold` | `0.9` | `same_as` confidence (0,1] at/above which an alias joins an entity's canonical view on `get_entity` (ADR 0020); read-time only, never merges storage |
+| `log_format` | `BELLU_GRAPH_LOG_FORMAT` | `--log-format` | `text` | log output format: `text` or `json` |
+| `log_level` | `BELLU_GRAPH_LOG_LEVEL` | `--log-level` | `info` | `debug`, `info`, `warn`, or `error` |
+| `production` | `BELLU_GRAPH_PRODUCTION` | `--production` | `false` | hardening profile — forces the three below off |
+| `graphql_introspection` | `BELLU_GRAPH_GRAPHQL_INTROSPECTION` | `--graphql-introspection` | `true` | expose GraphQL introspection |
+| `playground` | `BELLU_GRAPH_PLAYGROUND` | `--playground` | `true` | serve the GraphQL playground at `/playground` |
+| `debug_ui` | `BELLU_GRAPH_DEBUG_UI` | `--debug-ui` | `true` | serve the debug UI at `/` |
+| `allowed_origins` | `BELLU_GRAPH_ALLOWED_ORIGINS` | `--allowed-origins` | (empty) | comma-separated browser Origin allowlist (WebSocket/CORS); empty = same-origin only |
+| `auth_tokens` | `BELLU_GRAPH_AUTH_TOKENS` | *(none — secret)* | (empty) | comma-separated bearer tokens, **full role** (read + ingest), valid for every tenant; empty = auth disabled |
+| `read_tokens` | `BELLU_GRAPH_READ_TOKENS` | *(none — secret)* | (empty) | bearer tokens valid only on the **read** surfaces (GraphQL, MCP, debug UI) — rejected on OTLP ingest |
+| `ingest_tokens` | `BELLU_GRAPH_INGEST_TOKENS` | *(none — secret)* | (empty) | bearer tokens valid only on **OTLP ingest** — rejected on the read surfaces |
+| `tenant_tokens` | `BELLU_GRAPH_TENANT_TOKENS` | *(none — secret)* | (empty) | comma-separated `tenant:token` pairs — full role, authorized only for its tenant (HTTP 403 / gRPC PermissionDenied elsewhere) |
+| `tenant_read_tokens` | `BELLU_GRAPH_TENANT_READ_TOKENS` | *(none — secret)* | (empty) | `tenant:token` pairs — **read-only** role, that tenant's read surfaces only (per-tenant RBAC, ADR 0028) |
+| `tenant_ingest_tokens` | `BELLU_GRAPH_TENANT_INGEST_TOKENS` | *(none — secret)* | (empty) | `tenant:token` pairs — **ingest-only** role, that tenant's OTLP ingest only |
+| `metrics_public` | `BELLU_GRAPH_METRICS_PUBLIC` | — | `false` | keep `/metrics` outside authentication, as before 0.23. **Transitional**: set it only long enough to add a bearer token to an existing scrape, then unset it. See [the scrape surface](#the-scrape-surface) |
+| `accept_unknown_types` | `BELLU_GRAPH_ACCEPT_UNKNOWN_TYPES` | `--accept-unknown-types` | `false` | accept entity/relation types outside the built-in registry (shape still validated; counted on /metrics) |
+| `tenant_auto_create` | `BELLU_GRAPH_TENANT_AUTO_CREATE` | `--tenant-auto-create` | `true` | allow a first write to a new tenant id to create its stack; off = only pre-existing tenants (and `default`) are served |
+| `tenant_allowlist` | `BELLU_GRAPH_TENANT_ALLOWLIST` | `--tenant-allowlist` | (empty) | comma-separated tenant ids allowed to be created; empty = any (subject to auto-create and the cap) |
+| `max_tenants` | `BELLU_GRAPH_MAX_TENANTS` | `--max-tenants` | `0` | cap on open tenants; `0` = unbounded. Reading an unknown tenant never creates it (404) |
+| `allow_unauthenticated_writes` | `BELLU_GRAPH_ALLOW_UNAUTHENTICATED_WRITES` | `--allow-unauthenticated-writes` | `true` | let a caller with no credential write (`annotate_entity`). On by default so a trusted-network instance keeps the one write it has; **forced off by `production`**, which is what makes a hardened instance refuse a write from a caller carrying no write scope. Turning it back on under `production` is impossible: drop `production` and set the individual toggles instead. When the lockdown overrides a toggle that was on, the startup log names it |
+| `tenant_trust_mode` | `BELLU_GRAPH_TENANT_TRUST_MODE` | `--tenant-trust-mode` | `trust-header` | how a request's tenant is decided. `trust-header`: from `X-Scope-OrgID` / `tenant.id` (the edge is trusted). `derive-only`: a tenant-scoped token's tenant is **derived from its binding** and any client-supplied `X-Scope-OrgID` / `tenant.id` is **ignored** (anti-spoofing for multi-tenant SaaS, ADR 0028); global (operator) tokens keep header-based cross-tenant selection |
+| `tls_cert_file` | `BELLU_GRAPH_TLS_CERT_FILE` | `--tls-cert-file` | (empty) | PEM certificate; with the key, serves HTTP + OTLP over TLS |
+| `tls_key_file` | `BELLU_GRAPH_TLS_KEY_FILE` | `--tls-key-file` | (empty) | PEM private key (pairs with the cert) |
+| `tls_client_ca_file` | `BELLU_GRAPH_TLS_CLIENT_CA_FILE` | `--tls-client-ca-file` | (empty) | PEM CA bundle; when set, requires + verifies a client certificate on **OTLP ingest** (mTLS, ADR 0028) — needs TLS; the HTTP surfaces are unaffected |
+| `ingest_mtls_only` | `BELLU_GRAPH_INGEST_MTLS_ONLY` | `--ingest-mtls-only` | `false` | authenticate OTLP ingest by **mutual TLS alone** (no bearer required or consulted on ingest) while the read surfaces keep requiring their scoped tokens / OIDC; decouples ingest auth from read auth (ADR 0028). Requires `tls_client_ca_file` |
+| `tls_terminated_upstream` | `BELLU_GRAPH_TLS_TERMINATED_UPSTREAM` | `--tls-terminated-upstream` | `false` | a **declaration**, not a behavior: states that a reverse proxy terminates TLS and these listeners are not reachable without it. Suppresses the `no_tls` exposure condition, **never** `no_auth`, and is published as `bellu_graph_config_declaration` so the claim is auditable. [Why it exists](#if-tls-is-terminated-in-front-of-this-instance-say-so) |
+| `audit_log` | `BELLU_GRAPH_AUDIT_LOG` | `--audit-log` | (empty) | path to an append-only JSON-line audit file for operator writes (`annotate_entity`), per tenant; empty = off (ADR 0028) |
+| `oidc_issuer` | `BELLU_GRAPH_OIDC_ISSUER` | `--oidc-issuer` | (empty) | OIDC issuer URL; when set, JWT bearers are verified on the read surfaces (discovery + JWKS). Empty = OIDC off (ADR 0028) |
+| `oidc_audience` | `BELLU_GRAPH_OIDC_AUDIENCE` | `--oidc-audience` | (empty) | expected JWT `aud` |
+| `oidc_tenant_claim` | `BELLU_GRAPH_OIDC_TENANT_CLAIM` | `--oidc-tenant-claim` | `tenant` | JWT claim carrying the tenant id |
+| `oidc_role_claim` | `BELLU_GRAPH_OIDC_ROLE_CLAIM` | `--oidc-role-claim` | (empty) | JWT claim carrying the role (`read`/`ingest`/`full`); empty = every valid token is full |
+
+Durations are Go-duration strings (`"30s"`, `"5m"`, `"1h30m"`). **Unknown YAML
+keys are rejected** — a typo fails at startup rather than being silently ignored.
+
+`--mcp-stdio` (serve only the MCP server over stdio, for Claude Desktop) is a run
+mode rather than steady-state config; pass it as a flag when needed — see
+[MCP for AI assistants](querying/mcp.md).
+
+
+## The scrape surface
+
+`/metrics` requires a bearer token and answers **only what that token may see**.
+
+- A **global** token (`auth_tokens` or `read_tokens`) gets the whole exposition,
+  every tenant's series included. This is what a central scrape wants: the
+  per-tenant labels are the only per-client volume signal an operator has, and
+  removing them would cost more than the exposure did.
+- A **tenant-scoped** token (`tenant_tokens`, `tenant_read_tokens`) gets only the
+  families whose series carry its own tenant label. The server-wide families go
+  with the others — open tenants, store size, Go runtime — because their mere
+  presence tells a scoped reader that other tenants exist.
+- Every scoped answer carries `bellu_graph_metrics_scope_info{tenant="..."} 1`, so a
+  tenant with no series yet is distinguishable from a broken exporter. Two empty
+  bodies otherwise mean the same thing and only one of them is fine.
+
+Before 0.23 this route was public, and its series are labeled by tenant: one
+unauthenticated answer named every client on the instance and its ingest volume.
+
+!!! warning "Upgrading an existing scrape"
+    A Prometheus job with no `authorization` gets **401** the moment the server
+    restarts on 0.23. Add the token to the scrape first; or set `metrics_public`
+    for the length of the upgrade, add the token, then unset it. The server logs
+    which mode it is in at startup, so nobody has to read the config to find out
+    whether this is open.
+
+    The liveness probes `/healthz` and `/readyz` stay public. A probe must be able
+    to answer before anything is configured.
+
+## Examples
+
+A complete annotated file lives at
+[`examples/bellugraph-server.yaml`](https://github.com/bellu/bellucode/services/bellud/internal/bellugraph/blob/main/examples/bellugraph-server.yaml).
+A minimal one:
+
+```yaml
+listen: 0.0.0.0:8080
+otlp_listen: 0.0.0.0:4317
+data_dir: /var/lib/bellugraph
+retention_max_age: 720h   # 30 days
+```
+
+Run it:
+
+```sh
+bellugraph-server --config /etc/bellugraph/bellugraph-server.yaml
+# or
+BELLU_GRAPH_CONFIG=/etc/bellugraph/bellugraph-server.yaml bellugraph-server
+```
+
+Override one value for a single run without editing the file:
+
+```sh
+# env wins over the file...
+BELLU_GRAPH_DATA_DIR=/tmp/scratch bellugraph-server --config /etc/bellugraph/bellugraph-server.yaml
+# ...and a flag wins over both
+bellugraph-server --config /etc/bellugraph/bellugraph-server.yaml --listen 127.0.0.1:9999
+```
+
+## Authentication & TLS
+
+Both are **off by default** — the server binds to `127.0.0.1` and trusts the
+network (private datacenter segment or VPN; ADR 0014). Exposing it to other hosts
+(`0.0.0.0:...`) is an explicit choice; when you make it, turn these on.
+
+- **Bearer tokens.** Set `auth_tokens` via the environment only — they are secrets
+  and must never appear on the command line or in a committed file:
+
+  ```sh
+  BELLU_GRAPH_AUTH_TOKENS="tok-a,tok-b" bellugraph-server --config /etc/bellugraph/bellugraph-server.yaml
+  ```
+
+  Clients then send `Authorization: Bearer <token>` on both HTTP and gRPC. The
+  operational probes (`/healthz`, `/readyz`) and the metrics scrape (`/metrics`)
+  stay public so a load balancer and Prometheus can reach them without a token.
+  Configured tokens are **hashed at rest** (SHA-256): the server holds only the
+  hashes, never the plaintext, so a heap dump never yields a usable token
+  (ADR 0028). Matching is constant-time. Rotation is operational — add the new
+  token alongside the old, then drop the old one; revocation is removing a token
+  and reloading.
+- **Token roles (least privilege).** `auth_tokens` are full (read + ingest). Use
+  `read_tokens` for a token that may query but never ingest (a dashboard, an
+  assistant), and `ingest_tokens` for a producer that may ingest but never read.
+  A read-only token is rejected on OTLP ingest; an ingest-only token is rejected
+  on GraphQL/MCP/debug. These roles are global (every tenant). For **per-tenant
+  RBAC**, the same roles exist scoped to one tenant: `tenant_tokens` (full),
+  `tenant_read_tokens` (read-only), `tenant_ingest_tokens` (ingest-only) — each a
+  `tenant:token` pair authorized only for its tenant and surface (ADR 0028).
+- **TLS.** Point `tls_cert_file` and `tls_key_file` at a PEM cert/key pair to serve
+  the HTTP surfaces and OTLP ingestion over TLS.
+- **mTLS on ingest (optional).** Set `tls_client_ca_file` to a PEM CA bundle to
+  require and verify a client certificate on the OTLP ingest listener — for
+  regulated producers, on top of the bearer token. It applies to ingest only; the
+  HTTP read surfaces keep bearer/OIDC auth. Requires TLS to be enabled (ADR 0028).
+- **Audit log.** Set `audit_log` to a file path to record an append-only JSON-line
+  entry for every operator write (`annotate_entity`, on MCP and GraphQL) — the time,
+  tenant, surface, and target entity. It is distinct from the producer event log,
+  exportable, and off by default. A write failure is logged (never silent), and
+  never fails the audited operation (ADR 0028).
+- **OIDC / JWT (read surfaces).** Set `oidc_issuer` (and `oidc_audience`) to verify
+  JWT bearers on GraphQL/MCP/debug as a second path after the static tokens: the
+  token is validated against the issuer (discovery + JWKS, signature, audience,
+  expiry), and its `oidc_tenant_claim` / `oidc_role_claim` map to a tenant and role.
+  The client `X-Scope-OrgID` is ignored for a verified JWT (the claim is the
+  authority). Off by default; the static bearer tokens stay the baseline (ADR 0028).
+
+See [ADR 0024](https://github.com/bellu/bellucode/services/bellud/internal/bellugraph/blob/main/docs/architecture/adr/0024-native-auth-and-tls.md)
+and [ADR 0028](https://github.com/bellu/bellucode/services/bellud/internal/bellugraph/blob/main/docs/architecture/adr/0028-access-security-for-multi-tenant-saas.md).
+
+## Hardening for production
+
+The development surfaces — GraphQL introspection, the `/playground`, and the debug
+UI — are on by default for a friendly local experience. For an exposed deployment,
+turn them off with a single switch:
+
+```sh
+bellugraph-server --production        # or production: true / BELLU_GRAPH_PRODUCTION=true
+```
+
+`production: true` forces `graphql_introspection`, `playground`, and `debug_ui`
+off, winning over any individual setting. Set `allowed_origins` to the browser
+Origins permitted for WebSocket subscriptions and CORS (empty = same-origin only).
+
+Note what `production: true` does **not** change: retention, fsync, liveness
+expiry and verbosity are untouched. It closes the three development surfaces and
+nothing else.
+
+### Insecure configuration is a metric, not just a log line
+
+Two configuration choices leave data readable or unauthenticated on the network:
+a listener that is not loopback while auth or TLS is off, and log shipping with
+`log_shipping_s3_use_ssl` off to anything but loopback. Both are logged at
+startup — and a WARN at boot is read once, by nobody, which is how all three
+conditions once sat true in a production log for months.
+
+So they are also published, and can be alerted on:
+
+| metric | meaning |
+|---|---|
+| `bellu_graph_insecure_config_conditions` | how many conditions this instance has; **published even when zero**, so an alert on `> 0` does not depend on a series existing |
+| `bellu_graph_insecure_config{surface,addr,reason}` | one series per condition. `surface` is `listener` or `log_shipping`; `reason` is `no_auth`, `no_tls`, `no_auth_no_tls`, `cleartext` or `cleartext_public` |
+| `bellu_graph_insecure_config_last_check_timestamp_seconds` | when the conditions were last evaluated |
+| `bellu_graph_config_declaration{declaration}` | one series per operator declaration about the perimeter, **published as 0 or 1 always** (see below) |
+
+#### If TLS is terminated in front of this instance, say so
+
+**Set `tls_terminated_upstream` (`BELLU_GRAPH_TLS_TERMINATED_UPSTREAM`,
+`--tls-terminated-upstream`) when a reverse proxy terminates TLS and these
+listeners are not reachable without passing through it.**
+
+Read this before you copy the alert rules, because without it the first rule
+fires on a correct deployment and never stops. The exposed-listener check reads
+the address the process **binds**, and that address is the whole of what the
+process can see: not the port publication, not the network namespace, not where
+TLS ends. The container image's own default command binds `0.0.0.0`, so a
+containerised instance behind a terminating proxy — the deployment this guide
+recommends — reports `no_tls` on both listeners while nothing is exposed at all.
+
+The declaration suppresses `no_tls` on a non-loopback listener. It **never**
+suppresses `no_auth`: whether a bearer token is required is a fact this process
+holds, and no claim about the perimeter makes an unauthenticated read surface
+acceptable. It says nothing about log shipping either, which is an outbound
+connection no inbound proxy touches.
+
+**It is a claim, and it is published as one.** `bellu_graph_config_declaration` carries
+every declaration whether it is on or off, so a reader can tell an instance that
+reports no conditions because nothing is exposed from one that reports none
+because someone said so. A setting whose only effect is to quiet a control has to
+leave a trace, otherwise it is indistinguishable from the control passing — and
+you are accountable for the claim, not us: if the ports are later published to
+`0.0.0.0`, the declaration still says the proxy is there.
+
+**If a configuration-management role sets it, derive it from both facts.** Having
+the role assert this rather than a person is the better arrangement — the claim
+becomes reviewable in version control as well as in the metric, and the versioned
+one is the better witness. But derive it from the **conjunction**: a terminating
+proxy in front, **and** a publication the role itself restricts.
+
+Deriving it from the presence of TLS material alone is the mistake to avoid. "The
+proxy holds certificates" and "these listeners are unreachable without the proxy"
+are different statements, and only the second is what you are declaring. A host
+can have both a terminating proxy and its ports published on `0.0.0.0`: the proxy
+serves TLS to whoever goes through it, and this instance answers in plaintext
+beside it. A declaration that is **wrong and automatic** is worse than a wrong one
+typed by hand — nobody asserted it, so nobody re-reads it, and the control is off
+on an instance that really is exposed.
+
+Derive the publication and the declaration from the **same variable, in the same
+run**. If something other than that role controls the port publication, do not
+derive it at all: leave it false. A derivation whose input the role does not apply
+goes stale the moment someone changes the publication by another route, and
+nothing objects.
+
+#### Alert on four rules, because a control can lie in four ways
+
+The condition is true; or the series is gone, and a rule on `> 0` does not fire —
+it goes quiet; or the series is there and no longer evaluated, which `absent()`
+cannot see; or it is quiet because a declaration quieted it. One rule each:
+
+```
+Bellu Graph EngineConfigInsecure      bellu_graph_insecure_config_conditions > 0                              for: 5m
+Bellu Graph EngineInsecureGaugeAbsent absent(bellu_graph_insecure_config_conditions)                          for: 15m
+Bellu Graph EngineInsecureCheckStale  time() - bellu_graph_insecure_config_last_check_timestamp_seconds > 600  for: 10m
+Bellu Graph EngineDeclarationChanged  changes(bellu_graph_config_declaration[1h]) > 0                          for: 0m
+```
+
+The second and third are the ones that get forgotten, and they are why the
+timestamp is published at all: a fresh value proves the list was walked, while a
+zero total alone only proves that something once wrote a zero. The fourth is the
+one this release added: a declaration is how a real condition gets hidden, so its
+appearing or flipping is worth a line even though it is not itself a problem.
+
+**And alert on `no_auth` separately, whatever else you do.** A listener that
+requires no authentication is not the same event as one that serves plaintext
+behind a proxy, and merging them into `conditions > 0` is how the sharper of the
+two gets acknowledged along with the duller one:
+
+```
+Bellu Graph EngineListenerUnauthenticated  bellu_graph_insecure_config{surface="listener",reason=~"no_auth.*"} > 0  for: 5m
+```
+
+`cleartext_public` means the shipping endpoint is an IP that is neither loopback
+nor private: the segments do not merely travel unencrypted inside a perimeter,
+they leave it. Alert on that one separately if you alert on nothing else.
+
+## Multi-tenancy
+
+One Bellu Graph Engine instance can serve multiple tenants with **fully isolated** graphs — a
+query scoped to tenant A never sees tenant B (ADR 0025). Each tenant gets its own
+store + projection + change engine under `<data_dir>/<tenant>/`.
+
+The tenant id is generic and vendor-neutral, resolved (in order) from:
+
+1. the **`X-Scope-OrgID`** request metadata — the de-facto standard used by
+   Mimir/Loki/Tempo/VictoriaMetrics (an HTTP header on the query surfaces, gRPC
+   metadata on OTLP ingest);
+2. a **`tenant.id`** resource attribute on the OTLP request (set per
+   `ResourceLogs`, it overrides the request metadata — so one OTLP stream can carry
+   several tenants);
+3. otherwise the **`default`** tenant.
+
+```sh
+# Query tenant "acme" over HTTP
+curl -H 'X-Scope-OrgID: acme' http://127.0.0.1:8080/graphql \
+  -d '{"query":"{ entities { totalCount } }"}'
+```
+
+**Single-tenant deployments need no configuration:** with no tenant id ever set,
+everything lives under `default` and behaves as a single-graph build. A
+pre-existing data directory is migrated to `<data_dir>/default/` automatically on
+first start (take a backup first, as with any upgrade). `/metrics` reports the sum
+across tenants, so existing dashboards are unchanged.
+
+**Boot quarantine:** if a tenant's store cannot be opened at startup (a corrupt
+or half-written store), the server **does not abort** — it logs a warning, skips
+that tenant, counts it in the `bellu_graph_tenants_quarantined` gauge, and serves the
+healthy tenants. The `default` tenant is the exception: it is required, so its
+failure is fatal. A quarantined tenant's directory is left on disk under
+`<data_dir>/<tenant>/` for recovery; restore or remove it and restart.
+
+**Deleting a tenant** is a cold, destructive operation — run it with the server
+stopped (it holds the pebble lock while serving):
+
+```sh
+bellugraph-server delete-tenant --data-dir /var/lib/bellugraph/data acme
+```
+
+It removes `<data_dir>/acme/` (event log and snapshot) entirely and frees a slot
+under `max_tenants`. The `default` tenant cannot be deleted.
+
+**Metrics and tenants:** the Bellu Graph Engine gauges on `/metrics` (`bellu_graph_entities`,
+`bellu_graph_events_total`, `bellu_graph_store_disk_bytes`, …) are **aggregated across
+tenants** — a sum, except `bellu_graph_snapshot_seq` and `bellu_graph_store_prune_horizon_seconds`
+which report the high-water mark. They carry no per-tenant label, so the endpoint
+stays single-series and dashboards are unchanged. The maintenance metrics
+(`bellu_graph_maintenance_*`) are the exception: they label by `tenant` (and `op`,
+`outcome`) so a stuck sweep/prune can be traced to its tenant.
+
+!!! warning "Authentication is not yet bound to a tenant"
+    A valid bearer token may set any `X-Scope-OrgID`. Isolation therefore relies on
+    the upstream OTel Collector authenticating each client and stamping its tenant;
+    do not expose the ports directly to untrusted multi-tenant clients. Per-token
+    tenant binding is planned.
+
+## Operational endpoints
+
+Always on, on the `listen` address: `/healthz` (liveness), `/readyz` (readiness —
+green only when every tenant store is healthy), and Prometheus `/metrics` (sampled
+at scrape time). Wire these into your orchestrator and scrape config.
+
+See also [Storage sizing](operations/storage-sizing.md) for choosing
+`retention_max_age`, and [Performance](operations/performance.md) for the
+sweep/compaction cadences.

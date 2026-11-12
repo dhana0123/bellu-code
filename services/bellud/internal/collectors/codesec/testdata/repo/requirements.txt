@@ -1,0 +1,5 @@
+# deps
+requests>=2.31,<3  # http
+Flask[async]==3.0.0
+-r other.txt
+numpy ; python_version>"3.8"

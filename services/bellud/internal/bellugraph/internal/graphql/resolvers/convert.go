@@ -1,0 +1,227 @@
+// Modified by the Bellu project from upstream Toise (see NOTICE and UPSTREAM.md).
+
+package resolvers
+
+import (
+	"encoding/base64"
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/graphql/generated"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/model"
+)
+
+var changeTypeGQL = map[model.ChangeType]generated.ChangeType{
+	model.EntityCreated:            generated.ChangeTypeEntityCreated,
+	model.EntityDeleted:            generated.ChangeTypeEntityDeleted,
+	model.EntityIdentityChanged:    generated.ChangeTypeEntityIdentityChanged,
+	model.EntityAttributeUpdated:   generated.ChangeTypeEntityAttributeUpdated,
+	model.EntityStateChanged:       generated.ChangeTypeEntityStateChanged,
+	model.EntityUnchanged:          generated.ChangeTypeEntityUnchanged,
+	model.RelationAdded:            generated.ChangeTypeRelationAdded,
+	model.RelationRemoved:          generated.ChangeTypeRelationRemoved,
+	model.RelationAttributeChanged: generated.ChangeTypeRelationAttributeChanged,
+}
+
+func valueToGQL(v model.Value) (string, generated.ValueType) {
+	switch v.Kind() {
+	case model.KindInt:
+		return strconv.FormatInt(v.Int(), 10), generated.ValueTypeInt
+	case model.KindDouble:
+		return strconv.FormatFloat(v.Double(), 'g', -1, 64), generated.ValueTypeDouble
+	case model.KindBool:
+		return strconv.FormatBool(v.Bool()), generated.ValueTypeBool
+	case model.KindArray:
+		return v.Display(), generated.ValueTypeArray
+	case model.KindKvlist:
+		return v.Display(), generated.ValueTypeKvlist
+	default:
+		return v.Str(), generated.ValueTypeString
+	}
+}
+
+func attrsToGQL(kvs []model.KeyValue) []generated.Attribute {
+	out := make([]generated.Attribute, len(kvs))
+	for i, kv := range kvs {
+		val, vt := valueToGQL(kv.Value)
+		out[i] = generated.Attribute{Key: kv.Key, Value: val, Type: vt}
+	}
+	return out
+}
+
+func entityToGQL(e model.Entity, deleted bool) *generated.Entity {
+	return &generated.Entity{
+		ID:                  string(e.ID),
+		IdentityFingerprint: e.IdentityHash(),
+		DisplayName:         model.DisplayName(e),
+		Type:                e.Type,
+		Identity:            attrsToGQL(e.Identity),
+		Attributes:          attrsToGQL(e.Attributes),
+		SchemaURL:           e.SchemaURL,
+		Deleted:             deleted,
+	}
+}
+
+func relationToGQL(r model.Relation) *generated.Relation {
+	return &generated.Relation{
+		ID:         string(r.ID),
+		Type:       r.Type,
+		FromID:     string(r.From),
+		ToID:       string(r.To),
+		Attributes: attrsToGQL(r.Attributes),
+		Structural: r.Structural,
+	}
+}
+
+func eventToChangeGQL(ev model.Event) *generated.ChangeEvent {
+	ce := &generated.ChangeEvent{ChangedKeys: []string{}}
+	switch {
+	case ev.Entity != nil:
+		ee := ev.Entity
+		ce.ID = ee.EventID
+		ce.ChangeType = changeTypeGQL[ee.ChangeType]
+		ce.EventTime = ee.EventTime.UTC().Format(time.RFC3339Nano)
+		ce.RecordedAt = ee.RecordedAt.UTC().Format(time.RFC3339Nano)
+		ce.CommitSeq = commitSeqOf(ee.CommitSeq)
+		ce.Scope = strPtrOrNil(ee.Scope)
+		ce.SchemaVersion = ee.SchemaVersion
+		if ee.ChangedKeys != nil {
+			ce.ChangedKeys = ee.ChangedKeys
+		}
+		if ee.DeleteReason != "" {
+			r := ee.DeleteReason
+			ce.DeleteReason = &r
+		}
+		if ee.DeleteSource != model.DeleteSourceUnknown {
+			src := string(ee.DeleteSource)
+			ce.DeleteSource = &src
+		}
+		ce.Entity = entityToGQL(ee.Entity, ee.ChangeType == model.EntityDeleted)
+	case ev.Relation != nil:
+		re := ev.Relation
+		ce.ID = re.EventID
+		ce.ChangeType = changeTypeGQL[re.ChangeType]
+		ce.EventTime = re.EventTime.UTC().Format(time.RFC3339Nano)
+		ce.RecordedAt = re.RecordedAt.UTC().Format(time.RFC3339Nano)
+		ce.CommitSeq = commitSeqOf(re.CommitSeq)
+		ce.Scope = strPtrOrNil(re.Scope)
+		ce.SchemaVersion = re.SchemaVersion
+		if re.ChangedKeys != nil {
+			ce.ChangedKeys = re.ChangedKeys
+		}
+		if re.DeleteSource != model.DeleteSourceUnknown {
+			src := string(re.DeleteSource)
+			ce.DeleteSource = &src
+		}
+		ce.Relation = relationToGQL(re.Relation)
+	}
+	return ce
+}
+
+func eventID(ev model.Event) string {
+	switch {
+	case ev.Entity != nil:
+		return ev.Entity.EventID
+	case ev.Relation != nil:
+		return ev.Relation.EventID
+	default:
+		return ""
+	}
+}
+
+// --- Relay cursor pagination ---
+
+func encodeCursor(id string) string {
+	return base64.StdEncoding.EncodeToString([]byte(id))
+}
+
+func decodeCursor(c string) (string, error) {
+	b, err := base64.StdEncoding.DecodeString(c)
+	if err != nil {
+		return "", fmt.Errorf("invalid cursor %q: pass an `endCursor` value returned by a previous page", c)
+	}
+	return string(b), nil
+}
+
+// paginate returns a slice of items after the given cursor, capped at first
+// (default 50), along with the end cursor and whether more pages remain.
+// MaxPageSize bounds every connection on this surface. It is exported so the
+// schema descriptions and the error message quote one number rather than three.
+const MaxPageSize = 200
+
+func paginate[T any](items []T, idOf func(T) string, first *int, after *string) (page []T, endCursor *string, hasNext bool, err error) {
+	start := 0
+	if after != nil && *after != "" {
+		cur, derr := decodeCursor(*after)
+		if derr != nil {
+			return nil, nil, false, derr
+		}
+		start = len(items)
+		for i, it := range items {
+			if idOf(it) == cur {
+				start = i + 1
+				break
+			}
+		}
+	}
+	// MaxPageSize is the page bound, the same one the MCP tools apply (#144).
+	// An over-cap `first` is REFUSED rather than quietly served smaller (#366):
+	// a caller who asked for five hundred, received two hundred and was told
+	// nothing concluded the timeline was complete, and read a three-hour-old
+	// event as the newest. hasNextPage was set and technically honest, but it
+	// answers "is there more", not "what you are holding is not the end".
+	n := 50
+	if first != nil {
+		n = *first
+	}
+	if n > MaxPageSize {
+		return nil, nil, false, fmt.Errorf("first: %d exceeds the maximum page size of %d; ask for at most %d and page with `after`, or narrow the query — serving fewer than requested without saying so is how a partial answer gets read as a complete one", n, MaxPageSize, MaxPageSize)
+	}
+	if n < 0 {
+		n = 0
+	}
+	if start > len(items) {
+		start = len(items)
+	}
+	end := start + n
+	if end > len(items) {
+		end = len(items)
+	}
+	page = items[start:end]
+	hasNext = end < len(items)
+	if len(page) > 0 {
+		c := encodeCursor(idOf(page[len(page)-1]))
+		endCursor = &c
+	}
+	return page, endCursor, hasNext, nil
+}
+
+// commitSeqOf renders the commit grouping as a string, left null when unknown.
+//
+// A string rather than Int because GraphQL's Int is 32-bit signed and a sequence
+// outgrows it on a busy tenant; rather than a value that silently wraps or
+// overflows past two billion events, the grouping is an opaque token a consumer
+// compares for equality — which is the only operation it is for (#407).
+//
+// Null, not "0", on an event older than the field: zero would compare equal to
+// every other zero and manufacture a commit that groups every legacy event
+// together, which is the exact false pairing this field exists to prevent.
+func commitSeqOf(seq uint64) *string {
+	if seq == 0 {
+		return nil
+	}
+	s := strconv.FormatUint(seq, 10)
+	return &s
+}
+
+// strPtrOrNil leaves an unknown value null rather than rendering an empty
+// string. An empty scope would read as "observed by a collector with no name",
+// where null reads as "not recorded" — and the difference decides whether a
+// consumer treats the gap as a producer defect or as an old event.
+func strPtrOrNil(v string) *string {
+	if v == "" {
+		return nil
+	}
+	return &v
+}

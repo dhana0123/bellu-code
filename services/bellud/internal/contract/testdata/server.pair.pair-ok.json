@@ -1,0 +1,17 @@
+{
+  "operationId": "server.pair",
+  "name": "pair-ok",
+  "method": "POST",
+  "path": "/api/pair",
+  "request": {
+    "headers": {
+      "authorization": "<AUTH:pair-ok>"
+    }
+  },
+  "status": 200,
+  "contentType": "application/json",
+  "body": {
+    "code": "<CODE>",
+    "expires_in": 300
+  }
+}

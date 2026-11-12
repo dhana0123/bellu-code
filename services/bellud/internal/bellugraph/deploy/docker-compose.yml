@@ -1,0 +1,28 @@
+# Minimal bellugraph-server deployment. Pin a version in production
+# (e.g. ghcr.io/bellugraph-dev/bellugraph:0.3.0) rather than :latest.
+services:
+  bellugraph:
+    image: ghcr.io/bellugraph-dev/bellugraph:latest
+    restart: unless-stopped
+    # Keep ports on loopback unless you enable TLS+auth (see below) and front or
+    # firewall them appropriately.
+    ports:
+      - "127.0.0.1:8080:8080" # GraphQL / MCP / debug UI
+      - "127.0.0.1:4317:4317" # OTLP/gRPC ingest
+    environment:
+      BELLU_GRAPH_LOG_FORMAT: json
+      # Enable bearer-token auth by setting one or more comma-separated tokens
+      # (a secret — prefer Docker/Compose secrets over inlining):
+      # BELLU_GRAPH_AUTH_TOKENS: "change-me"
+      # Lock down the dev surfaces for a public deployment:
+      # BELLU_GRAPH_PRODUCTION: "true"
+    command:
+      - "--listen=0.0.0.0:8080"
+      - "--otlp-listen=0.0.0.0:4317"
+      - "--data-dir=/data"
+    volumes:
+      # A named volume inherits /data's nonroot ownership from the image.
+      - bellugraph-data:/data
+
+volumes:
+  bellugraph-data:

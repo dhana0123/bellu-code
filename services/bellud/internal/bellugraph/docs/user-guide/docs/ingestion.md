@@ -1,0 +1,246 @@
+# Ingesting data (OTLP)
+
+Bellu Graph Engine is fed entirely by **OpenTelemetry entity events** over OTLP. **It runs no
+collectors and polls no devices** — emitting entity events from hosts, network
+gear, or cloud APIs is the *producer's* job. Any OpenTelemetry producer can feed
+Bellu Graph Engine: [senhub-agent](https://agent.senhub.io), an OpenTelemetry Collector, or
+your own instrumentation.
+
+This page describes the wire contract a producer must satisfy. The full,
+authoritative mapping is in
+[`docs/data-model/otel-mapping.md`](https://github.com/bellu/bellucode/services/bellud/internal/bellugraph/blob/main/docs/data-model/otel-mapping.md).
+
+## Transport
+
+OTLP entity events are carried as OTLP **`LogRecord`s** over the logs service.
+
+| | |
+| --- | --- |
+| Protocol | OTLP/**gRPC** (logs service) |
+| Default address | `127.0.0.1:4317` (set via `otlp_listen`) |
+| Compression | uncompressed **and gzip** accepted — gzip is the OTel SDK default, so it works out of the box |
+| Max export size | **4 MiB** by default (gRPC's limit) — an oversized export is refused whole with `ResourceExhausted`; raise it with [`otlp_max_recv_bytes`](configuration.md#settings) |
+
+The ingest boundary is the single place where the OTel wire shape is translated
+into Bellu Graph Engine's internal event model; everything downstream is Bellu Graph Engine's own model.
+
+## Entity events
+
+Bellu Graph Engine classifies each `LogRecord` by its **`EventName`**: a record whose
+EventName is `entity.state` or `entity.delete` is an entity event; any other
+record is ignored. This follows the **merged** OpenTelemetry entity-events spec
+(`specification/entities/entity-events.md`, merged 2026-06-04).
+
+| Carrier | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `EventName` (LogRecord) | string | yes | `entity.state` (upsert) or `entity.delete` (soft delete) |
+| `entity.type` | string | yes | the entity type — must be in Bellu Graph Engine's type registry |
+| `entity.id` | **map** | yes | identifying attributes (the entity's identity), `map<string,string>` |
+| `entity.description` | **map** (`AnyValue`) | no | descriptive, non-identifying attributes — full AnyValue (scalars, arrays, nested maps) |
+| `entity.report.interval` | int | no | heartbeat cadence in **seconds**; arms the liveness backstop. `0` or absent = **no cadence** (removed only by an explicit `entity.delete`) |
+| `LogRecord.Timestamp` | — | yes | becomes `event_time` (falls back to `ObservedTimestamp`, then ingest time) |
+
+Set the OTLP **Resource** `service.instance.id` to identify the producing agent
+on every export — it keys per-producer liveness reference counting so multiple
+producers can assert the same entity without one's silence deleting it.
+
+### Identity is scalar; description is full AnyValue
+
+`entity.id` and `entity.description` are genuine OTLP maps, but they are read by
+**different rules**:
+
+- **`entity.description` carries the full `AnyValue`** — scalars (`string`,
+  `int64`, `double`, `bool`), **arrays**, and **nested maps**, recursively. Composite
+  values are ingested faithfully and render on read as compact JSON tagged `array` /
+  `kvlist` (since 0.9.0). Only unsupported leaves (e.g. `bytes`) are dropped, and
+  never silently — the boundary logs a `Warn` naming the key.
+- **`entity.id` (identity) must be flat scalars.** Exact-match identity is over
+  scalar strings (ADR 0018), so a nested value in an identity map is **dropped and
+  surfaced** (a `Warn` naming the key), never hashed. Pre-flatten identity structure
+  with dotted keys:
+
+```text
+{ "server.address": "10.0.0.1", "server.port": "5432" }   # correct — flat scalars
+{ "server": { "address": "10.0.0.1", "port": "5432" } }   # wrong — nested map is dropped from identity
+```
+
+## Relationships are embedded
+
+Relationships are **not** separate records. They ride **embedded** on an
+`entity.state` event as an `entity.relationships` array on the source entity; each
+descriptor names the **target** (the source is the emitting entity):
+
+| `entity.relationships[]` field | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `relationship.type` | string | yes | the relation type — must be in Bellu Graph Engine's registry |
+| `entity.type` | string | yes | the **target** endpoint entity type |
+| `entity.id` | **map** | yes | the **target** endpoint identity |
+
+The boundary translates each descriptor into a first-class relation event
+(`from` = the emitting entity, `to` = the target) and **reconciles per source**:
+a descriptor the source stops listing is **removed by absence** — there is no
+explicit relation-delete on the wire.
+
+**No edge attributes.** A descriptor carries only `relationship.type` + target.
+Anything that wants to describe *how* two things relate becomes an **entity** (a
+port is a `network.interface`, a route is a `network.route`), never an attribute
+on the edge.
+
+### Ordering is not required
+
+Endpoints resolve by **exact identity** against a live entity. Producers *should*
+emit endpoint `entity.state` events before the entity that embeds an edge to
+them, but ordering is **not required**: with the reconciliation buffer enabled
+(`relation_buffer_ttl`, on by default), an edge whose endpoint hasn't arrived yet
+is **parked** and retried, and dropped with a `Warn` only if its endpoints never
+appear within the hold — the greater of that TTL and the source's own re-emit
+interval, so a parked edge always gets at least one full cycle. OTLP guarantees
+no inter-batch order, so this keeps out-of-order delivery from silently losing
+edges.
+
+An edge whose endpoint will *never* arrive — a `same_as` naming an identity that
+no longer exists, for instance — costs one `Warn` per edge once the hold expires
+and nothing else: no event, no ingest error, nothing returned to the producer.
+
+## Liveness — explicit delete, interval backstop
+
+Liveness uses two mechanisms:
+
+1. **Explicit `entity.delete` is the primary signal.** When a producer knows an
+   entity is gone, it emits `entity.delete` and Bellu Graph Engine soft-deletes it (history
+   retained). A heartbeat is just a re-emitted `entity.state`. A delete may carry
+   an optional **`entity.delete.reason`** — an open enum, never validated against a
+   closed set — captured, persisted, and surfaced on MCP `recent_changes` /
+   `graph_diff` and GraphQL `ChangeEvent.deleteReason`.
+
+    The values split into two families, and the split is what matters: most say
+    the *resource* ended, while some say only that the **observation** did — and
+    then the resource may well still be running. Never use a lifecycle value when
+    a probe was simply removed or a target left the scope: an entity that
+    disappears because someone edited a configuration must not read as "the thing
+    is gone". The
+    [contract](https://github.com/bellu/bellucode/services/bellud/internal/bellugraph/blob/main/docs/data-model/senhub-agent-contract.md)
+    holds the one list — every recommended value, which family it belongs to, and
+    how each pairs with `delete_source`. It is deliberately not copied here: this
+    page's copy had drifted to seven of the nine values.
+2. **Interval backstop.** If a producer set `entity.report.interval` (> 0) and then
+   goes silent past that interval, the liveness sweep expires the entity — so a
+   producer that crashes without sending a delete doesn't leave stale entities
+   forever. An entity with **`entity.report.interval == 0` (or absent) has no
+   cadence**: the sweep never expires it, so it is removed only by an explicit
+   `entity.delete`. Use `0` for entities whose absence is only ever asserted, not
+   inferred from silence.
+
+Whichever mechanism removed something, the change feed says **who authored the
+disappearance**: every `entity.deleted` / `relation.removed` carries a
+`delete_source` (`producer` — explicit delete or removal-by-absence;
+`liveness_expiry` — the interval backstop; `cascade` — an endpoint died and took
+the edge), exposed on MCP `recent_changes` / `entity_history` / `graph_diff` and
+GraphQL `ChangeEvent.deleteSource`. It is consumer-authored provenance, distinct
+from the producer's `delete.reason`; events recorded before 0.10.0 read back with
+an unknown source.
+
+**Sizing the interval:** apply the ×3 slack to the **effective re-emission
+cadence** — the longest gap between two `entity.state` events the consumer can
+see (for an agent that suppresses unchanged state, the suppression cadence) —
+not the internal heartbeat tick. A tick of 60s with suppression at 120s sized as
+`3 × 60 = 180s` has a real slack of ×1.5 and expires mechanically on the first
+missed re-emission; size it `3 × 120 = 360s`.
+
+!!! warning "Heartbeat faster than your interval"
+    A producer must re-assert its entities **more often** than the
+    `entity.report.interval` it declares, or the sweeper will expire them between
+    heartbeats. Pick a heartbeat comfortably below the declared interval.
+
+### Coming back: the 15-minute resurrection window
+
+A deleted entity is not immediately forgotten. For **15 minutes** after its
+deletion, its identity stays *resurrectable*: a producer that goes silent —
+crash, partition, a heartbeat slower than its interval — and re-asserts the same
+identity within that window gets its **original logical id back**, with one
+continuous history. Past the window, the same identity is minted a **fresh id**,
+and the entity's story is split in two: the new id's history begins at its
+rebirth and does not reach back.
+
+The window defaults to 15 minutes and bounds staleness the way the tombstone
+cache bounds memory — Bellu Graph Engine will not claim an id it can no longer vouch for.
+Since 0.16.0 it is tunable with
+[`resurrection_grace`](configuration.md#settings): size it against your fleet's
+report intervals, so that riding out a couple of missed cycles does not split a
+timeline. Changing it requires a restart.
+
+Two consequences worth internalising before you debug an incident with the
+change feed:
+
+- **Never persist a logical id between two investigations.** An id you noted
+  yesterday may name an entity that has since died and come back under a new one.
+  Note the **identity** instead (`host.id`, `container.id`, `service.instance.id`)
+  and re-resolve it each time — that is what stays true.
+- **Ids are per-replica.** Each read replica projects the log independently and
+  mints its own ids, so the same machine legitimately carries a different logical
+  id on each replica. Ids are local to the replica that gave them to you;
+  identities are what travel. See
+  [what replicas agree on](operations/backups.md#what-replicas-agree-on--and-what-they-legitimately-do-not)
+  for the rest of the comparison traps.
+
+To join a timeline across a resurrection, query by identity and read both
+entities: the graph keeps the old one visible as deleted, with its history
+intact.
+
+## Try it without writing a producer
+
+The bundled `bellugraph-probe` is a real OTLP/gRPC producer — use it to exercise the
+whole path end to end:
+
+```bash
+./bin/bellugraph-server --data-dir ./live-data &
+./bin/bellugraph-probe --hosts 60 --interval 60s --heartbeat 6s
+```
+
+See [Installation](installation.md#a-live-run-over-the-real-otlp-path) for more
+producer scenarios, and the
+[data model](data-model.md) for what entities and relations Bellu Graph Engine tracks.
+
+
+## The bellugraph-emit SDK and conformance kit
+
+Hand-rolling the wire contract is how producers drift. Two tools replace it:
+
+- **`github.com/bellu/bellucode/services/bellud/internal/bellugraph/pkg/emit`** — a small Go SDK: declare entities
+  (type, identity map, attributes, heartbeat interval, embedded relationships)
+  and call `State` / `Delete`; the SDK builds the spec-correct OTLP payload
+  (deterministically — sorted keys, stable bytes) and exports it over gRPC
+  with your auth headers and tenant. When Bellu Graph Engine accepts the export but rejects
+  some records (OTLP partial success), `State`/`Delete` return a typed
+  `emit.PartialError` carrying the rejected count and the server's first
+  rejection reason — do not retry it; fix the producer.
+- **`pkg/emit/conformance`** — contract validation without a running Bellu Graph Engine:
+  `conformance.Check(logs)` returns every violation (missing identity, empty
+  attribute keys, mis-typed interval, incomplete relationship descriptor,
+  non-scalar values) with its location. Run it in your producer's CI; output
+  that passes is never rejected per-record by Bellu Graph Engine **for shape reasons**.
+  Type-registry membership is enforced separately: under the default strict
+  vocabulary an `entity.type` outside the registry is still rejected per
+  record, unless the deployment sets `accept_unknown_types`. `Check` also
+  returns *advisory* problems (`Problem.Advisory`, not rejections) for
+  misconfigurations such as a missing `service.instance.id` resource
+  attribute, which collapses multi-producer liveness reference counting.
+
+The checked-in fixture (`pkg/emit/testdata/fixture_v1.bin`) is the published
+contract v1: the SDK reproduces it byte for byte and Bellu Graph Engine's own ingest tests
+accept it with zero rejections — one artifact pins both sides.
+
+The SDK is its own Go module
+([ADR 0027](https://github.com/bellu/bellucode/services/bellud/internal/bellugraph/blob/main/docs/architecture/adr/0027-sdk-module-and-versioning.md)),
+versioned independently of the server and dependency-light: importing it pulls
+in the OTel pdata types and gRPC, none of the server's storage or query stack.
+It is installable at a tagged version once the first SDK tag
+(`pkg/emit/v0.1.0`) is cut — Go resolves the nested module path from the tag
+automatically:
+
+```bash
+go get github.com/bellu/bellucode/services/bellud/internal/bellugraph/pkg/emit@v0.1.0
+```
+
+Until then, `go get github.com/bellu/bellucode/services/bellud/internal/bellugraph/pkg/emit@main` resolves a
+pseudo-version of the latest main.

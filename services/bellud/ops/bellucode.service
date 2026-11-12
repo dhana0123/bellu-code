@@ -1,0 +1,22 @@
+[Unit]
+Description=bellucode dev server (bellud, localhost:4096, reach via SSH tunnel)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bellucode/packages/cli
+# Absolute path: systemd does not expand "~".
+EnvironmentFile=/home/ubuntu/.config/bellucode/env
+Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
+# bellud uses this to locate packages/cli for the TS child server.
+Environment=BELLUCODE_REPO=/home/ubuntu/bellucode
+ExecStart=/usr/local/bin/bellud serve --hostname 127.0.0.1 --port 4096
+# mixed: SIGTERM to bellud only, SIGKILL to the rest on timeout, so the TS child closes its lease cleanly.
+KillMode=mixed
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

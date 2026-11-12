@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "@bellucode/bellud",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "sh -c 'PATH=\"$PATH:/usr/local/go/bin\" go build -trimpath -o dist/bellud ./cmd/bellud'",
+    "build:embed": "bun script/embed-web.ts && sh -c 'PATH=\"$PATH:/usr/local/go/bin\" go build -trimpath -tags embedweb -o dist/bellud ./cmd/bellud'",
+    "test": "sh -c 'PATH=\"$PATH:/usr/local/go/bin\" go test ./...'",
+    "typecheck": "sh -c 'PATH=\"$PATH:/usr/local/go/bin\" go vet ./...'"
+  }
+}
