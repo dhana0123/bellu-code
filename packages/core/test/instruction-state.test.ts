@@ -1,26 +1,26 @@
 import { describe, expect } from "bun:test"
 import { and, asc, eq } from "drizzle-orm"
 import { Effect, Schema } from "effect"
-import { Database } from "@opencode/core/database/database"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { LayerNode } from "@opencode/util/effect/layer-node"
-import { Bus } from "@opencode/core/bus"
-import { Event } from "@opencode/schema/event"
-import { EventTable } from "@opencode/core/event/sql"
-import { InstructionDiscovery } from "@opencode/core/instruction-discovery"
-import { Instructions } from "@opencode/core/instructions/index"
-import { Project } from "@opencode/core/project"
-import { ProjectTable } from "@opencode/core/project/sql"
-import { AbsolutePath } from "@opencode/core/schema"
-import { InstructionState } from "@opencode/core/session/instruction-state"
-import { SessionProjector } from "@opencode/core/session/projector"
-import { SessionSchema } from "@opencode/core/session/schema"
+import { Database } from "@bellucode/core/database/database"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { LayerNode } from "@bellucode/util/effect/layer-node"
+import { Bus } from "@bellucode/core/bus"
+import { Event } from "@bellucode/schema/event"
+import { EventTable } from "@bellucode/core/event/sql"
+import { InstructionDiscovery } from "@bellucode/core/instruction-discovery"
+import { Instructions } from "@bellucode/core/instructions/index"
+import { Project } from "@bellucode/core/project"
+import { ProjectTable } from "@bellucode/core/project/sql"
+import { AbsolutePath } from "@bellucode/core/schema"
+import { InstructionState } from "@bellucode/core/session/instruction-state"
+import { SessionProjector } from "@bellucode/core/session/projector"
+import { SessionSchema } from "@bellucode/core/session/schema"
 import {
   InstructionBlobTable,
   InstructionStateTable,
   SessionMessageTable,
   SessionTable,
-} from "@opencode/core/session/sql"
+} from "@bellucode/core/session/sql"
 import { testEffect } from "./lib/effect"
 
 const it = testEffect(

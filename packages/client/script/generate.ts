@@ -1,55 +1,55 @@
 import { NodeFileSystem } from "@effect/platform-node"
-import { compile, emitEffectImported, emitEffectShape, emitPromise, write } from "@opencode/httpapi-codegen"
+import { compile, emitEffectImported, emitEffectShape, emitPromise, write } from "@bellucode/httpapi-codegen"
 import {
   ClientApi,
   clientNamespace,
   effectOmitEndpoints,
   groupNames,
   promiseOmitEndpoints,
-} from "@opencode/protocol/client"
-import { Agent } from "@opencode/schema/agent"
-import { Artifact } from "@opencode/schema/artifact"
-import { Command } from "@opencode/schema/command"
-import { Config } from "@opencode/schema/config"
-import { Credential } from "@opencode/schema/credential"
-import { Event } from "@opencode/schema/event"
-import { EventLog } from "@opencode/schema/event-log"
-import { FileDiff } from "@opencode/schema/file-diff"
-import { FileSystem } from "@opencode/schema/filesystem"
-import { Form } from "@opencode/schema/form"
-import { Generate } from "@opencode/schema/generate"
-import { Instruction } from "@opencode/schema/instruction"
-import { InstructionEntry } from "@opencode/schema/instruction-entry"
-import { Integration } from "@opencode/schema/integration"
-import { Job } from "@opencode/schema/job"
-import { Location } from "@opencode/schema/location"
-import { Mcp } from "@opencode/schema/mcp"
-import { Model } from "@opencode/schema/model"
-import { Money } from "@opencode/schema/money"
-import { Permission } from "@opencode/schema/permission"
-import { PermissionSaved } from "@opencode/schema/permission-saved"
-import { Plugin } from "@opencode/schema/plugin"
-import { Project } from "@opencode/schema/project"
-import { Worktree } from "@opencode/schema/worktree"
-import { AgentAttachment, FileAttachment, Prompt, PromptMention } from "@opencode/schema/prompt"
-import { PromptInput } from "@opencode/schema/prompt-input"
-import { Provider } from "@opencode/schema/provider"
-import { Pty } from "@opencode/schema/pty"
-import { PtyTicket } from "@opencode/schema/pty-ticket"
-import { Question } from "@opencode/schema/question"
-import { Reference } from "@opencode/schema/reference"
-import { AbsolutePath, RelativePath } from "@opencode/schema/schema"
-import { Schedule } from "@opencode/schema/schedule"
-import { Session } from "@opencode/schema/session"
-import { SessionMessage } from "@opencode/schema/session-message"
-import { SessionInbox } from "@opencode/schema/session-inbox"
-import { Shell } from "@opencode/schema/shell"
-import { Skill } from "@opencode/schema/skill"
-import { Snapshot } from "@opencode/schema/snapshot"
-import { UsageLimits } from "@opencode/schema/usage-limits"
-import { Vcs } from "@opencode/schema/vcs"
-import { WebSearch } from "@opencode/schema/websearch"
-import { Workspace } from "@opencode/schema/workspace"
+} from "@bellucode/protocol/client"
+import { Agent } from "@bellucode/schema/agent"
+import { Artifact } from "@bellucode/schema/artifact"
+import { Command } from "@bellucode/schema/command"
+import { Config } from "@bellucode/schema/config"
+import { Credential } from "@bellucode/schema/credential"
+import { Event } from "@bellucode/schema/event"
+import { EventLog } from "@bellucode/schema/event-log"
+import { FileDiff } from "@bellucode/schema/file-diff"
+import { FileSystem } from "@bellucode/schema/filesystem"
+import { Form } from "@bellucode/schema/form"
+import { Generate } from "@bellucode/schema/generate"
+import { Instruction } from "@bellucode/schema/instruction"
+import { InstructionEntry } from "@bellucode/schema/instruction-entry"
+import { Integration } from "@bellucode/schema/integration"
+import { Job } from "@bellucode/schema/job"
+import { Location } from "@bellucode/schema/location"
+import { Mcp } from "@bellucode/schema/mcp"
+import { Model } from "@bellucode/schema/model"
+import { Money } from "@bellucode/schema/money"
+import { Permission } from "@bellucode/schema/permission"
+import { PermissionSaved } from "@bellucode/schema/permission-saved"
+import { Plugin } from "@bellucode/schema/plugin"
+import { Project } from "@bellucode/schema/project"
+import { Worktree } from "@bellucode/schema/worktree"
+import { AgentAttachment, FileAttachment, Prompt, PromptMention } from "@bellucode/schema/prompt"
+import { PromptInput } from "@bellucode/schema/prompt-input"
+import { Provider } from "@bellucode/schema/provider"
+import { Pty } from "@bellucode/schema/pty"
+import { PtyTicket } from "@bellucode/schema/pty-ticket"
+import { Question } from "@bellucode/schema/question"
+import { Reference } from "@bellucode/schema/reference"
+import { AbsolutePath, RelativePath } from "@bellucode/schema/schema"
+import { Schedule } from "@bellucode/schema/schedule"
+import { Session } from "@bellucode/schema/session"
+import { SessionMessage } from "@bellucode/schema/session-message"
+import { SessionInbox } from "@bellucode/schema/session-inbox"
+import { Shell } from "@bellucode/schema/shell"
+import { Skill } from "@bellucode/schema/skill"
+import { Snapshot } from "@bellucode/schema/snapshot"
+import { UsageLimits } from "@bellucode/schema/usage-limits"
+import { Vcs } from "@bellucode/schema/vcs"
+import { WebSearch } from "@bellucode/schema/websearch"
+import { Workspace } from "@bellucode/schema/workspace"
 import { Effect, Schema } from "effect"
 import { fileURLToPath } from "url"
 
@@ -66,54 +66,54 @@ const effectContract = compile(ClientApi, {
   aliases: true,
 })
 const effectTypeReferences = [
-  ...namespaceTypes("Agent", "@opencode/schema/agent", Agent),
-  ...namespaceTypes("Artifact", "@opencode/schema/artifact", Artifact),
-  ...namespaceTypes("Command", "@opencode/schema/command", Command),
-  ...namespaceTypes("Config", "@opencode/schema/config", Config),
-  ...namespaceTypes("Credential", "@opencode/schema/credential", Credential),
-  ...namespaceTypes("Event", "@opencode/schema/event", Event),
-  ...namespaceTypes("EventLog", "@opencode/schema/event-log", EventLog),
-  ...namespaceTypes("FileDiff", "@opencode/schema/file-diff", FileDiff),
-  ...namespaceTypes("FileSystem", "@opencode/schema/filesystem", FileSystem),
-  ...namespaceTypes("Form", "@opencode/schema/form", Form),
-  ...namespaceTypes("Generate", "@opencode/schema/generate", Generate),
-  ...namespaceTypes("Instruction", "@opencode/schema/instruction", Instruction),
-  ...namespaceTypes("InstructionEntry", "@opencode/schema/instruction-entry", InstructionEntry),
-  ...namespaceTypes("Integration", "@opencode/schema/integration", Integration),
-  ...namespaceTypes("Job", "@opencode/schema/job", Job),
-  typeReference("Location.PublicRef", "@opencode/schema/location", Location.PublicRef),
-  typeReference("Location.PublicInfo", "@opencode/schema/location", Location.PublicInfo),
-  ...namespaceTypes("Mcp", "@opencode/schema/mcp", Mcp),
-  ...namespaceTypes("Model", "@opencode/schema/model", Model),
-  ...namespaceTypes("Money", "@opencode/schema/money", Money),
-  ...namespaceTypes("Permission", "@opencode/schema/permission", Permission),
-  ...namespaceTypes("PermissionSaved", "@opencode/schema/permission-saved", PermissionSaved),
-  ...namespaceTypes("Plugin", "@opencode/schema/plugin", Plugin),
-  ...namespaceTypes("Project", "@opencode/schema/project", Project),
-  ...namespaceTypes("Worktree", "@opencode/schema/worktree", Worktree),
-  ...namespaceTypes("PromptInput", "@opencode/schema/prompt-input", PromptInput),
-  ...namespaceTypes("Provider", "@opencode/schema/provider", Provider),
-  ...namespaceTypes("Pty", "@opencode/schema/pty", Pty),
-  ...namespaceTypes("PtyTicket", "@opencode/schema/pty-ticket", PtyTicket),
-  ...namespaceTypes("Question", "@opencode/schema/question", Question),
-  ...namespaceTypes("Reference", "@opencode/schema/reference", Reference),
-  ...namespaceTypes("Schedule", "@opencode/schema/schedule", Schedule),
-  ...namespaceTypes("Session", "@opencode/schema/session", Session),
-  ...namespaceTypes("SessionMessage", "@opencode/schema/session-message", SessionMessage),
-  ...namespaceTypes("SessionInbox", "@opencode/schema/session-inbox", SessionInbox),
-  ...namespaceTypes("Shell", "@opencode/schema/shell", Shell),
-  ...namespaceTypes("Skill", "@opencode/schema/skill", Skill),
-  ...namespaceTypes("Snapshot", "@opencode/schema/snapshot", Snapshot),
-  ...namespaceTypes("UsageLimits", "@opencode/schema/usage-limits", UsageLimits),
-  ...namespaceTypes("Vcs", "@opencode/schema/vcs", Vcs),
-  ...namespaceTypes("WebSearch", "@opencode/schema/websearch", WebSearch),
-  ...namespaceTypes("Workspace", "@opencode/schema/workspace", Workspace),
-  typeReference("Prompt", "@opencode/schema/prompt", Prompt),
-  typeReference("PromptMention", "@opencode/schema/prompt", PromptMention),
-  typeReference("FileAttachment", "@opencode/schema/prompt", FileAttachment),
-  typeReference("AgentAttachment", "@opencode/schema/prompt", AgentAttachment),
-  typeReference("AbsolutePath", "@opencode/schema/schema", AbsolutePath),
-  typeReference("RelativePath", "@opencode/schema/schema", RelativePath),
+  ...namespaceTypes("Agent", "@bellucode/schema/agent", Agent),
+  ...namespaceTypes("Artifact", "@bellucode/schema/artifact", Artifact),
+  ...namespaceTypes("Command", "@bellucode/schema/command", Command),
+  ...namespaceTypes("Config", "@bellucode/schema/config", Config),
+  ...namespaceTypes("Credential", "@bellucode/schema/credential", Credential),
+  ...namespaceTypes("Event", "@bellucode/schema/event", Event),
+  ...namespaceTypes("EventLog", "@bellucode/schema/event-log", EventLog),
+  ...namespaceTypes("FileDiff", "@bellucode/schema/file-diff", FileDiff),
+  ...namespaceTypes("FileSystem", "@bellucode/schema/filesystem", FileSystem),
+  ...namespaceTypes("Form", "@bellucode/schema/form", Form),
+  ...namespaceTypes("Generate", "@bellucode/schema/generate", Generate),
+  ...namespaceTypes("Instruction", "@bellucode/schema/instruction", Instruction),
+  ...namespaceTypes("InstructionEntry", "@bellucode/schema/instruction-entry", InstructionEntry),
+  ...namespaceTypes("Integration", "@bellucode/schema/integration", Integration),
+  ...namespaceTypes("Job", "@bellucode/schema/job", Job),
+  typeReference("Location.PublicRef", "@bellucode/schema/location", Location.PublicRef),
+  typeReference("Location.PublicInfo", "@bellucode/schema/location", Location.PublicInfo),
+  ...namespaceTypes("Mcp", "@bellucode/schema/mcp", Mcp),
+  ...namespaceTypes("Model", "@bellucode/schema/model", Model),
+  ...namespaceTypes("Money", "@bellucode/schema/money", Money),
+  ...namespaceTypes("Permission", "@bellucode/schema/permission", Permission),
+  ...namespaceTypes("PermissionSaved", "@bellucode/schema/permission-saved", PermissionSaved),
+  ...namespaceTypes("Plugin", "@bellucode/schema/plugin", Plugin),
+  ...namespaceTypes("Project", "@bellucode/schema/project", Project),
+  ...namespaceTypes("Worktree", "@bellucode/schema/worktree", Worktree),
+  ...namespaceTypes("PromptInput", "@bellucode/schema/prompt-input", PromptInput),
+  ...namespaceTypes("Provider", "@bellucode/schema/provider", Provider),
+  ...namespaceTypes("Pty", "@bellucode/schema/pty", Pty),
+  ...namespaceTypes("PtyTicket", "@bellucode/schema/pty-ticket", PtyTicket),
+  ...namespaceTypes("Question", "@bellucode/schema/question", Question),
+  ...namespaceTypes("Reference", "@bellucode/schema/reference", Reference),
+  ...namespaceTypes("Schedule", "@bellucode/schema/schedule", Schedule),
+  ...namespaceTypes("Session", "@bellucode/schema/session", Session),
+  ...namespaceTypes("SessionMessage", "@bellucode/schema/session-message", SessionMessage),
+  ...namespaceTypes("SessionInbox", "@bellucode/schema/session-inbox", SessionInbox),
+  ...namespaceTypes("Shell", "@bellucode/schema/shell", Shell),
+  ...namespaceTypes("Skill", "@bellucode/schema/skill", Skill),
+  ...namespaceTypes("Snapshot", "@bellucode/schema/snapshot", Snapshot),
+  ...namespaceTypes("UsageLimits", "@bellucode/schema/usage-limits", UsageLimits),
+  ...namespaceTypes("Vcs", "@bellucode/schema/vcs", Vcs),
+  ...namespaceTypes("WebSearch", "@bellucode/schema/websearch", WebSearch),
+  ...namespaceTypes("Workspace", "@bellucode/schema/workspace", Workspace),
+  typeReference("Prompt", "@bellucode/schema/prompt", Prompt),
+  typeReference("PromptMention", "@bellucode/schema/prompt", PromptMention),
+  typeReference("FileAttachment", "@bellucode/schema/prompt", FileAttachment),
+  typeReference("AgentAttachment", "@bellucode/schema/prompt", AgentAttachment),
+  typeReference("AbsolutePath", "@bellucode/schema/schema", AbsolutePath),
+  typeReference("RelativePath", "@bellucode/schema/schema", RelativePath),
 ]
 
 await Effect.runPromise(
@@ -138,8 +138,8 @@ await Effect.runPromise(
           typeReferences: effectTypeReferences,
           outputTypes: {
             "event.subscribe": {
-              name: "OpenCodeEvent",
-              import: 'import type { OpenCodeEvent } from "@opencode/protocol/groups/event"',
+              name: "BelluCodeEvent",
+              import: 'import type { BelluCodeEvent } from "@bellucode/protocol/groups/event"',
             },
           },
         }),

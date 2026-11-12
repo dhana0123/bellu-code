@@ -1,18 +1,18 @@
 export * as ConfigAgentPlugin from "./agent.js"
 
-import { define } from "@opencode/plugin/effect/plugin"
-import { Document, Info, type Entry } from "@opencode/schema/config"
-import { ConfigAgent } from "@opencode/schema/config/agent"
+import { define } from "@bellucode/plugin/effect/plugin"
+import { Document, Info, type Entry } from "@bellucode/schema/config"
+import { ConfigAgent } from "@bellucode/schema/config/agent"
 import path from "path"
 import { Effect, Result, SchemaIssue, SchemaParser } from "effect"
 import { Agent } from "../../agent.js"
 import { Config } from "../../config.js"
 import { ConfigMarkdown } from "../markdown.js"
 import { ConfigEntryObserver } from "./entry-observer.js"
-import { FSUtil } from "@opencode/util/fs-util"
+import { FSUtil } from "@bellucode/util/fs-util"
 import { ConfigAgentV1 } from "../../v1/config/agent.js"
 import { ConfigMigrateV1 } from "../../v1/config/migrate.js"
-import { Global } from "@opencode/util/global"
+import { Global } from "@bellucode/util/global"
 import { Permission } from "../../permission.js"
 import type { FileAccess } from "../../file-access.js"
 import type { ReadTool } from "../../tool/plugin/read.js"
@@ -35,7 +35,7 @@ const agentKeys = new Set(["variant", ...Object.keys(ConfigAgent.Info.fields)])
 const nativeKeys = ["permissions", "request", "system", "disabled"]
 
 export const Plugin = define({
-  id: "opencode.config.agent",
+  id: "bellucode.config.agent",
   effect: Effect.fn(function* (ctx) {
     const config = yield* Config.Service
     const fs = yield* FSUtil.Service

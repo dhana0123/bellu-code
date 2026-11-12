@@ -17,10 +17,10 @@ export const content = {
       body: "En hurtig terminalbrugerflade, der virker i enhver shell, editor eller fjernserver.",
       action: "Installer",
     },
-    sdk: { body: "Styr OpenCode fra dine egne scripts, CI-jobs og værktøjer.", action: "Læs docs" },
+    sdk: { body: "Styr Bellu Code fra dine egne scripts, CI-jobs og værktøjer.", action: "Læs docs" },
     ide: {
       name: "IDE-udvidelser",
-      body: "Åbn OpenCode i VS Code, Cursor og Windsurf, eller i Zed og JetBrains-IDE'er via ACP.",
+      body: "Åbn Bellu Code i VS Code, Cursor og Windsurf, eller i Zed og JetBrains-IDE'er via ACP.",
       action: "Installer",
     },
     mini: {
@@ -30,9 +30,9 @@ export const content = {
   },
   productDetails: {
     desktop: {
-      title: "OpenCode | Desktopapp til macOS, Windows og Linux",
+      title: "Bellu Code | Desktopapp til macOS, Windows og Linux",
       description:
-        "Kør så mange OpenCode-agenter parallelt, som du vil, se hver ændring i en browser ved siden af, og fortsæt på enhver enhed. Til macOS, Windows og Linux.",
+        "Kør så mange BelluCode-agenter parallelt, som du vil, se hver ændring i en browser ved siden af, og fortsæt på enhver enhed. Til macOS, Windows og Linux.",
       intro:
         "Kør flere agenter på én gang, hver session i sin egen fane. Gennemgå hver ændring som et diff, kommenter enhver linje, og tjek resultatet i den indbyggede browser. Til macOS, Windows og Linux.",
       showcase: {
@@ -50,16 +50,16 @@ export const content = {
         },
         "extend-it": {
           title: "Udvid den",
-          body: "Forbind dine værktøjer og tjenester, så agenten kan arbejde med alt. Eller lad OpenCode bygge plugins til sig selv med deres egen brugerflade i sidepanelet.",
+          body: "Forbind dine værktøjer og tjenester, så agenten kan arbejde med alt. Eller lad Bellu Code bygge plugins til sig selv med deres egen brugerflade i sidepanelet.",
         },
       },
     },
     mobile: {
-      title: "OpenCode | Mobile, dine kodningssessioner på telefonen",
+      title: "Bellu Code | Mobile, dine kodningssessioner på telefonen",
       description:
-        "Start og styr OpenCode-sessioner fra din telefon. Tal med agenten, mens den kører på din computer.",
+        "Start og styr BelluCode-sessioner fra din telefon. Tal med agenten, mens den kører på din computer.",
       intro:
-        "Start og styr sessioner fra din telefon, hvor du end er. Ring til en session og tal med agenten, eller åbn en session og fortsæt, hvor du slap, alt med OpenCode på din egen computer.",
+        "Start og styr sessioner fra din telefon, hvor du end er. Ring til en session og tal med agenten, eller åbn en session og fortsæt, hvor du slap, alt med Bellu Code på din egen computer.",
       features: {
         "notify-when-done": {
           title: "Besked når færdig",
@@ -67,7 +67,7 @@ export const content = {
         },
         "pair-from-anywhere": {
           title: "Par hvor som helst",
-          body: "Forbind fra ethvert netværk med opencode pair --remote.",
+          body: "Forbind fra ethvert netværk med bellucode pair --remote.",
         },
         "every-computer": { title: "Alle computere", body: "Skift mellem dine parrede computere med ét tryk." },
         "siri-and-shortcuts": {
@@ -75,7 +75,7 @@ export const content = {
           body: "Start et opkald eller en session fra Siri eller Kontrolcenter.",
         },
         "follow-along": { title: "Følg med", body: "Se tidslinjen opdatere, mens agenten arbejder." },
-        "your-computer": { title: "Din computer", body: "Forbinder til OpenCode, der kører på din egen maskine." },
+        "your-computer": { title: "Din computer", body: "Forbinder til Bellu Code, der kører på din egen maskine." },
         "share-sheet": { title: "Delingsmenu", body: "Del hvad som helst med en session uden at åbne appen." },
         "mute-sessions": { title: "Slå lyd fra", body: "Behold en session på listen uden at få dens notifikationer." },
       },
@@ -87,9 +87,9 @@ export const content = {
       },
     },
     terminal: {
-      title: "OpenCode | Terminal-UI til open source-kodningsagenten",
+      title: "Bellu Code | Terminal-UI til open source-kodningsagenten",
       description:
-        "En hurtig terminalbrugerflade til OpenCode, der virker i enhver shell, editor eller fjernserver. Beskriv, hvad du vil, se hver ændring som et diff, og godkend kommandoer.",
+        "En hurtig terminalbrugerflade til Bellu Code, der virker i enhver shell, editor eller fjernserver. Beskriv, hvad du vil, se hver ændring som et diff, og godkend kommandoer.",
       intro:
         "En hurtig terminalbrugerflade, der virker i enhver shell, editor eller fjernserver. Beskriv med almindelige ord, hvad du vil, se hver ændring lande som et diff, og vælg, hvilke kommandoer der kører af sig selv.",
       features: {
@@ -105,7 +105,7 @@ export const content = {
           title: "Fortsæt senere",
           body: "Fortsæt den seneste session med -c, eller en hvilken som helst med -s.",
         },
-        "one-off-runs": { title: "Enkeltkørsler", body: "opencode run sender én besked og udskriver svaret." },
+        "one-off-runs": { title: "Enkeltkørsler", body: "bellucode run sender én besked og udskriver svaret." },
         "agents-and-commands": {
           title: "Agenter og kommandoer",
           body: "Skift agent med shift+tab, og åbn alle kommandoer med ctrl+p.",
@@ -114,8 +114,8 @@ export const content = {
           title: "Autogodkend",
           body: "Kør med --auto for at tillade alle handlinger, du ikke har afvist.",
         },
-        "any-server": { title: "Enhver server", body: "Forbind til en OpenCode-server via URL med --server." },
-        "usage-stats": { title: "Forbrug", body: "opencode stats viser forbrugsstatistik, du kan dele." },
+        "any-server": { title: "Enhver server", body: "Forbind til en BelluCode-server via URL med --server." },
+        "usage-stats": { title: "Forbrug", body: "bellucode stats viser forbrugsstatistik, du kan dele." },
       },
       showcase: {
         "ask-in-plain-words": {
@@ -130,30 +130,30 @@ export const content = {
           title: "Gør den til din",
           body: "Skift tema med et tastetryk, fra standard til tokyonight og flere.",
         },
-        mini: { title: "Mini", body: "Kør opencode mini, og svarene skrives ind i din egen scrollback." },
+        mini: { title: "Mini", body: "Kør bellucode mini, og svarene skrives ind i din egen scrollback." },
       },
     },
     sdk: {
-      title: "OpenCode | TypeScript-SDK til scripts, CI-jobs og værktøjer",
+      title: "Bellu Code | TypeScript-SDK til scripts, CI-jobs og værktøjer",
       description:
-        "Styr OpenCode fra dine egne scripts, CI-jobs og værktøjer. Den typede TypeScript-klient opretter sessioner, sender prompts og streamer alle events, mens de sker.",
+        "Styr Bellu Code fra dine egne scripts, CI-jobs og værktøjer. Den typede TypeScript-klient opretter sessioner, sender prompts og streamer alle events, mens de sker.",
       intro:
-        "Styr OpenCode fra dine egne scripts, CI-jobs og værktøjer. SDK'et kører OpenCode i din egen proces med din konfiguration og dine modeller, og dets typede klient opretter sessioner, sender prompts og streamer alle events.",
+        "Styr Bellu Code fra dine egne scripts, CI-jobs og værktøjer. SDK'et kører Bellu Code i din egen proces med din konfiguration og dine modeller, og dets typede klient opretter sessioner, sender prompts og streamer alle events.",
       features: {
         "typescript-client": {
           title: "TypeScript-klient",
-          body: "Typede requests og events med de samme værdier som @opencode/client.",
+          body: "Typede requests og events med de samme værdier som @bellucode/client.",
         },
         "sessions-from-code": {
           title: "Sessioner fra kode",
           body: "Opret sessioner og send prompts fra ethvert script.",
         },
-        "any-model": { title: "Enhver model", body: "Bruger de modeller, din OpenCode-opsætning har." },
+        "any-model": { title: "Enhver model", body: "Bruger de modeller, din BelluCode-opsætning har." },
         "npm-or-bun": {
           title: "npm eller bun",
-          body: "Installer det med npm i @opencode/sdk eller bun add @opencode/sdk.",
+          body: "Installer det med npm i @bellucode/sdk eller bun add @bellucode/sdk.",
         },
-        "in-process-host": { title: "In-process-host", body: "Kører OpenCode i hukommelsen uden netværkshop." },
+        "in-process-host": { title: "In-process-host", body: "Kører Bellu Code i hukommelsen uden netværkshop." },
         "your-plugins": {
           title: "Dine plugins",
           body: "Giv dine egne plugins med, når du opretter in-process-hosten.",
@@ -164,13 +164,13 @@ export const content = {
         },
         "cloudflare-workers": {
           title: "Cloudflare Workers",
-          body: "Kør OpenCode i et Cloudflare Durable Object på Workers.",
+          body: "Kør Bellu Code i et Cloudflare Durable Object på Workers.",
         },
       },
       showcase: {
         "fix-ci-from-code": {
           title: "Ret CI fra kode",
-          body: "Et kort script beder OpenCode rette fejlende tests og kører dem så igen.",
+          body: "Et kort script beder Bellu Code rette fejlende tests og kører dem så igen.",
         },
         "follow-every-step": {
           title: "Følg hvert trin",
@@ -178,40 +178,40 @@ export const content = {
         },
         "build-your-own-tools": {
           title: "Byg egne værktøjer",
-          body: "Kobl OpenCode på bots, dashboards og workflows med få linjer.",
+          body: "Kobl Bellu Code på bots, dashboards og workflows med få linjer.",
         },
         "in-your-process": {
           title: "I din proces",
-          body: "Kører OpenCode i din proces med din konfiguration og dine modeller.",
+          body: "Kører Bellu Code i din proces med din konfiguration og dine modeller.",
         },
       },
     },
     ide: {
-      title: "OpenCode | Editorintegrationer til VS Code, Cursor og Zed",
+      title: "Bellu Code | Editorintegrationer til VS Code, Cursor og Zed",
       description:
-        "Brug OpenCode i din editor med udvidelsen til VS Code, Cursor, Windsurf og VSCodium, og med opencode acp til Zed, JetBrains-IDE'er og andre ACP-editorer.",
+        "Brug Bellu Code i din editor med udvidelsen til VS Code, Cursor, Windsurf og VSCodium, og med bellucode acp til Zed, JetBrains-IDE'er og andre ACP-editorer.",
       intro:
-        "Brug OpenCode i din editor. I VS Code, Cursor, Windsurf og VSCodium kører du opencode i den indbyggede terminal, og udvidelsen installerer sig selv. Zed, JetBrains-IDE'er og andre editorer, der understøtter Agent Client Protocol, kører OpenCode med opencode acp.",
+        "Brug Bellu Code i din editor. I VS Code, Cursor, Windsurf og VSCodium kører du bellucode i den indbyggede terminal, og udvidelsen installerer sig selv. Zed, JetBrains-IDE'er og andre editorer, der understøtter Agent Client Protocol, kører Bellu Code med bellucode acp.",
       features: {
-        "quick-launch": { title: "Hurtig start", body: "Cmd+Esc eller Ctrl+Esc åbner OpenCode i en delt terminal." },
+        "quick-launch": { title: "Hurtig start", body: "Cmd+Esc eller Ctrl+Esc åbner Bellu Code i en delt terminal." },
         "new-session": { title: "Ny session", body: "Cmd+Shift+Esc eller Ctrl+Shift+Esc starter en ny session." },
-        context: { title: "Kontekst", body: "Deler din aktuelle markering eller fane med OpenCode." },
+        context: { title: "Kontekst", body: "Deler din aktuelle markering eller fane med BelluCode." },
         "file-references": { title: "Filreferencer", body: "Cmd+Option+K eller Alt+Ctrl+K indsætter @File#L37-42." },
         "installs-itself": {
           title: "Installerer sig selv",
-          body: "Kør opencode i den indbyggede terminal for at tilføje den.",
+          body: "Kør bellucode i den indbyggede terminal for at tilføje den.",
         },
         "acp-editors": { title: "ACP-editorer", body: "Zed, JetBrains-IDE'er, Avante.nvim og CodeCompanion.nvim." },
         "open-vsx": { title: "Open VSX", body: "Også på Open VSX til Cursor, Windsurf og VSCodium." },
-        "same-agent": { title: "Samme agent", body: "Det OpenCode, du kører i terminalen, ved siden af din kode." },
+        "same-agent": { title: "Samme agent", body: "Det Bellu Code, du kører i terminalen, ved siden af din kode." },
       },
     },
     mini: {
-      title: "OpenCode | Mini, en minimal terminalbrugerflade til agenten",
+      title: "Bellu Code | Mini, en minimal terminalbrugerflade til agenten",
       description:
-        "Mini kører OpenCode i en minimal terminalbrugerflade. Svarene skrives ind i din terminals egen scrollback, og kun en prompt og en statuslinje bliver nederst.",
+        "Mini kører Bellu Code i en minimal terminalbrugerflade. Svarene skrives ind i din terminals egen scrollback, og kun en prompt og en statuslinje bliver nederst.",
       intro:
-        "En minimal terminalbrugerflade til OpenCode. Kør opencode mini, og svarene skrives direkte ind i din terminals egen scrollback, så du kan scrolle, søge og kopiere dem som alt andet output. Kun prompten og en statuslinje bliver nederst.",
+        "En minimal terminalbrugerflade til BelluCode. Kør bellucode mini, og svarene skrives direkte ind i din terminals egen scrollback, så du kan scrolle, søge og kopiere dem som alt andet output. Kun prompten og en statuslinje bliver nederst.",
       features: {
         "your-scrollback": { title: "Din scrollback", body: "Svarene bliver til almindelig terminalhistorik." },
         "one-prompt": { title: "Én prompt", body: "Agent, model, kontekst og pris på én statuslinje." },
@@ -224,7 +224,7 @@ export const content = {
           title: "Fortsæt senere",
           body: "Fortsæt den seneste session med -c, eller en hvilken som helst med -s.",
         },
-        "same-opencode": { title: "Samme OpenCode", body: "Samme server, agenter og modeller som de andre apps." },
+        "same-bellucode": { title: "Samme Bellu Code", body: "Samme server, agenter og modeller som de andre apps." },
         agents: { title: "Agenter", body: "Skift agent direkte fra prompten." },
         compact: { title: "Kompakt", body: "Gør en lang session mindre med /compact." },
       },
@@ -232,15 +232,15 @@ export const content = {
   },
   extensionCard: {
     name: "Udvidelser",
-    body: "Brug OpenCode i VS Code, eller i Zed og andre editorer via ACP.",
+    body: "Brug Bellu Code i VS Code, eller i Zed og andre editorer via ACP.",
     action: "Installer",
   },
   extensions: {
     browse: {
       body: "Lad agenter bruge din rigtige browser.",
-      title: "OpenCode | Browse, din rigtige browser til kodningsagenter",
+      title: "Bellu Code | Browse, din rigtige browser til kodningsagenter",
       description:
-        "Browse lader OpenCode og andre MCP-klienter bruge din rigtige browser. Agenter styrer faner i baggrunden med Playwright og giver logins og 2FA tilbage til dig.",
+        "Browse lader Bellu Code og andre MCP-klienter bruge din rigtige browser. Agenter styrer faner i baggrunden med Playwright og giver logins og 2FA tilbage til dig.",
       intro:
         "En MCP-server og en Chromium-udvidelse, der lader dine agenter bruge din rigtige browser med dine faner, logins og udvidelser. De åbner og styrer faner med Playwright, tager skærmbilleder og optager skærmen i baggrundsfaner, der er samlet i grupper og ude af vejen. Når det er din tur, for et login, en 2FA-prompt eller en betaling, giver de fanen tilbage til dig og fortsætter, når du klikker på Continue.",
       features: {
@@ -260,7 +260,7 @@ export const content = {
         },
         "any-mcp-client": {
           title: "Enhver MCP-klient",
-          body: "OpenCode, Claude Code, Cursor, Codex, Zed og mange flere.",
+          body: "Bellu Code, Claude Code, Cursor, Codex, Zed og mange flere.",
         },
         "all-your-logins": {
           title: "Alle dine logins",
@@ -283,9 +283,9 @@ export const content = {
   },
   getStarted: {
     title: "Kom i gang",
-    lead: "Den nemmeste måde at starte på er at downloade OpenCode og bruge de gratis modeller. Ingen konto nødvendig. Vil du have mere, så tag dit eget abonnement med, eller brug OpenCode Go.",
+    lead: "Den nemmeste måde at starte på er at downloade Bellu Code og bruge de gratis modeller. Ingen konto nødvendig. Vil du have mere, så tag dit eget abonnement med, eller brug Bellu Code Go.",
     phrases: {
-      "download-opencode": { text: "downloade OpenCode" },
+      "download-bellucode": { text: "downloade Bellu Code" },
       "free-models": { text: "gratis modeller" },
       "your-own-subscription": { text: "dit eget abonnement" },
       "a-subscription-you-already-have": { text: "et abonnement, du allerede har" },
@@ -295,30 +295,30 @@ export const content = {
       download: { title: "Download", line: "Desktop, terminal eller mobil." },
       "use-free-models": {
         title: "Brug gratis modeller",
-        line: "OpenCode har et sæt gratis modeller. Ingen konto nødvendig.",
+        line: "Bellu Code har et sæt gratis modeller. Ingen konto nødvendig.",
       },
       "add-more-models": {
         title: "Tilføj flere modeller",
-        line: "Tag dit eget abonnement med, eller brug OpenCode Go's udvalgte modeller fra $10/md.",
+        line: "Tag dit eget abonnement med, eller brug Bellu Code Go's udvalgte modeller fra $10/md.",
       },
     },
     sentence:
-      "Download OpenCode, start med gratis modeller, og tag dit eget abonnement eller OpenCode Go med, når du vil have mere.",
+      "Download Bellu Code, start med gratis modeller, og tag dit eget abonnement eller Bellu Code Go med, når du vil have mere.",
   },
   byos: {
     title: "Brug dit eget abonnement",
     headline: "Brug de abonnementer, du allerede har.",
-    line: "Log ind med ChatGPT Plus eller Pro eller med GitHub Copilot. Eller brug et OpenCode-abonnement.",
+    line: "Log ind med ChatGPT Plus eller Pro eller med GitHub Copilot. Eller brug et BelluCode-abonnement.",
     yours: { label: "Dit abonnement", items: { "chatgpt-plus-pro": { name: "ChatGPT Plus/Pro" } } },
-    planLinks: ["OpenCode-abonnement"],
-    ours: { label: "OpenCode-abonnementer" },
+    planLinks: ["BelluCode-abonnement"],
+    ours: { label: "BelluCode-abonnementer" },
   },
   brand: {
     hero: { copy: { text: "Regler til agent", copied: "Regler kopieret" } },
     naming: {
       title: "Navn",
-      body: "Skriv OpenCode i ét ord med stort O og stort C. Skriv ikke Opencode, Open Code, OpenCode AI eller Open-Code.",
-      code: "Brug kun `opencode` med små bogstaver i kode og pakkenavne, som `opencode-figma` eller `@acme/opencode-plugin`.",
+      body: "Skriv Bellu Code i ét ord med stort O og stort C. Skriv ikke Bellucode, Bellu Code, Bellu Code AI eller BelluCode.",
+      code: "Brug kun `bellucode` med små bogstaver i kode og pakkenavne, som `bellucode-figma` eller `@acme/opencode-plugin`.",
     },
     families: {
       logo: {
@@ -333,7 +333,7 @@ export const content = {
       },
       wordmark: {
         title: "Ordmærke",
-        body: "Det fulde navn i OpenCodes bogstavformer. Brug det, hvor der er plads til at skrive navnet helt ud.",
+        body: "Det fulde navn i BelluCodes bogstavformer. Brug det, hvor der er plads til at skrive navnet helt ud.",
         assets: { light: { name: "Lyst" }, dark: { name: "Mørkt" } },
       },
       "simple-wordmark": {
@@ -433,49 +433,49 @@ export const content = {
     },
     integrations: {
       title: "Integrationer",
-      body: "Plugins, udbydere og værktøjer, der virker med OpenCode, og projekter bygget med det, må gerne sige det. Brug et badge eller et partner-lockup, og navngiv dit projekt, så det er tydeligt, at det er dit.",
+      body: "Plugins, udbydere og værktøjer, der virker med Bellu Code, og projekter bygget med det, må gerne sige det. Brug et badge eller et partner-lockup, og navngiv dit projekt, så det er tydeligt, at det er dit.",
       badges: {
         body: "Sæt et badge i din README, dokumentation eller på dit website, og link det til opencode.ai. Vælg den lyse eller mørke fil til din baggrund (HTML'en skifter selv), og ændr ikke farverne eller teksten.",
         sizes: "Alle stilarter findes i 20, 32 og 44px (Shields kun i 20px), som SVG og som PNG i 2×.",
-        mono: "Hver fil findes også med tekst i OpenTUI Mono. Tilføj -mono før filtypen, som i opencode-works-with-a-light-20-mono.svg, eller -mono-caps for OpenTUI Mono med versaler.",
+        mono: "Hver fil findes også med tekst i OpenTUI Mono. Tilføj -mono før filtypen, som i bellucode-works-with-a-light-20-mono.svg, eller -mono-caps for OpenTUI Mono med versaler.",
         groups: {
           "works-with": {
             title: "Virker med",
-            alt: "Virker med OpenCode",
-            body: "Til plugins, udbydere og værktøjer, der kører med OpenCode.",
+            alt: "Virker med Bellu Code",
+            body: "Til plugins, udbydere og værktøjer, der kører med BelluCode.",
           },
-          "built-with": { title: "Bygget med", alt: "Bygget med OpenCode", body: "Til projekter lavet med OpenCode." },
+          "built-with": { title: "Bygget med", alt: "Bygget med Bellu Code", body: "Til projekter lavet med BelluCode." },
         },
         styles: { a: { name: "Ramme" }, c: { name: "Celler" }, f: { name: "Massiv" }, g: { name: "Shields" } },
       },
       lockup: {
         title: "Partner-lockup",
-        body: "Placer OpenCode-logoet og partnerlogoet side om side med et × imellem. Hold 3 stregers afstand på hver side af ×, skaler partnerlogoet, så det ser lige så højt ud som OpenCode-logoet, og hold frirum rundt om hele lockuppet.",
+        body: "Placer BelluCode-logoet og partnerlogoet side om side med et × imellem. Hold 3 stregers afstand på hver side af ×, skaler partnerlogoet, så det ser lige så højt ud som BelluCode-logoet, og hold frirum rundt om hele lockuppet.",
       },
       naming: {
         title: "Navngiv dit projekt",
         body: "Start med dit eget navn, så det er tydeligt, at projektet er dit.",
-        rule: "Skriv `Linear for OpenCode`, eller kald pakken `opencode-linear`. Skriv ikke `OpenCode Linear` eller `Linear by OpenCode`.",
+        rule: "Skriv `Linear for Bellu Code`, eller kald pakken `bellucode-linear`. Skriv ikke `Bellu Code Linear` eller `Linear by Bellu Code`.",
       },
     },
     trademarks: {
       title: "Varemærker",
-      body: "OpenCode og OpenCode-logoet er varemærker tilhørende Anomaly. Brug dem ikke til at antyde, at Anomaly støtter eller sponsorerer dig, i dit produkt- eller firmanavn eller på merchandise uden tilladelse.",
+      body: "Bellu Code og BelluCode-logoet er varemærker tilhørende Anomaly. Brug dem ikke til at antyde, at Anomaly støtter eller sponsorerer dig, i dit produkt- eller firmanavn eller på merchandise uden tilladelse.",
       contact: { before: "Spørgsmål kan sendes til " },
     },
   },
   press: {
-    title: "OpenCode | Pressekit med fakta om firmaet og brand-assets",
+    title: "Bellu Code | Pressekit med fakta om firmaet og brand-assets",
     description:
-      "OpenCodes pressekit med fakta om OpenCode og Anomaly, firmaet bag, plus logoer og ordmærker til download og en kontakt til spørgsmål fra pressen.",
-    hero: { title: "Presse", body: "Fakta, brand-assets og kontakter til at skrive om OpenCode og Anomaly." },
+      "BelluCodes pressekit med fakta om Bellu Code og Anomaly, firmaet bag, plus logoer og ordmærker til download og en kontakt til spørgsmål fra pressen.",
+    hero: { title: "Presse", body: "Fakta, brand-assets og kontakter til at skrive om Bellu Code og Anomaly." },
     company: {
       title: "Om Anomaly",
-      lead: "Anomaly er firmaet bag OpenCode. Det bygger open source-værktøjer til udviklere.",
+      lead: "Anomaly er firmaet bag BelluCode. Det bygger open source-værktøjer til udviklere.",
       more: "Andre projekter er bl.a. SST og OpenTUI, alle open source på [GitHub](github).",
       learnMore: "Læs mere på [anoma.ly](site).",
       projects: {
-        opencode: {
+        bellucode: {
           body: "Open source-kodningsagenten med apps til desktop, terminal og mobil og et SDK. MIT-licenseret, over 220.000 GitHub-stjerner.",
         },
         sst: {
@@ -483,7 +483,7 @@ export const content = {
         },
         opentui: {
           name: "OpenTUI",
-          body: "Et bibliotek til terminalbrugerflader i TypeScript, React eller Solid med en kerne i Zig. OpenCode bruger det i produktion. Over 13.000 GitHub-stjerner.",
+          body: "Et bibliotek til terminalbrugerflader i TypeScript, React eller Solid med en kerne i Zig. Bellu Code bruger det i produktion. Over 13.000 GitHub-stjerner.",
         },
         "models-dev": {
           body: "En open source-database med specifikationer, priser og egenskaber for AI-modeller og et offentligt API. Den indeholder over 8.900 modeller fra over 200 udbydere.",
@@ -497,30 +497,30 @@ export const content = {
       },
     },
     about: {
-      title: "Om OpenCode",
-      body: "Beskrivelser af OpenCode og dets produkter i en lang og en kort version, klar til at kopiere.",
+      title: "Om Bellu Code",
+      body: "Beskrivelser af Bellu Code og dets produkter i en lang og en kort version, klar til at kopiere.",
       boilerplate: {
-        long: "OpenCode er en open source-kodningsagent. Den findes som desktopapp, terminal-UI, mobilapp og SDK og virker med modeller fra enhver udbyder, bl.a. Claude, GPT og Gemini. OpenCode er MIT-licenseret og lavet af Anomaly. Den har over 220.000 GitHub-stjerner og mere end 1.000 bidragydere, og over 22 millioner udviklere bruger den hver måned.",
+        long: "Bellu Code er en open source-kodningsagent. Den findes som desktopapp, terminal-UI, mobilapp og SDK og virker med modeller fra enhver udbyder, bl.a. Claude, GPT og Gemini. Bellu Code er MIT-licenseret og lavet af Anomaly. Den har over 220.000 GitHub-stjerner og mere end 1.000 bidragydere, og over 22 millioner udviklere bruger den hver måned.",
         short:
-          "OpenCode er en open source-kodningsagent fra Anomaly med apps til desktop, terminal og mobil og et SDK.",
+          "Bellu Code er en open source-kodningsagent fra Anomaly med apps til desktop, terminal og mobil og et SDK.",
       },
       products: {
-        "opencode-console": {
-          name: "OpenCode Console",
-          long: "OpenCode Console er webappen, hvor udviklere og teams køber og administrerer adgang til AI-modeller til OpenCode og andre kodningsagenter. Den tilbyder pay-as-you-go-inferens til frontier- og open weight-modeller, afregnet pr. request fra forudbetalt kredit, og OpenCode Go-abonnementer. Teams får workspaces med rollerne Member, Admin og Owner, forbrugsgrænser for workspace og pr. bruger, single sign-on med Okta, Microsoft Entra ID eller Google Workspace og SCIM. Console understøtter mere end 30 udbydere, så teams kan forbinde udbyderkonti, de allerede har, og den egen inferens er valgfri. Den findes på opencode.ai/console.",
+        "bellucode-console": {
+          name: "Bellu Code Console",
+          long: "Bellu Code Console er webappen, hvor udviklere og teams køber og administrerer adgang til AI-modeller til Bellu Code og andre kodningsagenter. Den tilbyder pay-as-you-go-inferens til frontier- og open weight-modeller, afregnet pr. request fra forudbetalt kredit, og Bellu Code Go-abonnementer. Teams får workspaces med rollerne Member, Admin og Owner, forbrugsgrænser for workspace og pr. bruger, single sign-on med Okta, Microsoft Entra ID eller Google Workspace og SCIM. Console understøtter mere end 30 udbydere, så teams kan forbinde udbyderkonti, de allerede har, og den egen inferens er valgfri. Den findes på opencode.ai/console.",
           short:
-            "OpenCode Console er Anomalys webapp til pay-as-you-go-adgang til AI-modeller, OpenCode Go-abonnementer og teamkontrol som budgetter og single sign-on.",
+            "Bellu Code Console er Anomalys webapp til pay-as-you-go-adgang til AI-modeller, Bellu Code Go-abonnementer og teamkontrol som budgetter og single sign-on.",
         },
-        "opencode-go": {
-          long: "OpenCode Go er et abonnement til udviklere, der vil have en fast månedspris for kodningsmodeller. Go koster $10/md., Go Plus koster $40/md. med højere grænser, og Go Teams koster $20/md. pr. medlem. Hvert abonnement indeholder et udvalg af modeller, der er testet til agentisk kodning. Forbrugsgrænserne er månedlige dollarbeløb for hver model med løbende kvoter for 5 timer og en uge på 20% og 50% af månedsgrænsen. Abonnenter kan fylde kredit på, falde tilbage på en pay-as-you-go-saldo og opsige når som helst. Go virker med OpenCode og andre agenter. Det findes på opencode.ai/console/go.",
+        "bellucode-go": {
+          long: "Bellu Code Go er et abonnement til udviklere, der vil have en fast månedspris for kodningsmodeller. Go koster $10/md., Go Plus koster $40/md. med højere grænser, og Go Teams koster $20/md. pr. medlem. Hvert abonnement indeholder et udvalg af modeller, der er testet til agentisk kodning. Forbrugsgrænserne er månedlige dollarbeløb for hver model med løbende kvoter for 5 timer og en uge på 20% og 50% af månedsgrænsen. Abonnenter kan fylde kredit på, falde tilbage på en pay-as-you-go-saldo og opsige når som helst. Go virker med Bellu Code og andre agenter. Det findes på opencode.ai/console/go.",
           short:
-            "OpenCode Go er et månedligt abonnement fra Anomaly, der giver udviklere månedlige forbrugsgrænser på et udvalg af kodningsmodeller, fra $10/md.",
+            "Bellu Code Go er et månedligt abonnement fra Anomaly, der giver udviklere månedlige forbrugsgrænser på et udvalg af kodningsmodeller, fra $10/md.",
         },
-        "opencode-data": {
-          name: "OpenCode Data",
-          long: "OpenCode Data er et offentligt dashboard, der viser, hvilke AI-modeller udviklere bruger i OpenCode, og hvordan fordelingen ændrer sig over tid. Det udgiver en rangliste over de mest brugte modeller, tokenforbrug, omkostninger pr. session og token, cache-andele, markedsandele og en opdeling efter land. Tallene samles hver time med dage og uger i UTC. Antal brugere og sessioner er omtrentlige, og omkostninger bruger listepriser fra OpenCodes modelkatalog. Journalister kan citere det som OpenCode Data (opencode.ai/data) med det opdateringstidspunkt, siden viser.",
+        "bellucode-data": {
+          name: "Bellu Code Data",
+          long: "Bellu Code Data er et offentligt dashboard, der viser, hvilke AI-modeller udviklere bruger i Bellu Code, og hvordan fordelingen ændrer sig over tid. Det udgiver en rangliste over de mest brugte modeller, tokenforbrug, omkostninger pr. session og token, cache-andele, markedsandele og en opdeling efter land. Tallene samles hver time med dage og uger i UTC. Antal brugere og sessioner er omtrentlige, og omkostninger bruger listepriser fra BelluCodes modelkatalog. Journalister kan citere det som Bellu Code Data (opencode.ai/data) med det opdateringstidspunkt, siden viser.",
           short:
-            "OpenCode Data er et offentligt dashboard på opencode.ai/data, der rangerer AI-modeller efter reelt forbrug i OpenCode med tokens, omkostninger og markedsandele, opdateret hver time.",
+            "Bellu Code Data er et offentligt dashboard på opencode.ai/data, der rangerer AI-modeller efter reelt forbrug i Bellu Code med tokens, omkostninger og markedsandele, opdateret hver time.",
         },
       },
     },
@@ -537,23 +537,23 @@ export const content = {
       items: {
         "first-release-v0-0-1": { date: "apr. 2025", text: "Første version, v0.0.1" },
         "1-million-downloads": { date: "okt. 2025", text: "Over 1 million downloads" },
-        "opencode-1-0": { date: "okt. 2025", text: "OpenCode 1.0" },
+        "bellucode-1-0": { date: "okt. 2025", text: "Bellu Code 1.0" },
         "desktop-app-ships": { date: "dec. 2025", text: "Desktopappen udkommer" },
         "10-million-downloads": { date: "jan. 2026", text: "Over 10 millioner downloads" },
-        "opencode-2-0": { date: "sep. 2026", text: "OpenCode 2.0" },
+        "bellucode-2-0": { date: "sep. 2026", text: "Bellu Code 2.0" },
         "220-000-github-stars": { date: "nov. 2026", text: "Over 220.000 GitHub-stjerner" },
       },
     },
     news: {
       title: "Seneste versioner",
-      intro: "OpenCode udkommer ofte. Her er de nyeste versioner med nye funktioner.",
+      intro: "Bellu Code udkommer ofte. Her er de nyeste versioner med nye funktioner.",
       changelog: { text: "Fuld changelog" },
       feed: { text: "RSS-feed" },
     },
     media: {
       title: "Medier",
       intro:
-        "Stillbilleder og korte videoer af hver app, optaget fra det rigtige produkt. Du kan bruge dem, når du skriver om OpenCode.",
+        "Stillbilleder og korte videoer af hver app, optaget fra det rigtige produkt. Du kan bruge dem, når du skriver om BelluCode.",
       note: "Alle optagelser bruger det mørke tema. Stillbilleder og plakater er JPG'er op til 1920 × 1080, eller 1080 × 1350 i portræt. Videoer er MP4-klip uden lyd.",
       products: {
         desktop: {
@@ -628,10 +628,10 @@ export const content = {
     brand: {
       title: "Brand",
       before:
-        "Download OpenCode-logoerne og -ordmærkerne i én ZIP-fil. Enkelte filer, varianter og regler for brug finder du på ",
+        "Download BelluCode-logoerne og -ordmærkerne i én ZIP-fil. Enkelte filer, varianter og regler for brug finder du på ",
       link: { text: "brandsiden" },
       usage:
-        "Du kan bruge filerne, når du skriver om OpenCode. Ændr dem ikke, og antyd ikke, at OpenCode støtter dit arbejde.",
+        "Du kan bruge filerne, når du skriver om BelluCode. Ændr dem ikke, og antyd ikke, at Bellu Code støtter dit arbejde.",
     },
     product: {
       title: "Produkt",
@@ -642,7 +642,7 @@ export const content = {
         },
         mobile: {
           name: "Mobile",
-          body: "Den nyeste OpenCode-app. Ring til en session for at tale med agenten, og gennemgå og godkend dens ændringer fra din telefon, hvor som helst.",
+          body: "Den nyeste BelluCode-app. Ring til en session for at tale med agenten, og gennemgå og godkend dens ændringer fra din telefon, hvor som helst.",
         },
         terminal: {
           name: "Terminal",
@@ -659,7 +659,7 @@ export const content = {
         press: { title: "Presse", body: "Til journalister og analytikere. Vi svarer kun på henvendelser fra medier." },
         support: {
           title: "Support",
-          body: "Få hjælp til OpenCode ved at oprette et issue eller spørge fællesskabet. Skriv til os om konto og betaling.",
+          body: "Få hjælp til Bellu Code ved at oprette et issue eller spørge fællesskabet. Skriv til os om konto og betaling.",
           links: { "github-issues": { text: "GitHub-issues" }, "help-anoma-ly": { text: "help@anoma.ly" } },
         },
         security: {
@@ -691,7 +691,7 @@ export const content = {
     terminal: { commands: { curl: { name: "Script" } } },
     sdk: { more: { label: "Læs SDK-dokumentationen" } },
     ide: {
-      lead: "Kør opencode i din editors indbyggede terminal, så installerer udvidelsen sig selv. Du kan også installere den selv.",
+      lead: "Kør bellucode i din editors indbyggede terminal, så installerer udvidelsen sig selv. Du kan også installere den selv.",
       links: {
         "vs-code-marketplace": { label: "VS Code Marketplace" },
         "open-vsx-cursor-windsurf-vscodium": { label: "Open VSX (Cursor, Windsurf, VSCodium)" },
@@ -700,18 +700,18 @@ export const content = {
     },
     mini: {
       commands: { curl: { name: "Script" } },
-      lead: "Mini følger med OpenCode CLI. Installer den på en af disse måder, og kør så opencode mini.",
+      lead: "Mini følger med Bellu Code CLI. Installer den på en af disse måder, og kør så bellucode mini.",
     },
   },
   pair: {
     title: "Forbind din telefon",
     cardTitle: "Par din telefon med én kommando",
     intro:
-      "OpenCode Mobile er en fjernbetjening til OpenCode på din computer. Dine sessioner kører videre der, og appen viser dem og lader dig styre dem.",
+      "Bellu Code Mobile er en fjernbetjening til Bellu Code på din computer. Dine sessioner kører videre der, og appen viser dem og lader dig styre dem.",
     steps: {
       "get-the-app": {
         title: "Hent appen",
-        body: "Installer OpenCode-betaen på din iPhone fra TestFlight. Android-appen kommer snart.",
+        body: "Installer BelluCode-betaen på din iPhone fra TestFlight. Android-appen kommer snart.",
       },
       "run-this-on-your-computer": {
         title: "Kør dette på din computer",
@@ -722,12 +722,12 @@ export const content = {
         body: "Scan QR-koden med appen, eller indsæt linket. Din computers seneste sessioner åbner på telefonen.",
       },
     },
-    note: "--remote forbinder via en OpenTunnel-adresse, så det virker fra ethvert netværk. På samme Wi-Fi kører du opencode service set hostname 0.0.0.0 én gang og derefter opencode pair.",
+    note: "--remote forbinder via en OpenTunnel-adresse, så det virker fra ethvert netværk. På samme Wi-Fi kører du bellucode service set hostname 0.0.0.0 én gang og derefter bellucode pair.",
     facts: [
       "Parringen virker fra ethvert netværk, fordi --remote forbinder via en OpenTunnel-adresse.",
       "Linket og koden virker én gang og udløber efter 5 minutter.",
       "Lad computeren være tændt, for agenten kører der og ikke på telefonen.",
-      "På samme Wi-Fi kører du opencode service set hostname 0.0.0.0 én gang og derefter opencode pair.",
+      "På samme Wi-Fi kører du bellucode service set hostname 0.0.0.0 én gang og derefter bellucode pair.",
     ],
   },
   announcements: {
@@ -739,7 +739,7 @@ export const content = {
     "agents-can-now-generate-images": { text: "Agenter kan nu generere billeder.", link: "Se v2.2.1" },
     "steer-your-sessions-from-your-phone": {
       text: "Styr dine sessioner fra din telefon.",
-      link: "Mød OpenCode Mobile",
+      link: "Mød Bellu Code Mobile",
     },
     "a-refreshed-desktop-app": { text: "En fornyet desktopapp.", link: "Se nyt i 2.2" },
   },

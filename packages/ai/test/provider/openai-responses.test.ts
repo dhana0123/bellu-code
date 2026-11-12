@@ -1185,11 +1185,11 @@ describe("OpenAI Responses route", () => {
       )
       const cases = [
         {
-          model: Azure.configure({ resourceName: "opencode-test", apiKey: "azure-key" }).responses("deployment"),
+          model: Azure.configure({ resourceName: "bellucode-test", apiKey: "azure-key" }).responses("deployment"),
           headers: { "api-key": "azure-key", authorization: undefined },
         },
         {
-          model: Azure.configure({ resourceName: "opencode-test", auth: Auth.bearer("entra-token") }).responses(
+          model: Azure.configure({ resourceName: "bellucode-test", auth: Auth.bearer("entra-token") }).responses(
             "deployment",
           ),
           headers: { "api-key": undefined, authorization: "Bearer entra-token" },
@@ -1230,7 +1230,7 @@ describe("OpenAI Responses route", () => {
       const cases = [
         {
           model: Azure.configure({
-            resourceName: "opencode-test",
+            resourceName: "bellucode-test",
             apiKey: "azure-key",
             apiVersion: "2025-04-01-preview",
           }).responses("deployment"),
@@ -1238,7 +1238,7 @@ describe("OpenAI Responses route", () => {
         },
         {
           model: Azure.configure({
-            resourceName: "opencode-test",
+            resourceName: "bellucode-test",
             apiKey: "azure-key",
             useDeploymentBasedUrls: true,
           }).responses("deployment"),
@@ -2321,7 +2321,7 @@ describe("OpenAI Responses route", () => {
           type: "response.completed",
           response: {
             id: "resp_1",
-            usage: { input_tokens: 5, output_tokens: 2, cost: 0, opencode: { allowance: 0.0042 } },
+            usage: { input_tokens: 5, output_tokens: 2, cost: 0, bellucode: { allowance: 0.0042 } },
           },
         },
       )

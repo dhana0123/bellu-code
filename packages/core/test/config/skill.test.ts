@@ -2,24 +2,24 @@ import fs from "fs/promises"
 import path from "path"
 import { describe, expect, test } from "bun:test"
 import { Deferred, Effect, Fiber, Layer, Schema, Stream } from "effect"
-import { Config } from "@opencode/core/config"
-import { Directory, Document, type Entry, Info } from "@opencode/schema/config"
-import { ConfigSkillPlugin } from "@opencode/core/config/plugin/skill"
-import { ConfigCompatibilityPlugin } from "@opencode/core/config/plugin/compatibility"
-import { SkillFile } from "@opencode/core/config/plugin/skill-file"
-import { SkillScan } from "@opencode/core/config/plugin/skill-scan"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { Watcher } from "@opencode/core/filesystem/watcher"
-import { Bus } from "@opencode/core/bus"
-import { Credential } from "@opencode/core/credential"
-import { FSUtil } from "@opencode/util/fs-util"
-import { Global } from "@opencode/util/global"
-import { LayerNode } from "@opencode/util/effect/layer-node"
-import { Location } from "@opencode/core/location"
-import { AbsolutePath } from "@opencode/core/schema"
-import { Skill } from "@opencode/core/skill"
-import { SkillDiscovery } from "@opencode/core/skill/discovery"
-import { WellKnown } from "@opencode/core/wellknown"
+import { Config } from "@bellucode/core/config"
+import { Directory, Document, type Entry, Info } from "@bellucode/schema/config"
+import { ConfigSkillPlugin } from "@bellucode/core/config/plugin/skill"
+import { ConfigCompatibilityPlugin } from "@bellucode/core/config/plugin/compatibility"
+import { SkillFile } from "@bellucode/core/config/plugin/skill-file"
+import { SkillScan } from "@bellucode/core/config/plugin/skill-scan"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { Watcher } from "@bellucode/core/filesystem/watcher"
+import { Bus } from "@bellucode/core/bus"
+import { Credential } from "@bellucode/core/credential"
+import { FSUtil } from "@bellucode/util/fs-util"
+import { Global } from "@bellucode/util/global"
+import { LayerNode } from "@bellucode/util/effect/layer-node"
+import { Location } from "@bellucode/core/location"
+import { AbsolutePath } from "@bellucode/core/schema"
+import { Skill } from "@bellucode/core/skill"
+import { SkillDiscovery } from "@bellucode/core/skill/discovery"
+import { WellKnown } from "@bellucode/core/wellknown"
 import { emptyCredentialNode, emptyWellknownNode } from "../fixture/config-nodes"
 import { advance, drain } from "../lib/clock"
 import { tmpdir } from "../fixture/tmpdir"
@@ -133,7 +133,7 @@ describe("SkillFile.parse", () => {
     expect(parse("disable-model-invocation: false")).not.toMatchObject({ skill: { autoinvoke: expect.anything() } })
     expect(parse("disable-model-invocation: maybe")).not.toMatchObject({ skill: { autoinvoke: expect.anything() } })
     expect(
-      parse("disable-model-invocation: true\nmetadata:\n  opencode/autoinvoke: true"),
+      parse("disable-model-invocation: true\nmetadata:\n  bellucode/autoinvoke: true"),
     ).toMatchObject({ skill: { autoinvoke: true } })
   })
 
@@ -147,7 +147,7 @@ describe("SkillFile.parse", () => {
 name: Manual
 description: Manual only
 metadata:
-  opencode/autoinvoke: false
+  bellucode/autoinvoke: false
 ---
 # manual`,
       ),
@@ -183,14 +183,14 @@ describe("ConfigSkillPlugin.Plugin", () => {
         Effect.gen(function* () {
           const claude = path.join(tmp.path, "claude")
           const agents = path.join(tmp.path, "agents")
-          const opencode = path.join(tmp.path, "opencode")
+          const bellucode = path.join(tmp.path, "bellucode")
           const home = path.join(tmp.path, "home")
           const directory = path.join(tmp.path, "project")
           const expected = [
             path.join(claude, "skills"),
             path.join(agents, "skills"),
-            path.join(opencode, "skill"),
-            path.join(opencode, "skills"),
+            path.join(bellucode, "skill"),
+            path.join(bellucode, "skills"),
             path.join(home, "shared"),
             path.join(directory, "relative"),
           ]
@@ -198,7 +198,7 @@ describe("ConfigSkillPlugin.Plugin", () => {
 
           yield* startEntries(
             [
-              new Directory({ type: "directory", path: AbsolutePath.make(opencode) }),
+              new Directory({ type: "directory", path: AbsolutePath.make(bellucode) }),
               new Document({ type: "document", info: decode({ skills: ["~/shared", "./relative"] }) }),
             ],
             directory,
@@ -449,7 +449,7 @@ describe("ConfigSkillPlugin.Plugin", () => {
           )
           yield* Effect.yieldNow
 
-          yield* configTest.emitChange({ type: "update", path: path.join(tmp.path, "opencode.json") })
+          yield* configTest.emitChange({ type: "update", path: path.join(tmp.path, "bellucode.json") })
           yield* configTest.emitChange({ type: "create", path: path.join(tmp.path, "commands", "review.md") })
           yield* configTest.emitChange({ type: "create", path: path.join(tmp.path, "agents", "reviewer.md") })
           yield* drain

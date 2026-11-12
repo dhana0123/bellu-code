@@ -1,3 +1,3 @@
-# @opencode/core
+# @bellucode/core
 
-Core runtime services for OpenCode.
+Core runtime services for BelluCode.

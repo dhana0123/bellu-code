@@ -1,5 +1,5 @@
-import { Shell } from "@opencode/schema/shell"
-import { Location } from "@opencode/schema/location"
+import { Shell } from "@bellucode/schema/shell"
+import { Location } from "@bellucode/schema/location"
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/http-api"
 import { ShellNotFoundError } from "../errors.js"

@@ -50,9 +50,9 @@ export default defineConfig({
         reuseExistingServer: !built,
         timeout: 120_000,
         env: {
-          VITE_OPENCODE_TEST_FIXTURES: "1",
-          VITE_OPENCODE_SERVER_HOST: serverHost,
-          VITE_OPENCODE_SERVER_PORT: serverPort,
+          VITE_BELLUCODE_TEST_FIXTURES: "1",
+          VITE_BELLUCODE_SERVER_HOST: serverHost,
+          VITE_BELLUCODE_SERVER_PORT: serverPort,
         },
       },
   use: {

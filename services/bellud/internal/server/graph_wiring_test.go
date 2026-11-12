@@ -73,7 +73,7 @@ func call(t *testing.T, method, url string, hdr map[string]string, basicAuth boo
 		req.Header.Set(k, v)
 	}
 	if basicAuth {
-		req.SetBasicAuth("opencode", "pw")
+		req.SetBasicAuth("bellucode", "pw")
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

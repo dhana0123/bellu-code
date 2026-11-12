@@ -1,10 +1,10 @@
 export * as ShellTool from "./shell.js"
 
-import { ToolFailure } from "@opencode/ai/effect"
-import type { Context } from "@opencode/plugin/effect/plugin"
-import type { SessionHooks } from "@opencode/plugin/effect/session"
-import type { ShellCreateBefore } from "@opencode/plugin/effect/shell"
-import type { Tool } from "@opencode/schema/tool"
+import { ToolFailure } from "@bellucode/ai/effect"
+import type { Context } from "@bellucode/plugin/effect/plugin"
+import type { SessionHooks } from "@bellucode/plugin/effect/session"
+import type { ShellCreateBefore } from "@bellucode/plugin/effect/shell"
+import type { Tool } from "@bellucode/schema/tool"
 import { Deferred, Effect, Schema, Scope } from "effect"
 import { Environment } from "../../environment/index.js"
 import { Job } from "../../job.js"
@@ -99,7 +99,7 @@ const backgroundResult = (shellID: string, file: string) => ({
 })
 
 export const Plugin = {
-  id: "opencode.tool.shell",
+  id: "bellucode.tool.shell",
   effect: Effect.fn("ShellTool.Plugin")(function* (ctx: Context) {
     const sessions = yield* Session.Service
     const jobs = yield* Job.Service
@@ -198,9 +198,9 @@ export const Plugin = {
                 (invocation) =>
                   Effect.gen(function* () {
                     invocation.env.AGENT = "1"
-                    invocation.env.OPENCODE = "1"
-                    invocation.env.AI_AGENT ||= "opencode"
-                    invocation.env.OPENCODE_SESSION_ID = context.sessionID
+                    invocation.env.BELLUCODE = "1"
+                    invocation.env.AI_AGENT ||= "bellucode"
+                    invocation.env.BELLUCODE_SESSION_ID = context.sessionID
                     finalTimeout = yield* prepare(invocation, context)
                   }),
               )
@@ -255,7 +255,7 @@ export const Plugin = {
               // Shell spans, including the job that waits for a backgrounded command, name the call that started them.
               Effect.annotateSpans({
                 "gen_ai.tool.call.id": context.id,
-                ...(input.background === true ? { "opencode.shell.background": true } : {}),
+                ...(input.background === true ? { "bellucode.shell.background": true } : {}),
               }),
               Effect.map((output) => toolResult(output, finalTimeout)),
               Effect.mapError(

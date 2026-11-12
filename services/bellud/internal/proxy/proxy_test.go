@@ -35,7 +35,7 @@ func TestForwardsAndIsolatesCredentials(t *testing.T) {
 	req := httptest.NewRequest("POST", "http://client.example:4096/a/b?x=1", strings.NewReader("body"))
 	req.RemoteAddr = "10.1.2.3:555"
 	req.Header.Set("Authorization", "Basic ZXh0ZXJuYWw6c2VjcmV0")
-	req.Header.Set("Cookie", "opencode_session=zzz")
+	req.Header.Set("Cookie", "bellucode_session=zzz")
 	req.Header.Set("X-Forwarded-For", "6.6.6.6")
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -49,7 +49,7 @@ func TestForwardsAndIsolatesCredentials(t *testing.T) {
 	if v := got.Header.Values("Authorization"); len(v) != 1 {
 		t.Fatalf("auth headers %v", v)
 	}
-	if u, p, _ := got.BasicAuth(); u != "opencode" || p != "internal-pw" {
+	if u, p, _ := got.BasicAuth(); u != "bellucode" || p != "internal-pw" {
 		t.Fatalf("basic %s %s", u, p)
 	}
 	if got.Header.Get("Cookie") != "" {

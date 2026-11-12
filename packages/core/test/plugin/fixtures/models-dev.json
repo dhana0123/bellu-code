@@ -42,9 +42,9 @@
     "env": [],
     "models": {}
   },
-  "opencode": {
-    "id": "opencode",
-    "name": "OpenCode",
+  "bellucode": {
+    "id": "bellucode",
+    "name": "BelluCode",
     "env": [],
     "models": {
       "gpt-5.5": {

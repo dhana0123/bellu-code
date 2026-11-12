@@ -1,9 +1,9 @@
 import { expect } from "bun:test"
-import { OpenCode } from "@opencode/client/effect"
-import { ClientApi } from "@opencode/protocol/client"
-import { Authorization } from "@opencode/protocol/middleware/authorization"
-import { Event } from "@opencode/schema/event"
-import { Session } from "@opencode/schema/session"
+import { BelluCode } from "@bellucode/client/effect"
+import { ClientApi } from "@bellucode/protocol/client"
+import { Authorization } from "@bellucode/protocol/middleware/authorization"
+import { Event } from "@bellucode/schema/event"
+import { Session } from "@bellucode/schema/session"
 import { Cause, Effect, Exit, Layer, Stream } from "effect"
 import { HttpClient, HttpClientResponse, HttpRouter, HttpServer } from "effect/http"
 import { HttpApi, HttpApiBuilder, HttpApiGroup } from "effect/http-api"
@@ -57,7 +57,7 @@ it.live("the generated Effect client fails the session log stream with the serve
     )
     const received: unknown[] = []
     const exit = yield* Effect.gen(function* () {
-      const client = yield* OpenCode.make({ baseUrl: "http://opencode.local" })
+      const client = yield* BelluCode.make({ baseUrl: "http://opencode.local" })
       return yield* client.experimental.session
         .log({ sessionID: Session.ID.make("ses_test") })
         .pipe(Stream.runForEach((item) => Effect.sync(() => received.push(item))))

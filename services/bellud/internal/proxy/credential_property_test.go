@@ -48,10 +48,10 @@ func TestPropertyCredentialIsolation(t *testing.T) {
 		case 1:
 			req.Header.Set("Authorization", "Bearer "+external)
 		case 2:
-			req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("opencode:"+external)))
+			req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte("bellucode:"+external)))
 			req.Header.Add("Authorization", "Bearer "+external)
 		}
-		req.Header.Set("Cookie", "opencode_session="+external+"; other=1")
+		req.Header.Set("Cookie", "bellucode_session="+external+"; other=1")
 		req.Header.Set("X-Custom", "v")
 
 		h.ServeHTTP(httptest.NewRecorder(), req)

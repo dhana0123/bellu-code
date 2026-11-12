@@ -10,8 +10,8 @@ import {
   Suspense,
   untrack,
 } from "solid-js"
-import { Icon } from "@opencode/ui/icon"
-import type { FileDiffInfo } from "@opencode/client/promise"
+import { Icon } from "@bellucode/ui/icon"
+import type { FileDiffInfo } from "@bellucode/client/promise"
 import {
   Command,
   createKeyed,
@@ -24,9 +24,9 @@ import {
   type MountedSession,
   type Plugin,
   type ClosedPanelTab,
-} from "@opencode/plugin/gui"
-import { BuiltinPanel, onIdle, type BuiltinPanelTab } from "@opencode/plugin/gui/builtin"
-import { Changes, type ChangeKind } from "@opencode/plugin/gui/review"
+} from "@bellucode/plugin/gui"
+import { BuiltinPanel, onIdle, type BuiltinPanelTab } from "@bellucode/plugin/gui/builtin"
+import { Changes, type ChangeKind } from "@bellucode/plugin/gui/review"
 import type Review from "./index"
 import { ReviewDetails, type ReviewDetailsView } from "./contract"
 import { createReviewModel, type Demand, type ReviewModel } from "./model"

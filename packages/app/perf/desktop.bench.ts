@@ -1,10 +1,10 @@
-// The packaged desktop app, launched by strobe in a private home from the `opencode` profiles in strobe.json.
-// Compare two installed channels: `strobe bench packages/app/perf/desktop.bench.ts --base app:opencode --head app:opencode-beta`.
+// The packaged desktop app, launched by strobe in a private home from the `bellucode` profiles in strobe.json.
+// Compare two installed channels: `strobe bench packages/app/perf/desktop.bench.ts --base app:bellucode --head app:bellucode-beta`.
 import { app, bench } from "@hona/strobe"
 
 export default bench({
   targets: {
-    desktop: app("opencode", { viewport: { width: 1366, height: 768 } }),
+    desktop: app("bellucode", { viewport: { width: 1366, height: 768 } }),
   },
 
   async setup({ page }) {

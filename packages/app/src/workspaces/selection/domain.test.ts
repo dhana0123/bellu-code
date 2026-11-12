@@ -117,8 +117,8 @@ test.each([
   ["file search", pickerFileSearchQuery("/home/luke", "~/repos/op", "/home/luke"), "repos/op"],
   [
     "recent short 2-level tilde",
-    shortenPickerRecentPath("/home/luke/Developer/opencode", "/home/luke"),
-    "~/Developer/opencode",
+    shortenPickerRecentPath("/home/luke/Developer/bellucode", "/home/luke"),
+    "~/Developer/bellucode",
   ],
   [
     "recent deep tilde",
@@ -135,7 +135,7 @@ test.each([
     shortenPickerRecentPath("/srv/clients/acme/services/payments-gateway", "/home/luke"),
     "/srv/…/services/payments-gateway",
   ],
-  ["recent short Windows", shortenPickerRecentPath("C:/OpenCode/NewProject", ""), "C:\\OpenCode\\NewProject"],
+  ["recent short Windows", shortenPickerRecentPath("C:/BelluCode/NewProject", ""), "C:\\BelluCode\\NewProject"],
   [
     "recent deep Windows",
     shortenPickerRecentPath("C:/Users/luke/work/acme/repo", "C:/Users/luke"),

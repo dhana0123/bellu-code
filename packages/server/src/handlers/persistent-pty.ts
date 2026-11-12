@@ -1,17 +1,17 @@
-import { PersistentPty } from "@opencode/core/persistent-pty"
-import { PtyTicket } from "@opencode/core/pty/ticket"
+import { PersistentPty } from "@bellucode/core/persistent-pty"
+import { PtyTicket } from "@bellucode/core/pty/ticket"
 import {
   ForbiddenError,
   InvalidRequestError,
   PtyFeatureUnsupportedError,
   PtyNotFoundError,
   ServiceUnavailableError,
-} from "@opencode/protocol/errors"
+} from "@bellucode/protocol/errors"
 import {
   PTY_CONNECT_TICKET_QUERY,
   PTY_CONNECT_TOKEN_HEADER,
   PTY_CONNECT_TOKEN_HEADER_VALUE,
-} from "@opencode/protocol/groups/persistent-pty"
+} from "@bellucode/protocol/groups/persistent-pty"
 import { Effect, Queue } from "effect"
 import { HttpServerRequest, HttpServerResponse } from "effect/http"
 import { HttpApiBuilder, HttpApiSchema } from "effect/http-api"
@@ -120,7 +120,7 @@ export const PersistentPtyHandler = HttpApiBuilder.group(Api, "server.experiment
                 "PersistentPty.UnsupportedError": (error) =>
                   new PtyFeatureUnsupportedError({
                     feature: error.feature,
-                    message: "Terminal renaming will be available after OpenCode's terminal service restarts",
+                    message: "Terminal renaming will be available after Bellu Code's terminal service restarts",
                   }),
                 "PersistentPty.UnavailableError": unavailable,
               }),
@@ -273,4 +273,4 @@ const notFound = (error: PersistentPty.NotFoundError) =>
   new PtyNotFoundError({ ptyID: error.ptyID, message: `PTY session not found: ${error.ptyID}` })
 
 const unavailable = (error: PersistentPty.UnavailableError) =>
-  new ServiceUnavailableError({ message: error.message, service: "opencode-pty" })
+  new ServiceUnavailableError({ message: error.message, service: "bellucode-pty" })

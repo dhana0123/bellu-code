@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package",
-  "name": "@opencode/script",
+  "name": "@bellucode/script",
   "type": "module",
   "license": "MIT",
   "scripts": {

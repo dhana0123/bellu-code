@@ -9,21 +9,21 @@ import {
   type Mode,
   type ResolvedTheme,
   type ThemeDefinition,
-} from "@opencode/theme/tui"
-import { getOpenCodeTheme, parseTheme, type ThemeDocumentSource } from "../../../src/theme"
+} from "@bellucode/theme/tui"
+import { getBelluCodeTheme, parseTheme, type ThemeDocumentSource } from "../../../src/theme"
 
-const opencodeLight = selectTheme(getOpenCodeTheme(), "light")
-const opencodeDark = selectTheme(getOpenCodeTheme(), "dark")
+const bellucodeLight = selectTheme(getBelluCodeTheme(), "light")
+const bellucodeDark = selectTheme(getBelluCodeTheme(), "dark")
 const chromaticHues = ["gray", "red", "orange", "green", "cyan", "blue", "purple"] as const
 const light: ThemeDefinition = {
-  ...opencodeLight,
+  ...bellucodeLight,
   categorical: ["blue", "purple"],
-  hue: { ...opencodeLight.hue, accent: "$hue.blue", interactive: "$hue.blue", neutral: "$hue.gray" },
+  hue: { ...bellucodeLight.hue, accent: "$hue.blue", interactive: "$hue.blue", neutral: "$hue.gray" },
 }
 const dark: ThemeDefinition = {
-  ...opencodeDark,
+  ...bellucodeDark,
   categorical: ["blue", "purple"],
-  hue: { ...opencodeDark.hue, accent: "$hue.blue", interactive: "$hue.blue", neutral: "$hue.gray" },
+  hue: { ...bellucodeDark.hue, accent: "$hue.blue", interactive: "$hue.blue", neutral: "$hue.gray" },
 }
 
 test("orders light hues dark-to-light and dark hues light-to-dark", () => {
@@ -95,10 +95,10 @@ test("resolves arbitrary hue names across aliases, categorical colors, and token
 })
 
 test("validates hue relationships in every provided mode while parsing", () => {
-  const source = structuredClone(getOpenCodeTheme()) as ThemeDocumentSource
+  const source = structuredClone(getBelluCodeTheme()) as ThemeDocumentSource
   const darkMode = source.dark as Record<string, unknown>
   darkMode.hue = { ...(darkMode.hue as Record<string, unknown>), accent: "$hue.missing" }
-  const missingSemantic = structuredClone(getOpenCodeTheme()) as ThemeDocumentSource
+  const missingSemantic = structuredClone(getBelluCodeTheme()) as ThemeDocumentSource
   const lightMode = missingSemantic.light as Record<string, unknown>
   const lightHues = lightMode.hue as Record<string, unknown>
   delete lightHues.neutral

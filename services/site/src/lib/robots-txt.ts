@@ -9,7 +9,7 @@ const sitemap = "Sitemap: https://opencode.ai/sitemap.xml"
 
 // The agent message, laid out to fit the payload frame.
 const message = [
-  "Hello, agent. OpenCode is a coding agent, so you are welcome here.",
+  "Hello, agent. Bellu Code is a coding agent, so you are welcome here.",
   "Every page on this site is also written for you, in Markdown.",
   "",
   ...[
@@ -31,7 +31,7 @@ const notes = [
 ]
 
 // A 3 × 5 face for the banner, drawn in ▀ ▄ █ (two pixel rows per text row), square like the
-// OpenCode font.
+// Bellu Code font.
 const face: Record<string, string[]> = {
   A: ["###", "#.#", "###", "#.#", "#.#"],
   C: ["###", "#..", "#..", "#..", "###"],
@@ -89,7 +89,7 @@ async function build() {
     "",
     justify("OPENCODE.AI · ROBOTS.TXT · FOR AGENTS · UTF-8", `SHA-256(rules) ${sha.slice(0, 8)}`),
     "=".repeat(full),
-    justify(`[BOOT]  0x${hex("OPENCODE")} ("OPENCODE")  RULES ${rules.length}  SITEMAP 1`, "OK"),
+    justify(`[BOOT]  0x${hex("BELLUCODE")} ("BELLUCODE")  RULES ${rules.length}  SITEMAP 1`, "OK"),
     justify("[LINK]", "GET /robots.txt -> 200 -> GET /llms.txt -> 200 -> GET *.md -> 200"),
     "",
     justify("PARSER COMPLIANCE MATRIX", "(computed from the rules)"),

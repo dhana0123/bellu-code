@@ -1,20 +1,20 @@
 import { describe, expect, test } from "bun:test"
 import { SqliteClient } from "@effect/sql-sqlite-bun"
-import { EffectDrizzleSqlite } from "@opencode/core/database/drizzle"
-import { Database } from "@opencode/core/database/database"
-import { DatabaseMigration } from "@opencode/core/database/migration"
-import { V1Migration } from "@opencode/core/database/v1-migration"
-import { SessionMessage } from "@opencode/core/session/message"
-import { SessionSchema } from "@opencode/core/session/schema"
-import { SessionTable } from "@opencode/core/session/sql"
-import { Project } from "@opencode/core/project"
-import { Agent } from "@opencode/schema/agent"
-import { ProjectTable } from "@opencode/core/project/sql"
-import { AbsolutePath } from "@opencode/core/schema"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { LayerNode } from "@opencode/util/effect/layer-node"
-import { FSUtil } from "@opencode/util/fs-util"
-import { Global } from "@opencode/util/global"
+import { EffectDrizzleSqlite } from "@bellucode/core/database/drizzle"
+import { Database } from "@bellucode/core/database/database"
+import { DatabaseMigration } from "@bellucode/core/database/migration"
+import { V1Migration } from "@bellucode/core/database/v1-migration"
+import { SessionMessage } from "@bellucode/core/session/message"
+import { SessionSchema } from "@bellucode/core/session/schema"
+import { SessionTable } from "@bellucode/core/session/sql"
+import { Project } from "@bellucode/core/project"
+import { Agent } from "@bellucode/schema/agent"
+import { ProjectTable } from "@bellucode/core/project/sql"
+import { AbsolutePath } from "@bellucode/core/schema"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { LayerNode } from "@bellucode/util/effect/layer-node"
+import { FSUtil } from "@bellucode/util/fs-util"
+import { Global } from "@bellucode/util/global"
 import { Effect, Fiber, Layer, Logger, Schedule, Schema, Scope } from "effect"
 import { eq, sql } from "drizzle-orm"
 import type { SqlClient } from "effect/sql/SqlClient"
@@ -944,7 +944,7 @@ describe("V1Migration database workflow", () => {
 
   test("imports previous V2 sessions and messages containing apostrophes", async () => {
     await using tmp = await tmpdir()
-    const filename = path.join(tmp.path, "opencode-next.db")
+    const filename = path.join(tmp.path, "bellucode-next.db")
     const sqlite = await import("bun:sqlite")
     const source = new sqlite.Database(filename)
     source.run(`
@@ -1062,7 +1062,7 @@ describe("V1Migration database workflow", () => {
 
   test("imports previous V2 databases missing newer nullable columns", async () => {
     await using tmp = await tmpdir()
-    const filename = path.join(tmp.path, "opencode-next.db")
+    const filename = path.join(tmp.path, "bellucode-next.db")
     const sqlite = await import("bun:sqlite")
     const source = new sqlite.Database(filename)
     source.run(`

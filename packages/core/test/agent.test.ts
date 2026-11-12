@@ -1,22 +1,22 @@
 import path from "path"
 import { describe, expect } from "bun:test"
 import { Effect, Exit, Fiber, Layer, Scope, Stream } from "effect"
-import { Agent } from "@opencode/core/agent"
-import { Bus } from "@opencode/core/bus"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { LayerNode } from "@opencode/util/effect/layer-node"
-import { Location } from "@opencode/core/location"
-import { Permission } from "@opencode/core/permission"
-import { AgentPlugin } from "@opencode/core/plugin/agent"
-import { AbsolutePath } from "@opencode/core/schema"
-import { Global } from "@opencode/util/global"
+import { Agent } from "@bellucode/core/agent"
+import { Bus } from "@bellucode/core/bus"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { LayerNode } from "@bellucode/util/effect/layer-node"
+import { Location } from "@bellucode/core/location"
+import { Permission } from "@bellucode/core/permission"
+import { AgentPlugin } from "@bellucode/core/plugin/agent"
+import { AbsolutePath } from "@bellucode/core/schema"
+import { Global } from "@bellucode/util/global"
 import { location } from "./fixture/location"
 import { testEffect } from "./lib/effect"
 import { agentHost, host } from "./plugin/host"
 
 const testLocation = location({ directory: AbsolutePath.make("/project") })
 const locationLayer = Layer.succeed(Location.Service, Location.Service.of(testLocation))
-const global = Global.make({ data: "/data", config: "/config", tmp: "/tmp/opencode" })
+const global = Global.make({ data: "/data", config: "/config", tmp: "/tmp/bellucode" })
 const globalLayer = Layer.succeed(Global.Service, Global.Service.of(global))
 
 const it = testEffect(

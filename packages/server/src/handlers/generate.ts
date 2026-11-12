@@ -1,17 +1,17 @@
-import { Generate } from "@opencode/core/generate"
-import { Location } from "@opencode/core/location"
-import { LocationServiceMap } from "@opencode/core/location-services"
-import { AbsolutePath } from "@opencode/core/schema"
+import { Generate } from "@bellucode/core/generate"
+import { Location } from "@bellucode/core/location"
+import { LocationServiceMap } from "@bellucode/core/location-services"
+import { AbsolutePath } from "@bellucode/core/schema"
 import {
   InvalidRequestError,
   ModelNotFoundError,
   ProviderRequestError,
   ServiceUnavailableError,
   UnsupportedModelError,
-} from "@opencode/protocol/errors"
-import type { DecisionRequest, ImageRequest } from "@opencode/schema/generate"
-import { Global } from "@opencode/util/global"
-import { Model } from "@opencode/schema/model"
+} from "@bellucode/protocol/errors"
+import type { DecisionRequest, ImageRequest } from "@bellucode/schema/generate"
+import { Global } from "@bellucode/util/global"
+import { Model } from "@bellucode/schema/model"
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { Api } from "../api"

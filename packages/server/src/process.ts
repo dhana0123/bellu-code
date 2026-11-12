@@ -1,15 +1,15 @@
 export * as ServerProcess from "./process"
 
 import { NodeHttpServer } from "@effect/platform-node"
-import { Bus } from "@opencode/core/bus"
-import { SessionRestart } from "@opencode/core/session/execution/restart"
-import { Schedule } from "@opencode/core/schedule"
-import { InstallationEvent } from "@opencode/schema/installation-event"
-import { hasPtyConnectTicketURL } from "@opencode/protocol/groups/pty"
-import { hasPersistentPtyConnectTicketURL } from "@opencode/protocol/groups/persistent-pty"
-import { hasMcpClientTicketURL } from "@opencode/protocol/groups/mcp"
-import { isPairingConnectURL } from "@opencode/protocol/groups/server"
-import { Global } from "@opencode/util/global"
+import { Bus } from "@bellucode/core/bus"
+import { SessionRestart } from "@bellucode/core/session/execution/restart"
+import { Schedule } from "@bellucode/core/schedule"
+import { InstallationEvent } from "@bellucode/schema/installation-event"
+import { hasPtyConnectTicketURL } from "@bellucode/protocol/groups/pty"
+import { hasPersistentPtyConnectTicketURL } from "@bellucode/protocol/groups/persistent-pty"
+import { hasMcpClientTicketURL } from "@bellucode/protocol/groups/mcp"
+import { isPairingConnectURL } from "@bellucode/protocol/groups/server"
+import { Global } from "@bellucode/util/global"
 import { Cause, Context, Effect, Exit, Latch, Layer, Option, Ref, Scope } from "effect"
 import { HttpMiddleware, HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/http"
 import { NetAddress } from "effect/net"
@@ -115,7 +115,7 @@ export const start = Effect.fn("ServerProcess.start")(function* <E, R>(
         Effect.provideService(Scope.Scope, applicationScope),
       )
     }
-    // Schedules fire from any server process (`service`, `opencode serve`, or `--standalone`); the table holds all their state.
+    // Schedules fire from any server process (`service`, `bellucode serve`, or `--standalone`); the table holds all their state.
     yield* Effect.forkIn(Context.get(context, Schedule.Service).run, applicationScope)
     yield* Ref.set(application, Option.some(Context.get(context, HttpRouter.HttpRouter).asHttpEffect()))
     yield* status.ready
@@ -187,7 +187,7 @@ function dispatch(
   urls: () => ReadonlyArray<string>,
   tmp: string,
 ): App {
-  const auth = ServerAuth.Config.of({ password: Option.some(password), username: "opencode" })
+  const auth = ServerAuth.Config.of({ password: Option.some(password), username: "bellucode" })
   return Effect.gen(function* () {
     const request = yield* HttpServerRequest.HttpServerRequest
     const url = new URL(request.url, "http://localhost")
@@ -232,7 +232,7 @@ function unavailable(status: Status.State) {
       {
         code: "service_failed",
         message: "The background service could not start.",
-        action: "Run `opencode service restart` after checking the service logs.",
+        action: "Run `bellucode service restart` after checking the service logs.",
       },
       { status: 503 },
     )

@@ -75,10 +75,10 @@ func TestGateFailsOnUnpromotedGoRoute(t *testing.T) {
 	_ = http.StatusOK
 }
 
-// Go must never open the TS SQLite store (opencode-local.db compat name); session
+// Go must never open the TS SQLite store (bellucode-local.db compat name); session
 // data comes from the child API.
 func TestNoSQLiteAccess(t *testing.T) {
-	forbidden := regexp.MustCompile(`opencode-local\.db|opencode\.db|mattn/go-sqlite3|modernc\.org/sqlite|crawshaw|zombiezen\.com/go/sqlite|ncruces/go-sqlite3|"database/sql"`)
+	forbidden := regexp.MustCompile(`bellucode-local\.db|bellucode\.db|mattn/go-sqlite3|modernc\.org/sqlite|crawshaw|zombiezen\.com/go/sqlite|ncruces/go-sqlite3|"database/sql"`)
 	root := filepath.Join("..", "..")
 	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {

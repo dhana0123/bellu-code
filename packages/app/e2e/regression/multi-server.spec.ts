@@ -161,7 +161,7 @@ test("a remote session whose server signed the app out asks to sign in again, th
   })
   await seed(page, {
     storage: {
-      "opencode.global.dat:server": {
+      "bellucode.global.dat:server": {
         list: [{ type: "http", http: { url: REMOTE_SERVER, password: "old-password" } }],
       },
     },

@@ -1,8 +1,8 @@
-import type { LocationRef, UsageLimitsInfo } from "@opencode/client/promise"
-import { Button } from "@opencode/ui/button"
-import { useDialog } from "@opencode/ui/context/dialog"
-import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitleGroup } from "@opencode/ui/dialog"
-import { Loader } from "@opencode/ui/loader"
+import type { LocationRef, UsageLimitsInfo } from "@bellucode/client/promise"
+import { Button } from "@bellucode/ui/button"
+import { useDialog } from "@bellucode/ui/context/dialog"
+import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitleGroup } from "@bellucode/ui/dialog"
+import { Loader } from "@bellucode/ui/loader"
 import {
   createEffect,
   createMemo,
@@ -40,7 +40,7 @@ import {
 } from "./machine"
 import "./dialog.css"
 
-/** The Usage dialog: the location's OpenCode Go allowance and Console budgets, refreshed when it opens. */
+/** The Usage dialog: the location's Bellu Code Go allowance and Console budgets, refreshed when it opens. */
 export function DialogUsage(props: {
   location: LocationRef
   /** The model in use, so a per-model budget shows this model's counter. */

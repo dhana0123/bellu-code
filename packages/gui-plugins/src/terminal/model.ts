@@ -6,8 +6,8 @@ import {
   isPtyFeatureUnsupportedError,
   isPtyNotFoundError,
   isServiceUnavailableError,
-} from "@opencode/client"
-import type { Layout, Persisted, ServerRef, SessionRef, Storage, Toasts } from "@opencode/plugin/gui"
+} from "@bellucode/client"
+import type { Layout, Persisted, ServerRef, SessionRef, Storage, Toasts } from "@bellucode/plugin/gui"
 import { createDispatch } from "./dispatch"
 import { defaultTitle, titleNumber } from "./title"
 import {

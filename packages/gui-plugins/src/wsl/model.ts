@@ -1,12 +1,12 @@
 import fuzzysort from "fuzzysort"
-import type { WslInstalledDistro, WslOnlineDistro, WslOpencodeCheck, WslServersState } from "./contract"
+import type { WslInstalledDistro, WslOnlineDistro, WslBellucodeCheck, WslServersState } from "./contract"
 import {
   selectWslDialogAdding,
   selectWslDialogBusy,
   selectWslDialogCatalogSearch,
   selectWslDialogCatalogTarget,
   selectWslDialogInstallingCatalog,
-  selectWslDialogInstallingOpencode,
+  selectWslDialogInstallingBellucode,
   selectWslDialogSelectedDistro,
   selectWslDialogView,
   type WslDialogState,
@@ -28,7 +28,7 @@ export type AddServerPrimaryButton = {
   variant: "neutral" | "contrast"
   label: AddServerText
   disabled: boolean
-  action: "install-opencode" | "add" | null
+  action: "install-bellucode" | "add" | null
   loading: boolean
   width: string | null
 }
@@ -89,7 +89,7 @@ export function addServerViewModel(input: {
     addableInstalledDistros,
   )
 
-  const opencodeCheck = selectedDistro ? (state?.opencodeChecks[selectedDistro] ?? null) : null
+  const bellucodeCheck = selectedDistro ? (state?.bellucodeChecks[selectedDistro] ?? null) : null
   const installableDistros = addServerInstallableDistros(visibleInstalledDistros, visibleOnlineDistros)
   const filteredInstallableDistros = addServerFilteredInstallableDistros(installableDistros, catalogSearch)
   const catalogTarget = addServerCatalogTarget(selectWslDialogCatalogTarget(input.dialog), filteredInstallableDistros)
@@ -106,7 +106,7 @@ export function addServerViewModel(input: {
     visibleOnlineDistros,
     addableInstalledDistros,
     selectedDistro,
-    opencodeCheck,
+    bellucodeCheck,
     wslReady: !!state?.runtime?.available && !state?.pendingRestart,
     distroStatuses: Object.fromEntries(
       addableInstalledDistros.flatMap((item) => {
@@ -120,9 +120,9 @@ export function addServerViewModel(input: {
     primaryButton: addServerPrimaryButton({
       state,
       selectedDistro,
-      opencodeCheck,
+      bellucodeCheck,
       busy: working,
-      installingOpencode: selectWslDialogInstallingOpencode(input.dialog, selectedDistro),
+      installingBellucode: selectWslDialogInstallingBellucode(input.dialog, selectedDistro),
       adding: selectWslDialogAdding(input.dialog),
       probingAddable: input.probingAddable,
     }),
@@ -190,15 +190,15 @@ function addServerDistroStatus(input: {
     return { label: { key: "onboarding.distroStatus.missingTools" }, tone: "warning" }
   }
 
-  const check = input.state?.opencodeChecks[input.name]
+  const check = input.state?.bellucodeChecks[input.name]
 
   if (!check) return probing ? checkingStatus() : undefined
 
-  if (check.matchesDesktop === false) return { label: { key: "onboarding.updateOpencode" }, tone: "warning" }
+  if (check.matchesDesktop === false) return { label: { key: "onboarding.updateBellucode" }, tone: "warning" }
 
-  if (!check.resolvedPath) return { label: { key: "onboarding.distroStatus.opencodeMissing" }, tone: "warning" }
+  if (!check.resolvedPath) return { label: { key: "onboarding.distroStatus.bellucodeMissing" }, tone: "warning" }
 
-  if (check.error) return { label: { key: "onboarding.installOpencode" }, tone: "warning" }
+  if (check.error) return { label: { key: "onboarding.installBellucode" }, tone: "warning" }
 
   return { label: { key: "onboarding.distroStatus.ready" }, tone: "success" }
 }
@@ -210,21 +210,21 @@ function checkingStatus(): DistroStatus {
 function addServerPrimaryButton(input: {
   state: WslServersState | undefined
   selectedDistro: string | null
-  opencodeCheck: WslOpencodeCheck | null
+  bellucodeCheck: WslBellucodeCheck | null
   /** Main runs a job the dialog waits for, or the dialog waits for its own call. */
   busy: boolean
-  /** The dialog asked main to install OpenCode in the selected distro and waits for the answer. */
-  installingOpencode: boolean
+  /** The dialog asked main to install Bellu Code in the selected distro and waits for the answer. */
+  installingBellucode: boolean
   adding: boolean
   probingAddable: boolean
 }): AddServerPrimaryButton {
   const ready = !!input.selectedDistro && wslDistroReady(input.state, input.selectedDistro)
   const probingSelected = input.probingAddable && !addServerSelectedDistroSettled(input.state, input.selectedDistro)
   const job = input.selectedDistro ? input.state?.distroJobs[input.selectedDistro] : undefined
-  const probingOpencode = probingSelected || (ready && (!input.opencodeCheck || job === "probing"))
-  const installingOpencode = job === "updating" || input.installingOpencode
+  const probingBellucode = probingSelected || (ready && (!input.bellucodeCheck || job === "probing"))
+  const installingBellucode = job === "updating" || input.installingBellucode
 
-  if (!ready || probingOpencode) {
+  if (!ready || probingBellucode) {
     return {
       variant: "contrast",
       label: probingSelected ? { key: "onboarding.distroStatus.checking" } : { key: "server.add" },
@@ -235,19 +235,19 @@ function addServerPrimaryButton(input: {
     }
   }
 
-  if (!addServerOpencodeReady(input.opencodeCheck)) {
-    const update = !!input.opencodeCheck?.resolvedPath && input.opencodeCheck.matchesDesktop === false
+  if (!addServerBellucodeReady(input.bellucodeCheck)) {
+    const update = !!input.bellucodeCheck?.resolvedPath && input.bellucodeCheck.matchesDesktop === false
 
     return {
       variant: "neutral",
-      label: installingOpencode
-        ? { key: "onboarding.updatingOpencode" }
+      label: installingBellucode
+        ? { key: "onboarding.updatingBellucode" }
         : update
-          ? { key: "onboarding.updateOpencode" }
-          : { key: "onboarding.installOpencode" },
+          ? { key: "onboarding.updateBellucode" }
+          : { key: "onboarding.installBellucode" },
       disabled: input.busy,
-      action: "install-opencode",
-      loading: installingOpencode,
+      action: "install-bellucode",
+      loading: installingBellucode,
       width: update ? "138px" : "129px",
     }
   }
@@ -262,7 +262,7 @@ function addServerPrimaryButton(input: {
   }
 }
 
-function addServerOpencodeReady(check: WslOpencodeCheck | null) {
+function addServerBellucodeReady(check: WslBellucodeCheck | null) {
   return !!check?.resolvedPath && check.matchesDesktop !== false && !check.error
 }
 
@@ -276,7 +276,7 @@ function addServerSelectedDistroSettled(state: WslServersState | undefined, sele
 
   if (!wslDistroReady(state, selectedDistro)) return true
 
-  return !!state.opencodeChecks[selectedDistro]
+  return !!state.bellucodeChecks[selectedDistro]
 }
 
 function addServerInstallableDistros(installedDistros: WslInstalledDistro[], onlineDistros: WslOnlineDistro[]) {
@@ -328,7 +328,7 @@ function addableProbePlan(input: {
 
     if (!state.distroProbes[item.name]) return [`distro:${item.name}`]
 
-    if (wslDistroReady(state, item.name) && !state.opencodeChecks[item.name]) return [`opencode:${item.name}`]
+    if (wslDistroReady(state, item.name) && !state.bellucodeChecks[item.name]) return [`bellucode:${item.name}`]
 
     return []
   })

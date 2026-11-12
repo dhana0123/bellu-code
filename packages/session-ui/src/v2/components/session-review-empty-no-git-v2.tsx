@@ -1,6 +1,6 @@
-import { FileIcon } from "@opencode/ui/file-icon"
-import { useI18n } from "@opencode/ui/context/i18n"
-import { Button } from "@opencode/ui/button"
+import { FileIcon } from "@bellucode/ui/file-icon"
+import { useI18n } from "@bellucode/ui/context/i18n"
+import { Button } from "@bellucode/ui/button"
 import "./session-review-v2.css"
 
 export type SessionReviewEmptyNoGitV2Props = {

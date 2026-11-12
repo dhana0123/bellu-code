@@ -26,7 +26,7 @@ import type { SearchAction, SearchGroup, SearchItem, SearchResult } from "./sear
 type SearchModule = typeof import("./search-index")
 type Row = { result: SearchResult; group: SearchGroup; query?: string }
 
-const recentKey = "opencode-site-search-recent"
+const recentKey = "bellucode-site-search-recent"
 const listID = "site-search-listbox"
 const optionID = (index: number) => `site-search-option-${index}`
 const groupID = (index: number) => `site-search-group-${index}`
@@ -243,7 +243,7 @@ export function SearchPalette(props: SiteSearchProps & { openOnMount?: SearchVia
       close()
       const link = Object.assign(document.createElement("a"), {
         href: item.href,
-        download: "opencode-brand-assets.zip",
+        download: "bellucode-brand-assets.zip",
       })
       link.click()
       return

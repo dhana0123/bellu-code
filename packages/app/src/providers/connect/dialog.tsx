@@ -1,13 +1,13 @@
-import { Button } from "@opencode/ui/button"
-import { Badge } from "@opencode/ui/badge"
-import { useDialog } from "@opencode/ui/context/dialog"
-import { Icon } from "@opencode/ui/icon"
-import { RadioGroup, RadioItem } from "@opencode/ui/radio"
-import { Checkbox } from "@opencode/ui/checkbox"
-import { Loader } from "@opencode/ui/loader"
-import { TextField } from "@opencode/ui/text-field"
-import { DialogBody, DialogHeader, DialogTitle, DialogTitleGroup, Dialog } from "@opencode/ui/dialog"
-import { TextInput } from "@opencode/ui/text-input"
+import { Button } from "@bellucode/ui/button"
+import { Badge } from "@bellucode/ui/badge"
+import { useDialog } from "@bellucode/ui/context/dialog"
+import { Icon } from "@bellucode/ui/icon"
+import { RadioGroup, RadioItem } from "@bellucode/ui/radio"
+import { Checkbox } from "@bellucode/ui/checkbox"
+import { Loader } from "@bellucode/ui/loader"
+import { TextField } from "@bellucode/ui/text-field"
+import { DialogBody, DialogHeader, DialogTitle, DialogTitleGroup, Dialog } from "@bellucode/ui/dialog"
+import { TextInput } from "@bellucode/ui/text-input"
 import { type Component, createMemo, createUniqueId, For, type JSX, Match, onMount, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useParams } from "@solidjs/router"
@@ -23,7 +23,7 @@ import { SettingsList } from "@/settings/list"
 import { Persist, persisted } from "@/runtime/persistence/storage"
 import { Persistence } from "@/runtime/persistence/schema"
 import { Schema } from "effect"
-import type { FormField, IntegrationInfo } from "@opencode/client/promise"
+import type { FormField, IntegrationInfo } from "@bellucode/client/promise"
 import { createProviderDialogController, modelKey } from "./controller"
 import { CONSOLE_INTEGRATION, type ProviderDialogBody, type ProviderDialogFrame } from "./dialog-machine"
 import { connectMethods, selectProviderConnectView, type ProviderConnectMethod } from "./machine"
@@ -33,8 +33,8 @@ import { DialogChatGPTPlanWelcome } from "./chatgpt-welcome"
 import { authServerName, RemoteAuthNotice } from "./remote"
 import { providerAccounts } from "@/settings/providers/accounts"
 import { AccountNameInput } from "@/settings/providers/account-name"
-import { IconButton } from "@opencode/ui/icon-button"
-import { Menu } from "@opencode/ui/menu"
+import { IconButton } from "@bellucode/ui/icon-button"
+import { Menu } from "@bellucode/ui/menu"
 import "@/shell/search-list.css"
 import "./models.css"
 
@@ -105,17 +105,17 @@ export const DialogConnectProvider: Component<{
     const name = controller.providerName()
     const kind = view().title
 
-    if (kind === "console-error") return language.t("provider.connect.opencode.errorTitle")
+    if (kind === "console-error") return language.t("provider.connect.bellucode.errorTitle")
 
     if (kind === "console-sign-in")
       return language.t(
-        view().provider === "opencode-go" ? "provider.connect.console.titleGo" : "provider.connect.console.title",
+        view().provider === "bellucode-go" ? "provider.connect.console.titleGo" : "provider.connect.console.title",
       )
 
     if (kind === "anthropic-max") return language.t("provider.connect.title.anthropicProMax")
 
     return language.t("provider.connect.title", {
-      provider: consoleSelected() ? language.t("provider.connect.opencode.name") : name,
+      provider: consoleSelected() ? language.t("provider.connect.bellucode.name") : name,
     })
   }
 
@@ -231,7 +231,7 @@ export const DialogConnectProvider: Component<{
 const CLAUDE_CODE_SETUP_URL = "https://code.claude.com/docs/en/setup"
 
 // The TUI's integration groups and order, with connected integrations pulled up into their own group first.
-const POPULAR = ["opencode", "opencode-go", "openai", "github-copilot", "anthropic", "google"]
+const POPULAR = ["bellucode", "bellucode-go", "openai", "github-copilot", "anthropic", "google"]
 
 function ProviderPicker(props: { directory?: string; onSelect: (provider: string) => void; onPrepare?: () => void }) {
   const integrations = useIntegrations(() => props.directory)

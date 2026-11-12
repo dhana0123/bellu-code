@@ -8,41 +8,41 @@ import {
   Message,
   ToolDefinition,
   type LLMRequest,
-} from "@opencode/ai/effect"
-import { OpenAIChat } from "@opencode/ai/protocols"
-import { Database } from "@opencode/core/database/database"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { llmClient } from "@opencode/core/effect/app-node-platform"
-import { LayerNode } from "@opencode/util/effect/layer-node"
-import { Bus } from "@opencode/core/bus"
-import { EventTable } from "@opencode/core/event/sql"
-import { Instructions } from "@opencode/core/instructions/index"
-import { SessionCompaction } from "@opencode/core/session/compaction"
-import type { SessionContext } from "@opencode/core/session/context"
-import { MessageDecodeError } from "@opencode/core/session/error"
-import { SessionEvent } from "@opencode/core/session/event"
-import { SessionHistory } from "@opencode/core/session/history"
-import { SessionMessage } from "@opencode/core/session/message"
-import { SessionModelRequest } from "@opencode/core/session/model-request"
-import { PluginHooks } from "@opencode/core/plugin/hooks"
-import { Token } from "@opencode/core/util/token"
-import { SessionProjector } from "@opencode/core/session/projector"
-import { SessionRunnerModel } from "@opencode/core/session/runner/model"
-import { toLLMMessages } from "@opencode/core/session/runner/to-llm-message"
-import { SessionMessageTable, SessionTable } from "@opencode/core/session/sql"
-import { SessionStore } from "@opencode/core/session/store"
-import { Session } from "@opencode/core/session"
-import { Location } from "@opencode/core/location"
-import { Project } from "@opencode/core/project"
-import { ProjectTable } from "@opencode/core/project/sql"
-import { App } from "@opencode/core/app"
-import { Agent } from "@opencode/core/agent"
-import { Model } from "@opencode/core/model"
-import { Provider } from "@opencode/core/provider"
-import { AbsolutePath } from "@opencode/core/schema"
-import { Money } from "@opencode/schema/money"
-import { Skill } from "@opencode/schema/skill"
-import { Shell } from "@opencode/schema/shell"
+} from "@bellucode/ai/effect"
+import { OpenAIChat } from "@bellucode/ai/protocols"
+import { Database } from "@bellucode/core/database/database"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { llmClient } from "@bellucode/core/effect/app-node-platform"
+import { LayerNode } from "@bellucode/util/effect/layer-node"
+import { Bus } from "@bellucode/core/bus"
+import { EventTable } from "@bellucode/core/event/sql"
+import { Instructions } from "@bellucode/core/instructions/index"
+import { SessionCompaction } from "@bellucode/core/session/compaction"
+import type { SessionContext } from "@bellucode/core/session/context"
+import { MessageDecodeError } from "@bellucode/core/session/error"
+import { SessionEvent } from "@bellucode/core/session/event"
+import { SessionHistory } from "@bellucode/core/session/history"
+import { SessionMessage } from "@bellucode/core/session/message"
+import { SessionModelRequest } from "@bellucode/core/session/model-request"
+import { PluginHooks } from "@bellucode/core/plugin/hooks"
+import { Token } from "@bellucode/core/util/token"
+import { SessionProjector } from "@bellucode/core/session/projector"
+import { SessionRunnerModel } from "@bellucode/core/session/runner/model"
+import { toLLMMessages } from "@bellucode/core/session/runner/to-llm-message"
+import { SessionMessageTable, SessionTable } from "@bellucode/core/session/sql"
+import { SessionStore } from "@bellucode/core/session/store"
+import { Session } from "@bellucode/core/session"
+import { Location } from "@bellucode/core/location"
+import { Project } from "@bellucode/core/project"
+import { ProjectTable } from "@bellucode/core/project/sql"
+import { App } from "@bellucode/core/app"
+import { Agent } from "@bellucode/core/agent"
+import { Model } from "@bellucode/core/model"
+import { Provider } from "@bellucode/core/provider"
+import { AbsolutePath } from "@bellucode/core/schema"
+import { Money } from "@bellucode/schema/money"
+import { Skill } from "@bellucode/schema/skill"
+import { Shell } from "@bellucode/schema/shell"
 import { DateTime, Deferred, Effect, Fiber, Layer, Schema, Stream } from "effect"
 import { TestClock } from "effect/testing"
 import { asc, eq, inArray, sql } from "drizzle-orm"
@@ -713,15 +713,15 @@ it.effect("manual compaction summarizes short context instead of no-op", () =>
     expect(requests).toHaveLength(1)
     expect(requests[0]?.promptCacheKey).toBe(parentID)
     expect(requests[0]?.headers).toEqual({
-      "x-opencode-session-id": session.id,
-      "x-opencode-parent-session-id": parentID,
+      "x-bellucode-session-id": session.id,
+      "x-bellucode-parent-session-id": parentID,
       "x-session-affinity": parentID,
       "X-Session-Id": parentID,
       "x-parent-session-id": parentID,
       "User-Agent": App.useragent(App.make()),
-      "x-opencode-project": Project.ID.global,
-      "x-opencode-session": parentID,
-      "x-opencode-client": "opencode",
+      "x-bellucode-project": Project.ID.global,
+      "x-bellucode-session": parentID,
+      "x-bellucode-client": "bellucode",
     })
     expect(requests[0]?.maxTokens).toBe(30_000)
     expect(JSON.stringify(requests[0]?.messages)).toContain("Manual compaction should include this short conversation.")

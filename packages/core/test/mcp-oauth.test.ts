@@ -1,13 +1,13 @@
 import { afterAll, describe, expect, test } from "bun:test"
 import { auth, OAuthError, refreshAuthorization, type FetchLike } from "@modelcontextprotocol/client"
 import path from "path"
-import { ConfigMCP } from "@opencode/schema/config/mcp"
-import { Credential } from "@opencode/core/credential"
-import { Database } from "@opencode/core/database/database"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { Integration } from "@opencode/core/integration"
-import { McpClient } from "@opencode/core/mcp/client"
-import { McpOAuth } from "@opencode/core/mcp/oauth"
+import { ConfigMCP } from "@bellucode/schema/config/mcp"
+import { Credential } from "@bellucode/core/credential"
+import { Database } from "@bellucode/core/database/database"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { Integration } from "@bellucode/core/integration"
+import { McpClient } from "@bellucode/core/mcp/client"
+import { McpOAuth } from "@bellucode/core/mcp/oauth"
 import { Cause, Effect, Exit, ManagedRuntime } from "effect"
 import { hostEnvironmentLayer } from "./fixture/environment"
 import { tmpdir } from "./fixture/tmpdir"
@@ -658,7 +658,7 @@ describe("MCP OAuth", () => {
       expect(url.searchParams.get("client_id")).toBe("registered")
       expect(registrations).toHaveLength(1)
       expect(registrations[0]).toMatchObject({
-        client_name: "opencode",
+        client_name: "bellucode",
         client_uri: "https://opencode.ai",
         logo_uri: "https://opencode.ai/web-app-manifest-512x512.png",
       })
@@ -747,7 +747,7 @@ describe("MCP OAuth refresh across processes", () => {
 
   const setup = async (url: string) => {
     const tmp = await tmpdir()
-    const file = path.join(tmp.path, "opencode.db")
+    const file = path.join(tmp.path, "bellucode.db")
     const first = instance(file)
     const second = instance(file)
     await first.runPromise(

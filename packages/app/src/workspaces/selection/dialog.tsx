@@ -1,24 +1,24 @@
 import "@pierre/trees/web-components"
 import { FileTree } from "@pierre/trees"
-import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitle } from "@opencode/ui/dialog"
-import { Button } from "@opencode/ui/button"
-import { Divider } from "@opencode/ui/divider"
+import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitle } from "@bellucode/ui/dialog"
+import { Button } from "@bellucode/ui/button"
+import { Divider } from "@bellucode/ui/divider"
 import {
   displayName,
   getProjectAvatarSource,
   getProjectAvatarVariant,
   ProjectAvatar,
-} from "@opencode/ui/project-avatar"
-import { TextInput } from "@opencode/ui/text-input"
-import { Tooltip } from "@opencode/ui/tooltip"
-import { useDialog } from "@opencode/ui/context/dialog"
+} from "@bellucode/ui/project-avatar"
+import { TextInput } from "@bellucode/ui/text-input"
+import { Tooltip } from "@bellucode/ui/tooltip"
+import { useDialog } from "@bellucode/ui/context/dialog"
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show, untrack } from "solid-js"
 import { useServer } from "@/runtime/server/current"
 import { inferHomeDirectory } from "@/runtime/server/global-sync/bootstrap"
 import { useLanguage } from "@/runtime/i18n/language"
 import { ServerConnection, serverName, useServers } from "@/runtime/server/registry"
 import { pathKey } from "@/workspaces/path-key"
-import type { LocationRef } from "@opencode/client/promise"
+import type { LocationRef } from "@bellucode/client/promise"
 import {
   absoluteTreePath,
   canonicalPickerPath,

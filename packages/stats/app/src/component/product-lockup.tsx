@@ -1,10 +1,10 @@
 import "./product-lockup.css"
-import "@opencode/nav-menus/nav-menus.css"
-import { installNavMenus } from "@opencode/nav-menus"
+import "@bellucode/nav-menus/nav-menus.css"
+import { installNavMenus } from "@bellucode/nav-menus"
 import { onCleanup, onMount } from "solid-js"
 
 /**
- * The OpenCode lockup, as on opencode.ai and the Console: the OpenCode mark, linking to the site's home (right-click
+ * The Bellu Code lockup, as on opencode.ai and the Console: the Bellu Code mark, linking to the site's home (right-click
  * for the logo menu), then DATA, linking to the Data home (hover, or its chevron on touch screens, for the product
  * menu). The menus are the shared ones in packages/nav-menus.
  */

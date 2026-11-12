@@ -1,6 +1,6 @@
-import type { FileDiffInfo } from "@opencode/client/promise"
-import type { ChangeKind } from "@opencode/plugin/gui/review"
-import { artifactKind } from "@opencode/util/artifact"
+import type { FileDiffInfo } from "@bellucode/client/promise"
+import type { ChangeKind } from "@bellucode/plugin/gui/review"
+import { artifactKind } from "@bellucode/util/artifact"
 import { Match, Predicate } from "effect"
 
 export type RenderDiff = FileDiffInfo

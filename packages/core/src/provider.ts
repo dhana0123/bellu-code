@@ -1,19 +1,19 @@
 export * as Provider from "./provider.js"
 
 import { Context, Effect, Layer, Option, Schema, Stream, Struct } from "effect"
-import { Provider } from "@opencode/schema/provider"
-import { Model } from "@opencode/schema/model"
-import { makeLocationNode } from "@opencode/util/effect/app-node"
-import { HttpTimeout, type ProviderPackage } from "@opencode/ai/effect"
-import { isRecord } from "@opencode/util/record"
-import { Npm } from "@opencode/util/npm"
+import { Provider } from "@bellucode/schema/provider"
+import { Model } from "@bellucode/schema/model"
+import { makeLocationNode } from "@bellucode/util/effect/app-node"
+import { HttpTimeout, type ProviderPackage } from "@bellucode/ai/effect"
+import { isRecord } from "@bellucode/util/record"
+import { Npm } from "@bellucode/util/npm"
 import type { DeepMutable } from "./schema.js"
-import { importModule, resolveModule } from "@opencode/util/runtime-import"
+import { importModule, resolveModule } from "@bellucode/util/runtime-import"
 import { Bus } from "./bus.js"
 import { Integration } from "./integration.js"
 import { State } from "./state.js"
 import { IntegrationConnection } from "./integration/connection.js"
-import { Credential } from "@opencode/schema/credential"
+import { Credential } from "@bellucode/schema/credential"
 import { Location } from "./location.js"
 import { freeze } from "immer"
 import { AISDKNative } from "./aisdk-native.js"
@@ -29,7 +29,7 @@ export function packageName(value: undefined): undefined
 export function packageName(value: string | undefined): string | undefined
 export function packageName(value: string | undefined) {
   // Native provider entrypoints can persist in user configuration across the npm scope migration.
-  if (value?.startsWith("@opencode-ai/ai/")) return value.replace("@opencode-ai/", "@opencode/")
+  if (value?.startsWith("@opencode-ai/ai/")) return value.replace("@opencode-ai/", "@bellucode/")
   if (value === undefined || !isAISDK(value)) return value
   return value.slice(AISDK_PREFIX.length)
 }
@@ -45,142 +45,142 @@ export class LoadError extends Schema.TaggedError<LoadError>()("Provider.LoadErr
 
 const packages = new Map<string, Promise<unknown>>()
 const builtins = new Map<string, () => Promise<unknown>>([
-  ["@opencode/ai/providers/alibaba", () => import("@opencode/ai/providers/alibaba")],
-  ["@opencode/ai/providers/alibaba/chat", () => import("@opencode/ai/providers/alibaba/chat")],
-  ["@opencode/ai/providers/alibaba/messages", () => import("@opencode/ai/providers/alibaba/messages")],
-  ["@opencode/ai/providers/alibaba/responses", () => import("@opencode/ai/providers/alibaba/responses")],
-  ["@opencode/ai/providers/alibaba/images", () => import("@opencode/ai/providers/alibaba/images")],
-  ["@opencode/ai/providers/amazon-bedrock", () => import("@opencode/ai/providers/amazon-bedrock")],
-  ["@opencode/ai/providers/amazon-bedrock/mantle", () => import("@opencode/ai/providers/amazon-bedrock/mantle")],
+  ["@bellucode/ai/providers/alibaba", () => import("@bellucode/ai/providers/alibaba")],
+  ["@bellucode/ai/providers/alibaba/chat", () => import("@bellucode/ai/providers/alibaba/chat")],
+  ["@bellucode/ai/providers/alibaba/messages", () => import("@bellucode/ai/providers/alibaba/messages")],
+  ["@bellucode/ai/providers/alibaba/responses", () => import("@bellucode/ai/providers/alibaba/responses")],
+  ["@bellucode/ai/providers/alibaba/images", () => import("@bellucode/ai/providers/alibaba/images")],
+  ["@bellucode/ai/providers/amazon-bedrock", () => import("@bellucode/ai/providers/amazon-bedrock")],
+  ["@bellucode/ai/providers/amazon-bedrock/mantle", () => import("@bellucode/ai/providers/amazon-bedrock/mantle")],
   [
-    "@opencode/ai/providers/amazon-bedrock/mantle/chat",
-    () => import("@opencode/ai/providers/amazon-bedrock/mantle/chat"),
+    "@bellucode/ai/providers/amazon-bedrock/mantle/chat",
+    () => import("@bellucode/ai/providers/amazon-bedrock/mantle/chat"),
   ],
   [
-    "@opencode/ai/providers/amazon-bedrock/mantle/messages",
-    () => import("@opencode/ai/providers/amazon-bedrock/mantle/messages"),
+    "@bellucode/ai/providers/amazon-bedrock/mantle/messages",
+    () => import("@bellucode/ai/providers/amazon-bedrock/mantle/messages"),
   ],
   [
-    "@opencode/ai/providers/amazon-bedrock/mantle/responses",
-    () => import("@opencode/ai/providers/amazon-bedrock/mantle/responses"),
+    "@bellucode/ai/providers/amazon-bedrock/mantle/responses",
+    () => import("@bellucode/ai/providers/amazon-bedrock/mantle/responses"),
   ],
-  ["@opencode/ai/providers/anthropic", () => import("@opencode/ai/providers/anthropic")],
-  ["@opencode/ai/providers/anthropic-compatible", () => import("@opencode/ai/providers/anthropic-compatible")],
-  ["@opencode/ai/providers/azure", () => import("@opencode/ai/providers/azure")],
-  ["@opencode/ai/providers/azure/chat", () => import("@opencode/ai/providers/azure/chat")],
-  ["@opencode/ai/providers/azure/responses", () => import("@opencode/ai/providers/azure/responses")],
-  ["@opencode/ai/providers/azure/images", () => import("@opencode/ai/providers/azure/images")],
-  ["@opencode/ai/providers/azure/messages", () => import("@opencode/ai/providers/azure/messages")],
-  ["@opencode/ai/providers/baseten", () => import("@opencode/ai/providers/baseten")],
-  ["@opencode/ai/providers/baseten/decisions", () => import("@opencode/ai/providers/baseten/decisions")],
-  ["@opencode/ai/providers/cerebras", () => import("@opencode/ai/providers/cerebras")],
-  ["@opencode/ai/providers/cloudflare-ai-gateway", () => import("@opencode/ai/providers/cloudflare-ai-gateway")],
+  ["@bellucode/ai/providers/anthropic", () => import("@bellucode/ai/providers/anthropic")],
+  ["@bellucode/ai/providers/anthropic-compatible", () => import("@bellucode/ai/providers/anthropic-compatible")],
+  ["@bellucode/ai/providers/azure", () => import("@bellucode/ai/providers/azure")],
+  ["@bellucode/ai/providers/azure/chat", () => import("@bellucode/ai/providers/azure/chat")],
+  ["@bellucode/ai/providers/azure/responses", () => import("@bellucode/ai/providers/azure/responses")],
+  ["@bellucode/ai/providers/azure/images", () => import("@bellucode/ai/providers/azure/images")],
+  ["@bellucode/ai/providers/azure/messages", () => import("@bellucode/ai/providers/azure/messages")],
+  ["@bellucode/ai/providers/baseten", () => import("@bellucode/ai/providers/baseten")],
+  ["@bellucode/ai/providers/baseten/decisions", () => import("@bellucode/ai/providers/baseten/decisions")],
+  ["@bellucode/ai/providers/cerebras", () => import("@bellucode/ai/providers/cerebras")],
+  ["@bellucode/ai/providers/cloudflare-ai-gateway", () => import("@bellucode/ai/providers/cloudflare-ai-gateway")],
   [
-    "@opencode/ai/providers/cloudflare-ai-gateway/decisions",
-    () => import("@opencode/ai/providers/cloudflare-ai-gateway/decisions"),
+    "@bellucode/ai/providers/cloudflare-ai-gateway/decisions",
+    () => import("@bellucode/ai/providers/cloudflare-ai-gateway/decisions"),
   ],
-  ["@opencode/ai/providers/cloudflare-workers-ai", () => import("@opencode/ai/providers/cloudflare-workers-ai")],
+  ["@bellucode/ai/providers/cloudflare-workers-ai", () => import("@bellucode/ai/providers/cloudflare-workers-ai")],
   [
-    "@opencode/ai/providers/cloudflare-workers-ai/decisions",
-    () => import("@opencode/ai/providers/cloudflare-workers-ai/decisions"),
-  ],
-  [
-    "@opencode/ai/providers/cloudflare-workers-ai/images",
-    () => import("@opencode/ai/providers/cloudflare-workers-ai/images"),
-  ],
-  ["@opencode/ai/providers/cohere", () => import("@opencode/ai/providers/cohere")],
-  ["@opencode/ai/providers/cohere/chat", () => import("@opencode/ai/providers/cohere/chat")],
-  ["@opencode/ai/providers/deepinfra", () => import("@opencode/ai/providers/deepinfra")],
-  ["@opencode/ai/providers/deepseek", () => import("@opencode/ai/providers/deepseek")],
-  ["@opencode/ai/providers/digitalocean", () => import("@opencode/ai/providers/digitalocean")],
-  ["@opencode/ai/providers/digitalocean/decisions", () => import("@opencode/ai/providers/digitalocean/decisions")],
-  ["@opencode/ai/providers/digitalocean/images", () => import("@opencode/ai/providers/digitalocean/images")],
-  ["@opencode/ai/providers/digitalocean/responses", () => import("@opencode/ai/providers/digitalocean/responses")],
-  ["@opencode/ai/providers/fireworks", () => import("@opencode/ai/providers/fireworks")],
-  ["@opencode/ai/providers/google", () => import("@opencode/ai/providers/google")],
-  ["@opencode/ai/providers/google/interactions", () => import("@opencode/ai/providers/google/interactions")],
-  ["@opencode/ai/providers/google/images", () => import("@opencode/ai/providers/google/images")],
-  ["@opencode/ai/providers/google-vertex", () => import("@opencode/ai/providers/google-vertex")],
-  ["@opencode/ai/providers/google-vertex/chat", () => import("@opencode/ai/providers/google-vertex/chat")],
-  ["@opencode/ai/providers/google-vertex/gemini", () => import("@opencode/ai/providers/google-vertex/gemini")],
-  [
-    "@opencode/ai/providers/google-vertex/interactions",
-    () => import("@opencode/ai/providers/google-vertex/interactions"),
-  ],
-  ["@opencode/ai/providers/google-vertex/messages", () => import("@opencode/ai/providers/google-vertex/messages")],
-  ["@opencode/ai/providers/google-vertex/mistral", () => import("@opencode/ai/providers/google-vertex/mistral")],
-  ["@opencode/ai/providers/google-vertex/responses", () => import("@opencode/ai/providers/google-vertex/responses")],
-  ["@opencode/ai/providers/google-vertex/images", () => import("@opencode/ai/providers/google-vertex/images")],
-  ["@opencode/ai/providers/google-vertex-messages", () => import("@opencode/ai/providers/google-vertex-messages")],
-  ["@opencode/ai/providers/groq", () => import("@opencode/ai/providers/groq")],
-  ["@opencode/ai/providers/meta", () => import("@opencode/ai/providers/meta")],
-  ["@opencode/ai/providers/meta/chat", () => import("@opencode/ai/providers/meta/chat")],
-  ["@opencode/ai/providers/meta/images", () => import("@opencode/ai/providers/meta/images")],
-  ["@opencode/ai/providers/meta/messages", () => import("@opencode/ai/providers/meta/messages")],
-  ["@opencode/ai/providers/meta/responses", () => import("@opencode/ai/providers/meta/responses")],
-  ["@opencode/ai/providers/minimax", () => import("@opencode/ai/providers/minimax")],
-  ["@opencode/ai/providers/minimax/chat", () => import("@opencode/ai/providers/minimax/chat")],
-  ["@opencode/ai/providers/minimax/images", () => import("@opencode/ai/providers/minimax/images")],
-  ["@opencode/ai/providers/minimax/messages", () => import("@opencode/ai/providers/minimax/messages")],
-  ["@opencode/ai/providers/minimax/responses", () => import("@opencode/ai/providers/minimax/responses")],
-  ["@opencode/ai/providers/mistral", () => import("@opencode/ai/providers/mistral")],
-  ["@opencode/ai/providers/moonshot", () => import("@opencode/ai/providers/moonshot")],
-  ["@opencode/ai/providers/moonshot/chat", () => import("@opencode/ai/providers/moonshot/chat")],
-  ["@opencode/ai/providers/moonshot/messages", () => import("@opencode/ai/providers/moonshot/messages")],
-  ["@opencode/ai/providers/moonshot/responses", () => import("@opencode/ai/providers/moonshot/responses")],
-  ["@opencode/ai/providers/openai", () => import("@opencode/ai/providers/openai")],
-  ["@opencode/ai/providers/openai/chat", () => import("@opencode/ai/providers/openai/chat")],
-  ["@opencode/ai/providers/openai/responses", () => import("@opencode/ai/providers/openai/responses")],
-  ["@opencode/ai/providers/openai/images", () => import("@opencode/ai/providers/openai/images")],
-  ["@opencode/ai/providers/openai-compatible", () => import("@opencode/ai/providers/openai-compatible")],
-  [
-    "@opencode/ai/providers/openai-compatible/responses",
-    () => import("@opencode/ai/providers/openai-compatible/responses"),
-  ],
-  ["@opencode/ai/providers/openai-compatible/images", () => import("@opencode/ai/providers/openai-compatible/images")],
-  [
-    "@opencode/ai/providers/openai-compatible-responses",
-    () => import("@opencode/ai/providers/openai-compatible-responses"),
-  ],
-  ["@opencode/ai/providers/opencode/decisions", () => import("@opencode/ai/providers/opencode/decisions")],
-  ["@opencode/ai/providers/openrouter", () => import("@opencode/ai/providers/openrouter")],
-  ["@opencode/ai/providers/openrouter/decisions", () => import("@opencode/ai/providers/openrouter/decisions")],
-  ["@opencode/ai/providers/openrouter/images", () => import("@opencode/ai/providers/openrouter/images")],
-  ["@opencode/ai/providers/openrouter/responses", () => import("@opencode/ai/providers/openrouter/responses")],
-  ["@opencode/ai/providers/togetherai", () => import("@opencode/ai/providers/togetherai")],
-  ["@opencode/ai/providers/typesafe-ai/decisions", () => import("@opencode/ai/providers/typesafe-ai/decisions")],
-  ["@opencode/ai/providers/venice", () => import("@opencode/ai/providers/venice")],
-  ["@opencode/ai/providers/venice/responses", () => import("@opencode/ai/providers/venice/responses")],
-  ["@opencode/ai/providers/vercel-ai-gateway", () => import("@opencode/ai/providers/vercel-ai-gateway")],
-  ["@opencode/ai/providers/vercel-ai-gateway/chat", () => import("@opencode/ai/providers/vercel-ai-gateway/chat")],
-  [
-    "@opencode/ai/providers/vercel-ai-gateway/messages",
-    () => import("@opencode/ai/providers/vercel-ai-gateway/messages"),
+    "@bellucode/ai/providers/cloudflare-workers-ai/decisions",
+    () => import("@bellucode/ai/providers/cloudflare-workers-ai/decisions"),
   ],
   [
-    "@opencode/ai/providers/vercel-ai-gateway/responses",
-    () => import("@opencode/ai/providers/vercel-ai-gateway/responses"),
+    "@bellucode/ai/providers/cloudflare-workers-ai/images",
+    () => import("@bellucode/ai/providers/cloudflare-workers-ai/images"),
+  ],
+  ["@bellucode/ai/providers/cohere", () => import("@bellucode/ai/providers/cohere")],
+  ["@bellucode/ai/providers/cohere/chat", () => import("@bellucode/ai/providers/cohere/chat")],
+  ["@bellucode/ai/providers/deepinfra", () => import("@bellucode/ai/providers/deepinfra")],
+  ["@bellucode/ai/providers/deepseek", () => import("@bellucode/ai/providers/deepseek")],
+  ["@bellucode/ai/providers/digitalocean", () => import("@bellucode/ai/providers/digitalocean")],
+  ["@bellucode/ai/providers/digitalocean/decisions", () => import("@bellucode/ai/providers/digitalocean/decisions")],
+  ["@bellucode/ai/providers/digitalocean/images", () => import("@bellucode/ai/providers/digitalocean/images")],
+  ["@bellucode/ai/providers/digitalocean/responses", () => import("@bellucode/ai/providers/digitalocean/responses")],
+  ["@bellucode/ai/providers/fireworks", () => import("@bellucode/ai/providers/fireworks")],
+  ["@bellucode/ai/providers/google", () => import("@bellucode/ai/providers/google")],
+  ["@bellucode/ai/providers/google/interactions", () => import("@bellucode/ai/providers/google/interactions")],
+  ["@bellucode/ai/providers/google/images", () => import("@bellucode/ai/providers/google/images")],
+  ["@bellucode/ai/providers/google-vertex", () => import("@bellucode/ai/providers/google-vertex")],
+  ["@bellucode/ai/providers/google-vertex/chat", () => import("@bellucode/ai/providers/google-vertex/chat")],
+  ["@bellucode/ai/providers/google-vertex/gemini", () => import("@bellucode/ai/providers/google-vertex/gemini")],
+  [
+    "@bellucode/ai/providers/google-vertex/interactions",
+    () => import("@bellucode/ai/providers/google-vertex/interactions"),
+  ],
+  ["@bellucode/ai/providers/google-vertex/messages", () => import("@bellucode/ai/providers/google-vertex/messages")],
+  ["@bellucode/ai/providers/google-vertex/mistral", () => import("@bellucode/ai/providers/google-vertex/mistral")],
+  ["@bellucode/ai/providers/google-vertex/responses", () => import("@bellucode/ai/providers/google-vertex/responses")],
+  ["@bellucode/ai/providers/google-vertex/images", () => import("@bellucode/ai/providers/google-vertex/images")],
+  ["@bellucode/ai/providers/google-vertex-messages", () => import("@bellucode/ai/providers/google-vertex-messages")],
+  ["@bellucode/ai/providers/groq", () => import("@bellucode/ai/providers/groq")],
+  ["@bellucode/ai/providers/meta", () => import("@bellucode/ai/providers/meta")],
+  ["@bellucode/ai/providers/meta/chat", () => import("@bellucode/ai/providers/meta/chat")],
+  ["@bellucode/ai/providers/meta/images", () => import("@bellucode/ai/providers/meta/images")],
+  ["@bellucode/ai/providers/meta/messages", () => import("@bellucode/ai/providers/meta/messages")],
+  ["@bellucode/ai/providers/meta/responses", () => import("@bellucode/ai/providers/meta/responses")],
+  ["@bellucode/ai/providers/minimax", () => import("@bellucode/ai/providers/minimax")],
+  ["@bellucode/ai/providers/minimax/chat", () => import("@bellucode/ai/providers/minimax/chat")],
+  ["@bellucode/ai/providers/minimax/images", () => import("@bellucode/ai/providers/minimax/images")],
+  ["@bellucode/ai/providers/minimax/messages", () => import("@bellucode/ai/providers/minimax/messages")],
+  ["@bellucode/ai/providers/minimax/responses", () => import("@bellucode/ai/providers/minimax/responses")],
+  ["@bellucode/ai/providers/mistral", () => import("@bellucode/ai/providers/mistral")],
+  ["@bellucode/ai/providers/moonshot", () => import("@bellucode/ai/providers/moonshot")],
+  ["@bellucode/ai/providers/moonshot/chat", () => import("@bellucode/ai/providers/moonshot/chat")],
+  ["@bellucode/ai/providers/moonshot/messages", () => import("@bellucode/ai/providers/moonshot/messages")],
+  ["@bellucode/ai/providers/moonshot/responses", () => import("@bellucode/ai/providers/moonshot/responses")],
+  ["@bellucode/ai/providers/openai", () => import("@bellucode/ai/providers/openai")],
+  ["@bellucode/ai/providers/openai/chat", () => import("@bellucode/ai/providers/openai/chat")],
+  ["@bellucode/ai/providers/openai/responses", () => import("@bellucode/ai/providers/openai/responses")],
+  ["@bellucode/ai/providers/openai/images", () => import("@bellucode/ai/providers/openai/images")],
+  ["@bellucode/ai/providers/openai-compatible", () => import("@bellucode/ai/providers/openai-compatible")],
+  [
+    "@bellucode/ai/providers/openai-compatible/responses",
+    () => import("@bellucode/ai/providers/openai-compatible/responses"),
+  ],
+  ["@bellucode/ai/providers/openai-compatible/images", () => import("@bellucode/ai/providers/openai-compatible/images")],
+  [
+    "@bellucode/ai/providers/openai-compatible-responses",
+    () => import("@bellucode/ai/providers/openai-compatible-responses"),
+  ],
+  ["@bellucode/ai/providers/bellucode/decisions", () => import("@bellucode/ai/providers/bellucode/decisions")],
+  ["@bellucode/ai/providers/openrouter", () => import("@bellucode/ai/providers/openrouter")],
+  ["@bellucode/ai/providers/openrouter/decisions", () => import("@bellucode/ai/providers/openrouter/decisions")],
+  ["@bellucode/ai/providers/openrouter/images", () => import("@bellucode/ai/providers/openrouter/images")],
+  ["@bellucode/ai/providers/openrouter/responses", () => import("@bellucode/ai/providers/openrouter/responses")],
+  ["@bellucode/ai/providers/togetherai", () => import("@bellucode/ai/providers/togetherai")],
+  ["@bellucode/ai/providers/typesafe-ai/decisions", () => import("@bellucode/ai/providers/typesafe-ai/decisions")],
+  ["@bellucode/ai/providers/venice", () => import("@bellucode/ai/providers/venice")],
+  ["@bellucode/ai/providers/venice/responses", () => import("@bellucode/ai/providers/venice/responses")],
+  ["@bellucode/ai/providers/vercel-ai-gateway", () => import("@bellucode/ai/providers/vercel-ai-gateway")],
+  ["@bellucode/ai/providers/vercel-ai-gateway/chat", () => import("@bellucode/ai/providers/vercel-ai-gateway/chat")],
+  [
+    "@bellucode/ai/providers/vercel-ai-gateway/messages",
+    () => import("@bellucode/ai/providers/vercel-ai-gateway/messages"),
   ],
   [
-    "@opencode/ai/providers/vercel-ai-gateway/decisions",
-    () => import("@opencode/ai/providers/vercel-ai-gateway/decisions"),
+    "@bellucode/ai/providers/vercel-ai-gateway/responses",
+    () => import("@bellucode/ai/providers/vercel-ai-gateway/responses"),
   ],
-  ["@opencode/ai/providers/vercel-ai-gateway/images", () => import("@opencode/ai/providers/vercel-ai-gateway/images")],
-  ["@opencode/ai/providers/xai", () => import("@opencode/ai/providers/xai")],
-  ["@opencode/ai/providers/xai/images", () => import("@opencode/ai/providers/xai/images")],
-  ["@opencode/ai/providers/zai", () => import("@opencode/ai/providers/zai")],
-  ["@opencode/ai/providers/zai/chat", () => import("@opencode/ai/providers/zai/chat")],
-  ["@opencode/ai/providers/zai/images", () => import("@opencode/ai/providers/zai/images")],
-  ["@opencode/ai/providers/zai-coding-plan", () => import("@opencode/ai/providers/zai-coding-plan")],
-  ["@opencode/ai/providers/zai-coding-plan/chat", () => import("@opencode/ai/providers/zai-coding-plan/chat")],
-  ["@opencode/ai/providers/zai-coding-plan/messages", () => import("@opencode/ai/providers/zai-coding-plan/messages")],
   [
-    "@opencode/ai/providers/zai-coding-plan/responses",
-    () => import("@opencode/ai/providers/zai-coding-plan/responses"),
+    "@bellucode/ai/providers/vercel-ai-gateway/decisions",
+    () => import("@bellucode/ai/providers/vercel-ai-gateway/decisions"),
+  ],
+  ["@bellucode/ai/providers/vercel-ai-gateway/images", () => import("@bellucode/ai/providers/vercel-ai-gateway/images")],
+  ["@bellucode/ai/providers/xai", () => import("@bellucode/ai/providers/xai")],
+  ["@bellucode/ai/providers/xai/images", () => import("@bellucode/ai/providers/xai/images")],
+  ["@bellucode/ai/providers/zai", () => import("@bellucode/ai/providers/zai")],
+  ["@bellucode/ai/providers/zai/chat", () => import("@bellucode/ai/providers/zai/chat")],
+  ["@bellucode/ai/providers/zai/images", () => import("@bellucode/ai/providers/zai/images")],
+  ["@bellucode/ai/providers/zai-coding-plan", () => import("@bellucode/ai/providers/zai-coding-plan")],
+  ["@bellucode/ai/providers/zai-coding-plan/chat", () => import("@bellucode/ai/providers/zai-coding-plan/chat")],
+  ["@bellucode/ai/providers/zai-coding-plan/messages", () => import("@bellucode/ai/providers/zai-coding-plan/messages")],
+  [
+    "@bellucode/ai/providers/zai-coding-plan/responses",
+    () => import("@bellucode/ai/providers/zai-coding-plan/responses"),
   ],
 ])
 
-/** Native `@opencode/ai/providers/*` entrypoints bundled with Core and loadable by name from config. */
+/** Native `@bellucode/ai/providers/*` entrypoints bundled with Core and loadable by name from config. */
 export const builtinPackages: ReadonlySet<string> = new Set(builtins.keys())
 
 export const loadPackage = Effect.fn("Provider.loadPackage")(function* (input: string, npm?: Npm.Interface) {
@@ -188,7 +188,7 @@ export const loadPackage = Effect.fn("Provider.loadPackage")(function* (input: s
   const builtin = builtins.get(specifier)
   if (builtin) return yield* importPackage(specifier, specifier, builtin)
   const resolved = yield* Effect.sync(() => {
-    if (specifier.startsWith("file://") || specifier.startsWith("@opencode/ai/")) return specifier
+    if (specifier.startsWith("file://") || specifier.startsWith("@bellucode/ai/")) return specifier
     try {
       return import.meta.resolve(specifier)
     } catch {
@@ -215,7 +215,7 @@ export const loadPackage = Effect.fn("Provider.loadPackage")(function* (input: s
 const settingsKeys = Struct.keys(Provider.Settings.schema.fields)
 const providerOnlyKeys = settingsKeys.filter((key) => !(key in Model.Settings.schema.fields))
 
-/** The provider options: every settings key OpenCode doesn't read itself. */
+/** The provider options: every settings key Bellu Code doesn't read itself. */
 export function nativeSettings(settings: Settings) {
   return Struct.omit(settings, settingsKeys)
 }
@@ -318,7 +318,7 @@ export type Info = Provider.Info
 
 export type MutableInfo = DeepMutable<Info>
 
-export { Event } from "@opencode/schema/provider"
+export { Event } from "@bellucode/schema/provider"
 
 /** Provider metadata owns its drafts; model definitions remain immutable inputs. */
 export type Definition = {
@@ -358,7 +358,7 @@ export interface Interface extends State.Transformable<Editor> {
   readonly snapshot: () => Effect.Effect<Snapshot>
 }
 
-export class Service extends Context.Service<Service, Interface>()("@opencode/Provider") {}
+export class Service extends Context.Service<Service, Interface>()("@bellucode/Provider") {}
 
 // Every location references the same index for a shared immutable definition array.
 const definitions = new WeakMap<readonly Model.Info[], Map<ID, ReadonlyMap<Model.ID, Model.Info>>>()

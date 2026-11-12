@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "opencode",
+  "name": "bellucode",
   "description": "AI-powered development tool",
   "version": "2.2.5",
   "private": true,
@@ -8,9 +8,9 @@
   "packageManager": "bun@1.4.4",
   "scripts": {
     "dev": "bun run --cwd packages/cli src/index.ts",
-    "dev:live": "sh -c 'OPENCODE_TUI_CHANNEL=dev OPENCODE_PASSWORD=\"$(opencode service get password)\" exec bun run dev \"$@\" --server \"$(opencode service status)\"' --",
+    "dev:live": "sh -c 'BELLUCODE_TUI_CHANNEL=dev BELLUCODE_PASSWORD=\"$(bellucode service get password)\" exec bun run dev \"$@\" --server \"$(bellucode service status)\"' --",
     "dev:vite": "bun run --cwd packages/cli --conditions=browser dev/vite.ts",
-    "dev:vite:live": "sh -c 'OPENCODE_TUI_CHANNEL=dev OPENCODE_PASSWORD=\"$(opencode service get password)\" exec bun run dev:vite \"$@\" --server \"$(opencode service status)\"' --",
+    "dev:vite:live": "sh -c 'BELLUCODE_TUI_CHANNEL=dev BELLUCODE_PASSWORD=\"$(bellucode service get password)\" exec bun run dev:vite \"$@\" --server \"$(bellucode service status)\"' --",
     "dev:desktop": "bun --cwd packages/desktop dev",
     "dev:web": "bun --cwd packages/app dev",
     "dev:stats": "bun sst shell --stage=production -- bun run --cwd packages/stats/app dev",
@@ -31,7 +31,7 @@
     "postinstall": "bun run --cwd packages/core fix-node-pty",
     "prepare": "husky",
     "random": "echo 'Random script'",
-    "sso": "aws sso login --sso-session=opencode --no-browser",
+    "sso": "aws sso login --sso-session=bellucode --no-browser",
     "test": "echo 'do not run tests from root' && exit 1"
   },
   "workspaces": {
@@ -113,7 +113,7 @@
   "devDependencies": {
     "@ast-grep/cli": "0.44.0",
     "@hona/strobe": "catalog:",
-    "@opencode/client": "workspace:*",
+    "@bellucode/client": "workspace:*",
     "@oxlint/plugins": "1.60.0",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
@@ -129,8 +129,8 @@
     "turbo": "2.10.2"
   },
   "dependencies": {
-    "@opencode/plugin": "workspace:*",
-    "@opencode/script": "workspace:*",
+    "@bellucode/plugin": "workspace:*",
+    "@bellucode/script": "workspace:*",
     "typescript": "catalog:"
   },
   "repository": {

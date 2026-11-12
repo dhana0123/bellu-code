@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opencode/server",
+  "name": "@bellucode/server",
   "version": "2.2.5",
   "type": "module",
   "license": "MIT",
@@ -29,17 +29,17 @@
   "dependencies": {
     "@effect/platform-node": "catalog:",
     "@effect/platform-node-shared": "catalog:",
-    "@opencode/core": "workspace:*",
-    "@opencode/protocol": "workspace:*",
-    "@opencode/schema": "workspace:*",
-    "@opencode/simulation": "workspace:*",
-    "@opencode/util": "workspace:*",
+    "@bellucode/core": "workspace:*",
+    "@bellucode/protocol": "workspace:*",
+    "@bellucode/schema": "workspace:*",
+    "@bellucode/simulation": "workspace:*",
+    "@bellucode/util": "workspace:*",
     "effect": "catalog:"
   },
   "devDependencies": {
     "@opencode/pty": "0.4.0",
-    "@opencode/client": "workspace:*",
-    "@opencode/plugin": "workspace:*",
+    "@bellucode/client": "workspace:*",
+    "@bellucode/plugin": "workspace:*",
     "@tsconfig/bun": "catalog:",
     "@types/bun": "catalog:",
     "@typescript/native": "catalog:",

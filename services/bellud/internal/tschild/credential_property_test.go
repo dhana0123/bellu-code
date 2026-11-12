@@ -19,7 +19,7 @@ func TestPropertyChildEnvExcludesExternalPassword(t *testing.T) {
 		}
 		extra := map[string]string{}
 		if rapid.Bool().Draw(t, "extraPw") {
-			extra["OPENCODE_SERVER_PASSWORD"] = external
+			extra["BELLUCODE_SERVER_PASSWORD"] = external
 		}
 		s := New(Config{BaseEnv: base, Env: extra})
 		env := s.buildEnv(internal)

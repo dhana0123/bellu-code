@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, expect, mock, setSystemTime, test, vi } from "bun:test"
 import { createEffect, createRoot } from "solid-js"
 import { createStore } from "solid-js/store"
-import type { OpenCodeEvent } from "@opencode/client/promise"
+import type { BelluCodeEvent } from "@bellucode/client/promise"
 import type { ServerConnection } from "@/runtime/server/registry"
 import { ServerScope } from "@/runtime/server/scope"
 import type { Tab } from "@/shell/tabs/tabs"
@@ -156,7 +156,7 @@ test.each(
     options.scenario === "no tab"
       ? []
       : [{ type: "session", server, sessionId: options.scenario === "root tab" ? "root" : session.id }]
-  const listeners = new Array<(event: OpenCodeEvent) => void>()
+  const listeners = new Array<(event: BelluCodeEvent) => void>()
 
   const deliveries = new Array<NotificationDelivery>()
 
@@ -168,7 +168,7 @@ test.each(
         scope: ServerScope.local,
         connection: { status: () => "connected" },
         event: {
-          listen: (listener: (event: OpenCodeEvent) => void) => {
+          listen: (listener: (event: BelluCodeEvent) => void) => {
             listeners.push(listener)
 
             return () => {}
@@ -197,7 +197,7 @@ test.each(
   })
 
   try {
-    const event: OpenCodeEvent =
+    const event: BelluCodeEvent =
       options.kind === "permission"
         ? {
             id: "event-1",
@@ -253,7 +253,7 @@ test.each([
 ] as const)("system alert for %s requires an open session tab", async (type, title) => {
   alerts.length = 0
   tabs.store = [{ type: "session", server, sessionId: "another-session" }]
-  const listeners = new Array<(event: OpenCodeEvent) => void>()
+  const listeners = new Array<(event: BelluCodeEvent) => void>()
 
   const emit = (id: string) =>
     listeners.forEach((listener) =>
@@ -267,7 +267,7 @@ test.each([
         scope: ServerScope.local,
         connection: { status: () => "connected" },
         event: {
-          listen: (listener: (event: OpenCodeEvent) => void) => {
+          listen: (listener: (event: BelluCodeEvent) => void) => {
             listeners.push(listener)
 
             return () => {}
@@ -390,7 +390,7 @@ test("unread state and viewing follow the server's idle and viewed watermarks", 
 })
 
 test("unread state honours the old local list until its viewed state is carried to the server, then deletes it", async () => {
-  const key = "opencode.global.dat:notification"
+  const key = "bellucode.global.dat:notification"
   const lists: unknown[] = []
   const views: { sessionID: string; idle: number }[] = []
   const failures = { remaining: 1 }

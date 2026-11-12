@@ -5,7 +5,7 @@
 import { bench, web, type Case } from "@hona/strobe"
 import { draftHref, sessionHref } from "../e2e/utils/app"
 import { messages } from "../e2e/utils/markdown-sessions"
-import { mockOpenCodeServer } from "../e2e/utils/mock-server"
+import { mockBelluCodeServer } from "../e2e/utils/mock-server"
 import { fixture, installTimelineSettings, mockStressTimeline } from "../e2e/utils/session-fixture"
 import { installProjects } from "./fixtures/home"
 import { cached } from "./fixtures/mock"
@@ -123,7 +123,7 @@ export default bench({
 
   targets: {
     web: web({
-      expect: { title: "OpenCode" },
+      expect: { title: "Bellu Code" },
       viewport: { width: 1440, height: 900 },
       async prepare(ctx) {
         const { url } = ctx
@@ -132,7 +132,7 @@ export default bench({
         const page = cached(ctx)
 
         if (scene === restoring)
-          await mockOpenCodeServer(page, {
+          await mockBelluCodeServer(page, {
             server,
             sessions: restored,
             provider: fixture.provider,

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test"
-import type { ConfigEntry, OpenCodeEvent, SessionMessageInfo, WorktreeDirectory } from "@opencode/client/promise"
+import type { ConfigEntry, BelluCodeEvent, SessionMessageInfo, WorktreeDirectory } from "@bellucode/client/promise"
 import { NO_PROVIDER, REMOTE_SERVER, SERVER, holdRoute, project, seed, session } from "../utils/app"
-import { mockMissingLocation, mockOpenCodeServer } from "../utils/mock-server"
+import { mockMissingLocation, mockBelluCodeServer } from "../utils/mock-server"
 import { mockRemoteServer, mockWorkspace, openSession, openSettings, type WorkspaceInput } from "../utils/workspace"
 import { recordNotifications } from "../utils/notifications"
 import { installSseTransport } from "../utils/sse-transport"
@@ -27,8 +27,8 @@ function open(page: Page, input: Partial<WorkspaceInput> = {}) {
     project: { icon: { color: "orange", override }, commands: { start: "echo setup" }, sandboxes },
     provider: NO_PROVIDER,
     configEntries: [
-      { type: "document", path: "/home/test/.config/opencode/opencode.jsonc", info: { shell: "/bin/zsh" } },
-      { type: "directory", path: "/home/test/.config/opencode" },
+      { type: "document", path: "/home/test/.config/bellucode/bellucode.jsonc", info: { shell: "/bin/zsh" } },
+      { type: "directory", path: "/home/test/.config/bellucode" },
     ],
     shells: [
       { path: "/bin/zsh", name: "zsh", acceptable: true },
@@ -211,7 +211,7 @@ test("request events use real Questions settings without disabling Permissions a
   const event = (
     kind: "question" | "mcp-elicitation" | "websearch.provider" | "permission",
     index: number,
-  ): OpenCodeEvent => {
+  ): BelluCodeEvent => {
     const base = {
       id: `evt_request_${index}`,
       created: 1700000001000 + index,
@@ -335,7 +335,7 @@ for (const locale of ["en", "ar"]) {
           id: "shell_activity_settings",
           status: "running",
           command: "sleep 120",
-          cwd: "C:/OpenCode/Activity settings",
+          cwd: "C:/BelluCode/Activity settings",
           shell: "bash",
           file: "/tmp/activity.out",
           metadata: { sessionID: id },
@@ -542,7 +542,7 @@ for (const server of [
 }
 
 test("project list menus rename, edit, add, and stay inside the scrollport", async ({ page }) => {
-  const projects = ["rebase", "dinocms", "opencode", "Playground"].map((name, index) =>
+  const projects = ["rebase", "dinocms", "bellucode", "Playground"].map((name, index) =>
     project({ id: `project-${index}`, directory: `/projects/${name}`, name }),
   )
 
@@ -1223,7 +1223,7 @@ test("worktrees follow inventory events, wait for session counts, and delete by 
   // SAFETY: a worktree.updated event carries only the project ID, which is all the app reads from it.
   await view.push([
     { id: "evt_settings_worktree_updated", created: Date.now(), type: "worktree.updated", data: { projectID } },
-  ] as OpenCodeEvent[])
+  ] as BelluCodeEvent[])
   expect((await listed).ok()).toBe(true)
   await expect(settings.getByText(discovered, { exact: true })).toBeVisible()
   expect((await read).ok()).toBe(true)
@@ -1449,12 +1449,12 @@ test.describe("worktrees prefetch", () => {
 const lsp: ConfigEntry[] = [
   {
     type: "document",
-    path: "/config/opencode.json",
+    path: "/config/bellucode.json",
     info: { lsp: { typescript: { command: ["typescript-language-server", "--stdio"], extensions: [".ts", ".tsx"] } } },
   },
   {
     type: "document",
-    path: `${directory}/opencode.jsonc`,
+    path: `${directory}/bellucode.jsonc`,
     info: { lsp: { typescript: { disabled: true }, rust: { command: ["rust-analyzer"], extensions: [".rs"] } } },
   },
 ]
@@ -1503,7 +1503,7 @@ for (const row of ["configured", "disabled", "failure"] as const) {
   })
 }
 
-// Zen and the Console account share the id `opencode`: the provider comes from models.dev, the
+// Zen and the Console account share the id `bellucode`: the provider comes from models.dev, the
 // integration carries the account sign-in.
 for (const row of [
   { name: "a fresh install offers the Console sign-in", paid: false, connections: [], console: true },
@@ -1525,8 +1525,8 @@ for (const row of [
       provider: {
         all: [
           {
-            id: "opencode",
-            name: "OpenCode Zen",
+            id: "bellucode",
+            name: "Bellu Code Zen",
             models: {
               "claude-sonnet-4-6": {
                 id: "claude-sonnet-4-6",
@@ -1536,20 +1536,20 @@ for (const row of [
             },
           },
         ],
-        connected: ["opencode"],
+        connected: ["bellucode"],
         default: {},
       },
       integrations: [
         {
-          id: "opencode",
-          name: "OpenCode Console",
+          id: "bellucode",
+          name: "Bellu Code Console",
           methods: [
-            { id: "device", type: "oauth", label: "OpenCode Console account" },
+            { id: "device", type: "oauth", label: "Bellu Code Console account" },
             { type: "key", label: "API key (service account)" },
           ],
           connections: row.connections,
         },
-        { id: "opencode-go", name: "OpenCode Go", methods: [{ type: "key" }], connections: [] },
+        { id: "bellucode-go", name: "Bellu Code Go", methods: [{ type: "key" }], connections: [] },
         { id: "anthropic", name: "Anthropic", methods: [{ type: "key" }], connections: [] },
       ],
     })
@@ -1558,55 +1558,55 @@ for (const row of [
     await expect(settings.getByRole("heading", { name: "Popular providers" })).toBeVisible()
     const connected = settings.locator('[data-component="connected-providers-section"]')
 
-    if (row.paid) await expect(connected.getByText("OpenCode Zen", { exact: true })).toBeVisible()
+    if (row.paid) await expect(connected.getByText("Bellu Code Zen", { exact: true })).toBeVisible()
 
     if (!row.paid) await expect(settings.getByText("No connected providers")).toBeVisible()
     // Anthropic only exists in the integration fixture, so its row proves the integration list has loaded.
     await expect(settings.getByText("Anthropic", { exact: true })).toBeVisible()
-    await expect(settings.getByText("OpenCode Console", { exact: true })).toHaveCount(row.console ? 1 : 0)
+    await expect(settings.getByText("Bellu Code Console", { exact: true })).toHaveCount(row.console ? 1 : 0)
   })
 }
 
 const consoleIntegrations = [
   {
-    id: "opencode",
-    name: "OpenCode Console",
+    id: "bellucode",
+    name: "Bellu Code Console",
     methods: [
-      { id: "device", type: "oauth", label: "OpenCode Console account" },
+      { id: "device", type: "oauth", label: "Bellu Code Console account" },
       { type: "key", label: "API key (service account)" },
     ],
     connections: [],
   },
-  { id: "opencode-go", name: "OpenCode Go", methods: [{ type: "key" }], connections: [] },
+  { id: "bellucode-go", name: "Bellu Code Go", methods: [{ type: "key" }], connections: [] },
 ]
 
-test("providers: OpenCode Console signs in from its method list", async ({ page, context }) => {
+test("providers: Bellu Code Console signs in from its method list", async ({ page, context }) => {
   const url = "https://auth.example.test/device?user_code=ABCD-EFGH"
   await context.route("https://auth.example.test/**", (route) => route.fulfill({ body: "Sign in" }))
   const { settings } = await open(page, { integrations: consoleIntegrations, onIntegrationOAuth: () => ({ url }) })
 
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
   await settings
-    .locator(".settings-provider-row", { hasText: "OpenCode Console" })
+    .locator(".settings-provider-row", { hasText: "Bellu Code Console" })
     .getByRole("button", { name: "Connect", exact: true })
     .click()
-  const methods = page.getByRole("dialog", { name: "Connect OpenCode Console", exact: true })
+  const methods = page.getByRole("dialog", { name: "Connect Bellu Code Console", exact: true })
   // The methods come from the integration in the TUI's order: sign-ins first, API keys last.
   await expect(methods.locator('[data-action="provider-connect-method"]')).toHaveText([
-    "OpenCode Console account",
+    "Bellu Code Console account",
     "API key (service account)",
   ])
 
   const popup = page.waitForEvent("popup")
-  await methods.getByRole("button", { name: "OpenCode Console account", exact: true }).click()
+  await methods.getByRole("button", { name: "Bellu Code Console account", exact: true }).click()
   await expect(await popup).toHaveURL(url)
 
-  const signIn = page.getByRole("dialog", { name: "Connecting to OpenCode Console", exact: true })
+  const signIn = page.getByRole("dialog", { name: "Connecting to Bellu Code Console", exact: true })
   await expect(signIn.getByRole("group", { name: "Device code: ABCD-EFGH", exact: true })).toBeVisible()
   await expect(signIn.getByRole("button", { name: "Copy sign-in link", exact: true })).toBeVisible()
 })
 
-test("providers: OpenCode Go connects with its own methods, not the Console sign-in", async ({ page }) => {
+test("providers: Bellu Code Go connects with its own methods, not the Console sign-in", async ({ page }) => {
   const attempts: string[] = []
 
   const { settings } = await open(page, {
@@ -1620,10 +1620,10 @@ test("providers: OpenCode Go connects with its own methods, not the Console sign
 
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
   await settings
-    .locator(".settings-provider-row", { hasText: "OpenCode Go" })
+    .locator(".settings-provider-row", { hasText: "Bellu Code Go" })
     .getByRole("button", { name: "Connect", exact: true })
     .click()
-  const dialog = page.getByRole("dialog", { name: "Connect OpenCode Go", exact: true })
+  const dialog = page.getByRole("dialog", { name: "Connect Bellu Code Go", exact: true })
   await expect(dialog.getByPlaceholder("API key")).toBeVisible()
   expect(attempts).toEqual([])
 })
@@ -1723,7 +1723,7 @@ test("providers: the free tier upsell opens Go on its own, sized to its content"
     .getByRole("button", { name: "Subscribe", exact: true })
     .click()
 
-  const dialog = page.getByRole("dialog", { name: "Connect OpenCode Go", exact: true })
+  const dialog = page.getByRole("dialog", { name: "Connect Bellu Code Go", exact: true })
   const container = page.locator('[data-slot="dialog-container"]')
   await expect(dialog.getByPlaceholder("API key")).toBeVisible()
   // Nothing to go back to: the upsell opened the dialog straight on Go.
@@ -1837,10 +1837,10 @@ test("providers: adding an account starts a lone method once", async ({ page, co
 
   const { settings } = await open(page, {
     integrations: [
-      ...consoleIntegrations.filter((integration) => integration.id !== "opencode-go"),
+      ...consoleIntegrations.filter((integration) => integration.id !== "bellucode-go"),
       {
-        id: "opencode-go",
-        name: "OpenCode Go",
+        id: "bellucode-go",
+        name: "Bellu Code Go",
         methods: [{ type: "key" }],
         connections: [{ type: "credential", id: "cred_go", label: "Go key", method: "key" }],
       },
@@ -1861,7 +1861,7 @@ test("providers: adding an account starts a lone method once", async ({ page, co
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
   await settings.getByRole("button", { name: "Show more providers", exact: true }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.locator('[data-provider-id="opencode-go"]').click()
+  await dialog.locator('[data-provider-id="bellucode-go"]').click()
   await dialog.getByRole("button", { name: "Add account", exact: true }).click()
   await expect(dialog.getByPlaceholder("API key")).toBeVisible()
   expect(attempts).toEqual([])
@@ -1954,10 +1954,10 @@ test("providers: Back from a Console connection without models returns to its si
       state.authorized
         ? {
             all: [
-              { id: "opencode", integrationID: "opencode", name: "Anomaly / OpenCode", models: {} },
-              { id: "console-google", integrationID: "opencode", name: "Anomaly / Google", models: {} },
+              { id: "bellucode", integrationID: "bellucode", name: "Anomaly / Bellu Code", models: {} },
+              { id: "console-google", integrationID: "bellucode", name: "Anomaly / Google", models: {} },
             ],
-            connected: ["opencode", "console-google"],
+            connected: ["bellucode", "console-google"],
             default: {},
           }
         : NO_PROVIDER,
@@ -1972,18 +1972,18 @@ test("providers: Back from a Console connection without models returns to its si
 
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
   await settings
-    .locator(".settings-provider-row", { hasText: "OpenCode Console" })
+    .locator(".settings-provider-row", { hasText: "Bellu Code Console" })
     .getByRole("button", { name: "Connect", exact: true })
     .click()
-  const dialog = page.getByRole("dialog", { name: "Connect OpenCode Console", exact: true })
+  const dialog = page.getByRole("dialog", { name: "Connect Bellu Code Console", exact: true })
   const popup = page.waitForEvent("popup")
-  await dialog.getByRole("button", { name: "OpenCode Console account", exact: true }).click()
+  await dialog.getByRole("button", { name: "Bellu Code Console account", exact: true }).click()
   await popup
-  await expect(page.getByRole("dialog").getByText("OpenCode connected", { exact: true })).toBeVisible()
+  await expect(page.getByRole("dialog").getByText("Bellu Code connected", { exact: true })).toBeVisible()
 
   await page.getByRole("dialog").getByRole("button", { name: "Navigate back", exact: true }).click()
   await expect(dialog.locator('[data-action="provider-connect-method"]')).toHaveText([
-    "OpenCode Console account",
+    "Bellu Code Console account",
     "API key (service account)",
   ])
 })
@@ -2085,28 +2085,28 @@ test("providers: switching to a Zen API key does not wait for a Console workspac
       state.active === "cred_console"
         ? {
             all: [
-              { id: "opencode", integrationID: "opencode", name: "Anomaly / OpenCode", models: {} },
-              { id: "console-google", integrationID: "opencode", name: "Anomaly / Google", models: {} },
+              { id: "bellucode", integrationID: "bellucode", name: "Anomaly / Bellu Code", models: {} },
+              { id: "console-google", integrationID: "bellucode", name: "Anomaly / Google", models: {} },
             ],
-            connected: ["opencode", "console-google"],
+            connected: ["bellucode", "console-google"],
             default: {},
           }
         : {
             all: [
               {
-                id: "opencode",
-                name: "OpenCode Zen",
+                id: "bellucode",
+                name: "Bellu Code Zen",
                 models: { paid: { id: "paid", name: "Paid", cost: { input: 3 } } },
               },
             ],
-            connected: ["opencode"],
+            connected: ["bellucode"],
             default: {},
           },
     integrations: () => [
       {
-        id: "opencode",
-        name: "OpenCode Console",
-        methods: [{ id: "device", type: "oauth", label: "OpenCode Console account" }],
+        id: "bellucode",
+        name: "Bellu Code Console",
+        methods: [{ id: "device", type: "oauth", label: "Bellu Code Console account" }],
         connections: accounts.toSorted((a, b) => Number(b.id === state.active) - Number(a.id === state.active)),
       },
     ],
@@ -2116,7 +2116,7 @@ test("providers: switching to a Zen API key does not wait for a Console workspac
   })
 
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
-  const trigger = settings.getByRole("button", { name: "Manage OpenCode Console accounts", exact: true })
+  const trigger = settings.getByRole("button", { name: "Manage Bellu Code Console accounts", exact: true })
   await expect(trigger).toHaveText("Anomaly")
   await trigger.click()
 
@@ -2127,7 +2127,7 @@ test("providers: switching to a Zen API key does not wait for a Console workspac
       catalogReads.push(request.url())
   })
   await page.getByRole("menuitemradio", { name: "Zen key", exact: true }).click()
-  await expect(page.getByText("OpenCode Console account switched")).toBeVisible()
+  await expect(page.getByText("Bellu Code Console account switched")).toBeVisible()
   // One refresh after the switch; a Console workspace poll would keep reading the catalog.
   expect(catalogReads).toHaveLength(1)
 })
@@ -2140,10 +2140,10 @@ test("providers: adding a Console account keeps the Console row in place", async
 
   const workspace = {
     all: [
-      { id: "opencode", integrationID: "opencode", name: "Anomaly / OpenCode", models: {} },
-      { id: "console-google", integrationID: "opencode", name: "Anomaly / Google", models: {} },
+      { id: "bellucode", integrationID: "bellucode", name: "Anomaly / Bellu Code", models: {} },
+      { id: "console-google", integrationID: "bellucode", name: "Anomaly / Google", models: {} },
     ],
-    connected: ["opencode", "console-google"],
+    connected: ["bellucode", "console-google"],
     default: {},
   }
 
@@ -2151,7 +2151,7 @@ test("providers: adding a Console account keeps the Console row in place", async
     if (state.pendingReads > 0) {
       state.pendingReads--
 
-      return { all: [{ id: "opencode", name: "OpenCode", models: {} }], connected: ["opencode"], default: {} }
+      return { all: [{ id: "bellucode", name: "Bellu Code", models: {} }], connected: ["bellucode"], default: {} }
     }
 
     return workspace
@@ -2161,15 +2161,15 @@ test("providers: adding a Console account keeps the Console row in place", async
     provider: catalog,
     integrations: () => [
       {
-        id: "opencode",
-        name: "OpenCode Console",
-        methods: [{ id: "device", type: "oauth", label: "OpenCode Console account" }],
+        id: "bellucode",
+        name: "Bellu Code Console",
+        methods: [{ id: "device", type: "oauth", label: "Bellu Code Console account" }],
         connections: [
           { type: "credential", id: "cred_console", label: "Anomaly", method: "oauth" },
           ...(state.authorized ? [{ type: "credential", id: "cred_clara", label: "Clara", method: "oauth" }] : []),
         ],
       },
-      { id: "opencode-go", name: "OpenCode Go", methods: [{ type: "key" }], connections: [] },
+      { id: "bellucode-go", name: "Bellu Code Go", methods: [{ type: "key" }], connections: [] },
     ],
     onIntegrationOAuth: () => ({ url: "https://auth.example.test/device?user_code=GOGO-1234" }),
     onIntegrationOAuthStatus: () => {
@@ -2184,22 +2184,22 @@ test("providers: adding a Console account keeps the Console row in place", async
 
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
   const connected = settings.locator('[data-component="connected-providers-section"]')
-  await expect(connected.getByText("OpenCode Console", { exact: true })).toBeVisible()
+  await expect(connected.getByText("Bellu Code Console", { exact: true })).toBeVisible()
   await connected.evaluate((element) => {
     new MutationObserver(() => {
-      if (!element.textContent?.includes("OpenCode Console")) element.dataset.flashed = ""
+      if (!element.textContent?.includes("Bellu Code Console")) element.dataset.flashed = ""
     }).observe(element, { childList: true, subtree: true, characterData: true })
   })
 
   await settings.getByRole("button", { name: "Show more providers", exact: true }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.locator('[data-provider-id="opencode"]').click()
+  await dialog.locator('[data-provider-id="bellucode"]').click()
   const popup = page.waitForEvent("popup")
   await dialog.getByRole("button", { name: "Add account", exact: true }).click()
   await popup
-  await expect(page.getByText("OpenCode Console connected", { exact: true })).toBeVisible()
+  await expect(page.getByText("Bellu Code Console connected", { exact: true })).toBeVisible()
 
-  await expect(connected.getByText("OpenCode Console", { exact: true })).toBeVisible()
+  await expect(connected.getByText("Bellu Code Console", { exact: true })).toBeVisible()
   await expect(connected).not.toHaveAttribute("data-flashed")
 })
 
@@ -2218,18 +2218,18 @@ test("providers: switching Console accounts keeps the list until the new workspa
       state.pendingReads--
 
       return {
-        all: [{ id: "opencode", name: "OpenCode", models: { free: { id: "free", name: "Free", cost: { input: 0 } } } }],
-        connected: ["opencode"],
+        all: [{ id: "bellucode", name: "Bellu Code", models: { free: { id: "free", name: "Free", cost: { input: 0 } } } }],
+        connected: ["bellucode"],
         default: {},
       }
     }
 
     return {
       all: [
-        { id: "opencode", integrationID: "opencode", name: `${workspace()} / OpenCode`, models: {} },
-        { id: "console-google", integrationID: "opencode", name: `${workspace()} / Google`, models: {} },
+        { id: "bellucode", integrationID: "bellucode", name: `${workspace()} / Bellu Code`, models: {} },
+        { id: "console-google", integrationID: "bellucode", name: `${workspace()} / Google`, models: {} },
       ],
-      connected: ["opencode", "console-google"],
+      connected: ["bellucode", "console-google"],
       default: {},
     }
   }
@@ -2238,9 +2238,9 @@ test("providers: switching Console accounts keeps the list until the new workspa
     provider: catalog,
     integrations: () => [
       {
-        id: "opencode",
-        name: "OpenCode Console",
-        methods: [{ id: "device", type: "oauth", label: "OpenCode Console account" }],
+        id: "bellucode",
+        name: "Bellu Code Console",
+        methods: [{ id: "device", type: "oauth", label: "Bellu Code Console account" }],
         connections: accounts.toSorted((a, b) => Number(b.id === state.active) - Number(a.id === state.active)),
       },
     ],
@@ -2252,7 +2252,7 @@ test("providers: switching Console accounts keeps the list until the new workspa
 
   await settings.getByRole("tab", { name: "Providers", exact: true }).click()
   const connected = settings.locator('[data-component="connected-providers-section"]')
-  const trigger = connected.getByRole("button", { name: "Manage OpenCode Console accounts", exact: true })
+  const trigger = connected.getByRole("button", { name: "Manage Bellu Code Console accounts", exact: true })
   await expect(trigger).toHaveText("Clara")
   await connected.evaluate((element) => {
     new MutationObserver(() => {
@@ -2262,7 +2262,7 @@ test("providers: switching Console accounts keeps the list until the new workspa
 
   await trigger.click()
   await page.getByRole("menuitemradio", { name: "Anomaly", exact: true }).click()
-  await expect(page.getByText("OpenCode Console account switched")).toBeVisible()
+  await expect(page.getByText("Bellu Code Console account switched")).toBeVisible()
   await expect(trigger).toHaveText("Anomaly")
   await expect(connected).not.toHaveAttribute("data-flashed")
 })
@@ -2276,27 +2276,27 @@ test("models: a Console provider picked on Providers opens its collapsed group, 
     provider: {
       all: [
         {
-          id: "opencode",
-          integrationID: "opencode",
-          name: "Anomaly / OpenCode",
+          id: "bellucode",
+          integrationID: "bellucode",
+          name: "Anomaly / Bellu Code",
           models: model("console-model", "Console Model"),
         },
         {
           id: "console-google",
           canonical: "google",
-          integrationID: "opencode",
+          integrationID: "bellucode",
           name: "Anomaly / Google",
           models: model("managed-gemini", "Managed Gemini"),
         },
       ],
-      connected: ["opencode", "console-google"],
+      connected: ["bellucode", "console-google"],
       default: {},
     },
     integrations: [
       {
-        id: "opencode",
-        name: "OpenCode Console",
-        methods: [{ id: "device", type: "oauth", label: "OpenCode Console account" }],
+        id: "bellucode",
+        name: "Bellu Code Console",
+        methods: [{ id: "device", type: "oauth", label: "Bellu Code Console account" }],
         connections: [{ type: "credential", id: "cred_anomaly", label: "Anomaly", method: "oauth" }],
       },
     ],
@@ -2304,7 +2304,7 @@ test("models: a Console provider picked on Providers opens its collapsed group, 
 
   const group = settings
     .locator('[data-component="settings-models-console"]')
-    .getByRole("button", { name: /^OpenCode Console/ })
+    .getByRole("button", { name: /^BelluCode Console/ })
 
   await settings.getByRole("tab", { name: "Models", exact: true }).click()
   await group.click()
@@ -2351,7 +2351,7 @@ test("the add server dialog keeps focus above fullscreen settings", async ({ pag
 test("the add server dialog pairs from a one-time link and explains a spent one", async ({ page }) => {
   const paired = "http://127.0.0.1:4098"
   await mockRemoteServer(page, { directory: "/remote/settings-demo" })
-  await mockOpenCodeServer(page, {
+  await mockBelluCodeServer(page, {
     server: paired,
     directory: "/remote/paired",
     project: project({ id: "proj_paired", directory: "/remote/paired" }),
@@ -2380,7 +2380,7 @@ test("the add server dialog pairs from a one-time link and explains a spent one"
 
   const spent = await addServer()
   await expect(spent.getByRole("alert")).toHaveText(
-    "This pairing link expired or was already used. Run opencode pair to get a new one.",
+    "This pairing link expired or was already used. Run bellucode pair to get a new one.",
   )
 })
 
@@ -2389,7 +2389,7 @@ test("a server check that answers after its dialog closed saves nothing and leav
 }) => {
   const late = "http://127.0.0.1:4098"
   await mockRemoteServer(page, { directory: "/remote/settings-demo" })
-  await mockOpenCodeServer(page, {
+  await mockBelluCodeServer(page, {
     server: late,
     directory: "/remote/late",
     project: project({ id: "proj_late", directory: "/remote/late" }),
@@ -2433,7 +2433,7 @@ test("a pairing code with several addresses keeps the first one that works with 
     [first, { code: "spent-by-the-other-address", token: "session-token" }],
     [second, { code: "one-time-code", token: "session-token" }],
   ] as const) {
-    await mockOpenCodeServer(page, {
+    await mockBelluCodeServer(page, {
       server,
       directory: "/remote/paired",
       project: project({ id: "proj_paired", directory: "/remote/paired" }),

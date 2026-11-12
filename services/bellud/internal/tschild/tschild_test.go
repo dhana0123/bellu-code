@@ -46,14 +46,14 @@ func TestParseReady(t *testing.T) {
 
 func TestBuildEnvStripsExternalPassword(t *testing.T) {
 	s := New(Config{
-		BaseEnv: []string{"PATH=/bin", "OPENCODE_PASSWORD=external", "BELLUCODE_PASSWORD=external", "OPENCODE_SERVER_PASSWORD=x"},
-		Env:     map[string]string{"OPENCODE_CONFIG_CONTENT": "{}", "OPENCODE_PASSWORD": "evil"},
+		BaseEnv: []string{"PATH=/bin", "BELLUCODE_PASSWORD=external", "OPENCODE_PASSWORD=external", "BELLUCODE_SERVER_PASSWORD=x"},
+		Env:     map[string]string{"BELLUCODE_CONFIG_CONTENT": "{}", "BELLUCODE_PASSWORD": "evil"},
 	})
 	env := strings.Join(s.buildEnv("internal"), "\n")
-	if strings.Contains(env, "external") || strings.Contains(env, "evil") || strings.Contains(env, "BELLUCODE_PASSWORD") {
+	if strings.Contains(env, "external") || strings.Contains(env, "evil") || strings.Contains(env, "OPENCODE_PASSWORD") {
 		t.Fatalf("external password leaked: %s", env)
 	}
-	if !strings.Contains(env, "OPENCODE_PASSWORD=internal") || !strings.Contains(env, "OPENCODE_CONFIG_CONTENT={}") {
+	if !strings.Contains(env, "BELLUCODE_PASSWORD=internal") || !strings.Contains(env, "BELLUCODE_CONFIG_CONTENT={}") {
 		t.Fatalf("missing entries: %s", env)
 	}
 }

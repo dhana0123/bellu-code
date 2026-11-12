@@ -1,11 +1,11 @@
-import { ensurePluginRuntime, provides } from "@opencode/plugin/runtime"
-import { Plugin, PluginContextProvider, usePlugin } from "@opencode/plugin/tui"
+import { ensurePluginRuntime, provides } from "@bellucode/plugin/runtime"
+import { Plugin, PluginContextProvider, usePlugin } from "@bellucode/plugin/tui"
 import { ensureRuntimePluginSupport } from "@opentui/solid/runtime-plugin-support/configure"
 
 ensurePluginRuntime()
 ensureRuntimePluginSupport({
   additional: {
-    "@opencode/plugin/tui": { Plugin, PluginContextProvider, usePlugin },
+    "@bellucode/plugin/tui": { Plugin, PluginContextProvider, usePlugin },
   },
   preserve: provides,
 })

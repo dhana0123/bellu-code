@@ -1,5 +1,5 @@
-import type { FileContent } from "@opencode/plugin/gui"
-import { artifactKind, type ArtifactKind } from "@opencode/util/artifact"
+import type { FileContent } from "@bellucode/plugin/gui"
+import { artifactKind, type ArtifactKind } from "@bellucode/util/artifact"
 
 export type ArtifactMode = "preview" | "source"
 

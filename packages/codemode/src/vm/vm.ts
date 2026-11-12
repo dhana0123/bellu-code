@@ -2492,9 +2492,9 @@ export class Vm {
         const syncMethod = readProperty(v, IteratorSymbol, site)
         if (syncMethod !== undefined && syncMethod !== null) {
           const callable = requireIteratorMethod(syncMethod, "Iterator method", site)
-          const openCode = internalCode("$vmOpenSyncForAsync")
+          const belluCode = internalCode("$vmOpenSyncForAsync")
           frame.regs[sp - 1] = undefined
-          frame.regs[sp] = new VmInternalFn(openCode, [v, callable])
+          frame.regs[sp] = new VmInternalFn(belluCode, [v, callable])
           frame.sp = sp + 1
           return pc + 1
         }

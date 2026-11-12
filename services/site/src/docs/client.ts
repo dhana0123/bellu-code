@@ -5,7 +5,7 @@
 import { Funnel } from "../lib/funnel"
 import { downloadOf, surfaceOf, targetOf } from "../lib/funnel-config"
 import { base } from "./config"
-import { closeNavMenus, installNavMenus } from "@opencode/nav-menus"
+import { closeNavMenus, installNavMenus } from "@bellucode/nav-menus"
 import { fanMotion } from "../component/site/fan-motion"
 import { holdOpenMenu } from "../component/site/menu-hold"
 
@@ -25,7 +25,7 @@ const on = <K extends keyof DocumentEventMap>(type: K, listener: (event: Documen
 const phone = matchMedia("(max-width: 60rem)")
 const wait = (ms: number) => new Promise((done) => setTimeout(done, ms))
 
-// The theme switch: system, light, dark, saved as the site saves it (opencode-theme), so the docs
+// The theme switch: system, light, dark, saved as the site saves it (bellucode-theme), so the docs
 // and the site share one choice.
 const themes = ["system", "light", "dark"] as const
 type Theme = (typeof themes)[number]
@@ -74,7 +74,7 @@ on("click", (event) => {
   const cycle = target.closest("[data-slot=cycle]")
   if (cycle) {
     const theme = themes[(themes.indexOf(site.dataset.theme as Theme) + 1) % 3]
-    localStorage.setItem("opencode-theme", theme)
+    localStorage.setItem("bellucode-theme", theme)
     return showTheme(theme)
   }
 
@@ -160,10 +160,10 @@ phone.addEventListener("change", () => {
   closeLockup()
 })
 
-// The logo menu and the product menu (on DOCS), shared with the site and the other OpenCode sites (packages/nav-menus).
+// The logo menu and the product menu (on DOCS), shared with the site and the other Bellu Code sites (packages/nav-menus).
 // Opening one closes the lockup's own menus.
 installNavMenus({ link: (path) => path })
-on("opencode-nav-menu-open" as keyof DocumentEventMap, () => closeLockup())
+on("bellucode-nav-menu-open" as keyof DocumentEventMap, () => closeLockup())
 
 // The sections menu and its V2/V1 flyout come in as one panel with the nav menus' motion (packages/nav-menus).
 // Reduced motion shows them at once.

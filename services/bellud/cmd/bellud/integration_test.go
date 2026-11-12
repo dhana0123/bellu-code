@@ -72,7 +72,10 @@ func startBellud(t *testing.T) *instance {
 	}
 	repo := os.Getenv("BELLUCODE_REPO")
 	if repo == "" {
-		repo = "/home/ubuntu/bellucode"
+		// The test runs in services/bellud/cmd/bellud; the repo root is four levels up.
+		if wd, err := os.Getwd(); err == nil {
+			repo = filepath.Clean(filepath.Join(wd, "..", "..", "..", ".."))
+		}
 	}
 
 	home := t.TempDir()
@@ -115,7 +118,7 @@ func startBellud(t *testing.T) *instance {
 		"XDG_DATA_HOME="+filepath.Join(home, ".local", "share"),
 		"XDG_STATE_HOME="+filepath.Join(home, ".local", "state"),
 		"XDG_CACHE_HOME="+filepath.Join(home, ".cache"),
-		"OPENCODE_DISABLE_MODELS_FETCH=1",
+		"BELLUCODE_DISABLE_MODELS_FETCH=1",
 		"BELLUCODE_PASSWORD="+testPassword,
 		"BELLUCODE_REPO="+repo,
 		"NOTIFY_SOCKET="+sock,
@@ -146,7 +149,7 @@ func startBellud(t *testing.T) *instance {
 func (i *instance) get(path string, withAuth bool) (*http.Response, error) {
 	req, _ := http.NewRequest("GET", i.base+path, nil)
 	if withAuth {
-		req.SetBasicAuth("opencode", testPassword)
+		req.SetBasicAuth("bellucode", testPassword)
 	}
 	return (&http.Client{Timeout: 10 * time.Second}).Do(req)
 }
@@ -224,7 +227,7 @@ func TestIntegrationInfoAuthAndReady(t *testing.T) {
 	}
 	// Wrong password: 401.
 	req, _ := http.NewRequest("GET", inst.base+"/api/info", nil)
-	req.SetBasicAuth("opencode", "wrong")
+	req.SetBasicAuth("bellucode", "wrong")
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -265,7 +268,7 @@ func TestIntegrationSSEChildKillAndRecovery(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	req, _ := http.NewRequestWithContext(ctx, "GET", inst.base+"/api/event", nil)
-	req.SetBasicAuth("opencode", testPassword)
+	req.SetBasicAuth("bellucode", testPassword)
 	req.Header.Set("Accept", "text/event-stream")
 	resp, err := (&http.Client{}).Do(req)
 	if err != nil {

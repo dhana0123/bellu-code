@@ -42,7 +42,7 @@ func do(s *Server, method, path string, mut func(*http.Request)) *httptest.Respo
 	return w
 }
 
-func basic(r *http.Request) { r.SetBasicAuth("opencode", "pw") }
+func basic(r *http.Request) { r.SetBasicAuth("bellucode", "pw") }
 
 func TestDispatch(t *testing.T) {
 	s := newServer(t)

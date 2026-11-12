@@ -24,8 +24,7 @@ type Config struct {
 }
 
 // Load reads configuration through getenv (use os.Getenv in production).
-// Only BELLUCODE_* names are read, except OPENCODE_PASSWORD, which is a
-// fallback (compatibility name).
+// Only BELLUCODE_* names are read, plus the legacy OPENCODE_PASSWORD fallback.
 func Load(getenv func(string) string) (Config, error) {
 	c := Config{
 		Password: getenv("BELLUCODE_PASSWORD"),
@@ -35,7 +34,7 @@ func Load(getenv func(string) string) (Config, error) {
 		WebDist:  getenv("BELLUCODE_WEB_DIST"),
 	}
 	if c.Password == "" {
-		c.Password = getenv("OPENCODE_PASSWORD") // (compatibility name)
+		c.Password = getenv("OPENCODE_PASSWORD") // (legacy name from before the rebrand)
 	}
 	if c.Hostname == "" {
 		c.Hostname = DefaultHostname

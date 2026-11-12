@@ -9,32 +9,32 @@ import {
   SystemPart,
   TransportError,
   type LLMRequest,
-} from "@opencode/ai/effect"
-import { OpenAIChat, OpenAIResponses } from "@opencode/ai/protocols"
-import { Agent } from "@opencode/core/agent"
-import { Database } from "@opencode/core/database/database"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { llmClient } from "@opencode/core/effect/app-node-platform"
-import { LayerNode } from "@opencode/util/effect/layer-node"
-import { Bus } from "@opencode/core/bus"
-import { SessionEvent } from "@opencode/core/session/event"
-import { SessionMessage } from "@opencode/core/session/message"
-import { SessionProjector } from "@opencode/core/session/projector"
-import { SessionRunnerModel } from "@opencode/core/session/runner/model"
-import { SessionTable } from "@opencode/core/session/sql"
-import { SessionStore } from "@opencode/core/session/store"
-import { SessionTitle } from "@opencode/core/session/title"
-import { PluginHooks } from "@opencode/core/plugin/hooks"
-import { PluginSupervisor } from "@opencode/core/plugin/supervisor"
-import { Location } from "@opencode/core/location"
-import { Session } from "@opencode/core/session"
-import { Project } from "@opencode/core/project"
-import { ProjectTable } from "@opencode/core/project/sql"
-import { App } from "@opencode/core/app"
-import { Model } from "@opencode/core/model"
-import { Provider } from "@opencode/core/provider"
-import { AbsolutePath } from "@opencode/core/schema"
-import { Money } from "@opencode/schema/money"
+} from "@bellucode/ai/effect"
+import { OpenAIChat, OpenAIResponses } from "@bellucode/ai/protocols"
+import { Agent } from "@bellucode/core/agent"
+import { Database } from "@bellucode/core/database/database"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { llmClient } from "@bellucode/core/effect/app-node-platform"
+import { LayerNode } from "@bellucode/util/effect/layer-node"
+import { Bus } from "@bellucode/core/bus"
+import { SessionEvent } from "@bellucode/core/session/event"
+import { SessionMessage } from "@bellucode/core/session/message"
+import { SessionProjector } from "@bellucode/core/session/projector"
+import { SessionRunnerModel } from "@bellucode/core/session/runner/model"
+import { SessionTable } from "@bellucode/core/session/sql"
+import { SessionStore } from "@bellucode/core/session/store"
+import { SessionTitle } from "@bellucode/core/session/title"
+import { PluginHooks } from "@bellucode/core/plugin/hooks"
+import { PluginSupervisor } from "@bellucode/core/plugin/supervisor"
+import { Location } from "@bellucode/core/location"
+import { Session } from "@bellucode/core/session"
+import { Project } from "@bellucode/core/project"
+import { ProjectTable } from "@bellucode/core/project/sql"
+import { App } from "@bellucode/core/app"
+import { Model } from "@bellucode/core/model"
+import { Provider } from "@bellucode/core/provider"
+import { AbsolutePath } from "@bellucode/core/schema"
+import { Money } from "@bellucode/schema/money"
 import { Deferred, Effect, Fiber, Layer, Schema, Stream } from "effect"
 import { testEffect } from "./lib/effect"
 
@@ -218,13 +218,13 @@ it.effect("generates a title from the sole user message and renames the session"
 
     expect(requests).toHaveLength(1)
     expect(requests[0]?.headers).toEqual({
-      "x-opencode-session-id": sessionID,
+      "x-bellucode-session-id": sessionID,
       "x-session-affinity": sessionID,
       "X-Session-Id": sessionID,
       "User-Agent": App.useragent(App.make()),
-      "x-opencode-project": Project.ID.global,
-      "x-opencode-session": sessionID,
-      "x-opencode-client": "opencode",
+      "x-bellucode-project": Project.ID.global,
+      "x-bellucode-session": sessionID,
+      "x-bellucode-client": "bellucode",
     })
     expect(requests[0]?.promptCacheKey).toBe(sessionID)
     expect(requests[0]?.tools).toEqual([])

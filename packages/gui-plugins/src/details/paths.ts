@@ -1,4 +1,4 @@
-import { sameDirectory } from "@opencode/util/path"
+import { sameDirectory } from "@bellucode/util/path"
 
 /** The parts of a project that name its checkouts. */
 export type WorkspaceProject = {

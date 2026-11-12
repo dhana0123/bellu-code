@@ -1,8 +1,8 @@
 import { createSignal, onCleanup, Show, untrack } from "solid-js"
-import { ComposerPill, createKeyed, type ComposerPillProps, type Plugin } from "@opencode/plugin/gui"
-import { Goal } from "@opencode/schema/goal"
-import { Button } from "@opencode/ui/button"
-import { showToast } from "@opencode/ui/toast"
+import { ComposerPill, createKeyed, type ComposerPillProps, type Plugin } from "@bellucode/plugin/gui"
+import { Goal } from "@bellucode/schema/goal"
+import { Button } from "@bellucode/ui/button"
+import { showToast } from "@bellucode/ui/toast"
 import type GoalDefinition from "./index"
 import {
   createGoalState,

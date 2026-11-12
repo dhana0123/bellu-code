@@ -1,5 +1,5 @@
-import type { BuiltinMainStorage, MainStoreFrom } from "@opencode/plugin/gui/builtin"
-import type { Mutable } from "@opencode/plugin/gui/main"
+import type { BuiltinMainStorage, MainStoreFrom } from "@bellucode/plugin/gui/builtin"
+import type { Mutable } from "@bellucode/plugin/gui/main"
 import { Option, Schema } from "effect"
 import type { StateStore } from "../storage/state"
 import type { SettingsStore } from "../storage/store"

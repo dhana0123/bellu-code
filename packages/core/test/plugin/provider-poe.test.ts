@@ -1,14 +1,14 @@
-import { ai } from "@opencode/ai/effect"
-import { LLMClient, RequestExecutor } from "@opencode/ai/route"
-import { Credential } from "@opencode/core/credential"
-import { Integration } from "@opencode/core/integration"
-import { Model } from "@opencode/core/model"
-import { ModelResolver } from "@opencode/core/model-resolver"
-import { Plugin } from "@opencode/core/plugin"
-import { PluginHost } from "@opencode/core/plugin/host"
-import { ProviderPlugins } from "@opencode/core/plugin/provider"
-import { PoePlugin } from "@opencode/core/plugin/provider/poe"
-import { Provider } from "@opencode/core/provider"
+import { ai } from "@bellucode/ai/effect"
+import { LLMClient, RequestExecutor } from "@bellucode/ai/route"
+import { Credential } from "@bellucode/core/credential"
+import { Integration } from "@bellucode/core/integration"
+import { Model } from "@bellucode/core/model"
+import { ModelResolver } from "@bellucode/core/model-resolver"
+import { Plugin } from "@bellucode/core/plugin"
+import { PluginHost } from "@bellucode/core/plugin/host"
+import { ProviderPlugins } from "@bellucode/core/plugin/provider"
+import { PoePlugin } from "@bellucode/core/plugin/provider/poe"
+import { Provider } from "@bellucode/core/provider"
 import { expect } from "bun:test"
 import { Clock, Deferred, Effect, Fiber, Layer, Schedule, Stream } from "effect"
 import { TestClock } from "effect/testing"
@@ -42,7 +42,7 @@ const fixture = Effect.gen(function* () {
   })
   yield* providers.transform((editor) => {
     editor.update(providerID, (provider) => {
-      provider.package = "@opencode/ai/providers/openai-compatible"
+      provider.package = "@bellucode/ai/providers/openai-compatible"
       provider.settings = { baseURL: "https://api.poe.com/v1" }
     })
     editor.models.update(providerID, modelID, () => {})

@@ -1,4 +1,4 @@
-import { ServiceUnavailableError } from "@opencode/protocol/errors"
+import { ServiceUnavailableError } from "@bellucode/protocol/errors"
 import { Effect } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
 import { Api } from "../api"

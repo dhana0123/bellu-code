@@ -23274,7 +23274,7 @@
    "properties": {
     "interrupted": {
      "type": "boolean",
-     "description": "Whether an active execution owned by this OpenCode process was interrupted."
+     "description": "Whether an active execution owned by this Bellu Code process was interrupted."
     }
    },
    "required": [

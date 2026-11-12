@@ -4,22 +4,22 @@ import {
   mainOnlyModule,
   type PluginModule,
   type Entry,
-} from "@opencode/plugin/gui/host"
+} from "@bellucode/plugin/gui/host"
 
 // Plugin bundles share the host's module instances, so tokens, contexts and schemas they import are the same objects
 // the host checks against. In a window, the main SDK's name resolves to the window SDK.
 const modules = {
   effect: () => import("effect"),
-  "@opencode/plugin/gui": () => import("@opencode/plugin/gui"),
-  "@opencode/plugin/gui/main": () => import("@opencode/plugin/gui"),
-  "@opencode/plugin/gui/file": () => import("@opencode/plugin/gui/file"),
-  "@opencode/plugin/gui/review": () => import("@opencode/plugin/gui/review"),
-  "@opencode/plugin/gui/browser": () => import("@opencode/plugin/gui/browser"),
-  "@opencode/plugin/rpc": () => import("@opencode/plugin/rpc"),
-  "@opencode/schema/rpc": () => import("@opencode/schema/rpc"),
-  "@opencode/client": () => import("@opencode/client"),
-  "@opencode/client/effect": () => import("@opencode/client/effect"),
-  "@opencode/client/solid": () => import("@opencode/client/solid"),
+  "@bellucode/plugin/gui": () => import("@bellucode/plugin/gui"),
+  "@bellucode/plugin/gui/main": () => import("@bellucode/plugin/gui"),
+  "@bellucode/plugin/gui/file": () => import("@bellucode/plugin/gui/file"),
+  "@bellucode/plugin/gui/review": () => import("@bellucode/plugin/gui/review"),
+  "@bellucode/plugin/gui/browser": () => import("@bellucode/plugin/gui/browser"),
+  "@bellucode/plugin/rpc": () => import("@bellucode/plugin/rpc"),
+  "@bellucode/schema/rpc": () => import("@bellucode/schema/rpc"),
+  "@bellucode/client": () => import("@bellucode/client"),
+  "@bellucode/client/effect": () => import("@bellucode/client/effect"),
+  "@bellucode/client/solid": () => import("@bellucode/client/solid"),
   "solid-js": () => import("solid-js"),
   "solid-js/web": () => import("solid-js/web"),
   "solid-js/store": () => import("solid-js/store"),

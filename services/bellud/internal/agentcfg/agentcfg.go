@@ -1,4 +1,4 @@
-// Package agentcfg builds the OPENCODE_CONFIG_CONTENT value handed to the TS child.
+// Package agentcfg builds the BELLUCODE_CONFIG_CONTENT value handed to the TS child.
 package agentcfg
 
 import (
@@ -12,15 +12,15 @@ import (
 
 const (
 	// EnvConfigContent is the compatibility name of the child config variable.
-	EnvConfigContent = "OPENCODE_CONFIG_CONTENT"
+	EnvConfigContent = "BELLUCODE_CONFIG_CONTENT"
 	// ServerName is the mcp entry key.
 	ServerName = "bellu-graph"
 	// MCPPath is the Graph MCP endpoint path.
 	MCPPath = "/api/experimental/graph/mcp"
 )
 
-// ErrInvalidInbound reports an inbound OPENCODE_CONFIG_CONTENT that is not a JSON object.
-var ErrInvalidInbound = errors.New("OPENCODE_CONFIG_CONTENT is invalid: must be a JSON object")
+// ErrInvalidInbound reports an inbound BELLUCODE_CONFIG_CONTENT that is not a JSON object.
+var ErrInvalidInbound = errors.New("BELLUCODE_CONFIG_CONTENT is invalid: must be a JSON object")
 
 // MCPURL returns the endpoint URL for a listen address; wildcard or empty hosts become 127.0.0.1.
 func MCPURL(host string, port int) string {
@@ -32,7 +32,7 @@ func MCPURL(host string, port int) string {
 }
 
 // Build returns the config content for the child. inbound/present describe the
-// inherited OPENCODE_CONFIG_CONTENT. When enabled is false the inbound value is
+// inherited BELLUCODE_CONFIG_CONTENT. When enabled is false the inbound value is
 // returned untouched (and ok reports whether to set it at all). An invalid
 // inbound value is an error whenever it is present and the entry must be merged.
 func Build(inbound string, present, enabled bool, url, token string) (content string, set bool, err error) {

@@ -2,10 +2,10 @@ import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { sql } from "drizzle-orm"
 import { Effect, Option, Schema } from "effect"
-import { Credential } from "@opencode/schema/credential"
-import { Integration } from "@opencode/schema/integration"
-import { NonNegativeInt } from "@opencode/schema/schema"
-import { Global } from "@opencode/util/global"
+import { Credential } from "@bellucode/schema/credential"
+import { Integration } from "@bellucode/schema/integration"
+import { NonNegativeInt } from "@bellucode/schema/schema"
+import { Global } from "@bellucode/util/global"
 import type { DatabaseMigration } from "../migration.js"
 
 const LegacyOAuth = Schema.Struct({
@@ -104,6 +104,6 @@ export function importLegacyCredentials(tx: Parameters<DatabaseMigration.Migrati
 
 function methodID(integrationID: string) {
   if (integrationID === "openai") return "chatgpt-browser"
-  if (["github-copilot", "opencode", "xai"].includes(integrationID)) return "device"
+  if (["github-copilot", "bellucode", "xai"].includes(integrationID)) return "device"
   return "oauth"
 }

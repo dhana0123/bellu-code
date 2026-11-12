@@ -102,7 +102,7 @@ func TestPropertyEmptyPasswordRejects(t *testing.T) {
 	})
 }
 
-// Authorize: username must be "opencode"; password or session token as Basic password; session cookie by port.
+// Authorize: username must be "bellucode"; password or session token as Basic password; session cookie by port.
 func TestPropertyAuthorizeCredentials(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		pw := genPassword().Draw(t, "password")
@@ -115,7 +115,7 @@ func TestPropertyAuthorizeCredentials(t *testing.T) {
 			r := httptest.NewRequest("GET", "/", nil)
 			r.SetBasicAuth(Username, cred)
 			if !a.Authorize(r) {
-				t.Fatalf("opencode:%q should authorize", cred)
+				t.Fatalf("bellucode:%q should authorize", cred)
 			}
 			r = httptest.NewRequest("GET", "/", nil)
 			r.SetBasicAuth(user, cred)
@@ -126,7 +126,7 @@ func TestPropertyAuthorizeCredentials(t *testing.T) {
 
 		host := "example.com:" + itoa(int64(port))
 		name := SessionCookieName(host)
-		if name != "opencode_session_"+itoa(int64(port)) {
+		if name != "bellucode_session_"+itoa(int64(port)) {
 			t.Fatalf("cookie name %q", name)
 		}
 		r := httptest.NewRequest("GET", "/", nil)
@@ -137,13 +137,13 @@ func TestPropertyAuthorizeCredentials(t *testing.T) {
 		}
 		r = httptest.NewRequest("GET", "/", nil)
 		r.Host = "example.com"
-		r.AddCookie(&http.Cookie{Name: "opencode_session", Value: tok})
+		r.AddCookie(&http.Cookie{Name: "bellucode_session", Value: tok})
 		if !a.Authorize(r) {
 			t.Fatal("portless session cookie should authorize")
 		}
 		r = httptest.NewRequest("GET", "/", nil)
 		r.Host = host
-		r.AddCookie(&http.Cookie{Name: "opencode_session", Value: tok})
+		r.AddCookie(&http.Cookie{Name: "bellucode_session", Value: tok})
 		if a.Authorize(r) {
 			t.Fatal("cookie with wrong name for port must be rejected")
 		}

@@ -13,14 +13,14 @@ import {
   type ComponentProps,
   type JSX,
 } from "solid-js"
-import { FileIcon } from "@opencode/ui/file-icon"
+import { FileIcon } from "@bellucode/ui/file-icon"
 import { useI18n } from "../../context/i18n"
-import { Button } from "@opencode/ui/button"
-import { Icon } from "@opencode/ui/icon"
-import { IconButton } from "@opencode/ui/icon-button"
-import { Keybind } from "@opencode/ui/keybind"
-import { Tooltip } from "@opencode/ui/tooltip"
-import { Loader } from "@opencode/ui/loader"
+import { Button } from "@bellucode/ui/button"
+import { Icon } from "@bellucode/ui/icon"
+import { IconButton } from "@bellucode/ui/icon-button"
+import { Keybind } from "@bellucode/ui/keybind"
+import { Tooltip } from "@bellucode/ui/tooltip"
+import { Loader } from "@bellucode/ui/loader"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import {
   createLineCommentEditorState,

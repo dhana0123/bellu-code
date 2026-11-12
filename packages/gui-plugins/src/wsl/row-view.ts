@@ -1,10 +1,10 @@
-import type { WslOpencodeCheck, WslServersState } from "./contract"
+import type { WslBellucodeCheck, WslServersState } from "./contract"
 
 /** A configured distro's settings row, from main's state alone. A server still starting can be updated or removed. */
 export function wslRowView(state: WslServersState | undefined, distro: string) {
   const job = state?.distroJobs[distro]
-  const check = state?.opencodeChecks[distro]
-  const action = opencodeAction(check)
+  const check = state?.bellucodeChecks[distro]
+  const action = bellucodeAction(check)
   const runtime = state?.servers.find((item) => item.config.distro === distro)?.runtime.kind
   const free = !job || job === "starting"
 
@@ -16,10 +16,10 @@ export function wslRowView(state: WslServersState | undefined, distro: string) {
   }
 }
 
-function opencodeAction(check: WslOpencodeCheck | undefined) {
+function bellucodeAction(check: WslBellucodeCheck | undefined) {
   if (!check) return
 
-  if (!check.resolvedPath) return "onboarding.installOpencode"
+  if (!check.resolvedPath) return "onboarding.installBellucode"
 
-  if (check.matchesDesktop === false) return "onboarding.updateOpencode"
+  if (check.matchesDesktop === false) return "onboarding.updateBellucode"
 }

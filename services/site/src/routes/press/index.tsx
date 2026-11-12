@@ -42,7 +42,7 @@ import "~/component/site/product-list.css"
 
 // One-line Anomaly projects for Settings › Press Anomaly projects "list".
 const projectLines: Record<string, string> = {
-  OpenCode: "The open source coding agent.",
+  BelluCode: "The open source coding agent.",
   SST: "Build full-stack apps on your own infrastructure.",
   OpenTUI: "A library to build terminal user interfaces.",
   "Models.dev": "An open source database of AI models.",
@@ -61,9 +61,9 @@ export default function Press() {
   const releases = createMemo(() => pressReleases(data() ?? [], language.route, language.tag(language.locale())))
   const markdown = useMarkdown("/press", pressMarkdown, { releases: () => data() ?? [] })
   const [copied, setCopied] = createSignal<string>()
-  // The boilerplate accordion: OpenCode open from the server render. Rows animate only once someone
+  // The boilerplate accordion: Bellu Code open from the server render. Rows animate only once someone
   // has toggled one, so the first paint never runs the opening animation.
-  const [openProducts, setOpenProducts] = createSignal(["OpenCode"])
+  const [openProducts, setOpenProducts] = createSignal(["Bellu Code"])
   const [accordionReady, setAccordionReady] = createSignal(false)
   onMount(() => {
     // A link to a closed row (#boilerplate-…, or anything inside one) opens it.
@@ -250,10 +250,10 @@ export default function Press() {
 
       <Section title={content().about.title} design="pressBoilerplate pressCopyStyle">
         <p data-slot="text">{content().about.body}</p>
-        {/* OpenCode first, then the company's other products, each a row of the site's FAQ accordion
-            with its long and short text. OpenCode starts open; any number of rows can be open. */}
+        {/* BelluCode first, then the company's other products, each a row of the site's FAQ accordion
+            with its long and short text. BelluCode starts open; any number of rows can be open. */}
         <ul data-component="faq" data-slot="boilerplate-accordion" data-ready={accordionReady() ? "" : undefined}>
-          <For each={[{ name: "OpenCode", ...content().about.boilerplate }, ...content().about.products]}>
+          <For each={[{ name: "Bellu Code", ...content().about.boilerplate }, ...content().about.products]}>
             {(product) => (
               <li id={`boilerplate-${slug(product.name)}`}>
                 <Faq
@@ -403,7 +403,7 @@ export default function Press() {
           <p data-slot="text">{content().brand.usage}</p>
         </div>
         <div data-slot="links">
-          <a href={content().brand.all.href} download="opencode-brand-assets.zip" data-component="site-button">
+          <a href={content().brand.all.href} download="bellucode-brand-assets.zip" data-component="site-button">
             {content().brand.all.text}
             <DownloadIcon />
           </a>
@@ -432,7 +432,7 @@ export default function Press() {
               <div data-slot="links">
                 <a
                   href={zip()}
-                  download="opencode-press-photos.zip"
+                  download="bellucode-press-photos.zip"
                   data-component="site-button"
                   data-variant="neutral"
                 >
@@ -462,7 +462,7 @@ export default function Press() {
         >
           <For each={content().company.projects}>
             {(project) => {
-              // OpenCode is this site; the other projects open in a new tab.
+              // Bellu Code is this site; the other projects open in a new tab.
               const external = !project.href.startsWith("https://opencode.ai")
               return (
                 <li>

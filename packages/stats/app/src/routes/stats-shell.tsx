@@ -13,7 +13,7 @@ export const githubLink = {
   fallbackStars: "220K",
 }
 export const themePreferences = ["dark", "light", "system"] as const
-export const themeStorageKey = "opencode:stats-theme"
+export const themeStorageKey = "bellucode:stats-theme"
 export type ThemePreference = (typeof themePreferences)[number]
 
 const compactNumberFormatter = new Intl.NumberFormat("en", {
@@ -28,7 +28,7 @@ export const getGitHubStars = query(async () => {
     headers: {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
-      "User-Agent": "opencode-stats",
+      "User-Agent": "bellucode-stats",
     },
   })
     .then((response) => (response.ok ? response.json() : undefined))
@@ -126,10 +126,10 @@ export function Header(props: { githubStars: string; links?: readonly HeaderLink
             data-slot="header-button"
             data-variant="contrast"
             href="https://opencode.ai/"
-            aria-label={i18n.t("header.tryOpenCode")}
+            aria-label={i18n.t("header.tryBelluCode")}
           >
-            <strong data-slot="label">{i18n.t("header.tryOpenCode")}</strong>
-            <strong data-slot="label-short">{i18n.t("header.tryOpenCodeShort")}</strong>
+            <strong data-slot="label">{i18n.t("header.tryBelluCode")}</strong>
+            <strong data-slot="label-short">{i18n.t("header.tryBelluCodeShort")}</strong>
           </a>
           <a
             data-slot="github-mark"
@@ -173,9 +173,9 @@ export function Header(props: { githubStars: string; links?: readonly HeaderLink
   )
 }
 
-function OpenCodeMark() {
+function BelluCodeMark() {
   return (
-    <svg data-slot="opencode-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+    <svg data-slot="bellucode-mark" width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <path d="M40 40H0V0H40V40Z" fill="var(--stats-logo-bg)" />
       <path d="M26 29H14V17H26V29Z" fill="var(--stats-logo-fill)" />
       <path d="M26 11H14V29H26V11ZM32 35H8V5H32V35Z" fill="var(--stats-logo-stroke)" />
@@ -223,7 +223,7 @@ export function Footer(props: {
       <Show when={bridge()}>{(link) => <SectionBridge label={link().label} href={link().href} />}</Show>
       <div data-slot="footer-grid">
         <a data-slot="footer-mark" href="https://opencode.ai" aria-label={i18n.t("footer.homeAria")}>
-          <OpenCodeMark />
+          <BelluCodeMark />
         </a>
         <FooterColumn title={i18n.t("footer.modelData")} links={modelStats} localHref={localHref} />
         <FooterColumn title={i18n.t("footer.legal")} links={legal} localHref={localHref} />
