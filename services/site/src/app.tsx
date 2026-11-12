@@ -3,8 +3,8 @@ import { Router, useBeforeLeave, useCurrentMatches, useIsRouting, useLocation } 
 import { FileRoutes } from "@solidjs/start/router"
 import { createEffect, Show, Suspense } from "solid-js"
 import { isServer } from "solid-js/web"
-import { Favicon } from "@opencode/ui/favicon"
-import { Font } from "@opencode/ui/font"
+import { Favicon } from "@bellucode/ui/favicon"
+import { Font } from "@bellucode/ui/font"
 import "./style/ibm-plex-mono.dev.css"
 import "./app.css"
 import { LanguageProvider } from "~/context/language"
@@ -62,7 +62,7 @@ function AppMeta() {
   }
   return (
     <>
-      <Title>opencode</Title>
+      <Title>bellucode</Title>
       <LiveMeta name="viewport" content={viewportContent()} />
       {/* Defaults, skipped on pages that set their own: the server renders both tags, which would compete. */}
       <Show when={!ownDescription(strip(location.pathname))}>

@@ -5,19 +5,19 @@
 
 archives=$1 macos=$2 windows=$3
 cli=()
-for target in linux-arm64 linux-x64 linux-x64-baseline linux-arm64-musl linux-x64-musl linux-x64-baseline-musl; do cli+=("$archives/opencode-$target.tar.gz"); done
-for target in darwin-arm64 darwin-x64 darwin-x64-baseline; do cli+=("$macos/opencode-$target.zip"); done
-for target in windows-arm64 windows-x64 windows-x64-baseline; do cli+=("$windows/opencode-$target.zip"); done
+for target in linux-arm64 linux-x64 linux-x64-baseline linux-arm64-musl linux-x64-musl linux-x64-baseline-musl; do cli+=("$archives/bellucode-$target.tar.gz"); done
+for target in darwin-arm64 darwin-x64 darwin-x64-baseline; do cli+=("$macos/bellucode-$target.zip"); done
+for target in windows-arm64 windows-x64 windows-x64-baseline; do cli+=("$windows/bellucode-$target.zip"); done
 
 files=$(upload_files "${cli[@]}")
-publish_update cli npm '{"package": "@opencode/cli"}'
-publish_update cli opencode "$(jq -n --argjson files "$files" '{files: $files}')"
+publish_update cli npm '{"package": "@bellucode/cli"}'
+publish_update cli bellucode "$(jq -n --argjson files "$files" '{files: $files}')"
 
-if [ "$OPENCODE_CHANNEL" != latest ]; then
+if [ "$BELLUCODE_CHANNEL" != latest ]; then
   node=()
-  for target in linux-arm64 linux-x64; do node+=("$archives/opencode2-node-$target.tar.gz"); done
-  for target in darwin-arm64 windows-arm64 windows-x64; do node+=("$archives/opencode2-node-$target.zip"); done
+  for target in linux-arm64 linux-x64; do node+=("$archives/bellucode2-node-$target.tar.gz"); done
+  for target in darwin-arm64 windows-arm64 windows-x64; do node+=("$archives/bellucode2-node-$target.zip"); done
   files=$(upload_files "${node[@]}")
-  publish_update cli-node npm '{"package": "@opencode/cli-node"}'
-  publish_update cli-node opencode "$(jq -n --argjson files "$files" '{files: $files}')"
+  publish_update cli-node npm '{"package": "@bellucode/cli-node"}'
+  publish_update cli-node bellucode "$(jq -n --argjson files "$files" '{files: $files}')"
 fi

@@ -1,28 +1,28 @@
 import { Option, Schema } from "effect"
 
-declare const OPENCODE_VERSION: string
-declare const OPENCODE_CHANNEL: string
-declare const OPENCODE_ARTIFACT: string
-declare const OPENCODE_RELEASE_HIGHLIGHTS: string
+declare const BELLUCODE_VERSION: string
+declare const BELLUCODE_CHANNEL: string
+declare const BELLUCODE_ARTIFACT: string
+declare const BELLUCODE_RELEASE_HIGHLIGHTS: string
 
-const version = typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "local"
-const channel = typeof OPENCODE_CHANNEL === "string" ? OPENCODE_CHANNEL : "local"
-const artifact = typeof OPENCODE_ARTIFACT === "string" ? OPENCODE_ARTIFACT : "cli"
+const version = typeof BELLUCODE_VERSION === "string" ? BELLUCODE_VERSION : "local"
+const channel = typeof BELLUCODE_CHANNEL === "string" ? BELLUCODE_CHANNEL : "local"
+const artifact = typeof BELLUCODE_ARTIFACT === "string" ? BELLUCODE_ARTIFACT : "cli"
 // Stable release builds embed the release notes' Highlights; every other build has none.
 const highlights =
-  typeof OPENCODE_RELEASE_HIGHLIGHTS === "string"
+  typeof BELLUCODE_RELEASE_HIGHLIGHTS === "string"
     ? Option.getOrElse(
         Schema.decodeUnknownOption(
           Schema.fromJsonString(Schema.Array(Schema.Struct({ title: Schema.String, body: Schema.String }))),
-        )(OPENCODE_RELEASE_HIGHLIGHTS),
+        )(BELLUCODE_RELEASE_HIGHLIGHTS),
         () => [],
       )
     : []
 
 export {
-  version as OPENCODE_VERSION,
-  channel as OPENCODE_CHANNEL,
-  artifact as OPENCODE_ARTIFACT,
-  highlights as OPENCODE_HIGHLIGHTS,
+  version as BELLUCODE_VERSION,
+  channel as BELLUCODE_CHANNEL,
+  artifact as BELLUCODE_ARTIFACT,
+  highlights as BELLUCODE_HIGHLIGHTS,
 }
-export const OPENCODE_LOCAL = channel === "local"
+export const BELLUCODE_LOCAL = channel === "local"

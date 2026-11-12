@@ -46,7 +46,7 @@ export function MediaGallery(props: { products: Product[]; style: Style }) {
                 <Thumb item={product.items[0]} onClick={(event) => show(productIndex(), 0, event)} />
                 <a
                   href={product.zip.href}
-                  download={`opencode-${product.slug}-media.zip`}
+                  download={`bellucode-${product.slug}-media.zip`}
                   data-slot="product-download"
                   data-variant="neutral"
                   data-component="site-button"
@@ -68,7 +68,7 @@ export function MediaGallery(props: { products: Product[]; style: Style }) {
                 <span data-slot="count">{i18n.t("press.ui.items", { count: product.items.length })}</span>
                 <a
                   href={product.zip.href}
-                  download={`opencode-${product.slug}-media.zip`}
+                  download={`bellucode-${product.slug}-media.zip`}
                   data-slot="group-download"
                   data-variant="neutral"
                   data-component="site-button"

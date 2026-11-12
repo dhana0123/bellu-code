@@ -16,7 +16,7 @@ export const content = {
     },
     "steer-your-sessions-from-your-phone": {
       text: "Conduza suas sessões pelo celular.",
-      link: "Conheça o OpenCode Mobile",
+      link: "Conheça o Bellu Code Mobile",
     },
     "a-refreshed-desktop-app": {
       text: "Um app desktop renovado.",
@@ -41,12 +41,12 @@ export const content = {
     },
     sdk: {
       name: "SDK",
-      body: "Controle o OpenCode pelos seus scripts, jobs de CI e ferramentas.",
+      body: "Controle o Bellu Code pelos seus scripts, jobs de CI e ferramentas.",
       action: "Ver docs",
     },
     ide: {
       name: "Extensões de IDE",
-      body: "Abra o OpenCode no VS Code, Cursor e Windsurf, ou no Zed e em IDEs JetBrains via ACP.",
+      body: "Abra o Bellu Code no VS Code, Cursor e Windsurf, ou no Zed e em IDEs JetBrains via ACP.",
       action: "Instalar",
     },
     mini: {
@@ -57,9 +57,9 @@ export const content = {
   },
   productDetails: {
     desktop: {
-      title: "OpenCode | App desktop para macOS, Windows e Linux",
+      title: "Bellu Code | App desktop para macOS, Windows e Linux",
       description:
-        "Rode quantos agentes do OpenCode quiser em paralelo, veja cada mudança em um navegador ao lado e retome-os em qualquer dispositivo. Para macOS, Windows e Linux.",
+        "Rode quantos agentes do Bellu Code quiser em paralelo, veja cada mudança em um navegador ao lado e retome-os em qualquer dispositivo. Para macOS, Windows e Linux.",
       intro:
         "Rode vários agentes ao mesmo tempo, cada sessão na sua própria aba. Revise cada mudança como diff, comente qualquer linha e confira o resultado no navegador integrado. Para macOS, Windows e Linux.",
       showcase: {
@@ -77,16 +77,16 @@ export const content = {
         },
         "extend-it": {
           title: "Estenda",
-          body: "Conecte suas ferramentas e serviços para o agente trabalhar com qualquer coisa. Ou peça ao OpenCode para criar plugins para si mesmo, com interface própria na barra lateral.",
+          body: "Conecte suas ferramentas e serviços para o agente trabalhar com qualquer coisa. Ou peça ao BelluCode para criar plugins para si mesmo, com interface própria na barra lateral.",
         },
       },
     },
     mobile: {
-      title: "OpenCode | Mobile, suas sessões de código no seu celular",
+      title: "Bellu Code | Mobile, suas sessões de código no seu celular",
       description:
-        "Inicie e conduza sessões do OpenCode pelo celular. Fale com o agente enquanto ele roda no seu computador.",
+        "Inicie e conduza sessões do Bellu Code pelo celular. Fale com o agente enquanto ele roda no seu computador.",
       intro:
-        "Inicie e conduza sessões pelo celular, onde você estiver. Ligue para uma sessão e fale com o agente, ou abra qualquer sessão para continuar de onde parou, tudo no OpenCode rodando no seu próprio computador.",
+        "Inicie e conduza sessões pelo celular, onde você estiver. Ligue para uma sessão e fale com o agente, ou abra qualquer sessão para continuar de onde parou, tudo no Bellu Code rodando no seu próprio computador.",
       features: {
         "notify-when-done": {
           title: "Aviso ao terminar",
@@ -94,7 +94,7 @@ export const content = {
         },
         "pair-from-anywhere": {
           title: "Pareie de qualquer lugar",
-          body: "Conecte-se de qualquer rede com opencode pair --remote.",
+          body: "Conecte-se de qualquer rede com bellucode pair --remote.",
         },
         "every-computer": {
           title: "Cada computador",
@@ -110,7 +110,7 @@ export const content = {
         },
         "your-computer": {
           title: "Seu computador",
-          body: "Conecta ao OpenCode rodando na sua própria máquina.",
+          body: "Conecta ao Bellu Code rodando na sua própria máquina.",
         },
         "share-sheet": {
           title: "Compartilhar",
@@ -141,9 +141,9 @@ export const content = {
       },
     },
     terminal: {
-      title: "OpenCode | Interface de terminal do agente de código aberto",
+      title: "Bellu Code | Interface de terminal do agente de código aberto",
       description:
-        "Uma interface de terminal rápida para o OpenCode que funciona em qualquer shell, editor ou servidor remoto. Descreva o que quer, veja cada edição como diff e aprove comandos.",
+        "Uma interface de terminal rápida para o BelluCode que funciona em qualquer shell, editor ou servidor remoto. Descreva o que quer, veja cada edição como diff e aprove comandos.",
       intro:
         "Uma interface de terminal rápida que funciona em qualquer shell, editor ou servidor remoto. Descreva o que quer em palavras simples, veja cada edição chegar como diff e escolha quais comandos rodam sozinhos.",
       features: {
@@ -161,7 +161,7 @@ export const content = {
         },
         "one-off-runs": {
           title: "Uso avulso",
-          body: "opencode run envia uma mensagem e imprime a resposta.",
+          body: "bellucode run envia uma mensagem e imprime a resposta.",
         },
         "agents-and-commands": {
           title: "Agentes e comandos",
@@ -173,11 +173,11 @@ export const content = {
         },
         "any-server": {
           title: "Todo servidor",
-          body: "Conecte-se a um servidor OpenCode pela URL com --server.",
+          body: "Conecte-se a um servidor Bellu Code pela URL com --server.",
         },
         "usage-stats": {
           title: "Estatísticas",
-          body: "opencode stats mostra estatísticas de uso para compartilhar.",
+          body: "bellucode stats mostra estatísticas de uso para compartilhar.",
         },
       },
       showcase: {
@@ -195,20 +195,20 @@ export const content = {
         },
         mini: {
           title: "Mini",
-          body: "Rode opencode mini e as respostas vão para o seu histórico.",
+          body: "Rode bellucode mini e as respostas vão para o seu histórico.",
         },
       },
     },
     sdk: {
-      title: "OpenCode | SDK TypeScript para scripts, jobs de CI e ferramentas",
+      title: "Bellu Code | SDK TypeScript para scripts, jobs de CI e ferramentas",
       description:
-        "Controle o OpenCode pelos seus scripts, jobs de CI e ferramentas. O cliente TypeScript tipado cria sessões, envia prompts e transmite cada evento em tempo real.",
+        "Controle o Bellu Code pelos seus scripts, jobs de CI e ferramentas. O cliente TypeScript tipado cria sessões, envia prompts e transmite cada evento em tempo real.",
       intro:
-        "Controle o OpenCode pelos seus scripts, jobs de CI e ferramentas. O SDK roda o OpenCode dentro do seu processo, com sua configuração e seus modelos, e o cliente tipado cria sessões, envia prompts e transmite cada evento.",
+        "Controle o Bellu Code pelos seus scripts, jobs de CI e ferramentas. O SDK roda o Bellu Code dentro do seu processo, com sua configuração e seus modelos, e o cliente tipado cria sessões, envia prompts e transmite cada evento.",
       features: {
         "typescript-client": {
           title: "Cliente TypeScript",
-          body: "Requisições e eventos tipados, com os mesmos valores de @opencode/client.",
+          body: "Requisições e eventos tipados, com os mesmos valores de @bellucode/client.",
         },
         "sessions-from-code": {
           title: "Sessões pelo código",
@@ -216,15 +216,15 @@ export const content = {
         },
         "any-model": {
           title: "Todo modelo",
-          body: "Usa os modelos que o seu OpenCode tiver configurados.",
+          body: "Usa os modelos que o seu Bellu Code tiver configurados.",
         },
         "npm-or-bun": {
           title: "npm ou bun",
-          body: "Instale com npm i @opencode/sdk ou bun add @opencode/sdk.",
+          body: "Instale com npm i @bellucode/sdk ou bun add @bellucode/sdk.",
         },
         "in-process-host": {
           title: "Host no processo",
-          body: "Roda o OpenCode na memória, sem passar pela rede.",
+          body: "Roda o Bellu Code na memória, sem passar pela rede.",
         },
         "your-plugins": {
           title: "Seus plugins",
@@ -236,13 +236,13 @@ export const content = {
         },
         "cloudflare-workers": {
           title: "Cloudflare Workers",
-          body: "Rode o OpenCode em um Durable Object da Cloudflare no Workers.",
+          body: "Rode o Bellu Code em um Durable Object da Cloudflare no Workers.",
         },
       },
       showcase: {
         "fix-ci-from-code": {
           title: "Corrija o CI",
-          body: "Um script pede ao OpenCode para corrigir testes com falha e os roda de novo.",
+          body: "Um script pede ao Bellu Code para corrigir testes com falha e os roda de novo.",
         },
         "follow-every-step": {
           title: "Acompanhe cada passo",
@@ -250,24 +250,24 @@ export const content = {
         },
         "build-your-own-tools": {
           title: "Crie suas ferramentas",
-          body: "Integre o OpenCode a bots, dashboards e fluxos de trabalho com poucas linhas.",
+          body: "Integre o Bellu Code a bots, dashboards e fluxos de trabalho com poucas linhas.",
         },
         "in-your-process": {
           title: "No seu processo",
-          body: "Roda o OpenCode no seu processo, com sua configuração e seus modelos.",
+          body: "Roda o Bellu Code no seu processo, com sua configuração e seus modelos.",
         },
       },
     },
     ide: {
-      title: "OpenCode | Integrações com editores como VS Code, Cursor e Zed",
+      title: "Bellu Code | Integrações com editores como VS Code, Cursor e Zed",
       description:
-        "Use o OpenCode no seu editor, com a extensão para VS Code, Cursor, Windsurf e VSCodium, e opencode acp para Zed, IDEs JetBrains e outros editores ACP.",
+        "Use o Bellu Code no seu editor, com a extensão para VS Code, Cursor, Windsurf e VSCodium, e bellucode acp para Zed, IDEs JetBrains e outros editores ACP.",
       intro:
-        "Use o OpenCode no seu editor. No VS Code, Cursor, Windsurf e VSCodium, rode opencode no terminal integrado e a extensão se instala sozinha. Zed, IDEs JetBrains e outros editores compatíveis com o Agent Client Protocol rodam o OpenCode com opencode acp.",
+        "Use o Bellu Code no seu editor. No VS Code, Cursor, Windsurf e VSCodium, rode bellucode no terminal integrado e a extensão se instala sozinha. Zed, IDEs JetBrains e outros editores compatíveis com o Agent Client Protocol rodam o Bellu Code com bellucode acp.",
       features: {
         "quick-launch": {
           title: "Abertura rápida",
-          body: "Cmd+Esc ou Ctrl+Esc abre o OpenCode em um terminal dividido.",
+          body: "Cmd+Esc ou Ctrl+Esc abre o Bellu Code em um terminal dividido.",
         },
         "new-session": {
           title: "Nova sessão",
@@ -275,7 +275,7 @@ export const content = {
         },
         context: {
           title: "Contexto",
-          body: "Compartilha sua seleção ou aba atual com o OpenCode.",
+          body: "Compartilha sua seleção ou aba atual com o BelluCode.",
         },
         "file-references": {
           title: "Citar arquivos",
@@ -283,7 +283,7 @@ export const content = {
         },
         "installs-itself": {
           title: "Instala sozinha",
-          body: "Rode opencode no terminal integrado para adicioná-la.",
+          body: "Rode bellucode no terminal integrado para adicioná-la.",
         },
         "acp-editors": {
           title: "Editores ACP",
@@ -295,16 +295,16 @@ export const content = {
         },
         "same-agent": {
           title: "Mesmo agente",
-          body: "O OpenCode que você roda no terminal, ao lado do seu código.",
+          body: "O Bellu Code que você roda no terminal, ao lado do seu código.",
         },
       },
     },
     mini: {
-      title: "OpenCode | Mini, uma interface de terminal mínima para o agente",
+      title: "BelluCode | Mini, uma interface de terminal mínima para o agente",
       description:
-        "O Mini roda o OpenCode em uma interface de terminal mínima. As respostas vão para o histórico do próprio terminal, e só um prompt e uma linha de status ficam embaixo.",
+        "O Mini roda o BelluCode em uma interface de terminal mínima. As respostas vão para o histórico do próprio terminal, e só um prompt e uma linha de status ficam embaixo.",
       intro:
-        "Uma interface de terminal mínima para o OpenCode. Rode opencode mini e as respostas vão direto para o histórico do seu terminal, para você rolar, buscar e copiar como qualquer outra saída. Só o prompt e uma linha de status ficam embaixo.",
+        "Uma interface de terminal mínima para o BelluCode. Rode bellucode mini e as respostas vão direto para o histórico do seu terminal, para você rolar, buscar e copiar como qualquer outra saída. Só o prompt e uma linha de status ficam embaixo.",
       features: {
         "your-scrollback": {
           title: "Seu histórico",
@@ -326,8 +326,8 @@ export const content = {
           title: "Continue depois",
           body: "Retome a última sessão com -c, ou qualquer uma com -s.",
         },
-        "same-opencode": {
-          title: "Mesmo OpenCode",
+        "same-bellucode": {
+          title: "Mesmo Bellu Code",
           body: "O mesmo servidor, agentes e modelos dos outros apps.",
         },
         agents: {
@@ -343,16 +343,16 @@ export const content = {
   },
   extensionCard: {
     name: "Extensões",
-    body: "Use o OpenCode no VS Code, ou no Zed e em outros editores via ACP.",
+    body: "Use o Bellu Code no VS Code, ou no Zed e em outros editores via ACP.",
     action: "Instalar",
   },
   extensions: {
     browse: {
       name: "Browse",
       body: "Deixe agentes usarem seu navegador de verdade.",
-      title: "OpenCode | Browse, seu navegador real para agentes de programação",
+      title: "Bellu Code | Browse, seu navegador real para agentes de programação",
       description:
-        "Browse deixa o OpenCode e outros clientes MCP usarem seu navegador de verdade. Agentes controlam abas em segundo plano com Playwright e devolvem logins e 2FA a você.",
+        "Browse deixa o Bellu Code e outros clientes MCP usarem seu navegador de verdade. Agentes controlam abas em segundo plano com Playwright e devolvem logins e 2FA a você.",
       intro:
         "Um servidor MCP e uma extensão do Chromium que deixam seus agentes usarem seu navegador de verdade, com suas abas, seus logins e suas extensões. Eles abrem e controlam abas com Playwright, tiram capturas de tela e gravam a tela, em abas de segundo plano agrupadas fora do seu caminho. Quando é a sua vez, para um login, um código 2FA ou um pagamento, eles devolvem a aba a você e continuam quando você clica em Continue.",
       features: {
@@ -378,7 +378,7 @@ export const content = {
         },
         "any-mcp-client": {
           title: "Todo cliente MCP",
-          body: "OpenCode, Claude Code, Cursor, Codex, Zed e muitos outros.",
+          body: "Bellu Code, Claude Code, Cursor, Codex, Zed e muitos outros.",
         },
         "all-your-logins": {
           title: "Todos os seus logins",
@@ -413,10 +413,10 @@ export const content = {
   },
   getStarted: {
     title: "Comece agora",
-    lead: "O jeito mais fácil de começar é baixar o OpenCode e usar os modelos grátis. Não precisa de conta. Para mais, traga sua própria assinatura ou use o OpenCode Go.",
+    lead: "O jeito mais fácil de começar é baixar o Bellu Code e usar os modelos grátis. Não precisa de conta. Para mais, traga sua própria assinatura ou use o Bellu Code Go.",
     phrases: {
-      "download-opencode": {
-        text: "baixar o OpenCode",
+      "download-bellucode": {
+        text: "baixar o Bellu Code",
       },
       "free-models": {
         text: "modelos grátis",
@@ -427,8 +427,8 @@ export const content = {
       "a-subscription-you-already-have": {
         text: "uma assinatura que você já tem",
       },
-      "opencode-go": {
-        text: "OpenCode Go",
+      "bellucode-go": {
+        text: "Bellu Code Go",
       },
     },
     subscriptions: {
@@ -440,11 +440,11 @@ export const content = {
       },
     },
     plans: {
-      "opencode-go": {
-        name: "OpenCode Go",
+      "bellucode-go": {
+        name: "Bellu Code Go",
       },
-      "opencode-go-plus": {
-        name: "OpenCode Go Plus",
+      "bellucode-go-plus": {
+        name: "Bellu Code Go Plus",
       },
     },
     steps: {
@@ -454,20 +454,20 @@ export const content = {
       },
       "use-free-models": {
         title: "Use modelos grátis",
-        line: "O OpenCode vem com um conjunto de modelos grátis. Não precisa de conta.",
+        line: "O Bellu Code vem com um conjunto de modelos grátis. Não precisa de conta.",
       },
       "add-more-models": {
         title: "Adicione modelos",
-        line: "Traga sua própria assinatura ou use os modelos selecionados do OpenCode Go a partir de US$ 10/mês.",
+        line: "Traga sua própria assinatura ou use os modelos selecionados do Bellu Code Go a partir de US$ 10/mês.",
       },
     },
     sentence:
-      "Baixe o OpenCode, comece com modelos grátis e traga sua própria assinatura ou o OpenCode Go quando quiser mais.",
+      "Baixe o Bellu Code, comece com modelos grátis e traga sua própria assinatura ou o Bellu Code Go quando quiser mais.",
   },
   byos: {
     title: "Use suas assinaturas",
     headline: "Use as assinaturas que você já tem.",
-    line: "Entre com ChatGPT Plus ou Pro, ou com GitHub Copilot. Ou use uma assinatura OpenCode.",
+    line: "Entre com ChatGPT Plus ou Pro, ou com GitHub Copilot. Ou use uma assinatura BelluCode.",
     yours: {
       label: "Sua assinatura",
       items: {
@@ -479,9 +479,9 @@ export const content = {
         },
       },
     },
-    planLinks: ["assinatura OpenCode", "OpenCode Go"],
+    planLinks: ["assinatura Bellu Code", "Bellu Code Go"],
     ours: {
-      label: "Planos OpenCode",
+      label: "Planos Bellu Code",
     },
   },
   brand: {
@@ -493,8 +493,8 @@ export const content = {
     },
     naming: {
       title: "Nome",
-      body: "Escreva OpenCode como uma palavra só, com O e C maiúsculos. Não escreva Opencode, Open Code, OpenCode AI nem Open-Code.",
-      code: "Use `opencode` em minúsculas só em código e nomes de pacotes, como `opencode-figma` ou `@acme/opencode-plugin`.",
+      body: "Escreva Bellu Code como uma palavra só, com O e C maiúsculos. Não escreva Bellucode, Bellu Code, Bellu Code AI nem BelluCode.",
+      code: "Use `bellucode` em minúsculas só em código e nomes de pacotes, como `bellucode-figma` ou `@acme/opencode-plugin`.",
     },
     families: {
       logo: {
@@ -517,7 +517,7 @@ export const content = {
       },
       wordmark: {
         title: "Logotipo",
-        body: "O nome completo com as letras do OpenCode. Use sempre que houver espaço para escrever o nome por extenso.",
+        body: "O nome completo com as letras do BelluCode. Use sempre que houver espaço para escrever o nome por extenso.",
         assets: {
           light: {
             name: "Claro",
@@ -722,21 +722,21 @@ export const content = {
     },
     integrations: {
       title: "Integrações",
-      body: "Plugins, provedores e ferramentas que funcionam com o OpenCode, e projetos feitos com ele, podem dizer isso. Use um selo ou um lockup de parceria, e dê ao seu projeto um nome que deixe claro que ele é seu.",
+      body: "Plugins, provedores e ferramentas que funcionam com o Bellu Code, e projetos feitos com ele, podem dizer isso. Use um selo ou um lockup de parceria, e dê ao seu projeto um nome que deixe claro que ele é seu.",
       badges: {
         body: "Coloque um selo no seu README, docs ou site com link para opencode.ai. Escolha o arquivo claro ou escuro para o seu fundo (o HTML alterna sozinho) e não mude as cores nem o texto.",
         sizes: "Todo estilo vem em 20, 32 e 44px (Shields só em 20px), em SVG e em PNG a 2×.",
-        mono: "Cada arquivo também vem com texto em OpenTUI Mono. Adicione -mono antes da extensão, como em opencode-works-with-a-light-20-mono.svg, ou -mono-caps para OpenTUI Mono em maiúsculas.",
+        mono: "Cada arquivo também vem com texto em OpenTUI Mono. Adicione -mono antes da extensão, como em bellucode-works-with-a-light-20-mono.svg, ou -mono-caps para OpenTUI Mono em maiúsculas.",
         groups: {
           "works-with": {
             title: "Funciona com",
-            alt: "Funciona com OpenCode",
-            body: "Para plugins, provedores e ferramentas que rodam com o OpenCode.",
+            alt: "Funciona com Bellu Code",
+            body: "Para plugins, provedores e ferramentas que rodam com o BelluCode.",
           },
           "built-with": {
             title: "Feito com",
-            alt: "Feito com OpenCode",
-            body: "Para projetos feitos com o OpenCode.",
+            alt: "Feito com Bellu Code",
+            body: "Para projetos feitos com o BelluCode.",
           },
         },
         styles: {
@@ -756,7 +756,7 @@ export const content = {
       },
       lockup: {
         title: "Lockup de parceria",
-        body: "Coloque o logo do OpenCode e o logo do parceiro lado a lado, com um × entre eles. Deixe 3 traços de espaço de cada lado do ×, ajuste o logo do parceiro para parecer tão alto quanto o do OpenCode e mantenha área de respiro em volta de todo o conjunto.",
+        body: "Coloque o logo do Bellu Code e o logo do parceiro lado a lado, com um × entre eles. Deixe 3 traços de espaço de cada lado do ×, ajuste o logo do parceiro para parecer tão alto quanto o do Bellu Code e mantenha área de respiro em volta de todo o conjunto.",
         partners: {
           github: {
             name: "GitHub",
@@ -766,12 +766,12 @@ export const content = {
       naming: {
         title: "Nome do seu projeto",
         body: "Comece pelo seu próprio nome, para deixar claro que o projeto é seu.",
-        rule: "Escreva `Linear for OpenCode` ou chame o pacote de `opencode-linear`. Não escreva `OpenCode Linear` nem `Linear by OpenCode`.",
+        rule: "Escreva `Linear for Bellu Code` ou chame o pacote de `bellucode-linear`. Não escreva `Bellu Code Linear` nem `Linear by Bellu Code`.",
       },
     },
     trademarks: {
       title: "Marcas",
-      body: "OpenCode e o logo do OpenCode são marcas registradas da Anomaly. Não as use para sugerir que a Anomaly apoia ou patrocina você, no nome do seu produto ou empresa, nem em produtos à venda sem permissão.",
+      body: "Bellu Code e o logo do Bellu Code são marcas registradas da Anomaly. Não as use para sugerir que a Anomaly apoia ou patrocina você, no nome do seu produto ou empresa, nem em produtos à venda sem permissão.",
       contact: {
         before: "Em caso de dúvidas, escreva para ",
         after: ".",
@@ -779,21 +779,21 @@ export const content = {
     },
   },
   press: {
-    title: "OpenCode | Kit de imprensa com dados da empresa e da marca",
+    title: "Bellu Code | Kit de imprensa com dados da empresa e da marca",
     description:
-      "O kit de imprensa do OpenCode, com dados sobre o OpenCode e a Anomaly, a empresa por trás dele, além de logos e logotipos para baixar e um contato para a imprensa.",
+      "O kit de imprensa do Bellu Code, com dados sobre o Bellu Code e a Anomaly, a empresa por trás dele, além de logos e logotipos para baixar e um contato para a imprensa.",
     hero: {
       title: "Imprensa",
-      body: "Dados, ativos da marca e contatos para escrever sobre o OpenCode e a Anomaly.",
+      body: "Dados, ativos da marca e contatos para escrever sobre o Bellu Code e a Anomaly.",
     },
     company: {
       title: "Sobre a Anomaly",
-      lead: "A Anomaly é a empresa por trás do OpenCode. Ela cria ferramentas de código aberto para desenvolvedores.",
+      lead: "A Anomaly é a empresa por trás do BelluCode. Ela cria ferramentas de código aberto para desenvolvedores.",
       more: "Outros projetos incluem SST e OpenTUI, todos de código aberto no [GitHub](github).",
       learnMore: "Para saber mais, acesse [anoma.ly](site).",
       projects: {
-        opencode: {
-          name: "OpenCode",
+        bellucode: {
+          name: "Bellu Code",
           body: "O agente de programação de código aberto, com apps para desktop, terminal e mobile, e um SDK. Licença MIT, mais de 220.000 estrelas no GitHub.",
         },
         sst: {
@@ -802,7 +802,7 @@ export const content = {
         },
         opentui: {
           name: "OpenTUI",
-          body: "Uma biblioteca para interfaces de terminal em TypeScript, React ou Solid, com núcleo em Zig. O OpenCode a usa em produção. Mais de 13.000 estrelas no GitHub.",
+          body: "Uma biblioteca para interfaces de terminal em TypeScript, React ou Solid, com núcleo em Zig. O Bellu Code a usa em produção. Mais de 13.000 estrelas no GitHub.",
         },
         "models-dev": {
           name: "Models.dev",
@@ -819,31 +819,31 @@ export const content = {
       },
     },
     about: {
-      title: "Sobre o OpenCode",
-      body: "Descrições do OpenCode e de seus produtos em versões longa e curta, prontas para copiar.",
+      title: "Sobre o Bellu Code",
+      body: "Descrições do Bellu Code e de seus produtos em versões longa e curta, prontas para copiar.",
       boilerplate: {
-        long: "OpenCode é um agente de programação de código aberto. Ele vem como app desktop, interface de terminal, app mobile e SDK, e funciona com modelos de qualquer provedor, incluindo Claude, GPT e Gemini. O OpenCode tem licença MIT e é feito pela Anomaly. Tem mais de 220.000 estrelas no GitHub e mais de 1.000 colaboradores, e mais de 22 milhões de desenvolvedores o usam todo mês.",
+        long: "BelluCode é um agente de programação de código aberto. Ele vem como app desktop, interface de terminal, app mobile e SDK, e funciona com modelos de qualquer provedor, incluindo Claude, GPT e Gemini. O BelluCode tem licença MIT e é feito pela Anomaly. Tem mais de 220.000 estrelas no GitHub e mais de 1.000 colaboradores, e mais de 22 milhões de desenvolvedores o usam todo mês.",
         short:
-          "OpenCode é um agente de programação de código aberto da Anomaly, com apps para desktop, terminal e mobile, e um SDK.",
+          "Bellu Code é um agente de programação de código aberto da Anomaly, com apps para desktop, terminal e mobile, e um SDK.",
       },
       products: {
-        "opencode-console": {
-          name: "OpenCode Console",
-          long: "O OpenCode Console é o app web onde desenvolvedores e equipes compram e gerenciam acesso a modelos de IA para o OpenCode e outros agentes de programação. Ele oferece inferência pré-paga para modelos de fronteira e de pesos abertos, cobrada por requisição a partir de créditos, e assinaturas do OpenCode Go. Equipes têm workspaces com funções de Member, Admin e Owner, limites de gasto por workspace e por usuário, login único com Okta, Microsoft Entra ID ou Google Workspace, e SCIM. O Console aceita mais de 30 provedores, então as equipes podem conectar contas que já têm, e a inferência própria é opcional. Fica em opencode.ai/console.",
+        "bellucode-console": {
+          name: "Bellu Code Console",
+          long: "O Bellu Code Console é o app web onde desenvolvedores e equipes compram e gerenciam acesso a modelos de IA para o Bellu Code e outros agentes de programação. Ele oferece inferência pré-paga para modelos de fronteira e de pesos abertos, cobrada por requisição a partir de créditos, e assinaturas do Bellu Code Go. Equipes têm workspaces com funções de Member, Admin e Owner, limites de gasto por workspace e por usuário, login único com Okta, Microsoft Entra ID ou Google Workspace, e SCIM. O Console aceita mais de 30 provedores, então as equipes podem conectar contas que já têm, e a inferência própria é opcional. Fica em opencode.ai/console.",
           short:
-            "O OpenCode Console é o app web da Anomaly para acesso pré-pago a modelos de IA, assinaturas do OpenCode Go e controles de equipe como orçamentos e login único.",
+            "O Bellu Code Console é o app web da Anomaly para acesso pré-pago a modelos de IA, assinaturas do Bellu Code Go e controles de equipe como orçamentos e login único.",
         },
-        "opencode-go": {
-          name: "OpenCode Go",
-          long: "O OpenCode Go é uma assinatura para desenvolvedores que querem um preço mensal fixo para modelos de programação. O Go custa US$ 10/mês, o Go Plus custa US$ 40/mês com limites maiores, e o Go Teams custa US$ 20/mês por membro. Cada plano inclui um conjunto selecionado de modelos testados para programação com agentes. Os limites de uso são valores mensais em dólares para cada modelo, com cotas contínuas de 5 horas e semanais de 20% e 50% do limite mensal. Assinantes podem recarregar créditos, recorrer a um saldo pré-pago e cancelar quando quiserem. O Go funciona com o OpenCode e outros agentes. Fica em opencode.ai/console/go.",
+        "bellucode-go": {
+          name: "Bellu Code Go",
+          long: "O Bellu Code Go é uma assinatura para desenvolvedores que querem um preço mensal fixo para modelos de programação. O Go custa US$ 10/mês, o Go Plus custa US$ 40/mês com limites maiores, e o Go Teams custa US$ 20/mês por membro. Cada plano inclui um conjunto selecionado de modelos testados para programação com agentes. Os limites de uso são valores mensais em dólares para cada modelo, com cotas contínuas de 5 horas e semanais de 20% e 50% do limite mensal. Assinantes podem recarregar créditos, recorrer a um saldo pré-pago e cancelar quando quiserem. O Go funciona com o Bellu Code e outros agentes. Fica em opencode.ai/console/go.",
           short:
-            "O OpenCode Go é uma assinatura mensal da Anomaly que dá aos desenvolvedores limites de uso mensais em um conjunto selecionado de modelos de programação, a partir de US$ 10/mês.",
+            "O Bellu Code Go é uma assinatura mensal da Anomaly que dá aos desenvolvedores limites de uso mensais em um conjunto selecionado de modelos de programação, a partir de US$ 10/mês.",
         },
-        "opencode-data": {
-          name: "OpenCode Data",
-          long: "O OpenCode Data é um painel público que mostra quais modelos de IA os desenvolvedores usam no OpenCode e como essa combinação muda ao longo do tempo. Ele publica um ranking dos principais modelos, uso de tokens, custos por sessão e por token, taxas de cache, participação de mercado e uma divisão por país. Os números são agregados a cada hora, com dias e semanas em UTC. As contagens de usuários e sessões são aproximadas, e os custos usam preços de tabela do catálogo de modelos do OpenCode. Jornalistas podem citá-lo como OpenCode Data (opencode.ai/data), com o horário de atualização mostrado na página.",
+        "bellucode-data": {
+          name: "Bellu Code Data",
+          long: "O Bellu Code Data é um painel público que mostra quais modelos de IA os desenvolvedores usam no Bellu Code e como essa combinação muda ao longo do tempo. Ele publica um ranking dos principais modelos, uso de tokens, custos por sessão e por token, taxas de cache, participação de mercado e uma divisão por país. Os números são agregados a cada hora, com dias e semanas em UTC. As contagens de usuários e sessões são aproximadas, e os custos usam preços de tabela do catálogo de modelos do BelluCode. Jornalistas podem citá-lo como Bellu Code Data (opencode.ai/data), com o horário de atualização mostrado na página.",
           short:
-            "O OpenCode Data é um painel público em opencode.ai/data que classifica modelos de IA pelo uso real no OpenCode, com tokens, custos e participação de mercado atualizados a cada hora.",
+            "O Bellu Code Data é um painel público em opencode.ai/data que classifica modelos de IA pelo uso real no Bellu Code, com tokens, custos e participação de mercado atualizados a cada hora.",
         },
       },
     },
@@ -872,9 +872,9 @@ export const content = {
           date: "Out 2025",
           text: "1 mi+ de downloads",
         },
-        "opencode-1-0": {
+        "bellucode-1-0": {
           date: "Out 2025",
-          text: "OpenCode 1.0",
+          text: "Bellu Code 1.0",
         },
         "desktop-app-ships": {
           date: "Dez 2025",
@@ -884,9 +884,9 @@ export const content = {
           date: "Jan 2026",
           text: "10 mi+ de downloads",
         },
-        "opencode-2-0": {
+        "bellucode-2-0": {
           date: "Set 2026",
-          text: "OpenCode 2.0",
+          text: "Bellu Code 2.0",
         },
         "220-000-github-stars": {
           date: "Nov 2026",
@@ -896,7 +896,7 @@ export const content = {
     },
     news: {
       title: "Últimas versões",
-      intro: "O OpenCode lança versões com frequência. Estas são as mais recentes com novos recursos.",
+      intro: "O Bellu Code lança versões com frequência. Estas são as mais recentes com novos recursos.",
       changelog: {
         text: "Changelog completo",
       },
@@ -907,7 +907,7 @@ export const content = {
     media: {
       title: "Mídia",
       intro:
-        "Imagens e vídeos curtos de cada app, gravados do produto real. Você pode usá-los para escrever sobre o OpenCode.",
+        "Imagens e vídeos curtos de cada app, gravados do produto real. Você pode usá-los para escrever sobre o BelluCode.",
       note: "Todas as capturas usam o tema escuro. Imagens e capas são JPGs de até 1920 × 1080, ou 1080 × 1350 na vertical. Os vídeos são clipes MP4 sem som.",
       products: {
         desktop: {
@@ -1067,13 +1067,13 @@ export const content = {
     brand: {
       title: "Marca",
       before:
-        "Baixe os logos e logotipos do OpenCode em um único arquivo ZIP. Para arquivos individuais, variantes e regras de uso, acesse a página da ",
+        "Baixe os logos e logotipos do Bellu Code em um único arquivo ZIP. Para arquivos individuais, variantes e regras de uso, acesse a página da ",
       link: {
         text: "marca",
       },
       after: ".",
       usage:
-        "Você pode usar estes arquivos para escrever sobre o OpenCode. Não os altere e não sugira que o OpenCode apoia o seu trabalho.",
+        "Você pode usar estes arquivos para escrever sobre o BelluCode. Não os altere e não sugira que o Bellu Code apoia o seu trabalho.",
     },
     product: {
       title: "Produto",
@@ -1084,7 +1084,7 @@ export const content = {
         },
         mobile: {
           name: "Mobile",
-          body: "O app mais novo do OpenCode. Ligue para uma sessão para falar com o agente e revise e aprove as mudanças pelo celular, de qualquer lugar.",
+          body: "O app mais novo do BelluCode. Ligue para uma sessão para falar com o agente e revise e aprove as mudanças pelo celular, de qualquer lugar.",
         },
         terminal: {
           name: "Terminal",
@@ -1105,7 +1105,7 @@ export const content = {
         },
         support: {
           title: "Suporte",
-          body: "Para ajuda com o OpenCode, abra uma issue ou pergunte à comunidade. Para dúvidas de conta e cobrança, mande um e-mail.",
+          body: "Para ajuda com o Bellu Code, abra uma issue ou pergunte à comunidade. Para dúvidas de conta e cobrança, mande um e-mail.",
           links: {
             "github-issues": {
               text: "Issues no GitHub",
@@ -1190,13 +1190,13 @@ export const content = {
           label: "Open VSX (Cursor, Windsurf, VSCodium)",
         },
       },
-      lead: "Rode opencode no terminal integrado do seu editor e a extensão se instala sozinha, ou instale você mesmo.",
+      lead: "Rode bellucode no terminal integrado do seu editor e a extensão se instala sozinha, ou instale você mesmo.",
       more: {
         label: "Configure o Zed, IDEs JetBrains e outros editores ACP",
       },
     },
     mini: {
-      lead: "O Mini vem com a CLI do OpenCode. Instale com qualquer uma destas opções e rode opencode mini.",
+      lead: "O Mini vem com a CLI do BelluCode. Instale com qualquer uma destas opções e rode bellucode mini.",
       commands: {
         curl: {
           name: "Script",
@@ -1215,11 +1215,11 @@ export const content = {
     title: "Conecte seu celular",
     cardTitle: "Pareie seu celular com um comando",
     intro:
-      "O OpenCode Mobile é um controle remoto para o OpenCode no seu computador. Suas sessões continuam rodando lá, e o app as mostra e deixa você conduzi-las.",
+      "O Bellu Code Mobile é um controle remoto para o Bellu Code no seu computador. Suas sessões continuam rodando lá, e o app as mostra e deixa você conduzi-las.",
     steps: {
       "get-the-app": {
         title: "Baixe o app",
-        body: "Instale o beta do OpenCode no iPhone pelo TestFlight. O app para Android chega em breve.",
+        body: "Instale o beta do Bellu Code no iPhone pelo TestFlight. O app para Android chega em breve.",
       },
       "run-this-on-your-computer": {
         title: "Rode isto no computador",
@@ -1230,12 +1230,12 @@ export const content = {
         body: "Leia o QR code com o app ou cole o link. As sessões recentes do computador abrem no celular.",
       },
     },
-    note: "--remote conecta por um endereço OpenTunnel, então funciona de qualquer rede. Na mesma rede Wi-Fi, rode opencode service set hostname 0.0.0.0 uma vez e depois opencode pair.",
+    note: "--remote conecta por um endereço OpenTunnel, então funciona de qualquer rede. Na mesma rede Wi-Fi, rode bellucode service set hostname 0.0.0.0 uma vez e depois bellucode pair.",
     facts: [
       "O pareamento funciona de qualquer rede, porque --remote conecta por um endereço OpenTunnel.",
       "O link e o código funcionam uma vez e expiram em 5 minutos.",
       "Deixe o computador ligado, porque o agente roda nele e não no celular.",
-      "Na mesma rede Wi-Fi, rode opencode service set hostname 0.0.0.0 uma vez e depois opencode pair.",
+      "Na mesma rede Wi-Fi, rode bellucode service set hostname 0.0.0.0 uma vez e depois bellucode pair.",
     ],
   },
 } satisfies ContentOverlay

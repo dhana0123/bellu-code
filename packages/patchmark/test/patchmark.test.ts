@@ -62,7 +62,7 @@ describe("patchmark streaming parser", () => {
     expect(renderBlocksToHtml(f3.blocks)).toContain('href="https://example.com/guide"')
   })
 
-  test("streams open code fences in O(|delta|) and settles when fence closes", () => {
+  test("streams Bellu Code fences in O(|delta|) and settles when fence closes", () => {
     const stream = createMarkdownStream()
     stream.append("Intro\n\n```ts\nconst a = 1;\n")
     const beforeBlock = stream.getBlocks()[0]!

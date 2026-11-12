@@ -1,25 +1,25 @@
 import { describe, expect } from "bun:test"
 import fs from "fs/promises"
 import path from "path"
-import { Bus } from "@opencode/core/bus"
-import { Config } from "@opencode/core/config"
-import { Generate } from "@opencode/core/generate"
-import { Job } from "@opencode/core/job"
-import { Location } from "@opencode/core/location"
-import { Model } from "@opencode/core/model"
-import { Permission } from "@opencode/core/permission"
-import { Plugin } from "@opencode/core/plugin"
-import { PluginHost } from "@opencode/core/plugin/host"
-import { Provider } from "@opencode/core/provider"
-import { Session } from "@opencode/core/session"
-import { SessionEvent } from "@opencode/core/session/event"
-import { Tool } from "@opencode/core/tool"
-import { ImageGenerateTool } from "@opencode/core/tool/plugin/image-generate"
-import { OpenCodeTools } from "@opencode/core/tool/plugin/opencode"
-import { Document, Event, Info } from "@opencode/schema/config"
-import { ConfigExperimental } from "@opencode/schema/config/experimental"
-import type { ImageRequest, ImageResult } from "@opencode/schema/generate"
-import { Global } from "@opencode/util/global"
+import { Bus } from "@bellucode/core/bus"
+import { Config } from "@bellucode/core/config"
+import { Generate } from "@bellucode/core/generate"
+import { Job } from "@bellucode/core/job"
+import { Location } from "@bellucode/core/location"
+import { Model } from "@bellucode/core/model"
+import { Permission } from "@bellucode/core/permission"
+import { Plugin } from "@bellucode/core/plugin"
+import { PluginHost } from "@bellucode/core/plugin/host"
+import { Provider } from "@bellucode/core/provider"
+import { Session } from "@bellucode/core/session"
+import { SessionEvent } from "@bellucode/core/session/event"
+import { Tool } from "@bellucode/core/tool"
+import { ImageGenerateTool } from "@bellucode/core/tool/plugin/image-generate"
+import { BelluCodeTools } from "@bellucode/core/tool/plugin/bellucode"
+import { Document, Event, Info } from "@bellucode/schema/config"
+import { ConfigExperimental } from "@bellucode/schema/config/experimental"
+import type { ImageRequest, ImageResult } from "@bellucode/schema/generate"
+import { Global } from "@bellucode/util/global"
 import { Effect, Layer, Schedule, Stream } from "effect"
 import { testEffect } from "./lib/effect"
 import { permissionLayer } from "./lib/permission"
@@ -98,7 +98,7 @@ const setup = (providerID = "test") =>
     const location = yield* Location.Service
     const host = yield* PluginHost.make(plugins, "test")
     yield* ImageGenerateTool.Plugin.effect(host)
-    yield* OpenCodeTools.Plugin.effect(host)
+    yield* BelluCodeTools.Plugin.effect(host)
     const session = yield* sessions.create({
       location: Location.Ref.make({ directory: location.directory }),
       model: Model.Ref.make({ providerID: Provider.ID.make(providerID), id: Model.ID.make("chat") }),
@@ -487,7 +487,7 @@ describe("experimental_image_generate", () => {
             type: "tool-call",
             id: `models-${JSON.stringify(input)}`,
             name: "execute",
-            input: { code: `return await tools.opencode.models(${JSON.stringify(input)})` },
+            input: { code: `return await tools.bellucode.models(${JSON.stringify(input)})` },
           },
         }).pipe(
           Effect.map((result) =>

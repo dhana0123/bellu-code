@@ -1,23 +1,23 @@
-import { Config } from "@opencode/core/config"
-import { ConfigIntegration } from "@opencode/core/config/integration"
-import { ConfigPolicyPlugin } from "@opencode/core/config/plugin/policy"
-import { Integration } from "@opencode/core/integration"
-import { Mcp } from "@opencode/core/mcp/index"
-import { Skill } from "@opencode/core/skill"
-import { Info } from "@opencode/schema/config"
-import { ConfigPolicy } from "@opencode/schema/config/policy"
-import { ID } from "@opencode/schema/event"
-import { Credential } from "@opencode/core/credential"
-import { WebSearch } from "@opencode/core/websearch"
+import { Config } from "@bellucode/core/config"
+import { ConfigIntegration } from "@bellucode/core/config/integration"
+import { ConfigPolicyPlugin } from "@bellucode/core/config/plugin/policy"
+import { Integration } from "@bellucode/core/integration"
+import { Mcp } from "@bellucode/core/mcp/index"
+import { Skill } from "@bellucode/core/skill"
+import { Info } from "@bellucode/schema/config"
+import { ConfigPolicy } from "@bellucode/schema/config/policy"
+import { ID } from "@bellucode/schema/event"
+import { Credential } from "@bellucode/core/credential"
+import { WebSearch } from "@bellucode/core/websearch"
 import { Effect, Schema, Stream } from "effect"
 import { host } from "../plugin/host"
 
-/** A connected organization's policy as the OpenCode Console delivers it: an integration config document. */
+/** A connected organization's policy as the Bellu Code Console delivers it: an integration config document. */
 export function organizationPolicy(policies: ConfigPolicy.Info[], organization?: string) {
   return new ConfigIntegration.Document({
     type: "document",
-    integrationID: Integration.ID.make("opencode"),
-    connection: { type: "env", name: "OPENCODE_API_KEY" },
+    integrationID: Integration.ID.make("bellucode"),
+    connection: { type: "env", name: "BELLUCODE_API_KEY" },
     organization,
     info: Schema.decodeUnknownSync(Info)({ policies }),
   })
@@ -26,7 +26,7 @@ export function organizationPolicy(policies: ConfigPolicy.Info[], organization?:
 /** Replaces the connected organization's policy, or removes it; publish `Event.Updated` to make plugins reload. */
 export const setOrganizationPolicy = Effect.fn(function* (policies: ConfigPolicy.Info[] | undefined) {
   const config = yield* Config.Service
-  yield* config.integration?.(Integration.ID.make("opencode"), policies && organizationPolicy(policies)) ?? Effect.void
+  yield* config.integration?.(Integration.ID.make("bellucode"), policies && organizationPolicy(policies)) ?? Effect.void
 })
 
 // Exercise the real policy plugin against supplied catalogs without unrelated provider/permission setup.

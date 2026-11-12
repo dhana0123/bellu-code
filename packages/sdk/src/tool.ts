@@ -1,3 +1,3 @@
-export { RegistrationError } from "@opencode/core/tool"
-export { Error } from "@opencode/schema/tool"
-export type { ToolContext as Context, Info } from "@opencode/plugin/promise/tool"
+export { RegistrationError } from "@bellucode/core/tool"
+export { Error } from "@bellucode/schema/tool"
+export type { ToolContext as Context, Info } from "@bellucode/plugin/promise/tool"

@@ -1,6 +1,6 @@
 import { expect } from "bun:test"
-import { PermissionSaved } from "@opencode/schema/permission-saved"
-import { Session } from "@opencode/schema/session"
+import { PermissionSaved } from "@bellucode/schema/permission-saved"
+import { Session } from "@bellucode/schema/session"
 import { Effect, Schema } from "effect"
 import { it } from "../../core/test/lib/effect"
 import { ServerFetch } from "../src/fetch"

@@ -46,13 +46,13 @@ export function createWebPlatform(version: string) {
 }
 
 function getCurrentServerUrl() {
-  if (import.meta.env.VITE_OPENCODE_SERVER_MODE === "none") return undefined
+  if (import.meta.env.VITE_BELLUCODE_SERVER_MODE === "none") return undefined
 
   if (import.meta.env.DEV) {
     const loopback =
       location.hostname === "localhost" || location.hostname === "[::1]" || location.hostname.startsWith("127.")
 
-    const host = import.meta.env.VITE_OPENCODE_SERVER_HOST ?? (loopback ? location.hostname : "localhost")
+    const host = import.meta.env.VITE_BELLUCODE_SERVER_HOST ?? (loopback ? location.hostname : "localhost")
 
     return `http://${host}:${import.meta.env.VITE_OPENCODE_SERVER_PORT ?? "4096"}`
   }

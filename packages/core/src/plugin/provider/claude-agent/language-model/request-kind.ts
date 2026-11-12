@@ -1,5 +1,5 @@
 export * as RequestKind from "./request-kind.js"
 
-export const HEADER = "x-opencode-claude-agent-kind"
-export const SESSION_HEADER = "x-opencode-session-id"
-export const FORK_HEADER = "x-opencode-claude-agent-fork-source"
+export const HEADER = "x-bellucode-claude-agent-kind"
+export const SESSION_HEADER = "x-bellucode-session-id"
+export const FORK_HEADER = "x-bellucode-claude-agent-fork-source"

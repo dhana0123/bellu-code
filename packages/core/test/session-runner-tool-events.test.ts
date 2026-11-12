@@ -1,28 +1,28 @@
 import { expect, test } from "bun:test"
 import { Cause, Deferred, Effect, Exit, Fiber, Schema } from "effect"
 import { eq } from "drizzle-orm"
-import { LLMEvent } from "@opencode/ai/effect"
-import { Money } from "@opencode/schema/money"
-import { Bus } from "@opencode/core/bus"
-import { Database } from "@opencode/core/database/database"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { EventTable } from "@opencode/core/event/sql"
-import { Event } from "@opencode/schema/event"
-import { Agent } from "@opencode/core/agent"
-import { SessionEvent } from "@opencode/core/session/event"
-import { SessionMessage } from "@opencode/core/session/message"
-import { Session } from "@opencode/core/session"
-import { SessionProjector } from "@opencode/core/session/projector"
-import { SessionMessageTable, SessionTable } from "@opencode/core/session/sql"
-import { Project } from "@opencode/core/project"
-import { ProjectTable } from "@opencode/core/project/sql"
-import { Model } from "@opencode/core/model"
-import { Provider } from "@opencode/core/provider"
-import { AbsolutePath, RelativePath } from "@opencode/core/schema"
-import { Snapshot } from "@opencode/core/snapshot"
-import { createLLMEventPublisher } from "@opencode/core/session/runner/publish-llm-event"
-import { SessionUsage } from "@opencode/core/session/usage"
-import { LayerNode } from "@opencode/util/effect/layer-node"
+import { LLMEvent } from "@bellucode/ai/effect"
+import { Money } from "@bellucode/schema/money"
+import { Bus } from "@bellucode/core/bus"
+import { Database } from "@bellucode/core/database/database"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { EventTable } from "@bellucode/core/event/sql"
+import { Event } from "@bellucode/schema/event"
+import { Agent } from "@bellucode/core/agent"
+import { SessionEvent } from "@bellucode/core/session/event"
+import { SessionMessage } from "@bellucode/core/session/message"
+import { Session } from "@bellucode/core/session"
+import { SessionProjector } from "@bellucode/core/session/projector"
+import { SessionMessageTable, SessionTable } from "@bellucode/core/session/sql"
+import { Project } from "@bellucode/core/project"
+import { ProjectTable } from "@bellucode/core/project/sql"
+import { Model } from "@bellucode/core/model"
+import { Provider } from "@bellucode/core/provider"
+import { AbsolutePath, RelativePath } from "@bellucode/core/schema"
+import { Snapshot } from "@bellucode/core/snapshot"
+import { createLLMEventPublisher } from "@bellucode/core/session/runner/publish-llm-event"
+import { SessionUsage } from "@bellucode/core/session/usage"
+import { LayerNode } from "@bellucode/util/effect/layer-node"
 import { it, testEffect } from "./lib/effect"
 import { TestClock } from "effect/testing"
 
@@ -62,7 +62,7 @@ const capture = (
       agent: Agent.ID.make("build"),
       model: {
         id: Model.ID.make("model"),
-        providerID: Provider.ID.opencode,
+        providerID: Provider.ID.bellucode,
       },
       providerMetadataKey,
       pendingSnapshot: options?.pendingSnapshot,
@@ -168,7 +168,7 @@ testEffect(
         sessionID,
         assistantMessageID,
         agent: Agent.defaultID,
-        model: { id: Model.ID.make("test-model"), providerID: Provider.ID.opencode },
+        model: { id: Model.ID.make("test-model"), providerID: Provider.ID.bellucode },
         providerMetadataKey: "openai",
         started: 0,
       },

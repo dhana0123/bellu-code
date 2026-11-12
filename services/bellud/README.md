@@ -18,14 +18,14 @@ Go is looked up in `/usr/local/go/bin` if it is not on `PATH`. Output: `services
 | Variable | Purpose |
 | --- | --- |
 | `BELLUCODE_PASSWORD` | Basic auth password. |
-| `OPENCODE_PASSWORD` | Compatibility name. Fallback when `BELLUCODE_PASSWORD` is unset. |
+| `BELLUCODE_PASSWORD` | Compatibility name. Fallback when `BELLUCODE_PASSWORD` is unset. |
 | `BELLUCODE_HOSTNAME`, `BELLUCODE_PORT` | Listen address (flags `--hostname`, `--port` also work). |
 | `BELLUCODE_CORS` | Allowed CORS origins. |
 | `BELLUCODE_WEB_DIST` | Read web assets from disk (dev) instead of the embedded copy. |
 | `BELLUCODE_REPO` | Repo root, used to find `packages/cli` for the child server. |
 | `BELLU_GRAPH_ENABLED`, `BELLU_GRAPH_DIR`, `BELLU_GRAPH_OTLP_LISTEN`, `BELLU_GRAPH_RETENTION`, `BELLU_GRAPH_LOG_LEVEL` | Graph engine. |
 
-Compatibility names kept on purpose: the `opencode` basic-auth username, the auth cookie name and HMAC context, `OPENCODE_PASSWORD`, and the `OPENCODE_CONFIG_CONTENT` / `OPENCODE_CONFIG_DIR` variables passed to the child.
+Compatibility names kept on purpose: the `bellucode` basic-auth username, the auth cookie name and HMAC context, `BELLUCODE_PASSWORD`, and the `BELLUCODE_CONFIG_CONTENT` / `BELLUCODE_CONFIG_DIR` variables passed to the child.
 
 Data and config:
 
@@ -63,7 +63,7 @@ If no backup exists, edit the unit: set that `ExecStart`, remove `Type=notify`, 
 ```sh
 systemctl status bellucode
 journalctl -u bellucode -n 100 --no-pager
-curl -u opencode:<password> http://127.0.0.1:4096/api/info
+curl -u bellucode:<password> http://127.0.0.1:4096/api/info
 ```
 
 `systemctl status` should show `active (running)`. `/api/info` should return JSON. A wrong or missing password returns 401.

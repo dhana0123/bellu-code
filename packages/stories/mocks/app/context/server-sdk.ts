@@ -2,8 +2,8 @@ import { useServer } from "@/runtime/server/current"
 import { ServerScope } from "@/runtime/server/scope"
 
 const providers = [
-  "opencode-go",
-  "opencode",
+  "bellucode-go",
+  "bellucode",
   "anthropic",
   "openai",
   "google",

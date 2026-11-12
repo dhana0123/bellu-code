@@ -1,12 +1,12 @@
 {
-  "name": "@opencode/desktop",
+  "name": "@bellucode/desktop",
   "private": true,
   "version": "2.2.5",
   "type": "module",
   "license": "MIT",
   "homepage": "https://opencode.ai",
   "author": {
-    "name": "OpenCode",
+    "name": "BelluCode",
     "email": "hello@opencode.ai"
   },
   "scripts": {
@@ -32,12 +32,12 @@
     "@effect/platform-node": "catalog:",
     "@hona/strobe": "catalog:",
     "@lydell/node-pty": "catalog:",
-    "@opencode/app": "workspace:*",
-    "@opencode/gui-plugins": "workspace:*",
-    "@opencode/plugin": "workspace:*",
-    "@opencode/client": "workspace:*",
-    "@opencode/schema": "workspace:*",
-    "@opencode/ui": "workspace:*",
+    "@bellucode/app": "workspace:*",
+    "@bellucode/gui-plugins": "workspace:*",
+    "@bellucode/plugin": "workspace:*",
+    "@bellucode/client": "workspace:*",
+    "@bellucode/schema": "workspace:*",
+    "@bellucode/ui": "workspace:*",
     "@sentry/solid": "catalog:",
     "@solidjs/router": "catalog:",
     "@types/bun": "catalog:",

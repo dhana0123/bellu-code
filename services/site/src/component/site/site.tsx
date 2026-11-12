@@ -23,10 +23,10 @@ import {
 import { Dynamic, isServer } from "solid-js/web"
 import { interFaces, interLatin } from "./inter-fonts"
 import { AgentIcon, Bracket, PersonIcon, ThemeCycle } from "./site-controls"
-import logoLight from "../../asset/brand/opencode-logo-light.svg"
-import logoDark from "../../asset/brand/opencode-logo-dark.svg"
-import wordmarkLight from "../../asset/brand/opencode-wordmark-light.svg"
-import wordmarkDark from "../../asset/brand/opencode-wordmark-dark.svg"
+import logoLight from "../../asset/brand/bellucode-logo-light.svg"
+import logoDark from "../../asset/brand/bellucode-logo-dark.svg"
+import wordmarkLight from "../../asset/brand/bellucode-wordmark-light.svg"
+import wordmarkDark from "../../asset/brand/bellucode-wordmark-dark.svg"
 import { LanguagePicker } from "~/component/language-picker"
 import { LanguageSheet } from "~/component/language-sheet"
 import { useI18n } from "~/context/i18n"
@@ -215,7 +215,7 @@ export function Site(props: {
   // Read the saved theme before the first client render so hydration doesn't flip it back to
   // "system" for a frame. The inline script below applies it even earlier, before first paint.
   const [theme, setTheme] = createSignal<(typeof themes)[number]>(
-    isServer ? "system" : (themes.find((item) => item === localStorage.getItem("opencode-theme")) ?? "system"),
+    isServer ? "system" : (themes.find((item) => item === localStorage.getItem("bellucode-theme")) ?? "system"),
   )
   // The browser bar colour: the open banner's blue while it covers the top of the screen, the letters
   // bar's while it fills the bottom, else the page's background in the scheme the tag's media query
@@ -261,7 +261,7 @@ export function Site(props: {
   const [wordmarkNote, setWordmarkNote] = createSignal(false)
   // Whether the "Like letters?" bar is on screen, so the voice orb can rise above it.
   const [lettersBarInView, setLettersBarInView] = createSignal(false)
-  // The bar shows while the letters are out of their "opencode" order and slides away once they are
+  // The bar shows while the letters are out of their "bellucode" order and slides away once they are
   // put back.
   const lettersBarShown = wordmarkNote
   // The letters bar's body: the full label after its highlight ("Like letters?"), or the whole label
@@ -319,9 +319,9 @@ export function Site(props: {
   onMount(() => {
     if (!import.meta.env.DEV) return
     const asked = new URLSearchParams(location.search).get("letters-bar")
-    if (asked === "instant") localStorage.setItem("opencode-letters-bar", "instant")
-    if (asked === "slide") localStorage.removeItem("opencode-letters-bar")
-    setLettersInstant(localStorage.getItem("opencode-letters-bar") === "instant")
+    if (asked === "instant") localStorage.setItem("bellucode-letters-bar", "instant")
+    if (asked === "slide") localStorage.removeItem("bellucode-letters-bar")
+    setLettersInstant(localStorage.getItem("bellucode-letters-bar") === "instant")
   })
   const [lettersBlue, setLettersBlue] = createSignal<string>()
   createEffect(
@@ -685,9 +685,9 @@ export function Site(props: {
     )
 
     const idle = window.requestIdleCallback ?? ((run: () => void) => setTimeout(run, 1500))
-    // window.opencode and its greeting for developers who open DevTools (Settings › Other › Console API).
+    // window.bellucode and its greeting for developers who open DevTools (Settings › Other › Console API).
     createEffect(() => {
-      if (siteSettings.consoleApi === "off") return void delete (window as { opencode?: unknown }).opencode
+      if (siteSettings.consoleApi === "off") return void delete (window as { bellucode?: unknown }).bellucode
       // Checked again when idle: saved settings load in a microtask after this first run.
       idle(() => siteSettings.consoleApi === "on" && void import("~/lib/console-api").then((api) => api.install()))
     })
@@ -783,7 +783,7 @@ export function Site(props: {
     // Opening it closes the site's own menus. Its code (with the inlined brand files) loads after the page, so it stays
     // out of every page's first JavaScript (script/check-client-bundle.ts).
     let unmounted = false
-    void import("@opencode/nav-menus").then((module) => {
+    void import("@bellucode/nav-menus").then((module) => {
       if (unmounted) return
       const stop = module.installNavMenus({
         link: (path) => (["/", "/brand", "/press"].includes(path) ? language.route(path) : path),
@@ -795,13 +795,13 @@ export function Site(props: {
       setSectionNav(false)
       setLogoMenu(undefined)
     }
-    document.addEventListener("opencode-nav-menu-open", closeSiteMenus)
+    document.addEventListener("bellucode-nav-menu-open", closeSiteMenus)
 
     onCleanup(() => {
       unmounted = true
       navMenus?.stop()
       navMenus = undefined
-      document.removeEventListener("opencode-nav-menu-open", closeSiteMenus)
+      document.removeEventListener("bellucode-nav-menu-open", closeSiteMenus)
       stopMenuLinks()
       stopPreloads()
       for (const type of ["pointerover", "focusin", "touchstart", "click"])
@@ -974,7 +974,7 @@ export function Site(props: {
           <a
             role="menuitem"
             href={logoVariantSvgs[file.style][file.kind][assets().suffix]}
-            download={`opencode-${file.kind}-${file.style}-${assets().suffix}.svg`}
+            download={`bellucode-${file.kind}-${file.style}-${assets().suffix}.svg`}
             style={{ "--i": index() }}
           >
             <span data-slot="thumb" data-kind={file.kind} data-style={file.style} data-tone={assets().suffix}>
@@ -1002,7 +1002,7 @@ export function Site(props: {
         <span data-slot="name">{i18n.t("legal.brand")}</span>
         <span data-slot="meta">{i18n.t("site.logoMenu.page")}</span>
       </A>
-      <a role="menuitem" href={brandAssets} download="opencode-brand-assets.zip" style={{ "--i": 5 }}>
+      <a role="menuitem" href={brandAssets} download="bellucode-brand-assets.zip" style={{ "--i": 5 }}>
         <span data-slot="thumb" data-kind="zip" aria-hidden="true">
           <span data-slot="archive">
             <i />
@@ -1039,7 +1039,7 @@ export function Site(props: {
                 <a
                   role="menuitem"
                   href={logoVariantSvgs[file.style][file.kind][assets().suffix]}
-                  download={`opencode-${file.kind}-${file.style}-${assets().suffix}.svg`}
+                  download={`bellucode-${file.kind}-${file.style}-${assets().suffix}.svg`}
                 >
                   <Show when={file.kind === "logo"} fallback={<MenuIcon name="wordmark" />}>
                     <span
@@ -1059,7 +1059,7 @@ export function Site(props: {
               <MenuIcon name="press" />
               {i18n.t("site.footer.press")}
             </A>
-            <a role="menuitem" href={brandAssets} download="opencode-brand-assets.zip">
+            <a role="menuitem" href={brandAssets} download="bellucode-brand-assets.zip">
               <MenuIcon name="press" />
               {i18n.t("site.logoMenu.zip")}
             </a>
@@ -1100,7 +1100,7 @@ export function Site(props: {
 
   const chooseTheme = (value: (typeof themes)[number]) => {
     setTheme(value)
-    localStorage.setItem("opencode-theme", value)
+    localStorage.setItem("bellucode-theme", value)
     setDark(value === "dark" || (value === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches))
   }
 

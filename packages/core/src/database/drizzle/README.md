@@ -17,8 +17,8 @@ copy provenance.
 
 ## Local Boundary
 
-The supported local entrypoint is `@opencode/core/database/drizzle`, exposed
-as the `EffectDrizzleSqlite` namespace. OpenCode's database service consumes that
+The supported local entrypoint is `@bellucode/core/database/drizzle`, exposed
+as the `EffectDrizzleSqlite` namespace. Bellu Code's database service consumes that
 facade from `database/database.ts`.
 
 Material local adaptations include:

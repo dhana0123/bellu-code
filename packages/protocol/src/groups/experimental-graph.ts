@@ -1,4 +1,4 @@
-import { Graph } from "@opencode/schema/graph"
+import { Graph } from "@bellucode/schema/graph"
 import { Schema } from "effect"
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api"
 import { InvalidRequestError, ServiceUnavailableError } from "../errors.js"

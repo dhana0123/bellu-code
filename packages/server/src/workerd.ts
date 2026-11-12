@@ -1,24 +1,24 @@
 export * as ServerWorkerd from "./workerd"
 
 import { Effect, Layer } from "effect"
-import { ConfigPluginSource } from "@opencode/core/config/plugin/source"
-import { Database } from "@opencode/core/database/database"
-import { sqliteLayer } from "@opencode/core/database/sqlite.workerd"
-import type { DurableObjectStorage } from "@opencode/core/database/sqlite.workerd"
-import { EnvironmentUnavailable } from "@opencode/core/environment/unavailable"
-import { FileSystem } from "@opencode/core/filesystem"
-import { FileSystemSearch } from "@opencode/core/filesystem/search"
-import { Pty } from "@opencode/core/pty"
-import { Snapshot } from "@opencode/core/snapshot"
-import { Vcs } from "@opencode/core/vcs"
-import { CrossSpawnSpawner } from "@opencode/util/cross-spawn-spawner"
-import type { LayerNode } from "@opencode/util/effect/layer-node"
-import { Npm } from "@opencode/util/npm"
+import { ConfigPluginSource } from "@bellucode/core/config/plugin/source"
+import { Database } from "@bellucode/core/database/database"
+import { sqliteLayer } from "@bellucode/core/database/sqlite.workerd"
+import type { DurableObjectStorage } from "@bellucode/core/database/sqlite.workerd"
+import { EnvironmentUnavailable } from "@bellucode/core/environment/unavailable"
+import { FileSystem } from "@bellucode/core/filesystem"
+import { FileSystemSearch } from "@bellucode/core/filesystem/search"
+import { Pty } from "@bellucode/core/pty"
+import { Snapshot } from "@bellucode/core/snapshot"
+import { Vcs } from "@bellucode/core/vcs"
+import { CrossSpawnSpawner } from "@bellucode/util/cross-spawn-spawner"
+import type { LayerNode } from "@bellucode/util/effect/layer-node"
+import { Npm } from "@bellucode/util/npm"
 import { ServerFetch } from "./fetch"
 import type { ServerOptions } from "./options"
 
 /**
- * The workerd runtime profile: boots opencode core and server inside a
+ * The workerd runtime profile: boots bellucode core and server inside a
  * Cloudflare Durable Object, with every intentionally-local service replaced
  * or disabled.
  *
@@ -38,15 +38,15 @@ import type { ServerOptions } from "./options"
  * (see `script/workerd-probe.ts`).
  */
 export interface Options {
-  /** Durable Object storage whose SQLite database backs the opencode database. */
+  /** Durable Object storage whose SQLite database backs the bellucode database. */
   readonly storage: DurableObjectStorage
   readonly app?: ServerOptions["app"]
   readonly password?: string
-  /** Inline opencode config content (JSON), same as `ServerOptions.config.content`. */
+  /** Inline bellucode config content (JSON), same as `ServerOptions.config.content`. */
   readonly config?: { readonly content?: string }
   /** models.dev catalog options; the bundled snapshot is the boot-time floor either way. */
   readonly models?: ServerOptions["models"]
-  /** Replaces `globalThis.fetch` for OpenCode's own HTTP requests, e.g. to route them through a Service Binding. */
+  /** Replaces `globalThis.fetch` for Bellu Code's own HTTP requests, e.g. to route them through a Service Binding. */
   readonly fetch?: ServerOptions["fetch"]
 }
 

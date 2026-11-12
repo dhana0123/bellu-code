@@ -1,14 +1,14 @@
 import { expect, setDefaultTimeout } from "bun:test"
-import { Agent } from "@opencode/core/agent"
-import { Bus } from "@opencode/core/bus"
-import { Model } from "@opencode/core/model"
-import { Provider } from "@opencode/core/provider"
-import { Session } from "@opencode/core/session"
-import { SessionEvent } from "@opencode/core/session/event"
-import { SessionExecution } from "@opencode/core/session/execution"
-import { SessionMessage } from "@opencode/core/session/message"
-import { Money } from "@opencode/schema/money"
-import { makeGlobalNode } from "@opencode/util/effect/app-node"
+import { Agent } from "@bellucode/core/agent"
+import { Bus } from "@bellucode/core/bus"
+import { Model } from "@bellucode/core/model"
+import { Provider } from "@bellucode/core/provider"
+import { Session } from "@bellucode/core/session"
+import { SessionEvent } from "@bellucode/core/session/event"
+import { SessionExecution } from "@bellucode/core/session/execution"
+import { SessionMessage } from "@bellucode/core/session/message"
+import { Money } from "@bellucode/schema/money"
+import { makeGlobalNode } from "@bellucode/util/effect/app-node"
 import { Effect, Layer } from "effect"
 import { tmpdir } from "../../core/test/fixture/tmpdir"
 import { it } from "../../core/test/lib/effect"
@@ -18,7 +18,7 @@ setDefaultTimeout(30_000)
 
 it.live("serves turn diffs by user message with range validation", () =>
   Effect.gen(function* () {
-    const tmp = yield* Effect.acquireDisposable(Effect.promise(() => tmpdir("opencode-session-diff-")))
+    const tmp = yield* Effect.acquireDisposable(Effect.promise(() => tmpdir("bellucode-session-diff-")))
     const ids = { user: SessionMessage.ID.create(), assistant: SessionMessage.ID.create() }
     // Deliver the prompt and one step the way the runner would, without a model.
     const execution = Layer.effect(

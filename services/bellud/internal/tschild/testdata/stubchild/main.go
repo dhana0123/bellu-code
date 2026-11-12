@@ -24,7 +24,7 @@ func main() {
 		}
 	}
 	mode := os.Getenv("STUB_MODE")
-	pw := os.Getenv("OPENCODE_PASSWORD")
+	pw := os.Getenv("BELLUCODE_PASSWORD")
 	switch mode {
 	case "hang":
 		time.Sleep(time.Hour) // select{} would die on Go's deadlock detector
@@ -40,7 +40,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/info", func(w http.ResponseWriter, r *http.Request) {
 		u, p, ok := r.BasicAuth()
-		if !ok || u != "opencode" || p != pw || pw == "" {
+		if !ok || u != "bellucode" || p != pw || pw == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}

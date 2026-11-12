@@ -1,13 +1,13 @@
 import { Show } from "solid-js"
 import { createStore } from "solid-js/store"
-import { Button } from "@opencode/ui/button"
-import { timelinePresets, type TimelineDetail } from "@opencode/session-ui/timeline/detail"
+import { Button } from "@bellucode/ui/button"
+import { timelinePresets, type TimelineDetail } from "@bellucode/session-ui/timeline/detail"
 import { SettingsList } from "./list"
 import { TimelineDetailControl } from "./timeline-detail"
 import "./settings.css"
 
 export default {
-  title: "OpenCode/Settings/Timeline detail",
+  title: "BelluCode/Settings/Timeline detail",
   id: "settings-timeline-detail",
 }
 

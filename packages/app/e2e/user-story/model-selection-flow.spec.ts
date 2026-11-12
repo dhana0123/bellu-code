@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test"
 import { project, provider, sessionHref } from "../utils/app"
-import { mockOpenCodeServer } from "../utils/mock-server"
+import { mockBelluCodeServer } from "../utils/mock-server"
 import { expectAppVisible } from "../utils/waits"
 import { openSession } from "../utils/workspace"
 
-const directory = "C:/OpenCode/NewProject"
+const directory = "C:/BelluCode/NewProject"
 
 test("creates a session in a new project and selects its model", async ({ page }) => {
   // An empty draft must remain usable when the file viewer is unavailable.
@@ -14,7 +14,7 @@ test("creates a session in a new project and selects its model", async ({ page }
   const created = project({ id: "proj_model_selection_flow", directory, name: "NewProject" })
   // The server knows no project until the user adds this one.
   const projects: unknown[] = []
-  await mockOpenCodeServer(page, {
+  await mockBelluCodeServer(page, {
     directory,
     project: created,
     projects: () => projects,
@@ -25,8 +25,8 @@ test("creates a session in a new project and selects its model", async ({ page }
     provider: () => ({
       all: [
         {
-          id: "opencode",
-          name: "OpenCode",
+          id: "bellucode",
+          name: "Bellu Code",
           models: {
             "free-model": {
               id: "free-model",
@@ -37,8 +37,8 @@ test("creates a session in a new project and selects its model", async ({ page }
           },
         },
         {
-          id: "opencode-go",
-          name: "OpenCode Go",
+          id: "bellucode-go",
+          name: "Bellu Code Go",
           models: {
             "go-model-1": {
               id: "go-model-1",
@@ -49,23 +49,23 @@ test("creates a session in a new project and selects its model", async ({ page }
           },
         },
       ],
-      connected: ["opencode", "opencode-go"],
-      default: { providerID: "opencode", modelID: "free-model" },
+      connected: ["bellucode", "bellucode-go"],
+      default: { providerID: "bellucode", modelID: "free-model" },
     }),
     sessions: [],
     pageMessages: () => ({ items: [] }),
     // Listings are requested by absolute path and returned relative to the stable Location.
-    fileList: (path) => (path === "C:/OpenCode" ? [{ path: "./", type: "directory", ignored: false }] : []),
+    fileList: (path) => (path === "C:/BelluCode" ? [{ path: "./", type: "directory", ignored: false }] : []),
   })
   await page.addInitScript(() => {
     localStorage.setItem(
-      "opencode.global.dat:model",
+      "bellucode.global.dat:model",
       JSON.stringify({
         user: [
-          { providerID: "opencode", modelID: "free-model", visibility: "show" },
-          { providerID: "opencode-go", modelID: "go-model-1", visibility: "show" },
+          { providerID: "bellucode", modelID: "free-model", visibility: "show" },
+          { providerID: "bellucode-go", modelID: "go-model-1", visibility: "show" },
         ],
-        recent: [{ providerID: "opencode-go", modelID: "go-model-1" }],
+        recent: [{ providerID: "bellucode-go", modelID: "go-model-1" }],
         variant: {},
       }),
     )
@@ -81,7 +81,7 @@ test("creates a session in a new project and selects its model", async ({ page }
   const listing = page.waitForRequest((request) => {
     const url = new URL(request.url())
 
-    return url.pathname === "/api/fs/list" && url.searchParams.get("path") === "C:/OpenCode"
+    return url.pathname === "/api/fs/list" && url.searchParams.get("path") === "C:/BelluCode"
   })
 
   await picker.getByRole("button", { name: "Parent", exact: true }).click()
@@ -90,7 +90,7 @@ test("creates a session in a new project and selects its model", async ({ page }
   await expect(directoryItem).toBeVisible()
   await directoryItem.click()
   await expect(directoryItem).toHaveAttribute("aria-selected", "true")
-  await expect(picker.getByText("C:\\OpenCode\\NewProject", { exact: true })).toBeVisible()
+  await expect(picker.getByText("C:\\BelluCode\\NewProject", { exact: true })).toBeVisible()
   const selectFolder = picker.getByRole("button", { name: "Select folder", exact: true })
   await expect(selectFolder).toBeEnabled()
   await selectFolder.click()
@@ -120,7 +120,7 @@ test("restores each existing session's model and variant when switching tabs", a
   const sessions = ["A", "B"].map((name) => ({
     id: `ses_model_${name}`,
     title: `Model ${name}`,
-    model: { id: `model-${name}`, providerID: "opencode", variant: "balanced" },
+    model: { id: `model-${name}`, providerID: "bellucode", variant: "balanced" },
   }))
 
   await openSession(page, {
@@ -169,13 +169,13 @@ test("restores each existing session's model and variant when switching tabs", a
 test("keeps a variant picked in another directory's session with that session across a reload", async ({ page }) => {
   // The session view stays mounted while its tabs switch between sessions in different directories.
   const sessions = [
-    { name: "Home", directory: "C:/OpenCode/ModelHome" },
-    { name: "Away", directory: "C:/OpenCode/ModelAway" },
+    { name: "Home", directory: "C:/BelluCode/ModelHome" },
+    { name: "Away", directory: "C:/BelluCode/ModelAway" },
   ].map((item) => ({
     id: `ses_model_${item.name.toLowerCase()}`,
     title: `${item.name} session`,
     directory: item.directory,
-    model: { id: `model-${item.name.toLowerCase()}`, providerID: "opencode", variant: "balanced" },
+    model: { id: `model-${item.name.toLowerCase()}`, providerID: "bellucode", variant: "balanced" },
   }))
 
   await openSession(page, {

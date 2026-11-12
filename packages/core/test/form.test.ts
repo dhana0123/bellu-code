@@ -1,10 +1,10 @@
 import { describe, expect } from "bun:test"
 import { Deferred, Effect, Exit, Fiber } from "effect"
-import { AppNodeBuilder } from "@opencode/core/effect/app-node-builder"
-import { LayerNode } from "@opencode/util/effect/layer-node"
-import { Bus } from "@opencode/core/bus"
-import { Form } from "@opencode/core/form"
-import { SessionSchema } from "@opencode/core/session/schema"
+import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
+import { LayerNode } from "@bellucode/util/effect/layer-node"
+import { Bus } from "@bellucode/core/bus"
+import { Form } from "@bellucode/core/form"
+import { SessionSchema } from "@bellucode/core/session/schema"
 import { testEffect } from "./lib/effect"
 
 const forms = AppNodeBuilder.build(LayerNode.group([Bus.node, Form.node]))

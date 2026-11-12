@@ -10,7 +10,7 @@ const pad = (value: number, length: number) => String(value).padStart(length, "0
 /** Plate 01: the specimen's cover, like the first page of a printed type specimen. */
 export function Cover() {
   const facts = [
-    ["Typeface", "OpenCode"],
+    ["Typeface", "Bellu Code"],
     ["Glyphs", "o p e n c d"],
     ["Grid", "4 × 7 modules"],
     ["Module", "120 / 1,000 em"],
@@ -81,7 +81,7 @@ export function Cover() {
 export function Poster() {
   return (
     <Plate id="poster" tone="blue" aside="Offset · 1 colour + paper">
-      <div data-slot="poster" role="img" aria-label="Poster: open, code, node, done, encoded, set in the OpenCode font">
+      <div data-slot="poster" role="img" aria-label="Poster: open, code, node, done, encoded, set in the Bellu Code font">
         <span data-slot="crop" data-corner="tl" />
         <span data-slot="crop" data-corner="tr" />
         <span data-slot="crop" data-corner="bl" />
@@ -150,8 +150,8 @@ export function Waterfall() {
               </span>
               <div data-slot="waterfall-line">
                 <Word
-                  text="dependence encoded opencode deepened"
-                  label={size === 84 ? "dependence encoded opencode deepened" : undefined}
+                  text="dependence encoded bellucode deepened"
+                  label={size === 84 ? "dependence encoded bellucode deepened" : undefined}
                 />
               </div>
             </li>
@@ -174,7 +174,7 @@ function nextPermutation(current: string[]) {
   return [...next.slice(0, i + 1), ...next.slice(i + 1).reverse()]
 }
 
-/** Plate: every arrangement of the letters of opencode, in order, and the words hiding inside. */
+/** Plate: every arrangement of the letters of bellucode, in order, and the words hiding inside. */
 export function Anagrams() {
   let root: HTMLDivElement | undefined
   const visible = useVisible(() => root, "0px")
@@ -192,10 +192,10 @@ export function Anagrams() {
     }
     return list
   })
-  const target = () => all().indexOf("opencode")
+  const target = () => all().indexOf("bellucode")
   const index = () => Math.floor(time() / 90) % arrangements
   const word = () => all()[index()] ?? "cdeenoop"
-  const real = () => word() === "opencode"
+  const real = () => word() === "bellucode"
 
   return (
     <Plate
@@ -229,7 +229,7 @@ export function Anagrams() {
               setTime(target() * 90)
             }}
           >
-            Jump to opencode (#{(target() + 1).toLocaleString("en")})
+            Jump to bellucode (#{(target() + 1).toLocaleString("en")})
           </button>
           <button
             type="button"
@@ -547,7 +547,7 @@ export function Tester() {
         </div>
         <div data-slot="tester-footer">
           <div data-slot="presets">
-            <For each={["opencode", "dependence", "coded node", "open code done", "deep need"]}>
+            <For each={["bellucode", "dependence", "coded node", "Bellu Code done", "deep need"]}>
               {(preset) => (
                 <button type="button" onClick={() => update(preset)}>
                   {preset}
@@ -602,10 +602,10 @@ export function Colophon() {
     })
   })
   const credits = [
-    ["Typeface", "OpenCode 1.001"],
+    ["Typeface", "Bellu Code 1.001"],
     ["Drawn on", "4 × 7 modules of 120 units"],
-    ["Source", "The OpenCode wordmark"],
-    ["Specimen set in", "OpenCode, OpenTUI Mono and Inter"],
+    ["Source", "The Bellu Code wordmark"],
+    ["Specimen set in", "Bellu Code, OpenTUI Mono and Inter"],
     ["Built with", "SVG and CSS, no images"],
     ["Published by", "Anomaly"],
   ]
@@ -624,7 +624,7 @@ export function Colophon() {
         </dl>
         <div data-slot="colophon-action">
           <button type="button" data-component="site-button" disabled={busy()} aria-busy={busy()} onClick={download}>
-            {fontContent.download} OpenCode.otf
+            {fontContent.download} BelluCode.otf
           </button>
           <span data-slot="sr-only" role="status">
             {status()}

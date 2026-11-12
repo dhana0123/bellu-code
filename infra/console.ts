@@ -12,7 +12,7 @@ if ($app.stage === "production" || $app.stage === "dev") {
     {
       accountId: "15d29c8639fd3733b1b5486a2acfd968",
       hostname: domain,
-      service: `opencode-site-${$app.stage}`,
+      service: `bellucode-site-${$app.stage}`,
       zoneId: zoneID,
       environment: "production",
     },

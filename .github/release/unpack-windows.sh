@@ -8,8 +8,8 @@ mkdir -p "$work"
 if [ -d "$in/build-npm" ]; then
   for target in windows-arm64 windows-x64 windows-x64-baseline; do
     mkdir -p "$work/cli/$target"
-    tar -xzf "$in/build-npm/opencode-cli-$target-$OPENCODE_VERSION.tgz" -C "$work/cli/$target"
-    test -s "$work/cli/$target/package/bin/opencode.exe" || die "Missing opencode.exe for $target"
+    tar -xzf "$in/build-npm/bellucode-cli-$target-$BELLUCODE_VERSION.tgz" -C "$work/cli/$target"
+    test -s "$work/cli/$target/package/bin/bellucode.exe" || die "Missing bellucode.exe for $target"
   done
 fi
 for target in windows-arm64 windows-x64; do

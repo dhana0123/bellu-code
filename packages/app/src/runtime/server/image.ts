@@ -1,5 +1,5 @@
-import { getDirectory, getFilename } from "@opencode/util/path"
-import type { OpenCodeClient } from "@opencode/client/promise"
+import { getDirectory, getFilename } from "@bellucode/util/path"
+import type { BelluCodeClient } from "@bellucode/client/promise"
 
 const types = new Map([
   ["png", "image/png"],
@@ -14,7 +14,7 @@ const types = new Map([
 ])
 
 export async function readLocalImage(
-  api: Pick<OpenCodeClient, "file">,
+  api: Pick<BelluCodeClient, "file">,
   directory: string,
   path: string,
   signal: AbortSignal,

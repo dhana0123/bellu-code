@@ -8,7 +8,7 @@ import path from "node:path"
 const root = path.join(import.meta.dir, "../../..")
 const outDir = path.join(import.meta.dir, "../internal/contract/testdata")
 const PASSWORD = "fixture-password"
-const USERNAME = "opencode"
+const USERNAME = "bellucode"
 const SSE_WINDOW_MS = 1500
 
 const tmp = mkdtempSync(path.join(tmpdir(), "bellud-fixtures-"))
@@ -33,9 +33,9 @@ const proc = Bun.spawn(["bun", "run", "src/index.ts", "serve", "--hostname", "12
     XDG_CONFIG_HOME: config,
     XDG_CACHE_HOME: cache,
     XDG_STATE_HOME: state,
-    OPENCODE_PASSWORD: PASSWORD,
-    OPENCODE_SERVER_USERNAME: USERNAME,
-    OPENCODE_DISABLE_MODELS_FETCH: "1",
+    BELLUCODE_PASSWORD: PASSWORD,
+    BELLUCODE_SERVER_USERNAME: USERNAME,
+    BELLUCODE_DISABLE_MODELS_FETCH: "1",
   },
   stdout: "ignore",
   stderr: "ignore",

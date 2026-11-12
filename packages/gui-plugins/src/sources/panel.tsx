@@ -1,10 +1,10 @@
 import { createMemo } from "solid-js"
-import { turnMessages, turnSources } from "@opencode/session-ui/sources"
-import { sourcesExperiment } from "@opencode/session-ui/sources/experiment"
-import { SourcesPanel } from "@opencode/session-ui/sources/panel"
-import { usePlugin, type MountedSession } from "@opencode/plugin/gui"
+import { turnMessages, turnSources } from "@bellucode/session-ui/sources"
+import { sourcesExperiment } from "@bellucode/session-ui/sources/experiment"
+import { SourcesPanel } from "@bellucode/session-ui/sources/panel"
+import { usePlugin, type MountedSession } from "@bellucode/plugin/gui"
 import type Sources from "./index"
-import { Browser } from "@opencode/plugin/gui/browser"
+import { Browser } from "@bellucode/plugin/gui/browser"
 
 export default function SourcesTab(props: { session: MountedSession; from: string }) {
   const ctx = usePlugin<typeof Sources>()

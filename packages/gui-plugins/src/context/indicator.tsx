@@ -1,11 +1,11 @@
 import { Show, createMemo, type ComponentProps, type JSX } from "solid-js"
-import { ProgressCircle } from "@opencode/ui/progress-circle"
-import { Button } from "@opencode/ui/button"
-import { Menu } from "@opencode/ui/menu"
-import { Tooltip } from "@opencode/ui/tooltip"
-import { useI18n } from "@opencode/ui/context/i18n"
-import { lastAssistantWithUsage } from "@opencode/client/solid"
-import { usePlugin, type MountedSession } from "@opencode/plugin/gui"
+import { ProgressCircle } from "@bellucode/ui/progress-circle"
+import { Button } from "@bellucode/ui/button"
+import { Menu } from "@bellucode/ui/menu"
+import { Tooltip } from "@bellucode/ui/tooltip"
+import { useI18n } from "@bellucode/ui/context/i18n"
+import { lastAssistantWithUsage } from "@bellucode/client/solid"
+import { usePlugin, type MountedSession } from "@bellucode/plugin/gui"
 import { catalogModel, syncCatalog } from "./catalog"
 
 export function SessionContextUsage(props: {

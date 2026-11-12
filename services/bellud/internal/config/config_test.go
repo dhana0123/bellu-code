@@ -29,7 +29,7 @@ func TestPasswordPrecedence(t *testing.T) {
 		want string
 	}{
 		{"bellu only", map[string]string{"BELLUCODE_PASSWORD": "b"}, "b"},
-		{"opencode fallback", map[string]string{"OPENCODE_PASSWORD": "o"}, "o"},
+		{"legacy opencode fallback", map[string]string{"OPENCODE_PASSWORD": "o"}, "o"},
 		{"bellu wins", map[string]string{"BELLUCODE_PASSWORD": "b", "OPENCODE_PASSWORD": "o"}, "b"},
 		{"none", nil, ""},
 	}

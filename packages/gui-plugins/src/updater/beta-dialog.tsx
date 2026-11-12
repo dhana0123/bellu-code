@@ -1,10 +1,10 @@
 import { createSignal, For, onCleanup, onMount, Show } from "solid-js"
 import { createResizeObserver } from "@solid-primitives/resize-observer"
 import { Option } from "effect"
-import { Button } from "@opencode/ui/button"
-import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitleGroup } from "@opencode/ui/dialog"
-import { prefersReducedMotion } from "@opencode/ui/motion"
-import { usePlugin, type DialogHandle, type SetupContext } from "@opencode/plugin/gui"
+import { Button } from "@bellucode/ui/button"
+import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitleGroup } from "@bellucode/ui/dialog"
+import { prefersReducedMotion } from "@bellucode/ui/motion"
+import { usePlugin, type DialogHandle, type SetupContext } from "@bellucode/plugin/gui"
 import {
   betaBuild,
   decodeEmbeddedNotes,
@@ -21,7 +21,7 @@ import type definition from "./index"
  */
 export function readBetaNotes(previousCommit: string | undefined) {
   return Option.getOrUndefined(
-    Option.flatMap(decodeEmbeddedNotes(import.meta.env.OPENCODE_BETA_NOTES), (embedded) =>
+    Option.flatMap(decodeEmbeddedNotes(import.meta.env.BELLUCODE_BETA_NOTES), (embedded) =>
       sliceBetaNotes(embedded, previousCommit),
     ),
   )

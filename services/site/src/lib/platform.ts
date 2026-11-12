@@ -17,7 +17,7 @@ export type Platform = (typeof platforms)[number]
 export const platformParam = "_device"
 export const platformFrameAttribute = "data-device-preview-os"
 /** Dispatched on the document to open the device preview, such as from Settings or the search. */
-export const devicePreviewOpenEvent = "opencode-site-device-preview-open"
+export const devicePreviewOpenEvent = "bellucode-site-device-preview-open"
 /** The attribute on the device preview's frames, so the page inside knows it is a preview. */
 export const devicePreviewFrame = "data-device-preview-frame"
 /** True on the page shown inside the device preview, which must not open a preview of its own. */

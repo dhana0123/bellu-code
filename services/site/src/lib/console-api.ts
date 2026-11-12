@@ -7,15 +7,15 @@ import { modules, type Letter } from "~/lib/font-content"
 import { freeModels } from "~/lib/get-started"
 import { sdkInstalls } from "~/lib/install-commands"
 
-// window.opencode: a small console API for developers who open DevTools on the site. Site loads
-// this module once the page is idle (Settings › Other › Console API). opencode.try() and
-// opencode.install.pick() load Text.js console apps from /textjs/ (services/site/textjs) on
+// window.bellucode: a small console API for developers who open DevTools on the site. Site loads
+// this module once the page is idle (Settings › Other › Console API). bellucode.try() and
+// bellucode.install.pick() load Text.js console apps from /textjs/ (services/site/textjs) on
 // demand, so React and Text.js never enter the site's own bundles.
 //
-// OpenCode Lite also starts on its own once a visitor shows they want the console: DevTools docks,
+// Bellu Code Lite also starts on its own once a visitor shows they want the console: DevTools docks,
 // they press a DevTools shortcut on the page, or it already started in this tab. Text.js's
 // onConsoleIntent watches for that; its ~2 kB chunk is all a desktop visitor downloads until then,
-// and touch screens skip it. Quitting Lite turns this off for the browser until opencode.try().
+// and touch screens skip it. Quitting Lite turns this off for the browser until bellucode.try().
 
 const brand = {
   light: { open: "#626262", code: "#1f1f1f", inner: "#d2d2d2", text: "#333333", dim: "#737373", link: "#3b5cf6" },
@@ -46,11 +46,11 @@ const buildIds: Record<string, string> = {
   "linux-x64-appimage": "appimage",
   "linux-aarch64-appimage": "appimage-arm",
 }
-const liteQuitKey = "opencode-lite-quit"
+const liteQuitKey = "bellucode-lite-quit"
 const docsTopics = [...docsPages, ...docsConfigure, ...docsProducts.filter((item) => item.label !== "V1")]
 
 export function install() {
-  if (Object.hasOwn(window, "opencode")) return
+  if (Object.hasOwn(window, "bellucode")) return
   const colors = matchMedia("(prefers-color-scheme: dark)").matches ? brand.dark : brand.light
   const say = (...parts: [string, string?][]) =>
     console.log(
@@ -72,7 +72,7 @@ export function install() {
 
   const manifest = {
     site: location.origin,
-    about: "OpenCode, the open source coding agent",
+    about: "Bellu Code, the open source coding agent",
     pages: {
       product: url("/product"),
       docs: url(docsTopics[0].href),
@@ -105,14 +105,14 @@ export function install() {
       say(["› ", dim], [found, strong])
       return found
     }
-    say([`Install OpenCode${os ? ` on ${os}` : ""}:`, dim])
+    say([`Install BelluCode${os ? ` on ${os}` : ""}:`, dim])
     forThisComputer.forEach((id) => say(["› ", dim], [command(id) ?? "", strong], [`   # ${id}`, dim]))
-    say(["Others: opencode.install('npm' | 'bun' | 'brew' | 'paru' | 'curl'). Pick one: opencode.install.pick()", dim])
+    say(["Others: bellucode.install('npm' | 'bun' | 'brew' | 'paru' | 'curl'). Pick one: bellucode.install.pick()", dim])
     return command(forThisComputer[0])
   }
 
-  // One OpenCode Lite at a time. Quitting it brings the greeting back, and stops it from starting on
-  // its own in this browser (people who debug the site open DevTools all day) until opencode.try().
+  // One Bellu Code Lite at a time. Quitting it brings the greeting back, and stops it from starting on
+  // its own in this browser (people who debug the site open DevTools all day) until bellucode.try().
   let lite: Promise<{ stop: () => void }> | undefined
   const startLite = (reason?: string) => {
     if (lite) return lite
@@ -135,7 +135,7 @@ export function install() {
           )
           greet(colors, say)
           say([
-            "OpenCode Lite won't start on its own in this browser again. Type opencode.try() to bring it back.",
+            "Bellu Code Lite won't start on its own in this browser again. Type bellucode.try() to bring it back.",
             dim,
           ])
         },
@@ -146,7 +146,7 @@ export function install() {
   }
 
   const pick = async () => {
-    // Two apps can't share the console: the picker takes it from OpenCode Lite.
+    // Two apps can't share the console: the picker takes it from Bellu Code Lite.
     await lite?.then((app) => app.stop()).catch(() => undefined)
     lite = undefined
     say(["Click an empty part of the page, then use ↑ ↓ and Enter: keys reach the console app through the page.", dim])
@@ -175,20 +175,20 @@ export function install() {
   const api = {
     help() {
       console.table({
-        "opencode.install()": "the install command for this computer",
-        "opencode.install('brew')": "or one of: curl, npm, bun, brew, paru",
-        "opencode.install.pick()": "choose one with the arrow keys and copy it",
-        "opencode.download()": "desktop builds; download('mac-arm') starts one",
-        "opencode.mobile()": androidSoon
+        "bellucode.install()": "the install command for this computer",
+        "bellucode.install('brew')": "or one of: curl, npm, bun, brew, paru",
+        "bellucode.install.pick()": "choose one with the arrow keys and copy it",
+        "bellucode.download()": "desktop builds; download('mac-arm') starts one",
+        "bellucode.mobile()": androidSoon
           ? "the iPhone beta on TestFlight, Android coming soon"
           : "the iPhone beta and the Android app",
-        "opencode.sdk()": "the TypeScript SDK",
-        "opencode.models()": "the free models, live from models.dev",
-        "opencode.docs('agents')": "open a docs page; docs() lists them",
-        "opencode.agents()": "this site, for agents",
-        "opencode.contribute()": "help build OpenCode",
-        "opencode.manifest": "all of the above, as one object",
-        "opencode.try()": "OpenCode Lite in this console: a sandbox, nothing to install",
+        "bellucode.sdk()": "the TypeScript SDK",
+        "bellucode.models()": "the free models, live from models.dev",
+        "bellucode.docs('agents')": "open a docs page; docs() lists them",
+        "bellucode.agents()": "this site, for agents",
+        "bellucode.contribute()": "help build Bellu Code",
+        "bellucode.manifest": "all of the above, as one object",
+        "bellucode.try()": "Bellu Code Lite in this console: a sandbox, nothing to install",
       })
     },
     install: Object.assign(
@@ -212,16 +212,16 @@ export function install() {
     mobile() {
       const devices = (soon: boolean) =>
         mobileStores.filter((store) => store.soon === soon).map((store) => store.device)
-      say([`OpenCode Mobile for ${devices(false).join(" and ")}: ${url("/mobile")}`])
+      say([`Bellu Code Mobile for ${devices(false).join(" and ")}: ${url("/mobile")}`])
       for (const store of mobileStores.filter((item) => item.beta))
         say([`The ${store.device} app is a public beta on TestFlight: ${store.href}`, dim])
       if (devices(true).length > 0) say([`Coming soon to ${devices(true).join(" and ")}.`, dim])
-      say(["Pair it with your computer: run opencode pair in a terminal.", dim])
+      say(["Pair it with your computer: run bellucode pair in a terminal.", dim])
       return url("/mobile")
     },
     sdk() {
       say(["› ", dim], [manifest.sdk.install, strong])
-      say(['import { OpenCode } from "@opencode/sdk"'])
+      say(['import { BelluCode } from "@bellucode/sdk"'])
       say([`Docs: ${manifest.sdk.docs}`, dim])
       return manifest.sdk.install
     },
@@ -229,7 +229,7 @@ export function install() {
       const live = await fetch("https://models.dev/api.json")
         .then((response) => response.json() as Promise<ModelsDev>)
         .then((data) =>
-          Object.values(data.opencode?.models ?? {}).filter(
+          Object.values(data.bellucode?.models ?? {}).filter(
             (model) => model.cost?.input === 0 && model.cost?.output === 0 && model.status !== "deprecated",
           ),
         )
@@ -238,9 +238,9 @@ export function install() {
         say([`Free models include ${freeModels.join(", ")}. No account needed.`])
         return freeModels
       }
-      console.table(Object.fromEntries(live.map((model) => [model.name, { id: `opencode/${model.id}` }])))
-      say([`No account needed. Try one: opencode run -m opencode/${live[0].id} "hello"`, dim])
-      return live.map((model) => `opencode/${model.id}`)
+      console.table(Object.fromEntries(live.map((model) => [model.name, { id: `bellucode/${model.id}` }])))
+      say([`No account needed. Try one: bellucode run -m bellucode/${live[0].id} "hello"`, dim])
+      return live.map((model) => `bellucode/${model.id}`)
     },
     docs(topic?: string) {
       if (!topic) {
@@ -260,12 +260,12 @@ export function install() {
         "One page as Markdown": `${url("/desktop.md")} (or send Accept: text/markdown)`,
         Sitemap: manifest.agents.sitemap,
         Releases: `${manifest.agents.releases.rss}  ${manifest.agents.releases.json}`,
-        "OpenCode server API": manifest.agents.openapi,
+        "Bellu Code server API": manifest.agents.openapi,
       })
       return manifest.agents.llms
     },
     contribute() {
-      say(["OpenCode is open source (MIT). Come build it with us:"])
+      say(["Bellu Code is open source (MIT). Come build it with us:"])
       say([`  Good first issues  ${config.github.repoUrl}/contribute`, dim])
       say([`  Contributing       ${config.github.repoUrl}/blob/dev/CONTRIBUTING.md`, dim])
       say([`  Discord            ${config.social.discord}`, dim])
@@ -274,10 +274,10 @@ export function install() {
     manifest,
     async try() {
       localStorage.removeItem(liteQuitKey)
-      if (lite) return say(["OpenCode Lite is already running. Click an empty part of the page, then type.", dim])
+      if (lite) return say(["Bellu Code Lite is already running. Click an empty part of the page, then type.", dim])
       say(["Click an empty part of the page, then type: keys reach the console app through the page.", dim])
       if (["ios", "android"].includes(detectPlatform() ?? ""))
-        return say(["OpenCode Lite needs a desktop browser with DevTools. Try https://textjs.org/opencode", dim])
+        return say(["Bellu Code Lite needs a desktop browser with DevTools. Try https://textjs.org/opencode", dim])
       if (/^((?!chrome|android).)*safari/i.test(navigator.userAgent))
         say(["In Safari, turn on Settings › Advanced › Show features for web developers.", dim])
       const started = await startLite().then(
@@ -286,29 +286,29 @@ export function install() {
       )
       if (!started)
         return say([
-          "OpenCode Lite couldn't load here. Try it at https://textjs.org/opencode, or install OpenCode: opencode.install()",
+          "Bellu Code Lite couldn't load here. Try it at https://textjs.org/opencode, or install BelluCode: bellucode.install()",
           dim,
         ])
     },
-    toString: () => "opencode: type opencode.help()",
+    toString: () => "bellucode: type bellucode.help()",
   }
-  Object.defineProperty(window, "opencode", { value: api, configurable: true, writable: true })
-  // The greeting waits in the console for whoever opens DevTools later, and OpenCode Lite's first
+  Object.defineProperty(window, "bellucode", { value: api, configurable: true, writable: true })
+  // The greeting waits in the console for whoever opens DevTools later, and Bellu Code Lite's first
   // frame replaces it then. When DevTools is already docked (or Lite already ran in this tab), Lite
   // starts at once and the greeting is skipped. If Lite can't load, the greeting shows instead.
   // After a visitor quits Lite, only the greeting shows.
   const greetOnce = () => {
-    if (sessionStorage.getItem("opencode-console-greeted")) return
-    sessionStorage.setItem("opencode-console-greeted", "1")
+    if (sessionStorage.getItem("bellucode-console-greeted")) return
+    sessionStorage.setItem("bellucode-console-greeted", "1")
     greet(colors, say)
   }
   if (matchMedia("(hover: none) and (pointer: coarse)").matches || localStorage.getItem(liteQuitKey)) return greetOnce()
   import("@textjs/core/experimental").then((textjs) => {
-    // Settings › Other › Console API removes window.opencode when it's turned off, and Lite may have
+    // Settings › Other › Console API removes window.bellucode when it's turned off, and Lite may have
     // been started by hand and quit since this page loaded.
     const intent = textjs.onConsoleIntent(
       (e) =>
-        (window as { opencode?: unknown }).opencode === api &&
+        (window as { bellucode?: unknown }).bellucode === api &&
         !localStorage.getItem(liteQuitKey) &&
         void startLite(e.reason).catch(greetOnce),
       { engageSelector: false },
@@ -330,7 +330,7 @@ async function textjs<T>(name: "lite" | "picker") {
 
 /** The view-source logo (the wordmark with a ░ drop shadow) in colour, then three lines. */
 function greet(colors: typeof brand.light, say: (...parts: [string, string?][]) => void) {
-  const word = [..."opencode"] as Letter[]
+  const word = [..."bellucode"] as Letter[]
   const ink = (x: number, y: number) => {
     const letter = word[Math.floor(x / 10)]
     const column = Math.floor((x % 10) / 2)
@@ -357,13 +357,13 @@ function greet(colors: typeof brand.light, say: (...parts: [string, string?][]) 
     text += "\n"
   })
   console.log(text, ...styles)
-  say(["OpenCode, the open source coding agent.", `font-weight:bold;color:${colors.code}`])
+  say(["Bellu Code, the open source coding agent.", `font-weight:bold;color:${colors.code}`])
   say(
     ["Type ", `color:${colors.dim}`],
-    ["opencode.help()", `color:${colors.link}`],
+    ["bellucode.help()", `color:${colors.link}`],
     [" to install, download or read the docs from here.", `color:${colors.dim}`],
   )
-  say(["Or try OpenCode right in this console: ", `color:${colors.dim}`], ["opencode.try()", `color:${colors.link}`])
+  say(["Or try Bellu Code right in this console: ", `color:${colors.dim}`], ["bellucode.try()", `color:${colors.link}`])
   const links = [
     ["Contribute", config.github.repoUrl],
     ["Good first issues", `${config.github.repoUrl}/labels/good%20first%20issue`],

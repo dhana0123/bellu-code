@@ -1,4 +1,4 @@
-import type { OpenCodeEvent, SessionInfo } from "@opencode/client/promise"
+import type { BelluCodeEvent, SessionInfo } from "@bellucode/client/promise"
 import { createStore } from "solid-js/store"
 import { mergeHomeSessionIndex } from "@/home/sessions/index"
 
@@ -14,12 +14,12 @@ const activityTypes = [
   "session.revert.staged",
   "session.revert.cleared",
   "session.revert.committed",
-] as const satisfies OpenCodeEvent["type"][]
+] as const satisfies BelluCodeEvent["type"][]
 
 // Passive metadata and agent/model selection sync must not promote a session just because it was opened.
 export function isSidebarSessionActivity(
-  event: OpenCodeEvent,
-): event is Extract<OpenCodeEvent, { type: (typeof activityTypes)[number] }> {
+  event: BelluCodeEvent,
+): event is Extract<BelluCodeEvent, { type: (typeof activityTypes)[number] }> {
   return activityTypes.some((type) => type === event.type)
 }
 
@@ -30,7 +30,7 @@ export function createSidebarSessionActivity() {
     get(server: string, sessionId: string) {
       return activity[server]?.[sessionId]
     },
-    update(server: string, event: OpenCodeEvent) {
+    update(server: string, event: BelluCodeEvent) {
       if (!isSidebarSessionActivity(event)) return
       setActivity(server, (sessions) => ({
         ...sessions,

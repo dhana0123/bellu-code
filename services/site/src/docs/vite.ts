@@ -28,7 +28,7 @@ const pages = "virtual:docs-pages"
  */
 export function docs(): Plugin {
   return {
-    name: "opencode-docs",
+    name: "bellucode-docs",
     enforce: "pre",
     resolveId: (id) => (id === pages ? `\0${pages}` : undefined),
     load(id) {

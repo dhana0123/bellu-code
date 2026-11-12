@@ -1,6 +1,6 @@
 import type { WebSocketRoute } from "@playwright/test"
-import type { OpenCodeEvent } from "@opencode/client/promise"
-import type { PersistentPty } from "@opencode/schema/persistent-pty"
+import type { BelluCodeEvent } from "@bellucode/client/promise"
+import type { PersistentPty } from "@bellucode/schema/persistent-pty"
 import { Predicate } from "effect"
 
 // Serves the session-scoped persistent PTY routes (`/api/experimental/.../terminal`, `/api/experimental/persistent-pty`)
@@ -57,7 +57,7 @@ export type MockPersistentPtyUpdate = {
   title?: string | null
 }
 
-// Published on rename; not yet part of `OpenCodeEvent`.
+// Published on rename; not yet part of `BelluCodeEvent`.
 export type MockPersistentPtyUpdated = {
   id: string
   created: number
@@ -65,7 +65,7 @@ export type MockPersistentPtyUpdated = {
   data: { sessionID: string; terminal: MockPersistentPtyInfo }
 }
 
-export type MockServerEvent = OpenCodeEvent | MockPersistentPtyUpdated
+export type MockServerEvent = BelluCodeEvent | MockPersistentPtyUpdated
 
 // The JSON text frames the server sends; output travels as binary frames.
 export type MockPersistentPtyMessage =

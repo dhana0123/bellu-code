@@ -1,6 +1,6 @@
 // Package auth mirrors packages/server/src/auth.ts so existing clients keep working.
 //
-// The username, cookie name and HMAC context string keep their opencode names
+// The username, cookie name and HMAC context string keep their bellucode names
 // because existing clients and the TS implementation depend on them
 // (compatibility names).
 package auth
@@ -20,17 +20,17 @@ import (
 
 const (
 	// Username is the Basic-auth username (compatibility name).
-	Username = "opencode"
+	Username = "bellucode"
 	// SessionTTL is how long an issued session token stays valid.
 	SessionTTL = 30 * 24 * time.Hour
 
-	cookieBase  = "opencode_session"    // compatibility name
-	hmacContext = "opencode-session-v1" // compatibility name
+	cookieBase  = "bellucode_session"    // compatibility name
+	hmacContext = "bellucode-session-v1" // compatibility name
 )
 
 // Authenticator authorizes requests and issues/verifies session tokens.
 type Authenticator interface {
-	// Authorize accepts Basic (username "opencode") with the password or a valid
+	// Authorize accepts Basic (username "bellucode") with the password or a valid
 	// session token as the password, or the session cookie named by SessionCookieName(host).
 	Authorize(r *http.Request) bool
 	IssueSession(now time.Time) (token string, ok bool)
@@ -85,7 +85,7 @@ func (a *auth) VerifySession(token string, now time.Time) bool {
 	return ctEq(sig, a.sign(exp))
 }
 
-// SessionCookieName returns "opencode_session_<port>" when the Host has a port, else "opencode_session".
+// SessionCookieName returns "bellucode_session_<port>" when the Host has a port, else "bellucode_session".
 // Browsers share cookies across ports on one host, so the port keeps local servers apart.
 // Like URL.parse in the TS version, a default http port (80) counts as no port.
 func SessionCookieName(host string) string {

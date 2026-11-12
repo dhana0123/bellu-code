@@ -3,7 +3,7 @@
     <picture>
       <source srcset=".github/assets/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset=".github/assets/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src=".github/assets/logo-ornate-light.svg" alt="OpenCode logo">
+      <img src=".github/assets/logo-ornate-light.svg" alt="Bellu Code logo">
     </picture>
   </a>
 </p>
@@ -39,7 +39,7 @@
   <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+[![Bellu Code Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
 
 ---
 
@@ -50,12 +50,12 @@
 curl -fsSL https://opencode.ai/v2/install | bash
 
 # Менеджери пакетів
-npm i -g @opencode/cli@latest      # або bun/pnpm/yarn
-brew install anomalyco/tap/opencode-v2 # macOS і Linux (рекомендовано, завжди актуально)
-brew install opencode              # macOS і Linux (офіційна формула Homebrew, оновлюється рідше)
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-beta              # Arch Linux (Latest from AUR)
-mise use -g opencode               # Будь-яка ОС
+npm i -g @bellucode/cli@latest      # або bun/pnpm/yarn
+brew install anomalyco/tap/bellucode-v2 # macOS і Linux (рекомендовано, завжди актуально)
+brew install bellucode              # macOS і Linux (офіційна формула Homebrew, оновлюється рідше)
+sudo pacman -S bellucode            # Arch Linux (Stable)
+paru -S bellucode-beta              # Arch Linux (Latest from AUR)
+mise use -g bellucode               # Будь-яка ОС
 nix run github:anomalyco/opencode  # Nix
 ```
 
@@ -64,27 +64,27 @@ nix run github:anomalyco/opencode  # Nix
 
 ### Десктопний застосунок (BETA)
 
-OpenCode також доступний як десктопний застосунок. Завантажуйте з [opencode.ai/download](https://opencode.ai/download).
+Bellu Code також доступний як десктопний застосунок. Завантажуйте з [opencode.ai/download](https://opencode.ai/download).
 
 | Платформа             | Завантаження                       |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-win-x64.exe`     |
+| macOS (Apple Silicon) | `bellucode-desktop-mac-arm64.dmg`   |
+| macOS (Intel)         | `bellucode-desktop-mac-x64.dmg`     |
+| Windows               | `bellucode-desktop-win-x64.exe`     |
 | Linux                 | `.deb`, `.rpm` або AppImage        |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+brew install --cask bellucode-desktop
 ```
 
 #### Каталог встановлення
 
-Скрипт встановлення встановлює OpenCode в `$HOME/.opencode/bin`.
+Скрипт встановлення встановлює Bellu Code в `$HOME/.bellucode/bin`.
 
 ### Агенти
 
-OpenCode містить два вбудовані агенти, між якими можна перемикатися клавішею `Tab`.
+Bellu Code містить два вбудовані агенти, між якими можна перемикатися клавішею `Tab`.
 
 - **build** - Агент за замовчуванням із повним доступом для завдань розробки
 - **plan** - Агент лише для читання для аналізу та дослідження коду
@@ -99,16 +99,16 @@ OpenCode містить два вбудовані агенти, між яким�
 
 ### Документація
 
-Щоб дізнатися більше про налаштування OpenCode, [**перейдіть до нашої документації**](https://opencode.ai/docs).
+Щоб дізнатися більше про налаштування Bellu Code, [**перейдіть до нашої документації**](https://opencode.ai/docs).
 
 ### Внесок
 
-Якщо ви хочете зробити внесок в OpenCode, будь ласка, прочитайте нашу [документацію для контриб'юторів](./CONTRIBUTING.md) перед надсиланням pull request.
+Якщо ви хочете зробити внесок в Bellu Code, будь ласка, прочитайте нашу [документацію для контриб'юторів](./CONTRIBUTING.md) перед надсиланням pull request.
 
-### Проєкти на базі OpenCode
+### Проєкти на базі Bellu Code
 
-Якщо ви працюєте над проєктом, пов'язаним з OpenCode, і використовуєте "opencode" у назві, наприклад "opencode-dashboard" або "opencode-mobile", додайте примітку до свого README.
-Уточніть, що цей проєкт не створений командою OpenCode і жодним чином не афілійований із нами.
+Якщо ви працюєте над проєктом, пов'язаним з Bellu Code, і використовуєте "bellucode" у назві, наприклад "bellucode-dashboard" або "bellucode-mobile", додайте примітку до свого README.
+Уточніть, що цей проєкт не створений командою Bellu Code і жодним чином не афілійований із нами.
 
 ---
 

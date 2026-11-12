@@ -106,7 +106,7 @@ func TestSupervisorReadyAndLeaseClose(t *testing.T) {
 	if c.URL.Hostname() != "127.0.0.1" {
 		t.Fatalf("url = %s", c.URL)
 	}
-	// The child only answers 200 when OPENCODE_PASSWORD matches the credential we hold.
+	// The child only answers 200 when BELLUCODE_PASSWORD matches the credential we hold.
 	req, _ := http.NewRequest(http.MethodGet, c.URL.String()+"/api/info", nil)
 	req.SetBasicAuth(Username, c.Password)
 	resp, err := http.DefaultClient.Do(req)

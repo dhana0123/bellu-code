@@ -1,8 +1,8 @@
-import { Database } from "@opencode/core/database/database"
-import { ModelsDev } from "@opencode/core/models-dev"
-import { PersistentPty } from "@opencode/core/persistent-pty"
+import { Database } from "@bellucode/core/database/database"
+import { ModelsDev } from "@bellucode/core/models-dev"
+import { PersistentPty } from "@bellucode/core/persistent-pty"
 import { Schema } from "effect"
-import type { LayerNodePlatform } from "@opencode/util/effect/app-node-platform"
+import type { LayerNodePlatform } from "@bellucode/util/effect/app-node-platform"
 
 export const ServerOptions = Schema.Struct({
   app: Schema.optional(
@@ -26,7 +26,7 @@ export const ServerOptions = Schema.Struct({
   ),
   models: Schema.optional(ModelsDev.Options),
   /**
-   * Replaces `globalThis.fetch` for OpenCode's own HTTP requests: OpenCode Console config, model requests, web fetch
+   * Replaces `globalThis.fetch` for Bellu Code's own HTTP requests: Bellu Code Console config, model requests, web fetch
    * and search, well-known config, and remote MCP servers. Agent code in Code Mode keeps `globalThis.fetch`. For
    * example, a Cloudflare Worker can route requests through a Service Binding.
    */

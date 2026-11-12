@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
-import type { MainContext } from "@opencode/plugin/gui/main"
-import type { WslOpencodeCheck, WslServerConfig } from "./contract"
+import type { MainContext } from "@bellucode/plugin/gui/main"
+import type { WslBellucodeCheck, WslServerConfig } from "./contract"
 import {
   createWslMachineState,
   toServersState,
@@ -260,7 +260,7 @@ export function createWslServersController(options: WslServersControllerOptions)
       )
     },
 
-    installOpencode(distro: string) {
+    installBellucode(distro: string) {
       return request((attempt) => ({ type: "update", distro, attempt }))
     },
 
@@ -292,7 +292,7 @@ function cliCheck(
   resolvedPath: string | null,
   version: string | null,
   expectedVersion: string,
-): WslOpencodeCheck {
+): WslBellucodeCheck {
   if (!resolvedPath) {
     return {
       distro,
@@ -300,7 +300,7 @@ function cliCheck(
       version: null,
       expectedVersion,
       matchesDesktop: null,
-      error: t("error.opencodeMissing"),
+      error: t("error.bellucodeMissing"),
     }
   }
 
@@ -311,7 +311,7 @@ function cliCheck(
       version: null,
       expectedVersion,
       matchesDesktop: null,
-      error: t("error.opencodeCannotRun"),
+      error: t("error.bellucodeCannotRun"),
     }
   }
 

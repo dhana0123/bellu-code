@@ -13,19 +13,19 @@ import {
 import { createStore } from "solid-js/store"
 import { Dynamic } from "solid-js/web"
 import { createResizeObserver } from "@solid-primitives/resize-observer"
-import { PreviewControls } from "@opencode/ui/preview-controls"
-import { useDialog } from "@opencode/ui/context/dialog"
-import { FileIcon } from "@opencode/ui/file-icon"
-import { Icon } from "@opencode/ui/icon"
-import { IconButton } from "@opencode/ui/icon-button"
-import { ImagePreview } from "@opencode/ui/image-preview"
-import { Loader } from "@opencode/ui/loader"
-import { showToast } from "@opencode/ui/toast"
-import { Markdown } from "@opencode/session-ui/markdown"
-import { MarkdownProvider, useMarkdown } from "@opencode/session-ui/context/markdown"
-import { artifactKind } from "@opencode/util/artifact"
-import { getDirectory, getFilename } from "@opencode/util/path"
-import { createKeyed, usePlugin, type FileContent, type MountedSession, type SessionScreen } from "@opencode/plugin/gui"
+import { PreviewControls } from "@bellucode/ui/preview-controls"
+import { useDialog } from "@bellucode/ui/context/dialog"
+import { FileIcon } from "@bellucode/ui/file-icon"
+import { Icon } from "@bellucode/ui/icon"
+import { IconButton } from "@bellucode/ui/icon-button"
+import { ImagePreview } from "@bellucode/ui/image-preview"
+import { Loader } from "@bellucode/ui/loader"
+import { showToast } from "@bellucode/ui/toast"
+import { Markdown } from "@bellucode/session-ui/markdown"
+import { MarkdownProvider, useMarkdown } from "@bellucode/session-ui/context/markdown"
+import { artifactKind } from "@bellucode/util/artifact"
+import { getDirectory, getFilename } from "@bellucode/util/path"
+import { createKeyed, usePlugin, type FileContent, type MountedSession, type SessionScreen } from "@bellucode/plugin/gui"
 import {
   blobUrlFromContent,
   bytesFromContent,
@@ -35,8 +35,8 @@ import {
   splitFrontmatter,
   type FrontmatterProperty,
 } from "./artifact"
-import { FileViewer } from "@opencode/plugin/gui/file"
-import { uuid } from "@opencode/util/uuid"
+import { FileViewer } from "@bellucode/plugin/gui/file"
+import { uuid } from "@bellucode/util/uuid"
 import { ArtifactToolbar } from "./artifact-toolbar"
 import {
   createArtifactViewerState,

@@ -1,5 +1,5 @@
-import { Logo } from "@opencode/ui/logo"
-import { prefersReducedMotion } from "@opencode/ui/motion"
+import { Logo } from "@bellucode/ui/logo"
+import { prefersReducedMotion } from "@bellucode/ui/motion"
 import { type Accessor, createEffect, For, onCleanup, onMount, Show } from "solid-js"
 import { PinSound } from "./pin-sound"
 import {

@@ -1,10 +1,10 @@
 export * as WarmingPlugin from "./warming.js"
 
-import { define } from "@opencode/plugin/effect/plugin"
-import type { SessionHooks } from "@opencode/plugin/effect/session"
-import type { Provider } from "@opencode/schema/provider"
-import type { Session } from "@opencode/schema/session"
-import { ConfigWarming } from "@opencode/schema/config/warming"
+import { define } from "@bellucode/plugin/effect/plugin"
+import type { SessionHooks } from "@bellucode/plugin/effect/session"
+import type { Provider } from "@bellucode/schema/provider"
+import type { Session } from "@bellucode/schema/session"
+import { ConfigWarming } from "@bellucode/schema/config/warming"
 import { Clock, Duration, Effect, Option, Schema, Scope, Stream } from "effect"
 import { Config } from "../config.js"
 import { resolveModel } from "./optimize.js"
@@ -18,7 +18,7 @@ const defaults = {
 }
 
 export const Plugin = define({
-  id: "opencode.warming",
+  id: "bellucode.warming",
   effect: Effect.fn(function* (ctx) {
     const config = yield* Config.Service
     // A model's or provider's `cache.warming` overrides the top-level `warming`.

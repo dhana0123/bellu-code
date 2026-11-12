@@ -18,7 +18,7 @@
       "http://127.0.0.1:<PORT>"
     ],
     "paths": {
-      "tmp": "/tmp/opencode"
+      "tmp": "/tmp/bellucode"
     },
     "capabilities": {
       "persistentPty": true

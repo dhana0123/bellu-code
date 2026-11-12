@@ -3,7 +3,7 @@
     <picture>
       <source srcset=".github/assets/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset=".github/assets/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src=".github/assets/logo-ornate-light.svg" alt="OpenCode logo">
+      <img src=".github/assets/logo-ornate-light.svg" alt="Bellu Code logo">
     </picture>
   </a>
 </p>
@@ -39,7 +39,7 @@
   <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+[![Bellu Code Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
 
 ---
 
@@ -50,12 +50,12 @@
 curl -fsSL https://opencode.ai/v2/install | bash
 
 # パッケージマネージャー
-npm i -g @opencode/cli@latest      # bun/pnpm/yarn でもOK
-brew install anomalyco/tap/opencode-v2 # macOS と Linux（推奨。常に最新）
-brew install opencode              # macOS と Linux（公式 brew formula。更新頻度は低め）
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-beta              # Arch Linux (Latest from AUR)
-mise use -g opencode               # どのOSでも
+npm i -g @bellucode/cli@latest      # bun/pnpm/yarn でもOK
+brew install anomalyco/tap/bellucode-v2 # macOS と Linux（推奨。常に最新）
+brew install bellucode              # macOS と Linux（公式 brew formula。更新頻度は低め）
+sudo pacman -S bellucode            # Arch Linux (Stable)
+paru -S bellucode-beta              # Arch Linux (Latest from AUR)
+mise use -g bellucode               # どのOSでも
 nix run github:anomalyco/opencode  # Nix
 ```
 
@@ -64,27 +64,27 @@ nix run github:anomalyco/opencode  # Nix
 
 ### デスクトップアプリ (BETA)
 
-OpenCode はデスクトップアプリとしても利用できます。[opencode.ai/download](https://opencode.ai/download) からダウンロードしてください。
+Bellu Code はデスクトップアプリとしても利用できます。[opencode.ai/download](https://opencode.ai/download) からダウンロードしてください。
 
 | プラットフォーム      | ダウンロード                       |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-win-x64.exe`     |
+| macOS (Apple Silicon) | `bellucode-desktop-mac-arm64.dmg`   |
+| macOS (Intel)         | `bellucode-desktop-mac-x64.dmg`     |
+| Windows               | `bellucode-desktop-win-x64.exe`     |
 | Linux                 | `.deb`、`.rpm`、または AppImage    |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+brew install --cask bellucode-desktop
 ```
 
 #### インストールディレクトリ
 
-インストールスクリプトは、OpenCode を `$HOME/.opencode/bin` にインストールします。
+インストールスクリプトは、Bellu Code を `$HOME/.bellucode/bin` にインストールします。
 
 ### Agents
 
-OpenCode には組み込みの Agent が2つあり、`Tab` キーで切り替えられます。
+Bellu Code には組み込みの Agent が2つあり、`Tab` キーで切り替えられます。
 
 - **build** - デフォルト。開発向けのフルアクセス Agent
 - **plan** - 分析とコード探索向けの読み取り専用 Agent
@@ -99,15 +99,15 @@ OpenCode には組み込みの Agent が2つあり、`Tab` キーで切り替え
 
 ### ドキュメント
 
-OpenCode の設定については [**ドキュメント**](https://opencode.ai/docs) を参照してください。
+Bellu Code の設定については [**ドキュメント**](https://opencode.ai/docs) を参照してください。
 
 ### コントリビュート
 
-OpenCode に貢献したい場合は、Pull Request を送る前に [contributing docs](./CONTRIBUTING.md) を読んでください。
+Bellu Code に貢献したい場合は、Pull Request を送る前に [contributing docs](./CONTRIBUTING.md) を読んでください。
 
-### OpenCode の上に構築する
+### Bellu Code の上に構築する
 
-OpenCode に関連するプロジェクトで、名前に "opencode"（例: "opencode-dashboard" や "opencode-mobile"）を含める場合は、そのプロジェクトが OpenCode チームによって作られたものではなく、いかなる形でも関係がないことを README に明記してください。
+Bellu Code に関連するプロジェクトで、名前に "bellucode"（例: "bellucode-dashboard" や "bellucode-mobile"）を含める場合は、そのプロジェクトが Bellu Code チームによって作られたものではなく、いかなる形でも関係がないことを README に明記してください。
 
 ---
 

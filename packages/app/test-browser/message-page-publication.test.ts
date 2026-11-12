@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test"
 import { createComputed, createRoot } from "solid-js"
-import { OpenCode } from "@opencode/client/promise"
-import { createData } from "@opencode/client/solid"
+import { BelluCode } from "@bellucode/client/promise"
+import { createData } from "@bellucode/client/solid"
 
 test("publishes an initial message page, its index, and its cursor together", async () => {
   const observed: { ids: string[]; more: boolean; text: string | undefined }[] = []
 
-  const api = OpenCode.make({
+  const api = BelluCode.make({
     baseUrl: "http://opencode.local",
     fetch: async () =>
       Response.json({

@@ -1,16 +1,16 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test"
-import { CodeModeTool } from "@opencode/core/codemode/tool"
-import { Config } from "@opencode/core/config"
-import { Flag } from "@opencode/core/flag"
-import { Permission } from "@opencode/core/permission"
-import { Tool } from "@opencode/core/tool"
-import { execute } from "@opencode/core/tool/runtime"
-import { Agent } from "@opencode/schema/agent"
-import { Document, Info as ConfigInfo } from "@opencode/schema/config"
-import { ConfigExperimental } from "@opencode/schema/config/experimental"
-import { Session } from "@opencode/schema/session"
-import { SessionMessage } from "@opencode/schema/session-message"
-import type { Info } from "@opencode/schema/tool"
+import { CodeModeTool } from "@bellucode/core/codemode/tool"
+import { Config } from "@bellucode/core/config"
+import { Flag } from "@bellucode/core/flag"
+import { Permission } from "@bellucode/core/permission"
+import { Tool } from "@bellucode/core/tool"
+import { execute } from "@bellucode/core/tool/runtime"
+import { Agent } from "@bellucode/schema/agent"
+import { Document, Info as ConfigInfo } from "@bellucode/schema/config"
+import { ConfigExperimental } from "@bellucode/schema/config/experimental"
+import { Session } from "@bellucode/schema/session"
+import { SessionMessage } from "@bellucode/schema/session-message"
+import type { Info } from "@bellucode/schema/tool"
 import { Deferred, Effect, Fiber, Schema } from "effect"
 import { TestClock } from "effect/testing"
 import { it } from "./lib/effect"
@@ -582,14 +582,14 @@ describe("codemode_vm follows the flag registry", () => {
     })
   })
 
-  test("a release build opts in with OPENCODE_FLAGS, config, all or all_flags", async () => {
+  test("a release build opts in with BELLUCODE_FLAGS, config, all or all_flags", async () => {
     expect(await engine({ channel: "latest", overrides: "codemode_vm" })).toBe("vm")
     expect(await engine({ channel: "latest", entries: [document({ codemode_vm: true })] })).toBe("vm")
     expect(await engine({ channel: "latest", overrides: "all" })).toBe("vm")
     expect(await engine({ channel: "latest", entries: [document({ all_flags: true })] })).toBe("vm")
   })
 
-  test("a dev build opts out with OPENCODE_FLAGS or config", async () => {
+  test("a dev build opts out with BELLUCODE_FLAGS or config", async () => {
     expect(await engine({ channel: "dev", overrides: "-codemode_vm" })).toBe("legacy")
     expect(await engine({ channel: "dev", overrides: "all,-codemode_vm" })).toBe("legacy")
     expect(await engine({ channel: "dev", entries: [document({ codemode_vm: false })] })).toBe("legacy")

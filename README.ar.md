@@ -3,7 +3,7 @@
     <picture>
       <source srcset=".github/assets/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset=".github/assets/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src=".github/assets/logo-ornate-light.svg" alt="شعار OpenCode">
+      <img src=".github/assets/logo-ornate-light.svg" alt="شعار Bellu Code">
     </picture>
   </a>
 </p>
@@ -39,7 +39,7 @@
   <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+[![Bellu Code Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
 
 ---
 
@@ -50,12 +50,12 @@
 curl -fsSL https://opencode.ai/v2/install | bash
 
 # مديري الحزم
-npm i -g @opencode/cli@latest      # او bun/pnpm/yarn
-brew install anomalyco/tap/opencode-v2 # macOS و Linux (موصى به، دائما محدث)
-brew install opencode              # macOS و Linux (صيغة brew الرسمية، تحديث اقل)
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-beta              # Arch Linux (Latest from AUR)
-mise use -g opencode               # اي نظام
+npm i -g @bellucode/cli@latest      # او bun/pnpm/yarn
+brew install anomalyco/tap/bellucode-v2 # macOS و Linux (موصى به، دائما محدث)
+brew install bellucode              # macOS و Linux (صيغة brew الرسمية، تحديث اقل)
+sudo pacman -S bellucode            # Arch Linux (Stable)
+paru -S bellucode-beta              # Arch Linux (Latest from AUR)
+mise use -g bellucode               # اي نظام
 nix run github:anomalyco/opencode  # Nix
 ```
 
@@ -64,27 +64,27 @@ nix run github:anomalyco/opencode  # Nix
 
 ### تطبيق سطح المكتب (BETA)
 
-يتوفر OpenCode ايضا كتطبيق سطح مكتب. قم بالتنزيل من [opencode.ai/download](https://opencode.ai/download).
+يتوفر Bellu Code ايضا كتطبيق سطح مكتب. قم بالتنزيل من [opencode.ai/download](https://opencode.ai/download).
 
 | المنصة                | التنزيل                            |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-win-x64.exe`     |
+| macOS (Apple Silicon) | `bellucode-desktop-mac-arm64.dmg`   |
+| macOS (Intel)         | `bellucode-desktop-mac-x64.dmg`     |
+| Windows               | `bellucode-desktop-win-x64.exe`     |
 | Linux                 | `.deb` او `.rpm` او AppImage       |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+brew install --cask bellucode-desktop
 ```
 
 #### مجلد التثبيت
 
-يثبت سكربت التثبيت OpenCode في `$HOME/.opencode/bin`.
+يثبت سكربت التثبيت Bellu Code في `$HOME/.bellucode/bin`.
 
 ### Agents
 
-يتضمن OpenCode وكيليْن (Agents) مدمجين يمكنك التبديل بينهما باستخدام زر `Tab`.
+يتضمن Bellu Code وكيليْن (Agents) مدمجين يمكنك التبديل بينهما باستخدام زر `Tab`.
 
 - **build** - الافتراضي، وكيل بصلاحيات كاملة لاعمال التطوير
 - **plan** - وكيل للقراءة فقط للتحليل واستكشاف الكود
@@ -99,15 +99,15 @@ brew install --cask opencode-desktop
 
 ### التوثيق
 
-لمزيد من المعلومات حول كيفية ضبط OpenCode، [**راجع التوثيق**](https://opencode.ai/docs).
+لمزيد من المعلومات حول كيفية ضبط Bellu Code، [**راجع التوثيق**](https://opencode.ai/docs).
 
 ### المساهمة
 
-اذا كنت مهتما بالمساهمة في OpenCode، يرجى قراءة [contributing docs](./CONTRIBUTING.md) قبل ارسال pull request.
+اذا كنت مهتما بالمساهمة في Bellu Code، يرجى قراءة [contributing docs](./CONTRIBUTING.md) قبل ارسال pull request.
 
-### البناء فوق OpenCode
+### البناء فوق Bellu Code
 
-اذا كنت تعمل على مشروع مرتبط بـ OpenCode ويستخدم "opencode" كجزء من اسمه (مثل "opencode-dashboard" او "opencode-mobile")، يرجى اضافة ملاحظة في README توضح انه ليس مبنيا بواسطة فريق OpenCode ولا يرتبط بنا بأي شكل.
+اذا كنت تعمل على مشروع مرتبط بـ Bellu Code ويستخدم "bellucode" كجزء من اسمه (مثل "bellucode-dashboard" او "bellucode-mobile")، يرجى اضافة ملاحظة في README توضح انه ليس مبنيا بواسطة فريق Bellu Code ولا يرتبط بنا بأي شكل.
 
 ---
 

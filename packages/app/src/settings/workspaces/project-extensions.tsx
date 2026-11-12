@@ -1,7 +1,7 @@
-import { Icon } from "@opencode/ui/icon"
-import { Switch } from "@opencode/ui/switch"
-import { Tabs } from "@opencode/ui/tabs"
-import { isLocationNotFoundError } from "@opencode/client/promise"
+import { Icon } from "@bellucode/ui/icon"
+import { Switch } from "@bellucode/ui/switch"
+import { Tabs } from "@bellucode/ui/tabs"
+import { isLocationNotFoundError } from "@bellucode/client/promise"
 import {
   type Component,
   For,

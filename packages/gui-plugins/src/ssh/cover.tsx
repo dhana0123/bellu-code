@@ -1,8 +1,8 @@
-import { Button } from "@opencode/ui/button"
-import { Icon } from "@opencode/ui/icon"
-import { Loader } from "@opencode/ui/loader"
+import { Button } from "@bellucode/ui/button"
+import { Icon } from "@bellucode/ui/icon"
+import { Loader } from "@bellucode/ui/loader"
 import { Show } from "solid-js"
-import { createKeyed, usePlugin } from "@opencode/plugin/gui"
+import { createKeyed, usePlugin } from "@bellucode/plugin/gui"
 import { sshName } from "./name"
 import type { SshController } from "./state"
 

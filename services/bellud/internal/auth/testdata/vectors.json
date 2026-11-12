@@ -8,62 +8,62 @@
     {
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM"
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0"
     },
     {
       "password": "hunter2",
       "now": 1700000000999,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM"
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0"
     },
     {
       "password": "hunter2",
       "now": 0,
-      "token": "2592000.BYSjdfnCF161gpmWbz1U8yJU6aNxM6snkRJHvQbp8R4"
+      "token": "2592000.J9Sy1ceHRIf4AP5ZixLb8MnfUY2_B_UhGRhEiEyqCx4"
     },
     {
       "password": "hunter2",
       "now": 86400000,
-      "token": "2678400.G1F--Xx-fm4gCbnFHjX03m7v4fS2kPTeMoDrWe_sKW0"
+      "token": "2678400.7Fx2Jp7VebYFMG-ZkP31oilYxvIGDBiimiMUBq3PHzE"
     },
     {
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo"
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40"
     },
     {
       "password": "pässwörd ✓",
       "now": 1700000000999,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo"
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40"
     },
     {
       "password": "pässwörd ✓",
       "now": 0,
-      "token": "2592000.z-fpei54JmH9wBNziS5wmv3tNgAKv2-Cc0CTBqeMgT4"
+      "token": "2592000.M5RWFIsAD4DqAoRrdAoVCbqbsfriIqV64B3urxMn7Ps"
     },
     {
       "password": "pässwörd ✓",
       "now": 86400000,
-      "token": "2678400.hiSqQe86LCLHJybuhRNmznlxZMHDk60rozPLvxET0YA"
+      "token": "2678400.37uDRA2a45R8_Lne1jRfWqGX-pX69EY46bW3GmtTIq4"
     },
     {
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54"
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660"
     },
     {
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000999,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54"
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660"
     },
     {
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 0,
-      "token": "2592000.3ueYcDUlQQ4nIQkHcuiT2V3poQ5ItkhyMyHboXR20Vo"
+      "token": "2592000.G2eo2JH10FZDlQkzX0QPp9szMcVRZr6sVA5QbS2-Kt8"
     },
     {
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 86400000,
-      "token": "2678400.eH9C12sI3V5LztrdPb2tScUFfFwpR53Q0fxIHLnYvxQ"
+      "token": "2678400.s5jJDku8wlCL81b2BlF6CmzTkkioGsrgbri9PCIr6mI"
     }
   ],
   "cases": [
@@ -71,56 +71,56 @@
       "name": "valid at issue time",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": true
     },
     {
       "name": "valid just before expiry",
       "password": "hunter2",
       "now": 1702591999999,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": true
     },
     {
       "name": "rejected at expiry boundary",
       "password": "hunter2",
       "now": 1702592000000,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": false
     },
     {
       "name": "rejected after expiry",
       "password": "hunter2",
       "now": 1702592000001,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": false
     },
     {
       "name": "rejected tampered signature",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LA",
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijUA",
       "expected": false
     },
     {
       "name": "rejected truncated signature",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7",
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUij",
       "expected": false
     },
     {
       "name": "rejected extended expiry",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "1702592001.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "1702592001.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": false
     },
     {
       "name": "rejected token from other password",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "1702592000.U4KihSnEcljPCDNTvNRUBXy4Ah7tl8JAsDbIimWZCJc",
+      "token": "1702592000.fwpyst8E9q1HpBfJAmUlk065ud-cbX_aSnKWZJhFevw",
       "expected": false
     },
     {
@@ -141,7 +141,7 @@
       "name": "rejected extra segment",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "1702592000.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM.x",
+      "token": "1702592000.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0.x",
       "expected": false
     },
     {
@@ -155,35 +155,35 @@
       "name": "rejected empty expiry",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": ".LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": ".Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": false
     },
     {
       "name": "rejected non-numeric expiry",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "abc.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "abc.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": false
     },
     {
       "name": "rejected negative expiry",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "-1.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "-1.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": false
     },
     {
       "name": "rejected fractional expiry",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "1702592000.5.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "1702592000.5.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": false
     },
     {
       "name": "rejected unsafe integer expiry",
       "password": "hunter2",
       "now": 1700000000000,
-      "token": "9007199254740993.LbpxbDf2aILXjO-dmSp9sqaelYgkTMob-hClUWvC7LM",
+      "token": "9007199254740993.Rj6yF6RmXfJ5UpCr3nKZ3fHsDGjXCo6k31c7BdUijU0",
       "expected": false
     },
     {
@@ -197,56 +197,56 @@
       "name": "valid at issue time",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": true
     },
     {
       "name": "valid just before expiry",
       "password": "pässwörd ✓",
       "now": 1702591999999,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": true
     },
     {
       "name": "rejected at expiry boundary",
       "password": "pässwörd ✓",
       "now": 1702592000000,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": false
     },
     {
       "name": "rejected after expiry",
       "password": "pässwörd ✓",
       "now": 1702592000001,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": false
     },
     {
       "name": "rejected tampered signature",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_QA",
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch4A",
       "expected": false
     },
     {
       "name": "rejected truncated signature",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_",
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch",
       "expected": false
     },
     {
       "name": "rejected extended expiry",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "1702592001.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "1702592001.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": false
     },
     {
       "name": "rejected token from other password",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "1702592000.P4I_NxMBX31I_cIXuEZN64quRE47J6fwG631NKLOLxQ",
+      "token": "1702592000.tHJahNNi8k9U55jeJzfpLmAjYaJYM3Qa-qJ8WzujzWw",
       "expected": false
     },
     {
@@ -267,7 +267,7 @@
       "name": "rejected extra segment",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "1702592000.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo.x",
+      "token": "1702592000.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40.x",
       "expected": false
     },
     {
@@ -281,35 +281,35 @@
       "name": "rejected empty expiry",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": ".YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": ".KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": false
     },
     {
       "name": "rejected non-numeric expiry",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "abc.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "abc.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": false
     },
     {
       "name": "rejected negative expiry",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "-1.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "-1.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": false
     },
     {
       "name": "rejected fractional expiry",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "1702592000.5.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "1702592000.5.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": false
     },
     {
       "name": "rejected unsafe integer expiry",
       "password": "pässwörd ✓",
       "now": 1700000000000,
-      "token": "9007199254740993.YEVs9OEvaas3NItNAqQLx4aNYp6CEGF0M0KwsHIZ_Qo",
+      "token": "9007199254740993.KKhjArxF9bxle_gUHltCxk3u3wO_59bgs1Vt9B4ch40",
       "expected": false
     },
     {
@@ -323,56 +323,56 @@
       "name": "valid at issue time",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": true
     },
     {
       "name": "valid just before expiry",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1702591999999,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": true
     },
     {
       "name": "rejected at expiry boundary",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1702592000000,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": false
     },
     {
       "name": "rejected after expiry",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1702592000001,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": false
     },
     {
       "name": "rejected tampered signature",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF5A",
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq66A",
       "expected": false
     },
     {
       "name": "rejected truncated signature",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF",
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq6",
       "expected": false
     },
     {
       "name": "rejected extended expiry",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "1702592001.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "1702592001.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": false
     },
     {
       "name": "rejected token from other password",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "1702592000.qwZJl3g-UHl-0MSa3QawsRWgnbg4CPnbaWq1VwOWBW8",
+      "token": "1702592000.uH1y_ocu87_oTzdmwqFKXh_NyOKoIb-TBE6Tgv_jhDE",
       "expected": false
     },
     {
@@ -393,7 +393,7 @@
       "name": "rejected extra segment",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "1702592000.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54.x",
+      "token": "1702592000.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660.x",
       "expected": false
     },
     {
@@ -407,35 +407,35 @@
       "name": "rejected empty expiry",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": ".AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": ".7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": false
     },
     {
       "name": "rejected non-numeric expiry",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "abc.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "abc.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": false
     },
     {
       "name": "rejected negative expiry",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "-1.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "-1.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": false
     },
     {
       "name": "rejected fractional expiry",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "1702592000.5.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "1702592000.5.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": false
     },
     {
       "name": "rejected unsafe integer expiry",
       "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "now": 1700000000000,
-      "token": "9007199254740993.AHgXb5Uyyg-dmLH1R5oTPt9RXfkSRnhj8ZiTuIkkF54",
+      "token": "9007199254740993.7kHvvFxkOlmkdZ3Xgltp0F4Ed3gWDI8D8Jdra9Lq660",
       "expected": false
     },
     {

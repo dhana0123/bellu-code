@@ -3,7 +3,7 @@
     <picture>
       <source srcset=".github/assets/logo-ornate-dark.svg" media="(prefers-color-scheme: dark)">
       <source srcset=".github/assets/logo-ornate-light.svg" media="(prefers-color-scheme: light)">
-      <img src=".github/assets/logo-ornate-light.svg" alt="Logo OpenCode">
+      <img src=".github/assets/logo-ornate-light.svg" alt="Logo Bellu Code">
     </picture>
   </a>
 </p>
@@ -39,7 +39,7 @@
   <a href="README.vi.md">Tiếng Việt</a>
 </p>
 
-[![OpenCode Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
+[![Bellu Code Terminal UI](packages/web/src/assets/lander/screenshot.png)](https://opencode.ai)
 
 ---
 
@@ -50,12 +50,12 @@
 curl -fsSL https://opencode.ai/v2/install | bash
 
 # Package manager
-npm i -g @opencode/cli@latest      # oppure bun/pnpm/yarn
-brew install anomalyco/tap/opencode-v2 # macOS e Linux (consigliato, sempre aggiornato)
-brew install opencode              # macOS e Linux (formula brew ufficiale, aggiornata meno spesso)
-sudo pacman -S opencode            # Arch Linux (Stable)
-paru -S opencode-beta              # Arch Linux (Latest from AUR)
-mise use -g opencode               # Qualsiasi OS
+npm i -g @bellucode/cli@latest      # oppure bun/pnpm/yarn
+brew install anomalyco/tap/bellucode-v2 # macOS e Linux (consigliato, sempre aggiornato)
+brew install bellucode              # macOS e Linux (formula brew ufficiale, aggiornata meno spesso)
+sudo pacman -S bellucode            # Arch Linux (Stable)
+paru -S bellucode-beta              # Arch Linux (Latest from AUR)
+mise use -g bellucode               # Qualsiasi OS
 nix run github:anomalyco/opencode  # Nix
 ```
 
@@ -64,27 +64,27 @@ nix run github:anomalyco/opencode  # Nix
 
 ### App Desktop (BETA)
 
-OpenCode è disponibile anche come applicazione desktop. Puoi scaricarla da [opencode.ai/download](https://opencode.ai/download).
+Bellu Code è disponibile anche come applicazione desktop. Puoi scaricarla da [opencode.ai/download](https://opencode.ai/download).
 
 | Piattaforma           | Download                           |
 | --------------------- | ---------------------------------- |
-| macOS (Apple Silicon) | `opencode-desktop-mac-arm64.dmg`   |
-| macOS (Intel)         | `opencode-desktop-mac-x64.dmg`     |
-| Windows               | `opencode-desktop-win-x64.exe`     |
+| macOS (Apple Silicon) | `bellucode-desktop-mac-arm64.dmg`   |
+| macOS (Intel)         | `bellucode-desktop-mac-x64.dmg`     |
+| Windows               | `bellucode-desktop-win-x64.exe`     |
 | Linux                 | `.deb`, `.rpm`, oppure AppImage    |
 
 ```bash
 # macOS (Homebrew)
-brew install --cask opencode-desktop
+brew install --cask bellucode-desktop
 ```
 
 #### Directory di installazione
 
-Lo script di installazione installa OpenCode in `$HOME/.opencode/bin`.
+Lo script di installazione installa Bellu Code in `$HOME/.bellucode/bin`.
 
 ### Agenti
 
-OpenCode include due agenti integrati tra cui puoi passare usando il tasto `Tab`.
+Bellu Code include due agenti integrati tra cui puoi passare usando il tasto `Tab`.
 
 - **build** – Predefinito, agente con accesso completo per il lavoro di sviluppo
 - **plan** – Agente in sola lettura per analisi ed esplorazione del codice
@@ -99,15 +99,15 @@ Scopri di più sugli [agenti](https://opencode.ai/docs/agents).
 
 ### Documentazione
 
-Per maggiori informazioni su come configurare OpenCode, [**consulta la nostra documentazione**](https://opencode.ai/docs).
+Per maggiori informazioni su come configurare Bellu Code, [**consulta la nostra documentazione**](https://opencode.ai/docs).
 
 ### Contribuire
 
-Se sei interessato a contribuire a OpenCode, leggi la nostra [guida alla contribuzione](./CONTRIBUTING.md) prima di inviare una pull request.
+Se sei interessato a contribuire a Bellu Code, leggi la nostra [guida alla contribuzione](./CONTRIBUTING.md) prima di inviare una pull request.
 
-### Costruire su OpenCode
+### Costruire su Bellu Code
 
-Se stai lavorando a un progetto correlato a OpenCode e che utilizza “opencode” come parte del nome (ad esempio “opencode-dashboard” o “opencode-mobile”), aggiungi una nota nel tuo README per chiarire che non è sviluppato dal team OpenCode e che non è affiliato in alcun modo con noi.
+Se stai lavorando a un progetto correlato a Bellu Code e che utilizza “bellucode” come parte del nome (ad esempio “bellucode-dashboard” o “bellucode-mobile”), aggiungi una nota nel tuo README per chiarire che non è sviluppato dal team Bellu Code e che non è affiliato in alcun modo con noi.
 
 ---
 

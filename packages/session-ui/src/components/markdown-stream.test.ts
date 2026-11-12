@@ -183,7 +183,7 @@ describe("markdown stream", () => {
     ])
   })
 
-  test("preserves trailing newlines in open code fences", () => {
+  test("preserves trailing newlines in Bellu Code fences", () => {
     expect(stream("```ts\nconst x = 1\n", true)).toEqual([
       {
         raw: "```ts\nconst x = 1\n",
@@ -238,7 +238,7 @@ describe("markdown stream", () => {
     expect(final.blocks[2]).toEqual({ raw: "- final item", src: "- final item", mode: "full" })
   })
 
-  test("completes an open code block when streaming stops", () => {
+  test("completes an Bellu Code block when streaming stops", () => {
     const live = project(undefined, "```ts\nconst value = 1", true)
     const final = project(live, live.text, false)
 

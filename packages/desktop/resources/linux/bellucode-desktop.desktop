@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=BelluCode
+Exec=/opt/BelluCode/ai.bellucode %U
+Terminal=false
+Type=Application
+Icon=ai.bellucode
+StartupWMClass=ai.bellucode.desktop
+NoDisplay=true
+Comment=Open source AI coding agent
+Categories=Development;

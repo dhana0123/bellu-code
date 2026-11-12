@@ -8,7 +8,7 @@ const { Option } = await import(Bun.resolveSync("effect", path.join(import.meta.
 const out = path.join(import.meta.dir, "../internal/auth/testdata/vectors.json")
 const NOW = 1_700_000_000_000
 const TTL_MS = ServerAuth.SESSION_TTL_SECONDS * 1000
-const cfg = (password: string) => ({ password: Option.some(password), username: "opencode" })
+const cfg = (password: string) => ({ password: Option.some(password), username: "bellucode" })
 
 const passwords = ["hunter2", "pässwörd ✓", "a".repeat(200)]
 const issue = (password: string, now: number) => ServerAuth.issueSession(cfg(password), now)!

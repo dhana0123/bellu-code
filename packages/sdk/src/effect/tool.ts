@@ -1,3 +1,3 @@
-export { RegistrationError } from "@opencode/core/tool"
-export { Error } from "@opencode/schema/tool"
-export type { Context, Info } from "@opencode/schema/tool"
+export { RegistrationError } from "@bellucode/core/tool"
+export { Error } from "@bellucode/schema/tool"
+export type { Context, Info } from "@bellucode/schema/tool"

@@ -44,7 +44,7 @@ export default defineConfig({
     configSchema(),
     solidJs(),
     starlight({
-      title: "OpenCode",
+      title: "Bellu Code",
       defaultLocale: "root",
       locales: {
         root: {
@@ -340,7 +340,7 @@ function configSchema() {
     hooks: {
       "astro:build:done": async () => {
         execFileSync("bun", ["../schema/script/config-schema.ts", "./dist/client/config.json"], { stdio: "inherit" })
-        // The V1 TUI schema is frozen in services/site since packages/opencode lives on the v1 branch.
+        // The V1 TUI schema is frozen in services/site since packages/bellucode lives on the v1 branch.
         copyFileSync("../../services/site/public/tui.json", "./dist/client/tui.json")
       },
     },

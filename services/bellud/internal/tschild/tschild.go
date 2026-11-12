@@ -40,16 +40,16 @@ const (
 
 const (
 	// Username is the Basic-auth username the TS server expects (compatibility name).
-	Username = "opencode"
+	Username = "bellucode"
 	// PasswordEnv is the child env var carrying the internal credential (compatibility name).
-	PasswordEnv = "OPENCODE_PASSWORD"
+	PasswordEnv = "BELLUCODE_PASSWORD"
 
 	minBackoff = 500 * time.Millisecond
 	maxBackoff = 15 * time.Second
 )
 
 // passwordEnvNames are stripped from the inherited environment so the external secret never reaches the child.
-var passwordEnvNames = []string{"OPENCODE_PASSWORD", "OPENCODE_SERVER_PASSWORD", "BELLUCODE_PASSWORD"}
+var passwordEnvNames = []string{"BELLUCODE_PASSWORD", "BELLUCODE_SERVER_PASSWORD", "OPENCODE_PASSWORD", "OPENCODE_SERVER_PASSWORD"} // OPENCODE_* are legacy names
 
 // Child describes a started, probed child.
 type Child struct {
@@ -63,7 +63,7 @@ type Config struct {
 	Command []string
 	// Dir is the child working directory (packages/cli).
 	Dir string
-	// Env holds extra child env entries (e.g. OPENCODE_CONFIG_CONTENT). Password entries are ignored.
+	// Env holds extra child env entries (e.g. BELLUCODE_CONFIG_CONTENT). Password entries are ignored.
 	Env map[string]string
 	// BaseEnv is the inherited environment ("K=V"); defaults to os.Environ().
 	BaseEnv []string

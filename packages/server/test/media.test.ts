@@ -3,8 +3,8 @@ import { createHash } from "node:crypto"
 import fs from "node:fs/promises"
 import path from "node:path"
 import { expect } from "bun:test"
-import { OpenCode, type SessionMessageInfo } from "@opencode/client"
-import { Session } from "@opencode/schema/session"
+import { BelluCode, type SessionMessageInfo } from "@bellucode/client"
+import { Session } from "@bellucode/schema/session"
 import { Effect } from "effect"
 import { tmpdirScoped } from "../../core/test/fixture/tmpdir"
 import { it } from "../../core/test/lib/effect"
@@ -74,9 +74,9 @@ const serve = (database: string, mediaBlob: boolean) =>
   })
 
 const client = (handler: (request: Request) => Promise<Response>, capabilities?: string) =>
-  OpenCode.make({
+  BelluCode.make({
     baseUrl: "http://opencode.local",
-    ...(capabilities === undefined ? {} : { headers: { "X-OpenCode-Capabilities": capabilities } }),
+    ...(capabilities === undefined ? {} : { headers: { "X-BelluCode-Capabilities": capabilities } }),
     fetch: Object.assign((input: string | URL | Request, init?: RequestInit) => handler(new Request(input, init)), {
       preconnect: fetch.preconnect,
     }),
@@ -88,9 +88,9 @@ const route = (base64: string) => `http://opencode.local/api/experimental/media/
 it.live("serves stored media as refs only to clients that opt in while experimental.media_blob is on", () =>
   Effect.gen(function* () {
     // Acquired first so it is removed after the servers below are released; Windows can't delete an open db.
-    const dir = (yield* tmpdirScoped("opencode-media-wire-")).path
+    const dir = (yield* tmpdirScoped("bellucode-media-wire-")).path
     yield* Effect.gen(function* () {
-      const database = path.join(dir, "opencode.db")
+      const database = path.join(dir, "bellucode.db")
       const handler = yield* serve(database, true)
       const plain = client(handler)
       const opted = client(handler, "other, Experimental-Media-URI")
@@ -282,15 +282,15 @@ it.live("serves stored media as refs only to clients that opt in while experimen
 
 it.live("follows experimental.media_blob from the session's project config and serves only referenced blobs", () =>
   Effect.gen(function* () {
-    const dir = (yield* tmpdirScoped("opencode-media-project-")).path
+    const dir = (yield* tmpdirScoped("bellucode-media-project-")).path
     yield* Effect.gen(function* () {
-      const database = path.join(dir, "opencode.db")
+      const database = path.join(dir, "bellucode.db")
       const global = path.join(dir, "global")
       const project = path.join(dir, "project")
       yield* Effect.promise(async () => {
         await fs.mkdir(global, { recursive: true })
         await fs.mkdir(project, { recursive: true })
-        await fs.writeFile(path.join(project, "opencode.json"), JSON.stringify({ experimental: { media_blob: true } }))
+        await fs.writeFile(path.join(project, "bellucode.json"), JSON.stringify({ experimental: { media_blob: true } }))
       })
       // The flag lives only in the project's config; the server's cwd and global config leave it off.
       const handler = yield* ServerFetch.make({
