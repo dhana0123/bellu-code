@@ -350,12 +350,12 @@ const icons = {
 }
 
 /** Icon names derived from the shared artwork, with no UI or runtime dependencies. */
-export type IconName = keyof typeof icons | keyof typeof additionalIcons
+export type IconName = keyof typeof icons | keyof typeof additionalIcons | keyof typeof phosphorIcons
 
 /** The artwork catalog's names, in sprite order. */
 export function iconNames() {
   // SAFETY: every key comes from one of the two artwork records that define IconName.
-  return Array.from(new Set([...Object.keys(additionalIcons), ...Object.keys(icons)])) as IconName[]
+  return Array.from(new Set([...Object.keys(additionalIcons), ...Object.keys(icons), ...Object.keys(phosphorIcons)])) as IconName[]
 }
 
 /**
@@ -363,7 +363,7 @@ export function iconNames() {
  * @param name - A name supplied by a caller, including names unknown to this build.
  */
 export function isIconName(name: string): name is IconName {
-  return Object.hasOwn(icons, name) || Object.hasOwn(additionalIcons, name)
+  return Object.hasOwn(icons, name) || Object.hasOwn(additionalIcons, name) || Object.hasOwn(phosphorIcons, name)
 }
 
 /**
@@ -373,7 +373,7 @@ export function isIconName(name: string): name is IconName {
 export function getIcon(name: IconName) {
   // The Bellu icon set: Phosphor duotone artwork where a name has one (see script/phosphor-icons.ts). The icon element
   // draws with fill "none", so the artwork fills itself with the text color.
-  const phosphor = phosphorIcons[name]
+  const phosphor = (phosphorIcons as Readonly<Record<string, string>>)[name]
   if (phosphor) return { body: `<g fill="currentColor">${phosphor}</g>`, viewBox: phosphorViewBox }
   // SAFETY: IconName is the union of both catalogs' keys; an absent primary entry falls back to additional artwork.
   const icon = icons[name as keyof typeof icons]

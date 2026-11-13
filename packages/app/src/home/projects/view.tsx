@@ -30,6 +30,7 @@ import {
 } from "@/runtime/server/health-machine"
 import { ProjectMenuItems } from "./menu"
 import { CollapsedSidebarToggleSpace } from "@/shell/sidebar-toggle"
+import { showToast } from "@/shell/notifications/toast"
 import "./view.css"
 
 const HOME_PROJECT_NAV_LABEL = "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
@@ -182,7 +183,7 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
           ? "flex max-h-[min(60dvh,calc(var(--kb-popper-content-available-height)-12px))] min-h-0 min-w-0 flex-col overflow-hidden"
           : `
         mt-2.5 flex min-h-0 min-w-0 flex-col gap-4 overflow-hidden
-        lg:sticky lg:top-14 lg:mt-14 lg:h-[calc(100cqh-56px)] lg:self-start lg:pt-[52px]
+        lg:sticky lg:top-0 lg:mt-0 lg:h-[100cqh] lg:self-start lg:border-e lg:border-v2-border-border-muted lg:pl-4 lg:pt-4
       `
       }
       aria-label={props.language.t("home.projects")}
@@ -192,7 +193,7 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
       }}
     >
       <Show when={!props.dropdown}>
-        <div class="flex h-7 min-w-0 shrink-0 items-center justify-between pl-1.5 pr-3">
+        <div class="flex h-7 min-w-0 shrink-0 items-center justify-between pl-1.5 pr-3 lg:h-9">
           {/* Below lg, Projects heads the page on the collapsed sidebar toggle's line. Starting the space at the row's
               edge (the shell's 8px inset plus the grid's 12px padding) keeps the row's 6px padding after the toggle,
               which lines the label up with the icons that follow it in the session and settings headers. */}
@@ -319,6 +320,9 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
               </For>
             </div>
           </Show>
+          <Show when={!props.dropdown}>
+            <HomeSecurityNav class="mt-6 hidden lg:flex" language={props.language} />
+          </Show>
         </div>
       </div>
       <HomeUtilityNav
@@ -328,6 +332,58 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
         language={props.language}
       />
     </aside>
+  )
+}
+
+// The security area. Its pages are not built yet, so each item announces that for now.
+const SECURITY_ITEMS = [
+  { icon: "security-dashboard", label: "home.security.dashboards" },
+  { icon: "security-findings", label: "home.security.findings" },
+  { icon: "security-issues", label: "home.security.issues" },
+  { icon: "security-threat", label: "home.security.threatScore" },
+  { icon: "security-graph", label: "home.security.graph" },
+  { icon: "security-sbom", label: "home.security.sbom" },
+  { icon: "security-scanners", label: "home.security.scanners" },
+  { icon: "security-agents", label: "home.security.agents" },
+  { icon: "security-simulations", label: "home.security.simulations" },
+] as const
+
+function HomeSecurityNav(props: { class?: string; language: ReturnType<typeof useLanguage> }) {
+  const [state, setState] = createStore({ open: true })
+  const soon = (label: (typeof SECURITY_ITEMS)[number]["label"]) =>
+    showToast({
+      title: props.language.t("home.security.soon.title", { name: props.language.t(label) }),
+      description: props.language.t("home.security.soon.description"),
+    })
+
+  return (
+    <nav
+      class={`${props.class ?? ""} min-w-0 flex-col gap-1 lg:pr-3`}
+      aria-label={props.language.t("home.security")}
+    >
+      <button
+        type="button"
+        class="flex h-7 w-full cursor-default items-center gap-1 rounded-md px-1.5 text-left text-v2-text-text-muted [font-weight:530] hover:text-v2-text-text-base focus-visible:outline-none focus-visible:[box-shadow:inset_0_0_0_0.5px_var(--v2-border-border-muted)]"
+        aria-expanded={state.open}
+        onClick={() => setState("open", (open) => !open)}
+      >
+        <span class="min-w-0 flex-1">{props.language.t("home.security")}</span>
+        <Icon
+          name="chevron-down"
+          size="small"
+          class="text-v2-icon-icon-muted transition-transform duration-[120ms]"
+          style={{ transform: state.open ? undefined : "rotate(-90deg)" }}
+        />
+      </button>
+      <For each={state.open ? SECURITY_ITEMS : []}>
+        {(item) => (
+          <HomeProjectNavButton type="button" onClick={() => soon(item.label)}>
+            <Icon name={item.icon} size="small" />
+            <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t(item.label)}</span>
+          </HomeProjectNavButton>
+        )}
+      </For>
+    </nav>
   )
 }
 
