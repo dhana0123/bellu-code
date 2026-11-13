@@ -1,0 +1,177 @@
+[data-component="connectors-page"] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 24px;
+}
+[data-component="connectors-banner"] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  background-color: var(--v2-background-bg-layer-01);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--v2-text-text-muted);
+}
+[data-component="connectors-banner"] strong {
+  font-weight: var(--font-weight-medium);
+  color: var(--v2-text-text-base);
+}
+[data-component="connectors-banner"][data-tone="warning"] {
+  box-shadow: inset 0 0 0 1px var(--border-warning-base, var(--v2-border-border-base));
+}
+[data-component="connectors-banner"][data-tone="critical"] {
+  background-color: var(--surface-critical-weak);
+  box-shadow: inset 0 0 0 1px var(--border-critical-selected, var(--v2-border-border-base));
+}
+[data-component="connectors-state"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--v2-text-text-muted);
+}
+[data-component="connectors-grid"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-component="connector-card"] {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background-color: var(--v2-background-bg-layer-01);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+  color: var(--v2-text-text-base);
+}
+[data-component="connector-card"][data-state="coming-soon"] {
+  color: var(--v2-text-text-faint);
+}
+[data-component="connector-card"][data-state="needs-attention"] {
+  box-shadow: inset 0 0 0 1px var(--border-critical-selected, var(--v2-border-border-base));
+}
+[data-slot="connector-card-header"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+[data-slot="connector-card-icon"] {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  color: var(--v2-icon-icon-base);
+}
+[data-slot="connector-card-title"] {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+[data-slot="connector-card-name"] {
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-compact);
+}
+[data-slot="connector-card-description"] {
+  margin: 0;
+  font-size: 13px;
+  line-height: var(--line-height-base);
+  color: var(--v2-text-text-muted);
+}
+[data-slot="connector-card-badges"],
+[data-slot="connector-card-actions"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+[data-slot="connector-card-actions"] {
+  margin-top: auto;
+}
+[data-slot="connector-card-details"] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--v2-text-text-muted);
+  overflow-wrap: anywhere;
+}
+[data-slot="connector-card-reason"] {
+  color: var(--v2-state-fg-danger);
+}
+/* Announced by assistive technology only. */
+[data-slot="connector-card-live"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+[data-component="connector-card"] {
+  position: relative;
+}
+[data-component="connection-list"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-component="connection-row"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--v2-border-border-muted);
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+}
+[data-slot="connection-head"],
+[data-slot="connection-actions"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+[data-slot="connection-alias"] {
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+[data-slot="connection-details"],
+[data-slot="connection-result"],
+[data-slot="connection-test"] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--v2-text-text-muted);
+  overflow-wrap: anywhere;
+}
+[data-slot="connection-edit"],
+[data-component="connection-dialog-form"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+[data-slot="connection-note"] {
+  margin: 0;
+  color: var(--v2-text-text-muted);
+}
+[data-slot="connection-error"],
+[data-slot="connection-warning"] {
+  margin: 0;
+  color: var(--v2-state-fg-danger);
+}

@@ -285,6 +285,49 @@ import type {
   ExperimentalGraphDiffOutput,
   ExperimentalGraphSchemaOutput,
   ExperimentalGraphStatusOutput,
+  ExperimentalConnectorsStatusOutput,
+  ExperimentalConnectorsCatalogOutput,
+  ExperimentalConnectorsListConnectionsOutput,
+  ExperimentalConnectorsCreateConnectionInput,
+  ExperimentalConnectorsCreateConnectionOutput,
+  ExperimentalConnectorsGetConnectionInput,
+  ExperimentalConnectorsGetConnectionOutput,
+  ExperimentalConnectorsUpdateConnectionInput,
+  ExperimentalConnectorsUpdateConnectionOutput,
+  ExperimentalConnectorsDeleteConnectionInput,
+  ExperimentalConnectorsDeleteConnectionOutput,
+  ExperimentalConnectorsTestConnectionInput,
+  ExperimentalConnectorsTestConnectionOutput,
+  ExperimentalConnectorsSyncConnectionInput,
+  ExperimentalConnectorsSyncConnectionOutput,
+  ExperimentalConnectorsPauseConnectionInput,
+  ExperimentalConnectorsPauseConnectionOutput,
+  ExperimentalConnectorsResumeConnectionInput,
+  ExperimentalConnectorsResumeConnectionOutput,
+  ExperimentalConnectorsReconnectConnectionInput,
+  ExperimentalConnectorsReconnectConnectionOutput,
+  ExperimentalConnectorsRotateCredentialInput,
+  ExperimentalConnectorsRotateCredentialOutput,
+  ExperimentalConnectorsListAuditInput,
+  ExperimentalConnectorsListAuditOutput,
+  ExperimentalConnectorsListAuthConfigsInput,
+  ExperimentalConnectorsListAuthConfigsOutput,
+  ExperimentalConnectorsCreateAuthConfigInput,
+  ExperimentalConnectorsCreateAuthConfigOutput,
+  ExperimentalConnectorsDeleteAuthConfigInput,
+  ExperimentalConnectorsDeleteAuthConfigOutput,
+  ExperimentalConnectorsAwsSetupInput,
+  ExperimentalConnectorsAwsSetupOutput,
+  ExperimentalConnectorsListGithubReposInput,
+  ExperimentalConnectorsListGithubReposOutput,
+  ExperimentalConnectorsGetScopeInput,
+  ExperimentalConnectorsGetScopeOutput,
+  ExperimentalConnectorsPutScopeInput,
+  ExperimentalConnectorsPutScopeOutput,
+  ExperimentalConnectorsUnlockVaultInput,
+  ExperimentalConnectorsUnlockVaultOutput,
+  ExperimentalConnectorsRotateMasterKeyOutput,
+  ExperimentalConnectorsForgetAllOutput,
   ShellListInput,
   ShellListOutput,
   ShellCreateInput,
@@ -1827,6 +1870,305 @@ export function make(options: ClientOptions) {
             requestOptions,
           ),
       },
+      connectors: {
+        status: (requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsStatusOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/status`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        catalog: (requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsCatalogOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/catalog`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        listConnections: (requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsListConnectionsOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/connections`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        createConnection: (input: ExperimentalConnectorsCreateConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsCreateConnectionOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/connections`,
+              body: {
+                alias: input["alias"],
+                connectorId: input["connectorId"],
+                authConfigId: input["authConfigId"],
+                method: input["method"],
+                params: input["params"],
+                credential: input["credential"],
+                intervalSec: input["intervalSec"],
+              },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        getConnection: (input: ExperimentalConnectorsGetConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsGetConnectionOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        updateConnection: (input: ExperimentalConnectorsUpdateConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsUpdateConnectionOutput>(
+            {
+              method: "PATCH",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}`,
+              body: {
+                alias: input["alias"],
+                intervalSec: input["intervalSec"],
+                allowAgentLiveReads: input["allowAgentLiveReads"],
+                selection: input["selection"],
+                rotationIntervalDays: input["rotationIntervalDays"],
+              },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        deleteConnection: (input: ExperimentalConnectorsDeleteConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsDeleteConnectionOutput>(
+            {
+              method: "DELETE",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        testConnection: (input: ExperimentalConnectorsTestConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsTestConnectionOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/test`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        syncConnection: (input: ExperimentalConnectorsSyncConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsSyncConnectionOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/sync`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        pauseConnection: (input: ExperimentalConnectorsPauseConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsPauseConnectionOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/pause`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        resumeConnection: (input: ExperimentalConnectorsResumeConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsResumeConnectionOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/resume`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        reconnectConnection: (input: ExperimentalConnectorsReconnectConnectionInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsReconnectConnectionOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/reconnect`,
+              body: { credential: input["credential"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        rotateCredential: (input: ExperimentalConnectorsRotateCredentialInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsRotateCredentialOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/rotate`,
+              body: { credential: input["credential"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        listAudit: (input: ExperimentalConnectorsListAuditInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsListAuditOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/audit`,
+              query: { cursor: input["cursor"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        listAuthConfigs: (input: ExperimentalConnectorsListAuthConfigsInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsListAuthConfigsOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/connectors/${encodeURIComponent(input.cid)}/auth-configs`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        createAuthConfig: (input: ExperimentalConnectorsCreateAuthConfigInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsCreateAuthConfigOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/connectors/${encodeURIComponent(input.cid)}/auth-configs`,
+              body: {
+                name: input["name"],
+                method: input["method"],
+                scopes: input["scopes"],
+                settings: input["settings"],
+                secrets: input["secrets"],
+              },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        deleteAuthConfig: (input: ExperimentalConnectorsDeleteAuthConfigInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsDeleteAuthConfigOutput>(
+            {
+              method: "DELETE",
+              path: `/api/experimental/connectors/auth-configs/${encodeURIComponent(input.id)}`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        awsSetup: (input?: ExperimentalConnectorsAwsSetupInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsAwsSetupOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/aws/setup`,
+              body: { alias: input?.["alias"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        listGithubRepos: (input: ExperimentalConnectorsListGithubReposInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsListGithubReposOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/github/repos`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        getScope: (input: ExperimentalConnectorsGetScopeInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsGetScopeOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/scopes/${encodeURIComponent(input.principal)}`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        putScope: (input: ExperimentalConnectorsPutScopeInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsPutScopeOutput>(
+            {
+              method: "PUT",
+              path: `/api/experimental/connectors/scopes/${encodeURIComponent(input.principal)}`,
+              body: {
+                connectors: input["connectors"],
+                connections: input["connections"],
+                operations: input["operations"],
+              },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        unlockVault: (input: ExperimentalConnectorsUnlockVaultInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsUnlockVaultOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/vault/unlock`,
+              body: { passphrase: input["passphrase"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        rotateMasterKey: (requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsRotateMasterKeyOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/vault/rotate`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        forgetAll: (requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsForgetAllOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/vault/forget`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+      },
       migration: {
         v1: {
           status: (requestOptions?: RequestOptions) =>
@@ -2910,6 +3252,57 @@ export function make(options: ClientOptions) {
       schema: client.experimental.graph.schema,
       /** @deprecated Use `client.experimental.graph.status`. Removed in the next minor. */
       status: client.experimental.graph.status,
+    },
+    /** @deprecated Use `client.experimental.connectors`. Removed in the next minor. */
+    connectors: {
+      /** @deprecated Use `client.experimental.connectors.status`. Removed in the next minor. */
+      status: client.experimental.connectors.status,
+      /** @deprecated Use `client.experimental.connectors.catalog`. Removed in the next minor. */
+      catalog: client.experimental.connectors.catalog,
+      /** @deprecated Use `client.experimental.connectors.listConnections`. Removed in the next minor. */
+      listConnections: client.experimental.connectors.listConnections,
+      /** @deprecated Use `client.experimental.connectors.createConnection`. Removed in the next minor. */
+      createConnection: client.experimental.connectors.createConnection,
+      /** @deprecated Use `client.experimental.connectors.getConnection`. Removed in the next minor. */
+      getConnection: client.experimental.connectors.getConnection,
+      /** @deprecated Use `client.experimental.connectors.updateConnection`. Removed in the next minor. */
+      updateConnection: client.experimental.connectors.updateConnection,
+      /** @deprecated Use `client.experimental.connectors.deleteConnection`. Removed in the next minor. */
+      deleteConnection: client.experimental.connectors.deleteConnection,
+      /** @deprecated Use `client.experimental.connectors.testConnection`. Removed in the next minor. */
+      testConnection: client.experimental.connectors.testConnection,
+      /** @deprecated Use `client.experimental.connectors.syncConnection`. Removed in the next minor. */
+      syncConnection: client.experimental.connectors.syncConnection,
+      /** @deprecated Use `client.experimental.connectors.pauseConnection`. Removed in the next minor. */
+      pauseConnection: client.experimental.connectors.pauseConnection,
+      /** @deprecated Use `client.experimental.connectors.resumeConnection`. Removed in the next minor. */
+      resumeConnection: client.experimental.connectors.resumeConnection,
+      /** @deprecated Use `client.experimental.connectors.reconnectConnection`. Removed in the next minor. */
+      reconnectConnection: client.experimental.connectors.reconnectConnection,
+      /** @deprecated Use `client.experimental.connectors.rotateCredential`. Removed in the next minor. */
+      rotateCredential: client.experimental.connectors.rotateCredential,
+      /** @deprecated Use `client.experimental.connectors.listAudit`. Removed in the next minor. */
+      listAudit: client.experimental.connectors.listAudit,
+      /** @deprecated Use `client.experimental.connectors.listAuthConfigs`. Removed in the next minor. */
+      listAuthConfigs: client.experimental.connectors.listAuthConfigs,
+      /** @deprecated Use `client.experimental.connectors.createAuthConfig`. Removed in the next minor. */
+      createAuthConfig: client.experimental.connectors.createAuthConfig,
+      /** @deprecated Use `client.experimental.connectors.deleteAuthConfig`. Removed in the next minor. */
+      deleteAuthConfig: client.experimental.connectors.deleteAuthConfig,
+      /** @deprecated Use `client.experimental.connectors.awsSetup`. Removed in the next minor. */
+      awsSetup: client.experimental.connectors.awsSetup,
+      /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
+      listGithubRepos: client.experimental.connectors.listGithubRepos,
+      /** @deprecated Use `client.experimental.connectors.getScope`. Removed in the next minor. */
+      getScope: client.experimental.connectors.getScope,
+      /** @deprecated Use `client.experimental.connectors.putScope`. Removed in the next minor. */
+      putScope: client.experimental.connectors.putScope,
+      /** @deprecated Use `client.experimental.connectors.unlockVault`. Removed in the next minor. */
+      unlockVault: client.experimental.connectors.unlockVault,
+      /** @deprecated Use `client.experimental.connectors.rotateMasterKey`. Removed in the next minor. */
+      rotateMasterKey: client.experimental.connectors.rotateMasterKey,
+      /** @deprecated Use `client.experimental.connectors.forgetAll`. Removed in the next minor. */
+      forgetAll: client.experimental.connectors.forgetAll,
     },
     /** @deprecated Use `client.experimental.migration`. Removed in the next minor. */
     migration: {

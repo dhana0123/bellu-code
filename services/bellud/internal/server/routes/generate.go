@@ -28,7 +28,7 @@ func Operations(infos []OperationInfo) []Operation {
 // goOwnedPrefixes lists path prefixes whose protocol operations are served by
 // the Go server (declared in TS for the contract only). Req 2.5 (registered
 // handler plus passing contract test) is enforced separately.
-var goOwnedPrefixes = []string{"/api/experimental/graph/"}
+var goOwnedPrefixes = []string{"/api/experimental/graph/", "/api/experimental/connectors/"}
 
 func goOwned(path string) bool {
 	for _, p := range goOwnedPrefixes {
@@ -62,6 +62,7 @@ func GenerateRoutes(infos []OperationInfo) []Route {
 	routes = append(routes,
 		// The MCP endpoint is not an HttpApi operation but is served by Go.
 		Route{Method: "*", Pattern: "/api/experimental/graph/mcp", Group: "experimental", Owner: OwnerGo, Stream: true},
+		Route{Method: "*", Pattern: "/api/experimental/connectors/mcp", Group: "experimental", Owner: OwnerGo, Stream: true},
 		Route{Method: "*", Pattern: "/api/experimental/graph/graphql", Group: "experimental", Owner: OwnerGo, Stream: true},
 		Route{Method: "GET", Pattern: "/api/experimental/graph/subscribe", Group: "experimental", Owner: OwnerGo, Stream: true},
 		Route{Method: "GET", Pattern: "/api/experimental/graph/debug", Group: "experimental", Owner: OwnerGo},

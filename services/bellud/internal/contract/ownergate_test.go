@@ -34,7 +34,7 @@ func TestOwnerGateStage0OnlyGraph(t *testing.T) {
 			continue
 		}
 		n++
-		if !strings.HasPrefix(r.Pattern, "/api/experimental/graph") {
+		if !strings.HasPrefix(r.Pattern, "/api/experimental/graph") && !strings.HasPrefix(r.Pattern, "/api/experimental/connectors") {
 			t.Errorf("go-owned route outside Stage 0: %s %s", r.Method, r.Pattern)
 		}
 	}

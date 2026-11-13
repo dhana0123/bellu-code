@@ -363,6 +363,69 @@ export type GraphEngineState = "disabled" | "starting" | "ready" | "failed"
 
 export type GraphChildState = "starting" | "ready" | "restarting" | "degraded" | "stopped"
 
+export type ConnectorsServiceStatus = {
+  enabled: boolean
+  offline: boolean
+  keySource: string
+  persistent: boolean
+  locked: boolean
+  warnings: Array<string>
+}
+
+export type ConnectorsConnectorID = string
+
+export type ConnectorsManifestAuthMethod = { id: string; name: string; enabled: boolean; disabled_reason?: string }
+
+export type ConnectorsManifestPermission = { name: string; description?: string; read_only: boolean }
+
+export type ConnectorsManifestOperation = {
+  name: string
+  class: "read" | "auth"
+  method?: string
+  host: string
+  path?: string
+  query?: boolean
+  strip_keys?: Array<string>
+  max_bytes?: number
+}
+
+export type ConnectorsConnectionID = string
+
+export type ConnectorsStatus = "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+
+export type ConnectorsSelection = { regions: Array<string>; repos: Array<string> }
+
+export type ConnectorsLastSync = { status: string; endedAt?: string; entities: number; partial: Array<string> }
+
+export type ConnectorsVaultResult = { ok: boolean }
+
+export type ConnectorsPermissionCheck = "ok" | "excess" | "unverifiable"
+
+export type ConnectorsAuditEntry = {
+  seq: number
+  ts: string
+  connectionId: string
+  connectorId: string
+  event: string
+  outcome: "success" | "failure" | "blocked"
+  actor: string
+  detail?: { [x: string]: string }
+  prev: string
+}
+
+export type ConnectorsAuthConfigID = string
+
+export type ConnectorsAwsSetup = { externalId: string; cloudFormation: string; terraform: string; principal?: string }
+
+export type ConnectorsGithubRepo = { fullName: string; private: boolean }
+
+export type ConnectorsScope = {
+  principal: string
+  connectors: Array<string>
+  connections: Array<string>
+  operations: { [x: string]: Array<string> }
+}
+
 export type ReferenceGitSource = { type: "git"; repository: string; branch?: string }
 
 export type VcsBranch = { current?: string; default?: string }
@@ -1014,6 +1077,63 @@ export type GraphChange = {
 export type GraphSchemaSummary = { entity_types: Array<GraphSchemaType>; relation_types: Array<GraphSchemaType> }
 
 export type GraphStatus = { engine: GraphEngineState; ts_child: GraphChildState; detail?: string }
+
+export type ConnectorsManifest = {
+  id: ConnectorsConnectorID
+  version: string
+  name: string
+  icon: string
+  auth_methods: Array<ConnectorsManifestAuthMethod>
+  permissions: Array<ConnectorsManifestPermission>
+  operations: Array<ConnectorsManifestOperation>
+  egress: Array<string>
+  entities: Array<string>
+}
+
+export type ConnectorsConnection = {
+  id: ConnectorsConnectionID
+  connectorId: ConnectorsConnectorID
+  alias: string
+  authConfigId: string
+  method: string
+  status: ConnectorsStatus
+  statusReason: string
+  accountLabel: string
+  externalIdRef?: string
+  selection: ConnectorsSelection
+  intervalSec: number
+  allowAgentLiveReads: boolean
+  rotationIntervalDays: number
+  credentialCreatedAt: string | null
+  credentialExpiresAt: string | null
+  lastPermissionCheck: string | null
+  permissionCheck: string
+  lastSync?: ConnectorsLastSync
+  removed: boolean
+  createdAt: string
+}
+
+export type ConnectorsTestResult = {
+  ok: boolean
+  accountLabel: string
+  permissionCheck: ConnectorsPermissionCheck
+  offenders: Array<string>
+  warnings: Array<string>
+}
+
+export type ConnectorsAuditPage = { items: Array<ConnectorsAuditEntry>; nextCursor?: string }
+
+export type ConnectorsAuthConfig = {
+  id: ConnectorsAuthConfigID
+  connectorId: ConnectorsConnectorID
+  name: string
+  builtin: boolean
+  method: string
+  scopes: Array<string>
+  settings: { [x: string]: string }
+}
+
+export type ConnectorsGithubRepoList = { items: Array<ConnectorsGithubRepo> }
 
 export type VcsInfo = { provider?: string; branch: VcsBranch }
 
@@ -2289,6 +2409,14 @@ export type GraphEdgePage = { items: Array<GraphEdge>; total: number; truncated:
 
 export type GraphChangePage = { items: Array<GraphChange>; total: number; truncated: boolean; limit: number }
 
+export type ConnectorsCatalog = { items: Array<ConnectorsManifest> }
+
+export type ConnectorsConnectionList = { items: Array<ConnectorsConnection> }
+
+export type ConnectorsSyncResult = { started: boolean; connection: ConnectorsConnection }
+
+export type ConnectorsAuthConfigList = { items: Array<ConnectorsAuthConfig> }
+
 export type SessionInboxMove = {
   id: SessionMessageID
   sessionID: SessionID
@@ -2608,6 +2736,7 @@ export type ConfigEntry =
           artifacts?: boolean
           codemode_vm?: boolean
           bellu_graph?: boolean
+          connectors?: boolean
           part_rows?: boolean
           image_generate?: boolean | { model?: string | { providerID: string; model: string; variant?: string } }
           subagent_depth?: number
@@ -3295,6 +3424,38 @@ export type ArtifactNotFoundError = {
 }
 export const isArtifactNotFoundError = (value: unknown): value is ArtifactNotFoundError =>
   typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "ArtifactNotFoundError"
+
+export type ConnectorError = {
+  readonly _tag: "ConnectorError"
+  readonly code:
+    | "invalid_credential"
+    | "insufficient_permission"
+    | "excess_permission"
+    | "network"
+    | "rate_limited"
+    | "expired"
+    | "alias_invalid"
+    | "alias_taken"
+    | "blocked_by_policy"
+    | "scope_denied"
+    | "run_in_progress"
+    | "vault_unavailable"
+    | "audit_failed"
+    | "decrypt_failed"
+    | "transition_rejected"
+    | "validation_failed"
+    | "payload_too_large"
+    | "forbidden"
+  readonly message: string
+  readonly offenders?: ReadonlyArray<string> | undefined
+  readonly inUse?: number | undefined
+}
+export const isConnectorError = (value: unknown): value is ConnectorError =>
+  typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "ConnectorError"
+
+export type NotFoundError = { readonly _tag: "NotFoundError"; readonly message: string }
+export const isNotFoundError = (value: unknown): value is NotFoundError =>
+  typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "NotFoundError"
 
 export type ShellNotFoundError = { readonly _tag: "ShellNotFoundError"; readonly id: string; readonly message: string }
 export const isShellNotFoundError = (value: unknown): value is ShellNotFoundError =>
@@ -4819,6 +4980,125 @@ export type ExperimentalGraphSchemaOutput = GraphSchemaSummary
 
 export type ExperimentalGraphStatusOutput = GraphStatus
 
+export type ExperimentalConnectorsStatusOutput = ConnectorsServiceStatus
+
+export type ExperimentalConnectorsCatalogOutput = ConnectorsCatalog
+
+export type ExperimentalConnectorsListConnectionsOutput = ConnectorsConnectionList
+
+export type ExperimentalConnectorsCreateConnectionInput = {
+  readonly alias: string
+  readonly connectorId: string
+  readonly authConfigId?: string | undefined
+  readonly method: string
+  readonly params?: { readonly [x: string]: string } | undefined
+  readonly credential: { readonly [x: string]: string }
+  readonly intervalSec?: number | undefined
+}
+
+export type ExperimentalConnectorsCreateConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsGetConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsGetConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsUpdateConnectionInput = {
+  readonly id: string
+  readonly alias?: string | undefined
+  readonly intervalSec?: number | undefined
+  readonly allowAgentLiveReads?: boolean | undefined
+  readonly selection?: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> } | undefined
+  readonly rotationIntervalDays?: number | undefined
+}
+
+export type ExperimentalConnectorsUpdateConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsDeleteConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsDeleteConnectionOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsTestConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsTestConnectionOutput = ConnectorsTestResult
+
+export type ExperimentalConnectorsSyncConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsSyncConnectionOutput = ConnectorsSyncResult
+
+export type ExperimentalConnectorsPauseConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsPauseConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsResumeConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsResumeConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsReconnectConnectionInput = {
+  readonly id: string
+  readonly credential: { readonly [x: string]: string }
+}
+
+export type ExperimentalConnectorsReconnectConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsRotateCredentialInput = {
+  readonly id: string
+  readonly credential: { readonly [x: string]: string }
+}
+
+export type ExperimentalConnectorsRotateCredentialOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsListAuditInput = { readonly id: string; readonly cursor?: string | undefined }
+
+export type ExperimentalConnectorsListAuditOutput = ConnectorsAuditPage
+
+export type ExperimentalConnectorsListAuthConfigsInput = { readonly cid: string }
+
+export type ExperimentalConnectorsListAuthConfigsOutput = ConnectorsAuthConfigList
+
+export type ExperimentalConnectorsCreateAuthConfigInput = {
+  readonly cid: string
+  readonly name: string
+  readonly method: string
+  readonly scopes?: ReadonlyArray<string> | undefined
+  readonly settings?: { readonly [x: string]: string } | undefined
+  readonly secrets?: { readonly [x: string]: string } | undefined
+}
+
+export type ExperimentalConnectorsCreateAuthConfigOutput = ConnectorsAuthConfig
+
+export type ExperimentalConnectorsDeleteAuthConfigInput = { readonly id: string }
+
+export type ExperimentalConnectorsDeleteAuthConfigOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsAwsSetupInput = { readonly alias?: string | undefined }
+
+export type ExperimentalConnectorsAwsSetupOutput = ConnectorsAwsSetup
+
+export type ExperimentalConnectorsListGithubReposInput = { readonly id: string }
+
+export type ExperimentalConnectorsListGithubReposOutput = ConnectorsGithubRepoList
+
+export type ExperimentalConnectorsGetScopeInput = { readonly principal: string }
+
+export type ExperimentalConnectorsGetScopeOutput = ConnectorsScope
+
+export type ExperimentalConnectorsPutScopeInput = {
+  readonly principal: string
+  readonly connectors: ReadonlyArray<string>
+  readonly connections: ReadonlyArray<string>
+  readonly operations: { readonly [x: string]: ReadonlyArray<string> }
+}
+
+export type ExperimentalConnectorsPutScopeOutput = ConnectorsScope
+
+export type ExperimentalConnectorsUnlockVaultInput = { readonly passphrase: string }
+
+export type ExperimentalConnectorsUnlockVaultOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsRotateMasterKeyOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsForgetAllOutput = ConnectorsVaultResult
+
 export type ShellListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
 
 export type ShellListOutput = { location: LocationPublicRef; data: Array<ShellInfo1> }
@@ -5148,6 +5428,135 @@ export type GraphSchemaOutput = ExperimentalGraphSchemaOutput
 
 /** @deprecated Use `ExperimentalGraphStatusOutput`. Removed in the next minor. */
 export type GraphStatusOutput = ExperimentalGraphStatusOutput
+
+/** @deprecated Use `ExperimentalConnectorsStatusOutput`. Removed in the next minor. */
+export type ConnectorsStatusOutput = ExperimentalConnectorsStatusOutput
+
+/** @deprecated Use `ExperimentalConnectorsCatalogOutput`. Removed in the next minor. */
+export type ConnectorsCatalogOutput = ExperimentalConnectorsCatalogOutput
+
+/** @deprecated Use `ExperimentalConnectorsListConnectionsOutput`. Removed in the next minor. */
+export type ConnectorsListConnectionsOutput = ExperimentalConnectorsListConnectionsOutput
+
+/** @deprecated Use `ExperimentalConnectorsCreateConnectionInput`. Removed in the next minor. */
+export type ConnectorsCreateConnectionInput = ExperimentalConnectorsCreateConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsCreateConnectionOutput`. Removed in the next minor. */
+export type ConnectorsCreateConnectionOutput = ExperimentalConnectorsCreateConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetConnectionInput`. Removed in the next minor. */
+export type ConnectorsGetConnectionInput = ExperimentalConnectorsGetConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsGetConnectionOutput`. Removed in the next minor. */
+export type ConnectorsGetConnectionOutput = ExperimentalConnectorsGetConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsUpdateConnectionInput`. Removed in the next minor. */
+export type ConnectorsUpdateConnectionInput = ExperimentalConnectorsUpdateConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsUpdateConnectionOutput`. Removed in the next minor. */
+export type ConnectorsUpdateConnectionOutput = ExperimentalConnectorsUpdateConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteConnectionInput`. Removed in the next minor. */
+export type ConnectorsDeleteConnectionInput = ExperimentalConnectorsDeleteConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteConnectionOutput`. Removed in the next minor. */
+export type ConnectorsDeleteConnectionOutput = ExperimentalConnectorsDeleteConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsTestConnectionInput`. Removed in the next minor. */
+export type ConnectorsTestConnectionInput = ExperimentalConnectorsTestConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsTestConnectionOutput`. Removed in the next minor. */
+export type ConnectorsTestConnectionOutput = ExperimentalConnectorsTestConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsSyncConnectionInput`. Removed in the next minor. */
+export type ConnectorsSyncConnectionInput = ExperimentalConnectorsSyncConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsSyncConnectionOutput`. Removed in the next minor. */
+export type ConnectorsSyncConnectionOutput = ExperimentalConnectorsSyncConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsPauseConnectionInput`. Removed in the next minor. */
+export type ConnectorsPauseConnectionInput = ExperimentalConnectorsPauseConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsPauseConnectionOutput`. Removed in the next minor. */
+export type ConnectorsPauseConnectionOutput = ExperimentalConnectorsPauseConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsResumeConnectionInput`. Removed in the next minor. */
+export type ConnectorsResumeConnectionInput = ExperimentalConnectorsResumeConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsResumeConnectionOutput`. Removed in the next minor. */
+export type ConnectorsResumeConnectionOutput = ExperimentalConnectorsResumeConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsReconnectConnectionInput`. Removed in the next minor. */
+export type ConnectorsReconnectConnectionInput = ExperimentalConnectorsReconnectConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsReconnectConnectionOutput`. Removed in the next minor. */
+export type ConnectorsReconnectConnectionOutput = ExperimentalConnectorsReconnectConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsRotateCredentialInput`. Removed in the next minor. */
+export type ConnectorsRotateCredentialInput = ExperimentalConnectorsRotateCredentialInput
+
+/** @deprecated Use `ExperimentalConnectorsRotateCredentialOutput`. Removed in the next minor. */
+export type ConnectorsRotateCredentialOutput = ExperimentalConnectorsRotateCredentialOutput
+
+/** @deprecated Use `ExperimentalConnectorsListAuditInput`. Removed in the next minor. */
+export type ConnectorsListAuditInput = ExperimentalConnectorsListAuditInput
+
+/** @deprecated Use `ExperimentalConnectorsListAuditOutput`. Removed in the next minor. */
+export type ConnectorsListAuditOutput = ExperimentalConnectorsListAuditOutput
+
+/** @deprecated Use `ExperimentalConnectorsListAuthConfigsInput`. Removed in the next minor. */
+export type ConnectorsListAuthConfigsInput = ExperimentalConnectorsListAuthConfigsInput
+
+/** @deprecated Use `ExperimentalConnectorsListAuthConfigsOutput`. Removed in the next minor. */
+export type ConnectorsListAuthConfigsOutput = ExperimentalConnectorsListAuthConfigsOutput
+
+/** @deprecated Use `ExperimentalConnectorsCreateAuthConfigInput`. Removed in the next minor. */
+export type ConnectorsCreateAuthConfigInput = ExperimentalConnectorsCreateAuthConfigInput
+
+/** @deprecated Use `ExperimentalConnectorsCreateAuthConfigOutput`. Removed in the next minor. */
+export type ConnectorsCreateAuthConfigOutput = ExperimentalConnectorsCreateAuthConfigOutput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteAuthConfigInput`. Removed in the next minor. */
+export type ConnectorsDeleteAuthConfigInput = ExperimentalConnectorsDeleteAuthConfigInput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteAuthConfigOutput`. Removed in the next minor. */
+export type ConnectorsDeleteAuthConfigOutput = ExperimentalConnectorsDeleteAuthConfigOutput
+
+/** @deprecated Use `ExperimentalConnectorsAwsSetupInput`. Removed in the next minor. */
+export type ConnectorsAwsSetupInput = ExperimentalConnectorsAwsSetupInput
+
+/** @deprecated Use `ExperimentalConnectorsAwsSetupOutput`. Removed in the next minor. */
+export type ConnectorsAwsSetupOutput = ExperimentalConnectorsAwsSetupOutput
+
+/** @deprecated Use `ExperimentalConnectorsListGithubReposInput`. Removed in the next minor. */
+export type ConnectorsListGithubReposInput = ExperimentalConnectorsListGithubReposInput
+
+/** @deprecated Use `ExperimentalConnectorsListGithubReposOutput`. Removed in the next minor. */
+export type ConnectorsListGithubReposOutput = ExperimentalConnectorsListGithubReposOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetScopeInput`. Removed in the next minor. */
+export type ConnectorsGetScopeInput = ExperimentalConnectorsGetScopeInput
+
+/** @deprecated Use `ExperimentalConnectorsGetScopeOutput`. Removed in the next minor. */
+export type ConnectorsGetScopeOutput = ExperimentalConnectorsGetScopeOutput
+
+/** @deprecated Use `ExperimentalConnectorsPutScopeInput`. Removed in the next minor. */
+export type ConnectorsPutScopeInput = ExperimentalConnectorsPutScopeInput
+
+/** @deprecated Use `ExperimentalConnectorsPutScopeOutput`. Removed in the next minor. */
+export type ConnectorsPutScopeOutput = ExperimentalConnectorsPutScopeOutput
+
+/** @deprecated Use `ExperimentalConnectorsUnlockVaultInput`. Removed in the next minor. */
+export type ConnectorsUnlockVaultInput = ExperimentalConnectorsUnlockVaultInput
+
+/** @deprecated Use `ExperimentalConnectorsUnlockVaultOutput`. Removed in the next minor. */
+export type ConnectorsUnlockVaultOutput = ExperimentalConnectorsUnlockVaultOutput
+
+/** @deprecated Use `ExperimentalConnectorsRotateMasterKeyOutput`. Removed in the next minor. */
+export type ConnectorsRotateMasterKeyOutput = ExperimentalConnectorsRotateMasterKeyOutput
+
+/** @deprecated Use `ExperimentalConnectorsForgetAllOutput`. Removed in the next minor. */
+export type ConnectorsForgetAllOutput = ExperimentalConnectorsForgetAllOutput
 
 /** @deprecated Use `ExperimentalMigrationV1StatusOutput`. Removed in the next minor. */
 export type MigrationV1StatusOutput = ExperimentalMigrationV1StatusOutput

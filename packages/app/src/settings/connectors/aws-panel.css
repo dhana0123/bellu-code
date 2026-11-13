@@ -1,0 +1,172 @@
+.aws-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  color: var(--v2-text-text-base);
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+}
+
+.aws-panel fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.aws-panel legend {
+  padding: 0;
+  margin-bottom: 8px;
+  color: var(--v2-text-text-base);
+  font-weight: var(--font-weight-medium);
+}
+
+.aws-panel-regions {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.aws-panel-regions > legend,
+.aws-panel-regions > p {
+  grid-column: 1 / -1;
+}
+
+.aws-panel-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.aws-panel-section > * {
+  max-width: 100%;
+}
+
+.aws-panel-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.aws-panel-row > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.aws-panel-method {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  cursor: pointer;
+}
+
+.aws-panel-method[data-disabled] {
+  color: var(--v2-text-text-muted);
+  cursor: not-allowed;
+}
+
+.aws-panel-method input:focus-visible,
+.aws-panel-tabs button:focus-visible,
+.aws-panel-template pre:focus-visible {
+  outline: 2px solid var(--v2-border-border-focus, currentColor);
+  outline-offset: 2px;
+}
+
+.aws-panel-badge {
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: var(--v2-background-bg-layer-03);
+  color: var(--v2-text-text-base);
+  font-size: 12px;
+  line-height: var(--line-height-compact);
+}
+
+.aws-panel-badge[data-tone="muted"] {
+  color: var(--v2-text-text-muted);
+}
+
+.aws-panel-heading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-compact);
+}
+
+.aws-panel-note {
+  margin: 0;
+  color: var(--v2-text-text-muted);
+}
+
+.aws-panel-note:empty {
+  display: none;
+}
+
+.aws-panel-note[data-tone="warning"] {
+  color: var(--v2-text-text-warning, var(--v2-text-text-base));
+}
+
+.aws-panel-note[data-tone="danger"],
+.aws-panel-errors [data-tone="danger"] {
+  color: var(--v2-text-text-danger, var(--v2-text-text-base));
+}
+
+.aws-panel-errors p {
+  margin: 0 0 4px;
+}
+
+.aws-panel-policies {
+  margin: 0;
+  padding-inline-start: 20px;
+}
+
+.aws-panel-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.aws-panel-tabs button {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--v2-text-text-muted);
+  cursor: pointer;
+}
+
+.aws-panel-tabs button[aria-selected="true"] {
+  background: var(--v2-background-bg-layer-03);
+  color: var(--v2-text-text-base);
+}
+
+.aws-panel-template {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.aws-panel-template pre {
+  width: 100%;
+  max-height: 240px;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  background: var(--v2-background-bg-layer-03);
+  font-family: var(--font-family-mono);
+}
+
+.aws-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

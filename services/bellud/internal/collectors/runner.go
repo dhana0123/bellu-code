@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,6 +24,19 @@ type Collector interface {
 	// added/changed/removed by diffing against the projection.
 	Collect(ctx context.Context) (graph.Batch, error)
 }
+
+// Timeouter is an optional Collector interface overriding the per-tick timeout.
+type Timeouter interface{ Timeout() time.Duration }
+
+// ConnectorTimeout is the per-run timeout for cloud connector collectors.
+const ConnectorTimeout = 120 * time.Second
+
+// PartialError is returned by Collect together with a usable batch when some
+// resource types failed. The batch is still applied and the run is recorded as
+// ok with last_error "partial: <types>".
+type PartialError struct{ Types []string }
+
+func (e PartialError) Error() string { return "partial: " + strings.Join(e.Types, ",") }
 
 const (
 	// TickTimeout bounds one Collect+Apply cycle.
@@ -67,8 +81,9 @@ type Runner struct {
 	now        func() time.Time
 	timeout    time.Duration
 
-	mu     sync.Mutex // guards states and serializes status writes
+	mu     sync.Mutex // guards states, forgot and serializes status writes
 	states map[string]*state
+	forgot bool // a state was removed; the next status write must publish it
 
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
@@ -141,8 +156,12 @@ func (r *Runner) loop(ctx context.Context, c Collector) {
 // RunOnce executes one tick for c, records its status, and logs failures with
 // backoff. Failures never propagate to other collectors.
 func (r *Runner) RunOnce(ctx context.Context, c Collector) error {
-	tctx, cancel := context.WithTimeout(ctx, r.timeout)
-	err := r.tick(tctx, c)
+	timeout := r.timeout
+	if t, ok := c.(Timeouter); ok && t.Timeout() > 0 {
+		timeout = t.Timeout()
+	}
+	tctx, cancel := context.WithTimeout(ctx, timeout)
+	partial, err := r.tick(tctx, c)
 	timedOut := errors.Is(tctx.Err(), context.DeadlineExceeded) && ctx.Err() == nil
 	cancel()
 	if ctx.Err() != nil && err != nil {
@@ -150,11 +169,13 @@ func (r *Runner) RunOnce(ctx context.Context, c Collector) error {
 	}
 	status, msg := StatusOK, ""
 	switch {
+	case err == nil && partial != nil:
+		msg = partial.Error()
 	case err == nil:
 	case errors.Is(err, redact.ErrSecretLeak):
 		status, msg = StatusLeak, err.Error()
 	case timedOut || errors.Is(err, context.DeadlineExceeded):
-		status, msg = StatusTimeout, "tick exceeded "+r.timeout.String()
+		status, msg = StatusTimeout, "tick exceeded "+timeout.String()
 	default:
 		status, msg = StatusError, err.Error()
 	}
@@ -163,10 +184,14 @@ func (r *Runner) RunOnce(ctx context.Context, c Collector) error {
 }
 
 // tick is Algorithm E: collect, scrub, leak-check, apply.
-func (r *Runner) tick(ctx context.Context, c Collector) (err error) {
+func (r *Runner) tick(ctx context.Context, c Collector) (partial *PartialError, err error) {
 	b, err := c.Collect(ctx)
+	var pe PartialError
+	if errors.As(err, &pe) {
+		partial, err = &pe, nil
+	}
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if b.Collector == "" {
 		b.Collector = c.Name()
@@ -180,10 +205,21 @@ func (r *Runner) tick(ctx context.Context, c Collector) (err error) {
 	if rule, leaked := r.guard.FirstLeak(b); leaked || r.guard.Leaks(b) {
 		// Audit line: collector and rule id only.
 		r.log.Println("audit: secret leak blocked collector=" + c.Name() + " rule=" + rule)
-		return redact.ErrSecretLeak
+		return nil, redact.ErrSecretLeak
 	}
 	_, err = r.engine.Ingest().Apply(ctx, b)
-	return err
+	return partial, err
+}
+
+// Forget drops a collector's state so its collector_status entity is removed
+// on the next status write.
+func (r *Runner) Forget(name string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, ok := r.states[name]; ok {
+		delete(r.states, name)
+		r.forgot = true
+	}
 }
 
 func (r *Runner) record(ctx context.Context, name, status, msg string) {
@@ -224,9 +260,10 @@ func (r *Runner) writeStatus(ctx context.Context) error {
 		}
 		b.Entities = append(b.Entities, entity(n, st))
 	}
-	if len(b.Entities) == 0 {
+	if len(b.Entities) == 0 && !r.forgot {
 		return nil
 	}
+	r.forgot = false
 	b = r.guard.Scrub(b)
 	if r.guard.Leaks(b) {
 		return redact.ErrSecretLeak

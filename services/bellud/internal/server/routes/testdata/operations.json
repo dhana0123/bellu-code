@@ -169,6 +169,174 @@
   },
   {
     "method": "DELETE",
+    "path": "/api/experimental/connectors/auth-configs/{id}",
+    "operationId": "experimental.connectors.deleteAuthConfig",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/aws/setup",
+    "operationId": "experimental.connectors.awsSetup",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/catalog",
+    "operationId": "experimental.connectors.catalog",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections",
+    "operationId": "experimental.connectors.listConnections",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections",
+    "operationId": "experimental.connectors.createConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/experimental/connectors/connections/{id}",
+    "operationId": "experimental.connectors.deleteConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections/{id}",
+    "operationId": "experimental.connectors.getConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/experimental/connectors/connections/{id}",
+    "operationId": "experimental.connectors.updateConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections/{id}/audit",
+    "operationId": "experimental.connectors.listAudit",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections/{id}/github/repos",
+    "operationId": "experimental.connectors.listGithubRepos",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/pause",
+    "operationId": "experimental.connectors.pauseConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/reconnect",
+    "operationId": "experimental.connectors.reconnectConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/resume",
+    "operationId": "experimental.connectors.resumeConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/rotate",
+    "operationId": "experimental.connectors.rotateCredential",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/sync",
+    "operationId": "experimental.connectors.syncConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/test",
+    "operationId": "experimental.connectors.testConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connectors/{cid}/auth-configs",
+    "operationId": "experimental.connectors.listAuthConfigs",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connectors/{cid}/auth-configs",
+    "operationId": "experimental.connectors.createAuthConfig",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/scopes/{principal}",
+    "operationId": "experimental.connectors.getScope",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/experimental/connectors/scopes/{principal}",
+    "operationId": "experimental.connectors.putScope",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/status",
+    "operationId": "experimental.connectors.status",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/vault/forget",
+    "operationId": "experimental.connectors.forgetAll",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/vault/rotate",
+    "operationId": "experimental.connectors.rotateMasterKey",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/vault/unlock",
+    "operationId": "experimental.connectors.unlockVault",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "DELETE",
     "path": "/api/experimental/fs/watch",
     "operationId": "experimental.fs.unwatch",
     "group": "filesystem",

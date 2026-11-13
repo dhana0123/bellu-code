@@ -283,6 +283,49 @@ import type {
   ExperimentalGraphDiffOutput,
   ExperimentalGraphSchemaOutput,
   ExperimentalGraphStatusOutput,
+  ExperimentalConnectorsStatusOutput,
+  ExperimentalConnectorsCatalogOutput,
+  ExperimentalConnectorsListConnectionsOutput,
+  ExperimentalConnectorsCreateConnectionInput,
+  ExperimentalConnectorsCreateConnectionOutput,
+  ExperimentalConnectorsGetConnectionInput,
+  ExperimentalConnectorsGetConnectionOutput,
+  ExperimentalConnectorsUpdateConnectionInput,
+  ExperimentalConnectorsUpdateConnectionOutput,
+  ExperimentalConnectorsDeleteConnectionInput,
+  ExperimentalConnectorsDeleteConnectionOutput,
+  ExperimentalConnectorsTestConnectionInput,
+  ExperimentalConnectorsTestConnectionOutput,
+  ExperimentalConnectorsSyncConnectionInput,
+  ExperimentalConnectorsSyncConnectionOutput,
+  ExperimentalConnectorsPauseConnectionInput,
+  ExperimentalConnectorsPauseConnectionOutput,
+  ExperimentalConnectorsResumeConnectionInput,
+  ExperimentalConnectorsResumeConnectionOutput,
+  ExperimentalConnectorsReconnectConnectionInput,
+  ExperimentalConnectorsReconnectConnectionOutput,
+  ExperimentalConnectorsRotateCredentialInput,
+  ExperimentalConnectorsRotateCredentialOutput,
+  ExperimentalConnectorsListAuditInput,
+  ExperimentalConnectorsListAuditOutput,
+  ExperimentalConnectorsListAuthConfigsInput,
+  ExperimentalConnectorsListAuthConfigsOutput,
+  ExperimentalConnectorsCreateAuthConfigInput,
+  ExperimentalConnectorsCreateAuthConfigOutput,
+  ExperimentalConnectorsDeleteAuthConfigInput,
+  ExperimentalConnectorsDeleteAuthConfigOutput,
+  ExperimentalConnectorsAwsSetupInput,
+  ExperimentalConnectorsAwsSetupOutput,
+  ExperimentalConnectorsListGithubReposInput,
+  ExperimentalConnectorsListGithubReposOutput,
+  ExperimentalConnectorsGetScopeInput,
+  ExperimentalConnectorsGetScopeOutput,
+  ExperimentalConnectorsPutScopeInput,
+  ExperimentalConnectorsPutScopeOutput,
+  ExperimentalConnectorsUnlockVaultInput,
+  ExperimentalConnectorsUnlockVaultOutput,
+  ExperimentalConnectorsRotateMasterKeyOutput,
+  ExperimentalConnectorsForgetAllOutput,
   ShellListInput,
   ShellListOutput,
   ShellCreateInput,
@@ -1823,6 +1866,207 @@ const adaptGroupExperimentalGraph = (raw: RawClient["server.graph"]) => ({
   status: EndpointExperimentalGraphStatus(raw),
 })
 
+const EndpointExperimentalConnectorsStatus = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsStatusOutput>()(raw["status"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalConnectorsCatalog = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsCatalogOutput>()(raw["catalog"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalConnectorsListConnections = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsListConnectionsOutput>()(
+    raw["listConnections"]({}).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalConnectorsCreateConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsCreateConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsCreateConnectionOutput>()(
+      raw["createConnection"]({
+        payload: {
+          alias: input["alias"],
+          connectorId: input["connectorId"],
+          authConfigId: input["authConfigId"],
+          method: input["method"],
+          params: input["params"],
+          credential: input["credential"],
+          intervalSec: input["intervalSec"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsGetConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsGetConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsGetConnectionOutput>()(
+      raw["getConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsUpdateConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsUpdateConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsUpdateConnectionOutput>()(
+      raw["updateConnection"]({
+        params: { id: input["id"] },
+        payload: {
+          alias: input["alias"],
+          intervalSec: input["intervalSec"],
+          allowAgentLiveReads: input["allowAgentLiveReads"],
+          selection: input["selection"],
+          rotationIntervalDays: input["rotationIntervalDays"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsDeleteConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsDeleteConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsDeleteConnectionOutput>()(
+      raw["deleteConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsTestConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsTestConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsTestConnectionOutput>()(
+      raw["testConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsSyncConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsSyncConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsSyncConnectionOutput>()(
+      raw["syncConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsPauseConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsPauseConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsPauseConnectionOutput>()(
+      raw["pauseConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsResumeConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsResumeConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsResumeConnectionOutput>()(
+      raw["resumeConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsReconnectConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsReconnectConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsReconnectConnectionOutput>()(
+      raw["reconnectConnection"]({ params: { id: input["id"] }, payload: { credential: input["credential"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const EndpointExperimentalConnectorsRotateCredential =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsRotateCredentialInput) =>
+    preserveEffect<ExperimentalConnectorsRotateCredentialOutput>()(
+      raw["rotateCredential"]({ params: { id: input["id"] }, payload: { credential: input["credential"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const EndpointExperimentalConnectorsListAudit =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsListAuditInput) =>
+    preserveEffect<ExperimentalConnectorsListAuditOutput>()(
+      raw["listAudit"]({ params: { id: input["id"] }, query: { cursor: input["cursor"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const EndpointExperimentalConnectorsListAuthConfigs =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsListAuthConfigsInput) =>
+    preserveEffect<ExperimentalConnectorsListAuthConfigsOutput>()(
+      raw["listAuthConfigs"]({ params: { cid: input["cid"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsCreateAuthConfig =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsCreateAuthConfigInput) =>
+    preserveEffect<ExperimentalConnectorsCreateAuthConfigOutput>()(
+      raw["createAuthConfig"]({
+        params: { cid: input["cid"] },
+        payload: {
+          name: input["name"],
+          method: input["method"],
+          scopes: input["scopes"],
+          settings: input["settings"],
+          secrets: input["secrets"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsDeleteAuthConfig =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsDeleteAuthConfigInput) =>
+    preserveEffect<ExperimentalConnectorsDeleteAuthConfigOutput>()(
+      raw["deleteAuthConfig"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsAwsSetup =
+  (raw: RawClient["server.connectors"]) => (input?: ExperimentalConnectorsAwsSetupInput) =>
+    preserveEffect<ExperimentalConnectorsAwsSetupOutput>()(
+      raw["awsSetup"]({ payload: { alias: input?.["alias"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsListGithubRepos =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsListGithubReposInput) =>
+    preserveEffect<ExperimentalConnectorsListGithubReposOutput>()(
+      raw["listGithubRepos"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsGetScope =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsGetScopeInput) =>
+    preserveEffect<ExperimentalConnectorsGetScopeOutput>()(
+      raw["getScope"]({ params: { principal: input["principal"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsPutScope =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsPutScopeInput) =>
+    preserveEffect<ExperimentalConnectorsPutScopeOutput>()(
+      raw["putScope"]({
+        params: { principal: input["principal"] },
+        payload: {
+          connectors: input["connectors"],
+          connections: input["connections"],
+          operations: input["operations"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsUnlockVault =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsUnlockVaultInput) =>
+    preserveEffect<ExperimentalConnectorsUnlockVaultOutput>()(
+      raw["unlockVault"]({ payload: { passphrase: input["passphrase"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsRotateMasterKey = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsRotateMasterKeyOutput>()(
+    raw["rotateMasterKey"]({}).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalConnectorsForgetAll = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsForgetAllOutput>()(raw["forgetAll"]({}).pipe(Effect.mapError(mapClientError)))
+
+const adaptGroupExperimentalConnectors = (raw: RawClient["server.connectors"]) => ({
+  status: EndpointExperimentalConnectorsStatus(raw),
+  catalog: EndpointExperimentalConnectorsCatalog(raw),
+  listConnections: EndpointExperimentalConnectorsListConnections(raw),
+  createConnection: EndpointExperimentalConnectorsCreateConnection(raw),
+  getConnection: EndpointExperimentalConnectorsGetConnection(raw),
+  updateConnection: EndpointExperimentalConnectorsUpdateConnection(raw),
+  deleteConnection: EndpointExperimentalConnectorsDeleteConnection(raw),
+  testConnection: EndpointExperimentalConnectorsTestConnection(raw),
+  syncConnection: EndpointExperimentalConnectorsSyncConnection(raw),
+  pauseConnection: EndpointExperimentalConnectorsPauseConnection(raw),
+  resumeConnection: EndpointExperimentalConnectorsResumeConnection(raw),
+  reconnectConnection: EndpointExperimentalConnectorsReconnectConnection(raw),
+  rotateCredential: EndpointExperimentalConnectorsRotateCredential(raw),
+  listAudit: EndpointExperimentalConnectorsListAudit(raw),
+  listAuthConfigs: EndpointExperimentalConnectorsListAuthConfigs(raw),
+  createAuthConfig: EndpointExperimentalConnectorsCreateAuthConfig(raw),
+  deleteAuthConfig: EndpointExperimentalConnectorsDeleteAuthConfig(raw),
+  awsSetup: EndpointExperimentalConnectorsAwsSetup(raw),
+  listGithubRepos: EndpointExperimentalConnectorsListGithubRepos(raw),
+  getScope: EndpointExperimentalConnectorsGetScope(raw),
+  putScope: EndpointExperimentalConnectorsPutScope(raw),
+  unlockVault: EndpointExperimentalConnectorsUnlockVault(raw),
+  rotateMasterKey: EndpointExperimentalConnectorsRotateMasterKey(raw),
+  forgetAll: EndpointExperimentalConnectorsForgetAll(raw),
+})
+
 const EndpointShellList = (raw: RawClient["server.shell"]) => (input?: ShellListInput) =>
   preserveEffect<ShellListOutput>()(
     raw["shell.list"]({ query: { location: input?.["location"] } }).pipe(Effect.mapError(mapClientError)),
@@ -2053,6 +2297,7 @@ const adaptClient = (raw: RawClient) => {
       mcp: adaptGroupExperimentalMcp(raw["server.mcp"]),
       file: adaptGroupExperimentalFile(raw["server.fs"]),
       graph: adaptGroupExperimentalGraph(raw["server.graph"]),
+      connectors: adaptGroupExperimentalConnectors(raw["server.connectors"]),
       migration: adaptGroupExperimentalMigration(raw["server.migration"]),
       usage: adaptGroupExperimentalUsage(raw["server.usage"]),
       config: adaptGroupExperimentalConfig(raw["server.config"]),
@@ -2174,6 +2419,57 @@ const adaptClient = (raw: RawClient) => {
       schema: client.experimental.graph.schema,
       /** @deprecated Use `client.experimental.graph.status`. Removed in the next minor. */
       status: client.experimental.graph.status,
+    },
+    /** @deprecated Use `client.experimental.connectors`. Removed in the next minor. */
+    connectors: {
+      /** @deprecated Use `client.experimental.connectors.status`. Removed in the next minor. */
+      status: client.experimental.connectors.status,
+      /** @deprecated Use `client.experimental.connectors.catalog`. Removed in the next minor. */
+      catalog: client.experimental.connectors.catalog,
+      /** @deprecated Use `client.experimental.connectors.listConnections`. Removed in the next minor. */
+      listConnections: client.experimental.connectors.listConnections,
+      /** @deprecated Use `client.experimental.connectors.createConnection`. Removed in the next minor. */
+      createConnection: client.experimental.connectors.createConnection,
+      /** @deprecated Use `client.experimental.connectors.getConnection`. Removed in the next minor. */
+      getConnection: client.experimental.connectors.getConnection,
+      /** @deprecated Use `client.experimental.connectors.updateConnection`. Removed in the next minor. */
+      updateConnection: client.experimental.connectors.updateConnection,
+      /** @deprecated Use `client.experimental.connectors.deleteConnection`. Removed in the next minor. */
+      deleteConnection: client.experimental.connectors.deleteConnection,
+      /** @deprecated Use `client.experimental.connectors.testConnection`. Removed in the next minor. */
+      testConnection: client.experimental.connectors.testConnection,
+      /** @deprecated Use `client.experimental.connectors.syncConnection`. Removed in the next minor. */
+      syncConnection: client.experimental.connectors.syncConnection,
+      /** @deprecated Use `client.experimental.connectors.pauseConnection`. Removed in the next minor. */
+      pauseConnection: client.experimental.connectors.pauseConnection,
+      /** @deprecated Use `client.experimental.connectors.resumeConnection`. Removed in the next minor. */
+      resumeConnection: client.experimental.connectors.resumeConnection,
+      /** @deprecated Use `client.experimental.connectors.reconnectConnection`. Removed in the next minor. */
+      reconnectConnection: client.experimental.connectors.reconnectConnection,
+      /** @deprecated Use `client.experimental.connectors.rotateCredential`. Removed in the next minor. */
+      rotateCredential: client.experimental.connectors.rotateCredential,
+      /** @deprecated Use `client.experimental.connectors.listAudit`. Removed in the next minor. */
+      listAudit: client.experimental.connectors.listAudit,
+      /** @deprecated Use `client.experimental.connectors.listAuthConfigs`. Removed in the next minor. */
+      listAuthConfigs: client.experimental.connectors.listAuthConfigs,
+      /** @deprecated Use `client.experimental.connectors.createAuthConfig`. Removed in the next minor. */
+      createAuthConfig: client.experimental.connectors.createAuthConfig,
+      /** @deprecated Use `client.experimental.connectors.deleteAuthConfig`. Removed in the next minor. */
+      deleteAuthConfig: client.experimental.connectors.deleteAuthConfig,
+      /** @deprecated Use `client.experimental.connectors.awsSetup`. Removed in the next minor. */
+      awsSetup: client.experimental.connectors.awsSetup,
+      /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
+      listGithubRepos: client.experimental.connectors.listGithubRepos,
+      /** @deprecated Use `client.experimental.connectors.getScope`. Removed in the next minor. */
+      getScope: client.experimental.connectors.getScope,
+      /** @deprecated Use `client.experimental.connectors.putScope`. Removed in the next minor. */
+      putScope: client.experimental.connectors.putScope,
+      /** @deprecated Use `client.experimental.connectors.unlockVault`. Removed in the next minor. */
+      unlockVault: client.experimental.connectors.unlockVault,
+      /** @deprecated Use `client.experimental.connectors.rotateMasterKey`. Removed in the next minor. */
+      rotateMasterKey: client.experimental.connectors.rotateMasterKey,
+      /** @deprecated Use `client.experimental.connectors.forgetAll`. Removed in the next minor. */
+      forgetAll: client.experimental.connectors.forgetAll,
     },
     /** @deprecated Use `client.experimental.migration`. Removed in the next minor. */
     migration: {
