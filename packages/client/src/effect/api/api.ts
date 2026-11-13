@@ -2709,6 +2709,558 @@ export interface ExperimentalGraphApi<E = never> {
   readonly status: ExperimentalGraphStatusOperation<E>
 }
 
+export type ExperimentalConnectorsStatusOutput = {
+  readonly enabled: boolean
+  readonly offline: boolean
+  readonly keySource: string
+  readonly persistent: boolean
+  readonly locked: boolean
+  readonly warnings: ReadonlyArray<string>
+}
+export type ExperimentalConnectorsStatusOperation<E = never> = () => Effect.Effect<
+  ExperimentalConnectorsStatusOutput,
+  E
+>
+
+export type ExperimentalConnectorsCatalogOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly version: string
+    readonly name: string
+    readonly icon: string
+    readonly auth_methods: ReadonlyArray<{
+      readonly id: string
+      readonly name: string
+      readonly enabled: boolean
+      readonly disabled_reason?: string | undefined
+    }>
+    readonly permissions: ReadonlyArray<{
+      readonly name: string
+      readonly description?: string | undefined
+      readonly read_only: boolean
+    }>
+    readonly operations: ReadonlyArray<{
+      readonly name: string
+      readonly class: "read" | "auth"
+      readonly method?: string | undefined
+      readonly host: string
+      readonly path?: string | undefined
+      readonly query?: boolean | undefined
+      readonly strip_keys?: ReadonlyArray<string> | undefined
+      readonly max_bytes?: number | undefined
+    }>
+    readonly egress: ReadonlyArray<string>
+    readonly entities: ReadonlyArray<string>
+  }>
+}
+export type ExperimentalConnectorsCatalogOperation<E = never> = () => Effect.Effect<
+  ExperimentalConnectorsCatalogOutput,
+  E
+>
+
+export type ExperimentalConnectorsListConnectionsOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly connectorId: string
+    readonly alias: string
+    readonly authConfigId: string
+    readonly method: string
+    readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+    readonly statusReason: string
+    readonly accountLabel: string
+    readonly externalIdRef?: string | undefined
+    readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+    readonly intervalSec: number
+    readonly allowAgentLiveReads: boolean
+    readonly rotationIntervalDays: number
+    readonly credentialCreatedAt: string | null
+    readonly credentialExpiresAt: string | null
+    readonly lastPermissionCheck: string | null
+    readonly permissionCheck: string
+    readonly lastSync?:
+      | {
+          readonly status: string
+          readonly endedAt?: string | undefined
+          readonly entities: number
+          readonly partial: ReadonlyArray<string>
+        }
+      | undefined
+    readonly removed: boolean
+    readonly createdAt: string
+  }>
+}
+export type ExperimentalConnectorsListConnectionsOperation<E = never> = () => Effect.Effect<
+  ExperimentalConnectorsListConnectionsOutput,
+  E
+>
+
+export type ExperimentalConnectorsCreateConnectionInput = {
+  readonly alias: string
+  readonly connectorId: string
+  readonly authConfigId?: string | undefined
+  readonly method: string
+  readonly params?: { readonly [x: string]: string } | undefined
+  readonly credential: { readonly [x: string]: string }
+  readonly intervalSec?: number | undefined
+}
+export type ExperimentalConnectorsCreateConnectionOutput = {
+  readonly id: string
+  readonly connectorId: string
+  readonly alias: string
+  readonly authConfigId: string
+  readonly method: string
+  readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+  readonly statusReason: string
+  readonly accountLabel: string
+  readonly externalIdRef?: string | undefined
+  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly intervalSec: number
+  readonly allowAgentLiveReads: boolean
+  readonly rotationIntervalDays: number
+  readonly credentialCreatedAt: string | null
+  readonly credentialExpiresAt: string | null
+  readonly lastPermissionCheck: string | null
+  readonly permissionCheck: string
+  readonly lastSync?:
+    | {
+        readonly status: string
+        readonly endedAt?: string | undefined
+        readonly entities: number
+        readonly partial: ReadonlyArray<string>
+      }
+    | undefined
+  readonly removed: boolean
+  readonly createdAt: string
+}
+export type ExperimentalConnectorsCreateConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsCreateConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsCreateConnectionOutput, E>
+
+export type ExperimentalConnectorsGetConnectionInput = { readonly id: string }
+export type ExperimentalConnectorsGetConnectionOutput = {
+  readonly id: string
+  readonly connectorId: string
+  readonly alias: string
+  readonly authConfigId: string
+  readonly method: string
+  readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+  readonly statusReason: string
+  readonly accountLabel: string
+  readonly externalIdRef?: string | undefined
+  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly intervalSec: number
+  readonly allowAgentLiveReads: boolean
+  readonly rotationIntervalDays: number
+  readonly credentialCreatedAt: string | null
+  readonly credentialExpiresAt: string | null
+  readonly lastPermissionCheck: string | null
+  readonly permissionCheck: string
+  readonly lastSync?:
+    | {
+        readonly status: string
+        readonly endedAt?: string | undefined
+        readonly entities: number
+        readonly partial: ReadonlyArray<string>
+      }
+    | undefined
+  readonly removed: boolean
+  readonly createdAt: string
+}
+export type ExperimentalConnectorsGetConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsGetConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsGetConnectionOutput, E>
+
+export type ExperimentalConnectorsUpdateConnectionInput = {
+  readonly id: string
+  readonly alias?: string | undefined
+  readonly intervalSec?: number | undefined
+  readonly allowAgentLiveReads?: boolean | undefined
+  readonly selection?: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> } | undefined
+  readonly rotationIntervalDays?: number | undefined
+}
+export type ExperimentalConnectorsUpdateConnectionOutput = {
+  readonly id: string
+  readonly connectorId: string
+  readonly alias: string
+  readonly authConfigId: string
+  readonly method: string
+  readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+  readonly statusReason: string
+  readonly accountLabel: string
+  readonly externalIdRef?: string | undefined
+  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly intervalSec: number
+  readonly allowAgentLiveReads: boolean
+  readonly rotationIntervalDays: number
+  readonly credentialCreatedAt: string | null
+  readonly credentialExpiresAt: string | null
+  readonly lastPermissionCheck: string | null
+  readonly permissionCheck: string
+  readonly lastSync?:
+    | {
+        readonly status: string
+        readonly endedAt?: string | undefined
+        readonly entities: number
+        readonly partial: ReadonlyArray<string>
+      }
+    | undefined
+  readonly removed: boolean
+  readonly createdAt: string
+}
+export type ExperimentalConnectorsUpdateConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsUpdateConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsUpdateConnectionOutput, E>
+
+export type ExperimentalConnectorsDeleteConnectionInput = { readonly id: string }
+export type ExperimentalConnectorsDeleteConnectionOutput = { readonly ok: boolean }
+export type ExperimentalConnectorsDeleteConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsDeleteConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsDeleteConnectionOutput, E>
+
+export type ExperimentalConnectorsTestConnectionInput = { readonly id: string }
+export type ExperimentalConnectorsTestConnectionOutput = {
+  readonly ok: boolean
+  readonly accountLabel: string
+  readonly permissionCheck: "ok" | "excess" | "unverifiable"
+  readonly offenders: ReadonlyArray<string>
+  readonly warnings: ReadonlyArray<string>
+}
+export type ExperimentalConnectorsTestConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsTestConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsTestConnectionOutput, E>
+
+export type ExperimentalConnectorsSyncConnectionInput = { readonly id: string }
+export type ExperimentalConnectorsSyncConnectionOutput = {
+  readonly started: boolean
+  readonly connection: {
+    readonly id: string
+    readonly connectorId: string
+    readonly alias: string
+    readonly authConfigId: string
+    readonly method: string
+    readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+    readonly statusReason: string
+    readonly accountLabel: string
+    readonly externalIdRef?: string | undefined
+    readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+    readonly intervalSec: number
+    readonly allowAgentLiveReads: boolean
+    readonly rotationIntervalDays: number
+    readonly credentialCreatedAt: string | null
+    readonly credentialExpiresAt: string | null
+    readonly lastPermissionCheck: string | null
+    readonly permissionCheck: string
+    readonly lastSync?:
+      | {
+          readonly status: string
+          readonly endedAt?: string | undefined
+          readonly entities: number
+          readonly partial: ReadonlyArray<string>
+        }
+      | undefined
+    readonly removed: boolean
+    readonly createdAt: string
+  }
+}
+export type ExperimentalConnectorsSyncConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsSyncConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsSyncConnectionOutput, E>
+
+export type ExperimentalConnectorsPauseConnectionInput = { readonly id: string }
+export type ExperimentalConnectorsPauseConnectionOutput = {
+  readonly id: string
+  readonly connectorId: string
+  readonly alias: string
+  readonly authConfigId: string
+  readonly method: string
+  readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+  readonly statusReason: string
+  readonly accountLabel: string
+  readonly externalIdRef?: string | undefined
+  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly intervalSec: number
+  readonly allowAgentLiveReads: boolean
+  readonly rotationIntervalDays: number
+  readonly credentialCreatedAt: string | null
+  readonly credentialExpiresAt: string | null
+  readonly lastPermissionCheck: string | null
+  readonly permissionCheck: string
+  readonly lastSync?:
+    | {
+        readonly status: string
+        readonly endedAt?: string | undefined
+        readonly entities: number
+        readonly partial: ReadonlyArray<string>
+      }
+    | undefined
+  readonly removed: boolean
+  readonly createdAt: string
+}
+export type ExperimentalConnectorsPauseConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsPauseConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsPauseConnectionOutput, E>
+
+export type ExperimentalConnectorsResumeConnectionInput = { readonly id: string }
+export type ExperimentalConnectorsResumeConnectionOutput = {
+  readonly id: string
+  readonly connectorId: string
+  readonly alias: string
+  readonly authConfigId: string
+  readonly method: string
+  readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+  readonly statusReason: string
+  readonly accountLabel: string
+  readonly externalIdRef?: string | undefined
+  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly intervalSec: number
+  readonly allowAgentLiveReads: boolean
+  readonly rotationIntervalDays: number
+  readonly credentialCreatedAt: string | null
+  readonly credentialExpiresAt: string | null
+  readonly lastPermissionCheck: string | null
+  readonly permissionCheck: string
+  readonly lastSync?:
+    | {
+        readonly status: string
+        readonly endedAt?: string | undefined
+        readonly entities: number
+        readonly partial: ReadonlyArray<string>
+      }
+    | undefined
+  readonly removed: boolean
+  readonly createdAt: string
+}
+export type ExperimentalConnectorsResumeConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsResumeConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsResumeConnectionOutput, E>
+
+export type ExperimentalConnectorsReconnectConnectionInput = {
+  readonly id: string
+  readonly credential: { readonly [x: string]: string }
+}
+export type ExperimentalConnectorsReconnectConnectionOutput = {
+  readonly id: string
+  readonly connectorId: string
+  readonly alias: string
+  readonly authConfigId: string
+  readonly method: string
+  readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+  readonly statusReason: string
+  readonly accountLabel: string
+  readonly externalIdRef?: string | undefined
+  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly intervalSec: number
+  readonly allowAgentLiveReads: boolean
+  readonly rotationIntervalDays: number
+  readonly credentialCreatedAt: string | null
+  readonly credentialExpiresAt: string | null
+  readonly lastPermissionCheck: string | null
+  readonly permissionCheck: string
+  readonly lastSync?:
+    | {
+        readonly status: string
+        readonly endedAt?: string | undefined
+        readonly entities: number
+        readonly partial: ReadonlyArray<string>
+      }
+    | undefined
+  readonly removed: boolean
+  readonly createdAt: string
+}
+export type ExperimentalConnectorsReconnectConnectionOperation<E = never> = (
+  input: ExperimentalConnectorsReconnectConnectionInput,
+) => Effect.Effect<ExperimentalConnectorsReconnectConnectionOutput, E>
+
+export type ExperimentalConnectorsRotateCredentialInput = {
+  readonly id: string
+  readonly credential: { readonly [x: string]: string }
+}
+export type ExperimentalConnectorsRotateCredentialOutput = {
+  readonly id: string
+  readonly connectorId: string
+  readonly alias: string
+  readonly authConfigId: string
+  readonly method: string
+  readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+  readonly statusReason: string
+  readonly accountLabel: string
+  readonly externalIdRef?: string | undefined
+  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly intervalSec: number
+  readonly allowAgentLiveReads: boolean
+  readonly rotationIntervalDays: number
+  readonly credentialCreatedAt: string | null
+  readonly credentialExpiresAt: string | null
+  readonly lastPermissionCheck: string | null
+  readonly permissionCheck: string
+  readonly lastSync?:
+    | {
+        readonly status: string
+        readonly endedAt?: string | undefined
+        readonly entities: number
+        readonly partial: ReadonlyArray<string>
+      }
+    | undefined
+  readonly removed: boolean
+  readonly createdAt: string
+}
+export type ExperimentalConnectorsRotateCredentialOperation<E = never> = (
+  input: ExperimentalConnectorsRotateCredentialInput,
+) => Effect.Effect<ExperimentalConnectorsRotateCredentialOutput, E>
+
+export type ExperimentalConnectorsListAuditInput = { readonly id: string; readonly cursor?: string | undefined }
+export type ExperimentalConnectorsListAuditOutput = {
+  readonly items: ReadonlyArray<{
+    readonly seq: number
+    readonly ts: string
+    readonly connectionId: string
+    readonly connectorId: string
+    readonly event: string
+    readonly outcome: "success" | "failure" | "blocked"
+    readonly actor: string
+    readonly detail?: { readonly [x: string]: string } | undefined
+    readonly prev: string
+  }>
+  readonly nextCursor?: string | undefined
+}
+export type ExperimentalConnectorsListAuditOperation<E = never> = (
+  input: ExperimentalConnectorsListAuditInput,
+) => Effect.Effect<ExperimentalConnectorsListAuditOutput, E>
+
+export type ExperimentalConnectorsListAuthConfigsInput = { readonly cid: string }
+export type ExperimentalConnectorsListAuthConfigsOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly connectorId: string
+    readonly name: string
+    readonly builtin: boolean
+    readonly method: string
+    readonly scopes: ReadonlyArray<string>
+    readonly settings: { readonly [x: string]: string }
+  }>
+}
+export type ExperimentalConnectorsListAuthConfigsOperation<E = never> = (
+  input: ExperimentalConnectorsListAuthConfigsInput,
+) => Effect.Effect<ExperimentalConnectorsListAuthConfigsOutput, E>
+
+export type ExperimentalConnectorsCreateAuthConfigInput = {
+  readonly cid: string
+  readonly name: string
+  readonly method: string
+  readonly scopes?: ReadonlyArray<string> | undefined
+  readonly settings?: { readonly [x: string]: string } | undefined
+  readonly secrets?: { readonly [x: string]: string } | undefined
+}
+export type ExperimentalConnectorsCreateAuthConfigOutput = {
+  readonly id: string
+  readonly connectorId: string
+  readonly name: string
+  readonly builtin: boolean
+  readonly method: string
+  readonly scopes: ReadonlyArray<string>
+  readonly settings: { readonly [x: string]: string }
+}
+export type ExperimentalConnectorsCreateAuthConfigOperation<E = never> = (
+  input: ExperimentalConnectorsCreateAuthConfigInput,
+) => Effect.Effect<ExperimentalConnectorsCreateAuthConfigOutput, E>
+
+export type ExperimentalConnectorsDeleteAuthConfigInput = { readonly id: string }
+export type ExperimentalConnectorsDeleteAuthConfigOutput = { readonly ok: boolean }
+export type ExperimentalConnectorsDeleteAuthConfigOperation<E = never> = (
+  input: ExperimentalConnectorsDeleteAuthConfigInput,
+) => Effect.Effect<ExperimentalConnectorsDeleteAuthConfigOutput, E>
+
+export type ExperimentalConnectorsAwsSetupInput = { readonly alias?: string | undefined }
+export type ExperimentalConnectorsAwsSetupOutput = {
+  readonly externalId: string
+  readonly cloudFormation: string
+  readonly terraform: string
+  readonly principal?: string | undefined
+}
+export type ExperimentalConnectorsAwsSetupOperation<E = never> = (
+  input?: ExperimentalConnectorsAwsSetupInput,
+) => Effect.Effect<ExperimentalConnectorsAwsSetupOutput, E>
+
+export type ExperimentalConnectorsListGithubReposInput = { readonly id: string }
+export type ExperimentalConnectorsListGithubReposOutput = {
+  readonly items: ReadonlyArray<{ readonly fullName: string; readonly private: boolean }>
+}
+export type ExperimentalConnectorsListGithubReposOperation<E = never> = (
+  input: ExperimentalConnectorsListGithubReposInput,
+) => Effect.Effect<ExperimentalConnectorsListGithubReposOutput, E>
+
+export type ExperimentalConnectorsGetScopeInput = { readonly principal: string }
+export type ExperimentalConnectorsGetScopeOutput = {
+  readonly principal: string
+  readonly connectors: ReadonlyArray<string>
+  readonly connections: ReadonlyArray<string>
+  readonly operations: { readonly [x: string]: ReadonlyArray<string> }
+}
+export type ExperimentalConnectorsGetScopeOperation<E = never> = (
+  input: ExperimentalConnectorsGetScopeInput,
+) => Effect.Effect<ExperimentalConnectorsGetScopeOutput, E>
+
+export type ExperimentalConnectorsPutScopeInput = {
+  readonly principal: string
+  readonly connectors: ReadonlyArray<string>
+  readonly connections: ReadonlyArray<string>
+  readonly operations: { readonly [x: string]: ReadonlyArray<string> }
+}
+export type ExperimentalConnectorsPutScopeOutput = {
+  readonly principal: string
+  readonly connectors: ReadonlyArray<string>
+  readonly connections: ReadonlyArray<string>
+  readonly operations: { readonly [x: string]: ReadonlyArray<string> }
+}
+export type ExperimentalConnectorsPutScopeOperation<E = never> = (
+  input: ExperimentalConnectorsPutScopeInput,
+) => Effect.Effect<ExperimentalConnectorsPutScopeOutput, E>
+
+export type ExperimentalConnectorsUnlockVaultInput = { readonly passphrase: string }
+export type ExperimentalConnectorsUnlockVaultOutput = { readonly ok: boolean }
+export type ExperimentalConnectorsUnlockVaultOperation<E = never> = (
+  input: ExperimentalConnectorsUnlockVaultInput,
+) => Effect.Effect<ExperimentalConnectorsUnlockVaultOutput, E>
+
+export type ExperimentalConnectorsRotateMasterKeyOutput = { readonly ok: boolean }
+export type ExperimentalConnectorsRotateMasterKeyOperation<E = never> = () => Effect.Effect<
+  ExperimentalConnectorsRotateMasterKeyOutput,
+  E
+>
+
+export type ExperimentalConnectorsForgetAllOutput = { readonly ok: boolean }
+export type ExperimentalConnectorsForgetAllOperation<E = never> = () => Effect.Effect<
+  ExperimentalConnectorsForgetAllOutput,
+  E
+>
+
+export interface ExperimentalConnectorsApi<E = never> {
+  readonly status: ExperimentalConnectorsStatusOperation<E>
+  readonly catalog: ExperimentalConnectorsCatalogOperation<E>
+  readonly listConnections: ExperimentalConnectorsListConnectionsOperation<E>
+  readonly createConnection: ExperimentalConnectorsCreateConnectionOperation<E>
+  readonly getConnection: ExperimentalConnectorsGetConnectionOperation<E>
+  readonly updateConnection: ExperimentalConnectorsUpdateConnectionOperation<E>
+  readonly deleteConnection: ExperimentalConnectorsDeleteConnectionOperation<E>
+  readonly testConnection: ExperimentalConnectorsTestConnectionOperation<E>
+  readonly syncConnection: ExperimentalConnectorsSyncConnectionOperation<E>
+  readonly pauseConnection: ExperimentalConnectorsPauseConnectionOperation<E>
+  readonly resumeConnection: ExperimentalConnectorsResumeConnectionOperation<E>
+  readonly reconnectConnection: ExperimentalConnectorsReconnectConnectionOperation<E>
+  readonly rotateCredential: ExperimentalConnectorsRotateCredentialOperation<E>
+  readonly listAudit: ExperimentalConnectorsListAuditOperation<E>
+  readonly listAuthConfigs: ExperimentalConnectorsListAuthConfigsOperation<E>
+  readonly createAuthConfig: ExperimentalConnectorsCreateAuthConfigOperation<E>
+  readonly deleteAuthConfig: ExperimentalConnectorsDeleteAuthConfigOperation<E>
+  readonly awsSetup: ExperimentalConnectorsAwsSetupOperation<E>
+  readonly listGithubRepos: ExperimentalConnectorsListGithubReposOperation<E>
+  readonly getScope: ExperimentalConnectorsGetScopeOperation<E>
+  readonly putScope: ExperimentalConnectorsPutScopeOperation<E>
+  readonly unlockVault: ExperimentalConnectorsUnlockVaultOperation<E>
+  readonly rotateMasterKey: ExperimentalConnectorsRotateMasterKeyOperation<E>
+  readonly forgetAll: ExperimentalConnectorsForgetAllOperation<E>
+}
+
 export type ShellListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
 export type ShellListOutput = { readonly location: Location.PublicRef; readonly data: ReadonlyArray<Shell.Info> }
 export type ShellListOperation<E = never> = (input?: ShellListInput) => Effect.Effect<ShellListOutput, E>
@@ -3229,6 +3781,207 @@ export type GraphStatusOutput = ExperimentalGraphStatusOutput
 /** @deprecated Use `ExperimentalGraphStatusOperation`. Removed in the next minor. */
 export type GraphStatusOperation<E = never> = ExperimentalGraphStatusOperation<E>
 
+/** @deprecated Use `ExperimentalConnectorsStatusOutput`. Removed in the next minor. */
+export type ConnectorsStatusOutput = ExperimentalConnectorsStatusOutput
+
+/** @deprecated Use `ExperimentalConnectorsStatusOperation`. Removed in the next minor. */
+export type ConnectorsStatusOperation<E = never> = ExperimentalConnectorsStatusOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsCatalogOutput`. Removed in the next minor. */
+export type ConnectorsCatalogOutput = ExperimentalConnectorsCatalogOutput
+
+/** @deprecated Use `ExperimentalConnectorsCatalogOperation`. Removed in the next minor. */
+export type ConnectorsCatalogOperation<E = never> = ExperimentalConnectorsCatalogOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsListConnectionsOutput`. Removed in the next minor. */
+export type ConnectorsListConnectionsOutput = ExperimentalConnectorsListConnectionsOutput
+
+/** @deprecated Use `ExperimentalConnectorsListConnectionsOperation`. Removed in the next minor. */
+export type ConnectorsListConnectionsOperation<E = never> = ExperimentalConnectorsListConnectionsOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsCreateConnectionInput`. Removed in the next minor. */
+export type ConnectorsCreateConnectionInput = ExperimentalConnectorsCreateConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsCreateConnectionOutput`. Removed in the next minor. */
+export type ConnectorsCreateConnectionOutput = ExperimentalConnectorsCreateConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsCreateConnectionOperation`. Removed in the next minor. */
+export type ConnectorsCreateConnectionOperation<E = never> = ExperimentalConnectorsCreateConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsGetConnectionInput`. Removed in the next minor. */
+export type ConnectorsGetConnectionInput = ExperimentalConnectorsGetConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsGetConnectionOutput`. Removed in the next minor. */
+export type ConnectorsGetConnectionOutput = ExperimentalConnectorsGetConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetConnectionOperation`. Removed in the next minor. */
+export type ConnectorsGetConnectionOperation<E = never> = ExperimentalConnectorsGetConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsUpdateConnectionInput`. Removed in the next minor. */
+export type ConnectorsUpdateConnectionInput = ExperimentalConnectorsUpdateConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsUpdateConnectionOutput`. Removed in the next minor. */
+export type ConnectorsUpdateConnectionOutput = ExperimentalConnectorsUpdateConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsUpdateConnectionOperation`. Removed in the next minor. */
+export type ConnectorsUpdateConnectionOperation<E = never> = ExperimentalConnectorsUpdateConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsDeleteConnectionInput`. Removed in the next minor. */
+export type ConnectorsDeleteConnectionInput = ExperimentalConnectorsDeleteConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteConnectionOutput`. Removed in the next minor. */
+export type ConnectorsDeleteConnectionOutput = ExperimentalConnectorsDeleteConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteConnectionOperation`. Removed in the next minor. */
+export type ConnectorsDeleteConnectionOperation<E = never> = ExperimentalConnectorsDeleteConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsTestConnectionInput`. Removed in the next minor. */
+export type ConnectorsTestConnectionInput = ExperimentalConnectorsTestConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsTestConnectionOutput`. Removed in the next minor. */
+export type ConnectorsTestConnectionOutput = ExperimentalConnectorsTestConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsTestConnectionOperation`. Removed in the next minor. */
+export type ConnectorsTestConnectionOperation<E = never> = ExperimentalConnectorsTestConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsSyncConnectionInput`. Removed in the next minor. */
+export type ConnectorsSyncConnectionInput = ExperimentalConnectorsSyncConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsSyncConnectionOutput`. Removed in the next minor. */
+export type ConnectorsSyncConnectionOutput = ExperimentalConnectorsSyncConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsSyncConnectionOperation`. Removed in the next minor. */
+export type ConnectorsSyncConnectionOperation<E = never> = ExperimentalConnectorsSyncConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsPauseConnectionInput`. Removed in the next minor. */
+export type ConnectorsPauseConnectionInput = ExperimentalConnectorsPauseConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsPauseConnectionOutput`. Removed in the next minor. */
+export type ConnectorsPauseConnectionOutput = ExperimentalConnectorsPauseConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsPauseConnectionOperation`. Removed in the next minor. */
+export type ConnectorsPauseConnectionOperation<E = never> = ExperimentalConnectorsPauseConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsResumeConnectionInput`. Removed in the next minor. */
+export type ConnectorsResumeConnectionInput = ExperimentalConnectorsResumeConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsResumeConnectionOutput`. Removed in the next minor. */
+export type ConnectorsResumeConnectionOutput = ExperimentalConnectorsResumeConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsResumeConnectionOperation`. Removed in the next minor. */
+export type ConnectorsResumeConnectionOperation<E = never> = ExperimentalConnectorsResumeConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsReconnectConnectionInput`. Removed in the next minor. */
+export type ConnectorsReconnectConnectionInput = ExperimentalConnectorsReconnectConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsReconnectConnectionOutput`. Removed in the next minor. */
+export type ConnectorsReconnectConnectionOutput = ExperimentalConnectorsReconnectConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsReconnectConnectionOperation`. Removed in the next minor. */
+export type ConnectorsReconnectConnectionOperation<E = never> = ExperimentalConnectorsReconnectConnectionOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsRotateCredentialInput`. Removed in the next minor. */
+export type ConnectorsRotateCredentialInput = ExperimentalConnectorsRotateCredentialInput
+
+/** @deprecated Use `ExperimentalConnectorsRotateCredentialOutput`. Removed in the next minor. */
+export type ConnectorsRotateCredentialOutput = ExperimentalConnectorsRotateCredentialOutput
+
+/** @deprecated Use `ExperimentalConnectorsRotateCredentialOperation`. Removed in the next minor. */
+export type ConnectorsRotateCredentialOperation<E = never> = ExperimentalConnectorsRotateCredentialOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsListAuditInput`. Removed in the next minor. */
+export type ConnectorsListAuditInput = ExperimentalConnectorsListAuditInput
+
+/** @deprecated Use `ExperimentalConnectorsListAuditOutput`. Removed in the next minor. */
+export type ConnectorsListAuditOutput = ExperimentalConnectorsListAuditOutput
+
+/** @deprecated Use `ExperimentalConnectorsListAuditOperation`. Removed in the next minor. */
+export type ConnectorsListAuditOperation<E = never> = ExperimentalConnectorsListAuditOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsListAuthConfigsInput`. Removed in the next minor. */
+export type ConnectorsListAuthConfigsInput = ExperimentalConnectorsListAuthConfigsInput
+
+/** @deprecated Use `ExperimentalConnectorsListAuthConfigsOutput`. Removed in the next minor. */
+export type ConnectorsListAuthConfigsOutput = ExperimentalConnectorsListAuthConfigsOutput
+
+/** @deprecated Use `ExperimentalConnectorsListAuthConfigsOperation`. Removed in the next minor. */
+export type ConnectorsListAuthConfigsOperation<E = never> = ExperimentalConnectorsListAuthConfigsOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsCreateAuthConfigInput`. Removed in the next minor. */
+export type ConnectorsCreateAuthConfigInput = ExperimentalConnectorsCreateAuthConfigInput
+
+/** @deprecated Use `ExperimentalConnectorsCreateAuthConfigOutput`. Removed in the next minor. */
+export type ConnectorsCreateAuthConfigOutput = ExperimentalConnectorsCreateAuthConfigOutput
+
+/** @deprecated Use `ExperimentalConnectorsCreateAuthConfigOperation`. Removed in the next minor. */
+export type ConnectorsCreateAuthConfigOperation<E = never> = ExperimentalConnectorsCreateAuthConfigOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsDeleteAuthConfigInput`. Removed in the next minor. */
+export type ConnectorsDeleteAuthConfigInput = ExperimentalConnectorsDeleteAuthConfigInput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteAuthConfigOutput`. Removed in the next minor. */
+export type ConnectorsDeleteAuthConfigOutput = ExperimentalConnectorsDeleteAuthConfigOutput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteAuthConfigOperation`. Removed in the next minor. */
+export type ConnectorsDeleteAuthConfigOperation<E = never> = ExperimentalConnectorsDeleteAuthConfigOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsAwsSetupInput`. Removed in the next minor. */
+export type ConnectorsAwsSetupInput = ExperimentalConnectorsAwsSetupInput
+
+/** @deprecated Use `ExperimentalConnectorsAwsSetupOutput`. Removed in the next minor. */
+export type ConnectorsAwsSetupOutput = ExperimentalConnectorsAwsSetupOutput
+
+/** @deprecated Use `ExperimentalConnectorsAwsSetupOperation`. Removed in the next minor. */
+export type ConnectorsAwsSetupOperation<E = never> = ExperimentalConnectorsAwsSetupOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsListGithubReposInput`. Removed in the next minor. */
+export type ConnectorsListGithubReposInput = ExperimentalConnectorsListGithubReposInput
+
+/** @deprecated Use `ExperimentalConnectorsListGithubReposOutput`. Removed in the next minor. */
+export type ConnectorsListGithubReposOutput = ExperimentalConnectorsListGithubReposOutput
+
+/** @deprecated Use `ExperimentalConnectorsListGithubReposOperation`. Removed in the next minor. */
+export type ConnectorsListGithubReposOperation<E = never> = ExperimentalConnectorsListGithubReposOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsGetScopeInput`. Removed in the next minor. */
+export type ConnectorsGetScopeInput = ExperimentalConnectorsGetScopeInput
+
+/** @deprecated Use `ExperimentalConnectorsGetScopeOutput`. Removed in the next minor. */
+export type ConnectorsGetScopeOutput = ExperimentalConnectorsGetScopeOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetScopeOperation`. Removed in the next minor. */
+export type ConnectorsGetScopeOperation<E = never> = ExperimentalConnectorsGetScopeOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsPutScopeInput`. Removed in the next minor. */
+export type ConnectorsPutScopeInput = ExperimentalConnectorsPutScopeInput
+
+/** @deprecated Use `ExperimentalConnectorsPutScopeOutput`. Removed in the next minor. */
+export type ConnectorsPutScopeOutput = ExperimentalConnectorsPutScopeOutput
+
+/** @deprecated Use `ExperimentalConnectorsPutScopeOperation`. Removed in the next minor. */
+export type ConnectorsPutScopeOperation<E = never> = ExperimentalConnectorsPutScopeOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsUnlockVaultInput`. Removed in the next minor. */
+export type ConnectorsUnlockVaultInput = ExperimentalConnectorsUnlockVaultInput
+
+/** @deprecated Use `ExperimentalConnectorsUnlockVaultOutput`. Removed in the next minor. */
+export type ConnectorsUnlockVaultOutput = ExperimentalConnectorsUnlockVaultOutput
+
+/** @deprecated Use `ExperimentalConnectorsUnlockVaultOperation`. Removed in the next minor. */
+export type ConnectorsUnlockVaultOperation<E = never> = ExperimentalConnectorsUnlockVaultOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsRotateMasterKeyOutput`. Removed in the next minor. */
+export type ConnectorsRotateMasterKeyOutput = ExperimentalConnectorsRotateMasterKeyOutput
+
+/** @deprecated Use `ExperimentalConnectorsRotateMasterKeyOperation`. Removed in the next minor. */
+export type ConnectorsRotateMasterKeyOperation<E = never> = ExperimentalConnectorsRotateMasterKeyOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsForgetAllOutput`. Removed in the next minor. */
+export type ConnectorsForgetAllOutput = ExperimentalConnectorsForgetAllOutput
+
+/** @deprecated Use `ExperimentalConnectorsForgetAllOperation`. Removed in the next minor. */
+export type ConnectorsForgetAllOperation<E = never> = ExperimentalConnectorsForgetAllOperation<E>
+
 /** @deprecated Use `ExperimentalMigrationV1StatusOutput`. Removed in the next minor. */
 export type MigrationV1StatusOutput = ExperimentalMigrationV1StatusOutput
 
@@ -3262,6 +4015,9 @@ export type VoiceApi<E = never> = ExperimentalVoiceApi<E>
 /** @deprecated Use `ExperimentalGraphApi`. Removed in the next minor. */
 export type GraphApi<E = never> = ExperimentalGraphApi<E>
 
+/** @deprecated Use `ExperimentalConnectorsApi`. Removed in the next minor. */
+export type ConnectorsApi<E = never> = ExperimentalConnectorsApi<E>
+
 /** @deprecated Use `ExperimentalMigrationApi`. Removed in the next minor. */
 export type MigrationApi<E = never> = ExperimentalMigrationApi<E>
 
@@ -3282,6 +4038,7 @@ export interface AppApi<E = never> {
     readonly mcp: ExperimentalMcpApi<E>
     readonly file: ExperimentalFileApi<E>
     readonly graph: ExperimentalGraphApi<E>
+    readonly connectors: ExperimentalConnectorsApi<E>
     readonly migration: ExperimentalMigrationApi<E>
     readonly usage: ExperimentalUsageApi<E>
     readonly config: ExperimentalConfigApi<E>
@@ -3355,6 +4112,81 @@ export interface AppApi<E = never> {
 
     /** @deprecated Use `client.experimental.graph.status`. Removed in the next minor. */
     readonly status: ExperimentalGraphStatusOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.connectors`. Removed in the next minor. */
+  readonly connectors: {
+    /** @deprecated Use `client.experimental.connectors.status`. Removed in the next minor. */
+    readonly status: ExperimentalConnectorsStatusOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.catalog`. Removed in the next minor. */
+    readonly catalog: ExperimentalConnectorsCatalogOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.listConnections`. Removed in the next minor. */
+    readonly listConnections: ExperimentalConnectorsListConnectionsOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.createConnection`. Removed in the next minor. */
+    readonly createConnection: ExperimentalConnectorsCreateConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.getConnection`. Removed in the next minor. */
+    readonly getConnection: ExperimentalConnectorsGetConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.updateConnection`. Removed in the next minor. */
+    readonly updateConnection: ExperimentalConnectorsUpdateConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.deleteConnection`. Removed in the next minor. */
+    readonly deleteConnection: ExperimentalConnectorsDeleteConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.testConnection`. Removed in the next minor. */
+    readonly testConnection: ExperimentalConnectorsTestConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.syncConnection`. Removed in the next minor. */
+    readonly syncConnection: ExperimentalConnectorsSyncConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.pauseConnection`. Removed in the next minor. */
+    readonly pauseConnection: ExperimentalConnectorsPauseConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.resumeConnection`. Removed in the next minor. */
+    readonly resumeConnection: ExperimentalConnectorsResumeConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.reconnectConnection`. Removed in the next minor. */
+    readonly reconnectConnection: ExperimentalConnectorsReconnectConnectionOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.rotateCredential`. Removed in the next minor. */
+    readonly rotateCredential: ExperimentalConnectorsRotateCredentialOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.listAudit`. Removed in the next minor. */
+    readonly listAudit: ExperimentalConnectorsListAuditOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.listAuthConfigs`. Removed in the next minor. */
+    readonly listAuthConfigs: ExperimentalConnectorsListAuthConfigsOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.createAuthConfig`. Removed in the next minor. */
+    readonly createAuthConfig: ExperimentalConnectorsCreateAuthConfigOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.deleteAuthConfig`. Removed in the next minor. */
+    readonly deleteAuthConfig: ExperimentalConnectorsDeleteAuthConfigOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.awsSetup`. Removed in the next minor. */
+    readonly awsSetup: ExperimentalConnectorsAwsSetupOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
+    readonly listGithubRepos: ExperimentalConnectorsListGithubReposOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.getScope`. Removed in the next minor. */
+    readonly getScope: ExperimentalConnectorsGetScopeOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.putScope`. Removed in the next minor. */
+    readonly putScope: ExperimentalConnectorsPutScopeOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.unlockVault`. Removed in the next minor. */
+    readonly unlockVault: ExperimentalConnectorsUnlockVaultOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.rotateMasterKey`. Removed in the next minor. */
+    readonly rotateMasterKey: ExperimentalConnectorsRotateMasterKeyOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.forgetAll`. Removed in the next minor. */
+    readonly forgetAll: ExperimentalConnectorsForgetAllOperation<E>
   }
 
   /** @deprecated Use `client.experimental.migration`. Removed in the next minor. */

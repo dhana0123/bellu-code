@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bellucode.dev/schemas/connector-manifest.json",
+  "title": "Bellu Code Connector_Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "name", "icon", "auth_methods", "permissions", "operations", "egress", "entities"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$", "minLength": 1, "maxLength": 64 },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-((0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(\\.(0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\\+[0-9a-zA-Z-]+(\\.[0-9a-zA-Z-]+)*)?$"
+    },
+    "name": { "type": "string", "pattern": "\\S", "minLength": 1, "maxLength": 64 },
+    "icon": { "type": "string", "maxLength": 256 },
+    "auth_methods": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/authMethod" }
+    },
+    "permissions": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "$ref": "#/$defs/permission" }
+    },
+    "operations": {
+      "type": "array",
+      "maxItems": 200,
+      "items": { "$ref": "#/$defs/operation" }
+    },
+    "egress": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "$ref": "#/$defs/host" }
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" }
+    }
+  },
+  "$defs": {
+    "host": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 253,
+      "pattern": "^(\\*\\.)?[a-z0-9{}]([a-z0-9{}.-]*[a-z0-9{}])?$"
+    },
+    "authMethod": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "enabled"],
+      "properties": {
+        "id": { "type": "string", "pattern": "\\S", "minLength": 1, "maxLength": 64 },
+        "name": { "type": "string", "pattern": "\\S", "minLength": 1, "maxLength": 64 },
+        "enabled": { "type": "boolean" },
+        "disabled_reason": { "type": "string", "minLength": 1, "maxLength": 256 }
+      },
+      "if": { "properties": { "enabled": { "const": false } } },
+      "then": { "required": ["disabled_reason"] }
+    },
+    "permission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "read_only"],
+      "properties": {
+        "name": { "type": "string", "pattern": "\\S", "minLength": 1, "maxLength": 256 },
+        "description": { "type": "string", "maxLength": 1024 },
+        "read_only": { "const": true }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "class", "host"],
+      "properties": {
+        "name": { "type": "string", "pattern": "\\S", "minLength": 1, "maxLength": 256 },
+        "class": { "enum": ["read", "auth"] },
+        "method": { "enum": ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"] },
+        "host": { "$ref": "#/$defs/host" },
+        "path": { "type": "string", "pattern": "^/", "maxLength": 512 },
+        "query": { "type": "boolean" },
+        "strip_keys": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "type": "string", "pattern": "\\S", "minLength": 1, "maxLength": 128 }
+        },
+        "max_bytes": { "type": "integer", "minimum": 0, "maximum": 67108864 }
+      }
+    }
+  }
+}

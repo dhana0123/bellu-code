@@ -38,3 +38,21 @@ test("graph endpoints are exactly /api/experimental/graph/* <-> experimental.gra
   expect(byIdentifier.map(({ path }) => path).sort()).toEqual(byPath.map(({ path }) => path).sort())
   for (const { description } of byPath) expect(description).toEndWith("Experimental: may change without compatibility guarantees.")
 })
+
+test("connector endpoints are exactly /api/experimental/connectors/* <-> experimental.connectors.*, with the experimental description", () => {
+  const operations = Object.entries(OpenApi.fromApi(ClientApi).paths).flatMap(([path, item]) =>
+    methods.flatMap((method) => {
+      const operation = item[method]
+      return operation ? [{ path, identifier: operation.operationId, description: operation.description }] : []
+    }),
+  )
+  const byPath = operations.filter(({ path }) => path.startsWith("/api/experimental/connectors/"))
+  const byIdentifier = operations.filter(({ identifier }) => identifier.startsWith("experimental.connectors."))
+  expect(byPath.length).toBeGreaterThan(0)
+  expect(byIdentifier.map(({ path }) => path).sort()).toEqual(byPath.map(({ path }) => path).sort())
+  expect(byIdentifier.map(({ identifier }) => identifier).sort()).toEqual(
+    byPath.map(({ identifier }) => identifier).sort(),
+  )
+  for (const { description } of byPath)
+    expect(description).toEndWith("Experimental: may change without compatibility guarantees.")
+})

@@ -18,6 +18,7 @@ import { ServerHandler } from "./handlers/server"
 import { DebugHandler } from "./handlers/debug"
 import { PtyHandler } from "./handlers/pty"
 import { PersistentPtyHandler } from "./handlers/persistent-pty"
+import { ExperimentalConnectorsHandler } from "./handlers/experimental-connectors"
 import { ExperimentalGraphHandler } from "./handlers/experimental-graph"
 import { ShellHandler } from "./handlers/shell"
 import { ReferenceHandler } from "./handlers/reference"
@@ -63,6 +64,7 @@ export const handlers = Layer.mergeAll(
   PtyHandler,
   PersistentPtyHandler,
   ExperimentalGraphHandler,
+  ExperimentalConnectorsHandler,
   ShellHandler,
   ReferenceHandler,
   WorktreeHandler,

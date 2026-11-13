@@ -171,6 +171,156 @@ routes:
     public: false
     stream: false
   - method: "DELETE"
+    pattern: "/api/experimental/connectors/auth-configs/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/aws/setup"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/catalog"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "DELETE"
+    pattern: "/api/experimental/connectors/connections/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PATCH"
+    pattern: "/api/experimental/connectors/connections/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections/{id}/audit"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections/{id}/github/repos"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/pause"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/reconnect"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/resume"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/rotate"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/sync"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/test"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connectors/{cid}/auth-configs"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connectors/{cid}/auth-configs"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "*"
+    pattern: "/api/experimental/connectors/mcp"
+    group: experimental
+    owner: go
+    public: false
+    stream: true
+  - method: "GET"
+    pattern: "/api/experimental/connectors/scopes/{principal}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PUT"
+    pattern: "/api/experimental/connectors/scopes/{principal}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/vault/forget"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/vault/rotate"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/vault/unlock"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "DELETE"
     pattern: "/api/experimental/fs/watch"
     group: filesystem
     owner: ts

@@ -78,3 +78,34 @@ func TestMCPURL(t *testing.T) {
 		}
 	}
 }
+
+func TestAddConnectorsKeepsGraphEntry(t *testing.T) {
+	base, set, err := Build("", false, true, "http://127.0.0.1:1/g", "gtok")
+	if err != nil || !set {
+		t.Fatal(err)
+	}
+	out, err := AddConnectors(base, set, ConnectorsMCPURL("0.0.0.0", 7), "Bearer ctok")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mcp := decode(t, out)["mcp"].(map[string]any)
+	g := mcp[ServerName].(map[string]any)["headers"].(map[string]any)["Authorization"]
+	c := mcp[ConnectorsServerName].(map[string]any)
+	if g != "Bearer gtok" || c["url"] != "http://127.0.0.1:7/api/experimental/connectors/mcp" ||
+		c["headers"].(map[string]any)["Authorization"] != "Bearer ctok" {
+		t.Fatalf("unexpected %s", out)
+	}
+}
+
+func TestAddConnectorsWithoutBase(t *testing.T) {
+	out, err := AddConnectors("", false, "http://h/x", "Bearer t")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := decode(t, out)["mcp"].(map[string]any)[ConnectorsServerName]; !ok {
+		t.Fatal(out)
+	}
+	if _, err := AddConnectors("[]", true, "u", "a"); !errors.Is(err, ErrInvalidInbound) {
+		t.Fatalf("err=%v", err)
+	}
+}

@@ -14,6 +14,22 @@ Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/bin:/usr/bin:/bin
 Environment=BELLUCODE_REPO=/home/ubuntu/bellucode
 # Web UI assets (built with `bun run build` in packages/app); non-embedweb builds ship none.
 Environment=BELLUCODE_WEB_DIST=/home/ubuntu/bellucode/packages/app/dist
+# Connector vault master key (systemd >= 250). Provision with bellucode-vault-init.sh first, or the
+# unit fails to start. bellud reads $CREDENTIALS_DIRECTORY/bellucode-master-key. If you use
+# BELLUCODE_MASTER_KEY_FILE or BELLUCODE_VAULT_PASSPHRASE instead, delete this line.
+LoadCredentialEncrypted=bellucode-master-key:/etc/bellucode/master-key.cred
+# Hardening. The service runs coding agents that write to arbitrary project dirs under $HOME,
+# so ProtectSystem=full (read-only /usr, /boot, /etc) is used rather than strict.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+UMask=0077
+LimitCORE=0
 ExecStart=/usr/local/bin/bellud serve --hostname 127.0.0.1 --port 4096
 # mixed: SIGTERM to bellud only, SIGKILL to the rest on timeout, so the TS child closes its lease cleanly.
 KillMode=mixed

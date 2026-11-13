@@ -112,6 +112,13 @@ func serve(args []string) error {
 		}
 	}
 
+	// Connectors need the open graph engine; nil while the flag is off.
+	conn := openConnectors(logger, engine, set, allowedHostsOf(cfg.Hostname))
+	closeAll := func() {
+		conn.close(logger) // before the graph: its collectors write to the engine
+		stopGraph(engine, runner, logger)
+	}
+
 	// Bind first so a bind failure never starts the child.
 	ln, err := net.Listen("tcp", cfg.Addr())
 	if err != nil {
@@ -129,8 +136,19 @@ func serve(args []string) error {
 		agentcfg.MCPURL(cfg.Hostname, ln.Addr().(*net.TCPAddr).Port), tok.String())
 	if err != nil {
 		_ = ln.Close()
-		stopGraph(engine, runner, logger)
+		closeAll()
 		return err
+	}
+	// The bellu-connectors entry carries only its own MCP token; no credential,
+	// master key or passphrase ever reaches the child.
+	if conn != nil {
+		if content, err = agentcfg.AddConnectors(content, setContent,
+			agentcfg.ConnectorsMCPURL(cfg.Hostname, ln.Addr().(*net.TCPAddr).Port), conn.token.Header()); err != nil {
+			_ = ln.Close()
+			closeAll()
+			return err
+		}
+		setContent = true
 	}
 	childEnv := map[string]string{}
 	if enabled {
@@ -149,7 +167,7 @@ func serve(args []string) error {
 		if plan.Inject {
 			if content, err = agentcfg.InjectDefinitions(content, setContent); err != nil {
 				_ = ln.Close()
-				stopGraph(engine, runner, logger)
+				closeAll()
 				return err
 			}
 			setContent = true
@@ -175,8 +193,8 @@ func serve(args []string) error {
 	handler := &server.Server{
 		Table:  table,
 		Auth:   authn,
-		Go:     goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) }),
-		GoAuth: graphGoAuth(table, set, authn.Authorize),
+		Go:     conn.wrap(goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) })),
+		GoAuth: conn.auth(graphGoAuth(table, set, authn.Authorize)),
 		Proxy:  proxy.New(sup.Current),
 		CORS:   origins,
 		Web:    web,
@@ -188,6 +206,7 @@ func serve(args []string) error {
 
 	if err := sup.Start(context.Background()); err != nil {
 		_ = ln.Close()
+		closeAll()
 		return err
 	}
 
@@ -200,14 +219,14 @@ func serve(args []string) error {
 
 	select {
 	case err := <-serveErr:
-		stopGraph(engine, runner, logger)
+		closeAll()
 		stopChild(sup, logger)
 		return err
 	case <-ctx.Done():
 	}
 
 	logger.Println("shutting down")
-	stopGraph(engine, runner, logger)
+	closeAll()
 	var forced bool
 	drain, cancel := context.WithTimeout(context.Background(), drainTimeout)
 	if err := srv.Shutdown(drain); err != nil {

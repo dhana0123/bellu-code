@@ -49,7 +49,9 @@ const (
 )
 
 // passwordEnvNames are stripped from the inherited environment so the external secret never reaches the child.
-var passwordEnvNames = []string{"BELLUCODE_PASSWORD", "BELLUCODE_SERVER_PASSWORD", "OPENCODE_PASSWORD", "OPENCODE_SERVER_PASSWORD"} // OPENCODE_* are legacy names
+var passwordEnvNames = []string{"BELLUCODE_PASSWORD", "BELLUCODE_SERVER_PASSWORD", "OPENCODE_PASSWORD", "OPENCODE_SERVER_PASSWORD", // OPENCODE_* are legacy names
+	// Connector vault key material must never reach the child (Req 16.1).
+	"CREDENTIALS_DIRECTORY", "BELLUCODE_MASTER_KEY_FILE", "BELLUCODE_VAULT_PASSPHRASE"}
 
 // Child describes a started, probed child.
 type Child struct {

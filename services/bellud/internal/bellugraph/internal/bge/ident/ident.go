@@ -30,6 +30,16 @@ var identityAttrs = map[string][]string{
 	"secret_finding":   {"path", "line", "rule"},
 	"collector_status": {"collector"},
 	"endpoint":         {"protocol", "address", "port"},
+
+	// Connector kinds are connection-scoped so Disconnect removes exactly one
+	// connection's entities.
+	"aws_account":         {"connection", "account_id"},
+	"aws_resource":        {"connection", "arn"},
+	"github_org":          {"connection", "login"},
+	"github_repo":         {"connection", "full_name"},
+	"github_workflow":     {"connection", "repo", "path"},
+	"github_pull_request": {"connection", "repo", "number"},
+	"github_alert":        {"connection", "repo", "alert_type", "number"},
 }
 
 // Kinds lists the registered kinds, sorted.

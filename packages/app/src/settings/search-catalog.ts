@@ -13,6 +13,8 @@ type Entry<Tab> = {
   section?: Label
   subtab?: "mcps" | "plugins" | "skills" | "lsps"
   available?: "desktop" | "browser" | "mobile"
+  /** Indexed only while the named feature is available on the selected server. */
+  feature?: "connectors"
 }
 
 export const clientSettings: Entry<SettingsRootTab>[] = [
@@ -251,6 +253,27 @@ export const serverSettings: Entry<SettingsServerTab | "servers">[] = [
   { tab: "providers", label: "settings.providers.title", keywords: "connect api key credentials" },
   { tab: "models", label: "settings.models.title", keywords: "model picker visibility" },
   { tab: "extensions", label: "settings.tab.extensions" },
+  {
+    tab: "connectors",
+    label: "settings.connectors.title",
+    description: "settings.connectors.description",
+    keywords: "connectors aws github integrations",
+    feature: "connectors",
+  },
+  {
+    tab: "connectors",
+    label: "settings.connectors.scope.title",
+    section: "settings.connectors.title",
+    keywords: "connectors agent scope live read",
+    feature: "connectors",
+  },
+  {
+    tab: "connectors",
+    label: "settings.connectors.vault.title",
+    section: "settings.connectors.title",
+    keywords: "connectors credential vault key",
+    feature: "connectors",
+  },
   {
     tab: "extensions",
     subtab: "mcps",

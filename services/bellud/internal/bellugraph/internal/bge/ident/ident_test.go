@@ -35,7 +35,7 @@ func TestHashErrors(t *testing.T) {
 }
 
 func TestKinds(t *testing.T) {
-	if n := len(Kinds()); n != 16 {
+	if n := len(Kinds()); n != 23 {
 		t.Fatalf("kinds = %d", n)
 	}
 	a, _ := IdentityAttributes("endpoint")
@@ -44,6 +44,22 @@ func TestKinds(t *testing.T) {
 	}
 }
 
+func TestConnectorKindsAreConnectionScoped(t *testing.T) {
+	for _, k := range []string{"aws_account", "aws_resource", "github_org", "github_repo", "github_workflow", "github_pull_request", "github_alert"} {
+		a, ok := IdentityAttributes(k)
+		if !ok || len(a) == 0 || a[0] != "connection" {
+			t.Errorf("%s attrs %v", k, a)
+		}
+		if IsSecretName(k) {
+			t.Errorf("%s matches secret rule", k)
+		}
+		for _, n := range a {
+			if IsSecretName(n) {
+				t.Errorf("%s attr %s matches secret rule", k, n)
+			}
+		}
+	}
+}
 func TestDirection(t *testing.T) {
 	if d, def := DirectionOf("found_in"); d != Forward || def {
 		t.Error("found_in")

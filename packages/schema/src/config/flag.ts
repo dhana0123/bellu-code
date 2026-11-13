@@ -18,5 +18,7 @@ export const registry = {
   codemode_vm: "Run the Code Mode execute tool on the experimental bytecode VM instead of the legacy interpreter.",
   bellu_graph:
     "Enable the experimental Bellu Graph code-security integration: the bellu-graph MCP server entry, the security agent and the security-context skill.",
+  connectors:
+    "Enable the experimental Settings → Connectors page and the bellud connector service that connects AWS and GitHub read-only and feeds their metadata into the Bellu Graph.",
 } as const satisfies Record<string, string>
 export type Key = keyof typeof registry
