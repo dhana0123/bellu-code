@@ -13,6 +13,7 @@ import {
 import { motionTuning } from "../../motion-tuning"
 import { attachGeneratedAvatar } from "./animation"
 import { generateProjectIcon, GENERATED_PROJECT_ICON_STYLE, type GeneratedProjectIcon } from "./generated"
+import { PROJECT_AVATAR_COLOR_SHAPES, PROJECT_AVATAR_SHAPE_PATHS, projectAvatarColor } from "./shape"
 import "./project-avatar.css"
 
 export { generateProjectIcon, GENERATED_PROJECT_ICON_STYLE, type GeneratedProjectIcon } from "./generated"
@@ -164,6 +165,14 @@ export function ProjectAvatar(props: ProjectAvatarProps) {
   const generated = () =>
     split.src || split.variant === "outline" || avatarStyle() === "letters" ? undefined : split.generated
 
+  // Default mark: the first letter on a solid shape. The color is the chosen one, or picked from the key when none was
+  // chosen, and each color always draws the same shape.
+  const mark = createMemo(() => {
+    if (split.src || split.variant === "outline" || generated()) return
+    const color = split.generated ? projectAvatarColor(split.generated) : (split.variant ?? "gray")
+    return { color, shape: PROJECT_AVATAR_COLOR_SHAPES[color] }
+  })
+
   return (
     <div
       {...rest}
@@ -177,14 +186,29 @@ export function ProjectAvatar(props: ProjectAvatarProps) {
     >
       <div
         data-slot="project-avatar-surface"
-        data-variant={split.variant ?? "gray"}
+        data-variant={mark()?.color ?? split.variant ?? "gray"}
         data-has-image={split.src ? "" : undefined}
         data-generated={generated() ? "" : undefined}
+        data-shape={mark()?.shape}
       >
         <Show
           when={split.src}
           fallback={
-            <Show when={generated()} fallback={first(split.fallback)}>
+            <Show
+              when={generated()}
+              fallback={
+                <Show when={mark()} fallback={first(split.fallback)}>
+                  {(current) => (
+                    <>
+                      <svg data-slot="project-avatar-shape" viewBox="0 0 16 16" aria-hidden="true">
+                        <path d={PROJECT_AVATAR_SHAPE_PATHS[current().shape]} fill="var(--project-avatar-shape-fill)" />
+                      </svg>
+                      <span data-slot="project-avatar-letter">{first(split.fallback)}</span>
+                    </>
+                  )}
+                </Show>
+              }
+            >
               {(key) => <GeneratedAvatar seed={key()} />}
             </Show>
           }

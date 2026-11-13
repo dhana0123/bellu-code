@@ -389,6 +389,7 @@ function HomeSessionLeading(props: { record: HomeSessionRecord; open: boolean; u
         project={props.record.project}
         directory={props.record.session.location.directory}
         unread={props.unread}
+        large
       />
     </div>
   )

@@ -9,7 +9,15 @@ import {
 
 // The project avatar never changes while a session works: callers show `ActivityRing` at the row's trailing edge, as
 // session tabs do.
-export function SessionTabAvatarView(props: { project?: LocalProject; directory: string; unread: boolean }) {
+// The home lists show larger marks than the 16px tab default.
+const LARGE = { width: "20px", height: "20px", "--project-avatar-letter-size": "11px" }
+
+export function SessionTabAvatarView(props: {
+  project?: LocalProject
+  directory: string
+  unread: boolean
+  large?: boolean
+}) {
   return (
     <ProjectAvatar
       fallback={displayName(props.project ?? { worktree: props.directory })}
@@ -17,6 +25,7 @@ export function SessionTabAvatarView(props: { project?: LocalProject; directory:
       variant={getProjectAvatarVariant(props.project?.icon?.color)}
       generated={getProjectAvatarGenerated(props.project ?? { worktree: props.directory })}
       unread={props.unread}
+      style={props.large ? LARGE : undefined}
     />
   )
 }

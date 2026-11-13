@@ -12,11 +12,10 @@
     --submit-bg: var(--v2-background-bg-icon-button-contrast);
 
     background-image:
-      linear-gradient(180deg, var(--submit-highlight) 0%, var(--v2-alpha-light-0) 100%),
       linear-gradient(90deg, var(--submit-bg) 0%, var(--submit-bg) 100%);
     color: var(--v2-text-text-contrast);
-    text-shadow: 0 0.5px 0.5px rgba(0, 0, 0, 0.3);
-    box-shadow: var(--v2-elevation-button-contrast);
+    text-shadow: none;
+    box-shadow: none;
   }
 
   [data-color-scheme="dark"]
@@ -50,7 +49,6 @@
       ):is(:hover, [data-state="hover"]):not(:disabled) {
       background-image:
         linear-gradient(90deg, var(--submit-hover) 0%, var(--submit-hover) 100%),
-        linear-gradient(180deg, var(--submit-highlight) 0%, var(--v2-alpha-light-0) 100%),
         linear-gradient(90deg, var(--submit-bg) 0%, var(--submit-bg) 100%);
     }
   }
@@ -65,7 +63,6 @@
         var(--v2-overlay-simple-overlay-contrast-pressed) 0%,
         var(--v2-overlay-simple-overlay-contrast-pressed) 100%
       ),
-      linear-gradient(180deg, var(--submit-highlight) 0%, var(--v2-alpha-light-0) 100%),
       linear-gradient(90deg, var(--submit-bg) 0%, var(--submit-bg) 100%);
   }
 

@@ -411,7 +411,7 @@ Conventions for every task:
     - Update `services/bellud/ops/bellucode.service`: `LoadCredentialEncrypted=bellucode-master-key:/etc/bellucode/master-key.cred` and `NoNewPrivileges=yes`; document the `BELLUCODE_MASTER_KEY_FILE` fallback (32 raw bytes, owner `ubuntu`, mode 0400, outside `~/.local/share/bellucode`) in the script's usage text.
     - _Requirements: 6.3, 6.4, 6.8_
 
-- [-] 15. Final checkpoint
+- [x] 15. Final checkpoint
   - From `services/bellud` run `go build ./...`, `go vet ./...`, `go test ./...`. From `packages/protocol`, `packages/schema`, `packages/app` run `bun test` and `bun typecheck`. From `packages/client` rerun `bun run generate` and confirm no diff. From the repo root run `bun run check`. Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
