@@ -3,7 +3,6 @@ import { createEffect, createMemo } from "solid-js"
 import { createMediaQuery } from "@solid-primitives/media"
 import { Effect, Option, Predicate, Schema, SchemaGetter } from "effect"
 import { createSimpleContext } from "@bellucode/ui/context"
-import { setNewIcons } from "@bellucode/ui/icon"
 import { timelinePresets, type TimelineCategory, type TimelineDetail } from "@bellucode/session-ui/timeline/detail"
 import { persisted } from "@/runtime/persistence/storage"
 import { Persistence } from "@/runtime/persistence/schema"
@@ -128,7 +127,6 @@ const generalSchema = Persistence.struct({
   backgroundActivity: Schema.Literals(["off", "left", "center", "right"]),
   timelineWidth: Schema.Literals(["focused", "comfortable", "wide"]),
   // The "New icons" design experiment, off until it ships.
-  newIcons: Schema.Boolean,
   // The "Fold long messages" experiment, off until it ships.
   foldUserMessages: Schema.Boolean,
   // The redesigned keyboard-first question dock, off until it ships.
@@ -304,7 +302,6 @@ export const defaultSettings: Settings = {
     showTurnDiffs: false,
     backgroundActivity: "left",
     timelineWidth: "comfortable",
-    newIcons: false,
     foldUserMessages: false,
     newQuestionUI: false,
     sidebarOrganize: "list",
@@ -355,8 +352,6 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
       void document.fonts?.load(`440 13px ${mono}`).catch(() => undefined)
     })
 
-    const newIcons = withFallback(() => store.general?.newIcons, defaultSettings.general.newIcons)
-    createEffect(() => setNewIcons(newIcons()))
 
     const reduceMotion = withFallback(() => store.appearance?.reduceMotion, defaultSettings.appearance.reduceMotion)
     const systemReducedMotion = createMediaQuery("(prefers-reduced-motion: reduce)")
@@ -413,10 +408,6 @@ export const { use: useSettings, provider: SettingsProvider } = createSimpleCont
         timelineWidth,
         setTimelineWidth(value: TimelineWidth) {
           setStore("general", "timelineWidth", value)
-        },
-        newIcons,
-        setNewIcons(value: boolean) {
-          setStore("general", "newIcons", value)
         },
         foldUserMessages: withFallback(() => store.general?.foldUserMessages, defaultSettings.general.foldUserMessages),
         setFoldUserMessages(value: boolean) {

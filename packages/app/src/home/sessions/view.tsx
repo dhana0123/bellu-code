@@ -215,7 +215,7 @@ export function HomeSessionsView(props: HomeSessionsViewProps) {
   return (
     <section
       ref={props.onSetHoverTarget}
-      class="min-h-0 min-w-0 flex-1 flex flex-col"
+      class="min-h-0 min-w-0 flex-1 flex flex-col lg:mx-auto lg:w-full lg:max-w-[720px] lg:px-8"
       aria-label={props.language.t("sidebar.project.recentSessions")}
     >
       <div

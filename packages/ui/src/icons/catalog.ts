@@ -1,4 +1,5 @@
 import { additionalIcons, additionalIconViewBox } from "./icon/additional-icons"
+import { phosphorIcons, phosphorViewBox } from "./phosphor-icons"
 
 // Consumers center the SVG viewport, so each icon must center its artwork within its viewBox.
 const icons = {
@@ -370,6 +371,10 @@ export function isIconName(name: string): name is IconName {
  * @param name - A name validated by the type or by `isIconName`.
  */
 export function getIcon(name: IconName) {
+  // The Bellu icon set: Phosphor duotone artwork where a name has one (see script/phosphor-icons.ts). The icon element
+  // draws with fill "none", so the artwork fills itself with the text color.
+  const phosphor = phosphorIcons[name]
+  if (phosphor) return { body: `<g fill="currentColor">${phosphor}</g>`, viewBox: phosphorViewBox }
   // SAFETY: IconName is the union of both catalogs' keys; an absent primary entry falls back to additional artwork.
   const icon = icons[name as keyof typeof icons]
 
