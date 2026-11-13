@@ -106,7 +106,7 @@ export function SideRegion(props: {
         aria-label={language.t("session.panel.reviewAndFiles")}
         aria-hidden={!tabsOpen()}
         data-focused={props.region.focus.focused() || undefined}
-        class="relative h-full shrink-0 min-w-0 flex overflow-hidden bg-v2-background-bg-base rounded-[10px] shadow-[var(--v2-elevation-raised)] outline-none"
+        class="relative h-full shrink-0 min-w-0 flex overflow-hidden bg-v2-background-bg-base rounded-xl shadow-[var(--v2-elevation-raised)] outline-none"
         classList={{ "flex-1": tabsVisible() }}
         style={{ width: panelWidth() }}
       >
@@ -499,7 +499,8 @@ function AddMenu(props: { items: readonly SessionPanelMenuEntry[]; onChoose: (ke
   const menu = createDeferredMenu<SessionPanelMenuEntry>({
     onChoose: (entry) => {
       props.onChoose(entry.key)
-      entry.item.run()    },
+      entry.item.run()
+    },
   })
 
   return (
@@ -593,7 +594,7 @@ function LauncherRow(props: { item: SessionPanelMenuItem; onChoose: () => void }
   return (
     <button
       type="button"
-      class="flex h-[41px] w-full items-center justify-between gap-4 rounded-[8px] border-[0.5px] border-v2-border-border-base bg-v2-background-bg-layer-01 px-3.5 text-start hover:bg-v2-background-bg-layer-02"
+      class="flex h-[41px] w-full items-center justify-between gap-4 rounded-lg border-[0.5px] border-v2-border-border-base bg-v2-background-bg-layer-01 px-3.5 text-start hover:bg-v2-background-bg-layer-02"
       // The new tab view stays until the tab the item opens selects itself, so nothing shows in between.
       onClick={() => {
         props.onChoose()

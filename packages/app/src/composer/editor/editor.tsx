@@ -857,12 +857,12 @@ function ComposerAttachments(props: {
                           <img
                             src={value()}
                             alt={attachment.filename}
-                            class="w-[58px] h-[46px] rounded-[6px] object-cover"
+                            class="w-[58px] h-[46px] rounded-md object-cover"
                             onClick={(event) => props.onAttachmentClick?.(attachment, event.currentTarget)}
                           />
                         )}
                       </Show>
-                      <div class="absolute inset-0 rounded-[6px] shadow-[inset_0_0_0_0.5px_var(--v2-border-border-base)] pointer-events-none" />
+                      <div class="absolute inset-0 rounded-md shadow-[inset_0_0_0_0.5px_var(--v2-border-border-base)] pointer-events-none" />
                     </Show>
                   </Tooltip>
                   <button

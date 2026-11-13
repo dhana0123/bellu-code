@@ -380,7 +380,7 @@ function HomeSessionLeading(props: { record: HomeSessionRecord; open: boolean; u
           aria-hidden="true"
           class={`
             pointer-events-none absolute top-1/2 h-3 w-0.5 -translate-y-1/2
-            rounded-[2px] bg-v2-background-bg-layer-04
+            rounded-xs bg-v2-background-bg-layer-04
           `}
           style={{ right: "calc(100% + 4px)" }}
         />
@@ -415,7 +415,7 @@ function HomeSessionSearch(
             data-component="home-session-search-panel"
             onMouseDown={(event) => event.preventDefault()}
             class={`
-              absolute flex flex-col overflow-hidden rounded-[12px]
+              absolute flex flex-col overflow-hidden rounded-xl
               bg-v2-background-bg-base shadow-[var(--v2-elevation-floating)]
             `}
             style={{
@@ -478,7 +478,7 @@ function HomeSessionSearch(
         </Show>
         <label
           class={`
-            relative z-20 flex h-9 w-full items-center gap-2 rounded-[6px] py-1 ps-3 pe-2
+            relative z-20 flex h-9 w-full items-center gap-2 rounded-md py-1 ps-3 pe-2
             bg-v2-background-bg-layer-02/60 text-v2-icon-icon-muted transition-[background-color,box-shadow]
             duration-[120ms] ease-in-out hover:bg-v2-background-bg-layer-02 focus-within:bg-v2-background-bg-layer-02
           `}
@@ -673,7 +673,7 @@ function HomeSessionRow(
       data-component="home-session-row-container"
       data-project-name={!!showProjectName()}
       data-session-id={props.record.session.id}
-      class="group/session relative flex h-10 min-w-0 items-center rounded-[6px] outline-none focus:outline-none focus-visible:outline-none"
+      class="group/session relative flex h-10 min-w-0 items-center rounded-md outline-none focus:outline-none focus-visible:outline-none"
       onContextMenu={(event) => {
         // While renaming, keep the native menu so paste and spelling work.
         if (editor()) return
@@ -749,7 +749,7 @@ function HomeSessionRow(
           aria-haspopup="menu"
           aria-expanded={!!menu()}
           class={`
-            flex h-10 min-w-0 w-full flex-1 shrink-0 cursor-default items-center rounded-[6px] border-0
+            flex h-10 min-w-0 w-full flex-1 shrink-0 cursor-default items-center rounded-md border-0
             bg-transparent py-3 ps-1.5 pe-3 md:ps-3 text-start text-v2-text-text-muted [font-weight:530]
             transition-[background-color,color,box-shadow] duration-[120ms] ease-in-out
             hover:bg-v2-overlay-simple-overlay-hover focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:outline-none
@@ -1046,7 +1046,7 @@ function HomeSessionSkeleton(props: { visible: boolean; showProjectName: boolean
               class="flex h-10 min-w-0 items-center ps-1.5 pe-3 md:ps-3 md:pe-10"
               classList={{ "gap-1.5": props.desktop, "gap-2": !props.desktop, "max-md:h-12": props.showProjectName }}
             >
-              <span class="size-4 shrink-0 rounded-[4px] bg-v2-background-bg-layer-02" />
+              <span class="size-4 shrink-0 rounded-sm bg-v2-background-bg-layer-02" />
               <span class="h-2 rounded-full bg-v2-background-bg-layer-02" style={{ width: `${width}%` }} />
               <Show when={props.showProjectName}>
                 <span class="h-2 w-16 shrink-0 rounded-full bg-v2-background-bg-layer-01" />

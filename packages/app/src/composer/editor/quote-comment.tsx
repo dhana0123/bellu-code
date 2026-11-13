@@ -145,7 +145,7 @@ export function QuoteCommentEditor(props: {
         }}
       >
         <MenuScroll
-          class="rounded-[8px] shadow-[var(--v2-elevation-floating)]"
+          class="rounded-lg shadow-[var(--v2-elevation-floating)]"
           style={{ "max-height": `${availableHeight()}px` }}
         >
           <LineCommentEditor
@@ -172,7 +172,7 @@ export function QuoteCommentEditor(props: {
           <Show when={props.view.failed}>
             <p
               role="alert"
-              class="rounded-b-[8px] bg-v2-background-bg-layer-01 px-3 pb-3 text-[12px] leading-[var(--line-height-compact)] text-v2-text-text-base"
+              class="rounded-b-lg bg-v2-background-bg-layer-01 px-3 pb-3 text-[12px] leading-[var(--line-height-compact)] text-v2-text-text-base"
             >
               {language.t("session.quote.sendFailed")}
             </p>

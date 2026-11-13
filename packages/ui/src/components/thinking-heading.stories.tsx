@@ -350,7 +350,7 @@ input[type="range"].heading-slider {
   appearance: none;
   width: 140px;
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--color-divider, #444);
   outline: none;
 }

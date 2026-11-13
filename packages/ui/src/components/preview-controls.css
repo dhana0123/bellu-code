@@ -8,7 +8,7 @@
   align-items: center;
   padding: 4px;
   border: 0.5px solid var(--v2-border-border-base);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: var(--v2-background-bg-base);
   box-shadow: var(--v2-elevation-raised);
 }

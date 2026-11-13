@@ -15,7 +15,7 @@
       width: 100%;
       height: 36px;
       padding-inline-end: 12px;
-      border-radius: 6px;
+      border-radius: var(--radius-md);
       outline: 0;
       background: color-mix(in srgb, var(--v2-background-bg-layer-02) 60%, transparent);
       box-shadow: none;
@@ -31,7 +31,7 @@
 
     [data-slot="text-input-v2-value"] {
       gap: 8px;
-      border-radius: 6px;
+      border-radius: var(--radius-md);
       background: transparent;
     }
 
@@ -40,7 +40,7 @@
     }
 
     [data-slot="text-input-v2-input"] {
-      border-radius: 6px;
+      border-radius: var(--radius-md);
       background: transparent;
     }
   }
@@ -145,7 +145,7 @@
     gap: 8px;
     padding: 0 12px;
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--v2-text-text-base);
     text-align: start;
@@ -207,7 +207,7 @@
       z-index: 12;
       max-height: min(45vh, 480px);
       overflow: hidden;
-      border-radius: 8px;
+      border-radius: var(--radius-lg);
       background: var(--search-list-surface);
       box-shadow: var(--v2-elevation-floating);
     }

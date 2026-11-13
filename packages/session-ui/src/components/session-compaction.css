@@ -35,7 +35,7 @@
   [data-slot="session-compaction-divider"] {
     padding: 0;
     border: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     background: none;
     font: inherit;
     cursor: pointer;

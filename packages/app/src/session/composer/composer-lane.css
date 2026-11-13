@@ -10,7 +10,7 @@
   padding-inline: 10px;
   /* The elevation draws the hairline; a second border would double it. */
   border: 0.5px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: var(--v2-background-bg-base);
   box-shadow: var(--v2-elevation-raised);
   font-size: 13px;
@@ -63,7 +63,7 @@
 [data-composer-pill-panel] {
   max-width: calc(100vw - 56px);
   border: 0.5px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   background: var(--v2-background-bg-layer-01);
   box-shadow: var(--v2-elevation-floating);
   outline: none;

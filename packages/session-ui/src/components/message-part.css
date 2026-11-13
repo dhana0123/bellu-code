@@ -39,7 +39,7 @@
     align-items: center;
     justify-content: center;
     min-width: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     overflow: hidden;
     background: var(--v2-background-bg-layer-02);
     border: 0.5px solid var(--v2-border-border-base);
@@ -177,10 +177,10 @@
     background: var(--v2-background-bg-layer-02);
     border: none;
     padding: 8px 12px;
-    border-radius: 10px;
+    border-radius: var(--radius-xl);
     /* Where two bubbles of a run meet, their trailing corners tighten to 4px. */
-    border-start-end-radius: calc(10px - 6px * var(--user-run-top, 0));
-    border-end-end-radius: calc(10px - 6px * var(--user-run-bottom, 0));
+    border-start-end-radius: calc(var(--radius-xl) - (var(--radius-xl) - var(--radius-sm)) * var(--user-run-top, 0));
+    border-end-end-radius: calc(var(--radius-xl) - (var(--radius-xl) - var(--radius-sm)) * var(--user-run-bottom, 0));
     transition:
       background-color 150ms ease-out,
       color 150ms ease-out;
@@ -264,7 +264,7 @@
     &:focus-visible {
       outline: 1px solid var(--v2-text-text-accent);
       outline-offset: 2px;
-      border-radius: 4px;
+      border-radius: var(--radius-sm);
     }
   }
 
@@ -512,7 +512,7 @@
     display: flex;
     padding-inline-start: 16px;
     background: linear-gradient(to left, var(--user-message-bubble) calc(100% - 16px), transparent);
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 
     &:dir(rtl) {
       background: linear-gradient(to right, var(--user-message-bubble) calc(100% - 16px), transparent);
@@ -767,7 +767,7 @@
     display: block;
     max-width: 100%;
     height: auto;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 }
 
@@ -788,7 +788,7 @@
   unicode-bidi: isolate;
   width: 100%;
   border: 0.5px solid var(--v2-border-border-base);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: transparent;
   position: relative;
   overflow: hidden;
@@ -1092,7 +1092,7 @@
 
   [data-slot="execute-details-status"] {
     padding: 0 6px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     font-size: 12px;
     line-height: var(--line-height-base);
     color: var(--v2-text-text-muted);
@@ -1149,7 +1149,7 @@
   [data-slot="execute-details-source"] {
     max-height: 360px;
     overflow: auto;
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     box-shadow: 0 0 0 0.5px var(--v2-border-border-base);
 
     /* The file wrapper sets Pierre's defaults inline, so override them on the shadow host below that wrapper. */
@@ -1492,7 +1492,7 @@
   flex-direction: column;
   min-height: 0;
   background-color: var(--v2-background-bg-base);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   box-shadow:
     var(--v2-elevation-raised),
     0 0 0 0.5px var(--v2-background-bg-base);

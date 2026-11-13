@@ -37,7 +37,7 @@ function SessionCardStory(props: {
 
   return (
     <div class="flex flex-col gap-3" style={{ width: `${props.width}px` }}>
-      <div class="rounded-[6px] bg-v2-background-bg-deep p-1">
+      <div class="rounded-md bg-v2-background-bg-deep p-1">
         <Show
           when={!state.removed}
           fallback={<span class="text-[13px] leading-4 text-v2-text-text-muted">Session deleted</span>}
@@ -45,7 +45,12 @@ function SessionCardStory(props: {
           <InboxSessionCard
             project={
               props.projectKnown
-                ? { id: "lab-bellucode", name: props.project, worktree: "/workspace/bellucode", icon: { color: "blue" } }
+                ? {
+                    id: "lab-bellucode",
+                    name: props.project,
+                    worktree: "/workspace/bellucode",
+                    icon: { color: "blue" },
+                  }
                 : undefined
             }
             directory={props.worktree ? "/workspace/bellucode/worktrees/tooltip-status" : "/workspace/bellucode"}

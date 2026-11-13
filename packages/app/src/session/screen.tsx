@@ -568,7 +568,7 @@ function SessionScreenContent(props: {
               id="bottom-panel"
               aria-label={language.t("session.panel.bottom")}
               inert={!bottomOpen() || undefined}
-              class="size-full min-w-0 flex flex-col overflow-hidden bg-v2-background-bg-base rounded-[10px] shadow-[var(--v2-elevation-raised)]"
+              class="size-full min-w-0 flex flex-col overflow-hidden bg-v2-background-bg-base rounded-xl shadow-[var(--v2-elevation-raised)]"
             >
               <PaneTabs
                 pane={region.pane("bottom")}

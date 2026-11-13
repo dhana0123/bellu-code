@@ -4,7 +4,7 @@
 }
 
 [data-component="dialog-v2"]:has(.settings-manage-models-dialog) [data-slot="dialog-container"] {
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   background: var(--v2-background-bg-base);
 }
 
@@ -44,7 +44,7 @@
   min-height: 36px;
   padding-block: 0;
   padding-inline: 12px 40px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 
 .settings-manage-models-dialog .provider-model-group-header:has(:focus-visible) .provider-model-group-trigger {
@@ -88,7 +88,7 @@
   position: relative;
   height: 36px;
   padding-inline: 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
 }
 
 .manage-models-rows .search-list-row:not(:last-child)::after {

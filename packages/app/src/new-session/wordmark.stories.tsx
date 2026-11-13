@@ -17,7 +17,7 @@ function Panel(props: { pins: boolean }) {
   return (
     <div
       data-component="new-session"
-      class="relative isolate h-[640px] w-full overflow-hidden rounded-[10px] bg-v2-background-bg-base"
+      class="relative isolate h-[640px] w-full overflow-hidden rounded-xl bg-v2-background-bg-base"
     >
       <div class="absolute inset-x-0 top-[25%] flex justify-center px-6">
         <div class="w-full max-w-[720px]">

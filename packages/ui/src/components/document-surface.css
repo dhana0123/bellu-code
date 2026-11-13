@@ -1,6 +1,6 @@
 [data-component="document-surface"] {
   position: relative;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   background: var(--v2-background-bg-base);
   box-shadow: var(--v2-elevation-raised);
 }

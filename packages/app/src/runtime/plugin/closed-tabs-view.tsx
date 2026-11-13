@@ -85,7 +85,7 @@ export function ClosedTabsSection(props: { entries: readonly ClosedSideTab[]; on
             <button
               type="button"
               data-slot="side-recently-closed-row"
-              class="group/closed-tab flex h-8 w-full shrink-0 items-center justify-between gap-4 rounded-[6px] px-2 text-start text-[13px] font-[440] hover:bg-v2-background-bg-layer-02"
+              class="group/closed-tab flex h-8 w-full shrink-0 items-center justify-between gap-4 rounded-md px-2 text-start text-[13px] font-[440] hover:bg-v2-background-bg-layer-02"
               onClick={() => props.onReopen(entry.key)}
             >
               <ClosedTabVisual entry={entry} />
@@ -99,7 +99,7 @@ export function ClosedTabsSection(props: { entries: readonly ClosedSideTab[]; on
           <button
             type="button"
             data-slot="side-recently-closed-more"
-            class="flex h-8 w-fit items-center gap-1 rounded-[6px] px-2 text-[13px] font-[440] text-v2-text-text-muted hover:bg-v2-background-bg-layer-02 hover:text-v2-text-text-base"
+            class="flex h-8 w-fit items-center gap-1 rounded-md px-2 text-[13px] font-[440] text-v2-text-text-muted hover:bg-v2-background-bg-layer-02 hover:text-v2-text-text-base"
             onClick={(event) => {
               const section = event.currentTarget.parentElement
               setState("expanded", true)
