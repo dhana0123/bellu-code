@@ -375,21 +375,12 @@ function HomeSessionIndicators(props: {
 function HomeSessionLeading(props: { record: HomeSessionRecord; open: boolean; unread: boolean }) {
   return (
     <div class="relative shrink-0">
-      <Show when={props.open}>
-        <span
-          aria-hidden="true"
-          class={`
-            pointer-events-none absolute top-1/2 h-3 w-0.5 -translate-y-1/2
-            rounded-xs bg-v2-background-bg-layer-04
-          `}
-          style={{ right: "calc(100% + 4px)" }}
-        />
-      </Show>
       <SessionTabAvatarView
         project={props.record.project}
         directory={props.record.session.location.directory}
         unread={props.unread}
         large
+        tinted={props.open}
       />
     </div>
   )

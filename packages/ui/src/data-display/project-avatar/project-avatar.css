@@ -122,6 +122,16 @@
   height: 100%;
 }
 
+/* Tinted: a soft square in the mark's own color behind it. It paints first, so the shape and letter draw on top. */
+[data-component="project-avatar-v2"][data-tinted] [data-slot="project-avatar-surface"][data-shape]::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--project-avatar-shape-fill) 24%, transparent);
+  pointer-events: none;
+}
+
 [data-slot="project-avatar-surface"] [data-slot="project-avatar-letter"] {
   position: relative;
 }

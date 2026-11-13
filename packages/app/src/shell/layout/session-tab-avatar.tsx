@@ -17,6 +17,8 @@ export function SessionTabAvatarView(props: {
   directory: string
   unread: boolean
   large?: boolean
+  /** Marks a session that is open in a tab with a tint in the project's color. */
+  tinted?: boolean
 }) {
   return (
     <ProjectAvatar
@@ -25,6 +27,7 @@ export function SessionTabAvatarView(props: {
       variant={getProjectAvatarVariant(props.project?.icon?.color)}
       generated={getProjectAvatarGenerated(props.project ?? { worktree: props.directory })}
       unread={props.unread}
+      tinted={props.tinted}
       style={props.large ? LARGE : undefined}
     />
   )
