@@ -57,7 +57,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if !found && s.StrictAPI && IsAPIPath(clean) {
 		if !s.Auth.Authorize(r) {
-			auth.WriteUnauthorized(w)
+			auth.WriteUnauthorized(w, r)
 			return
 		}
 		http.NotFound(w, r)
@@ -70,7 +70,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !authorize(r) {
-		auth.WriteUnauthorized(w)
+		auth.WriteUnauthorized(w, r)
 		return
 	}
 	owner := routes.OwnerTS
