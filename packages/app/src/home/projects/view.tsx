@@ -198,7 +198,7 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
               which lines the label up with the icons that follow it in the session and settings headers. */}
           <div class="flex min-w-0 items-center">
             <CollapsedSidebarToggleSpace start={20} class="lg:hidden" />
-            <div class="text-[15px] leading-[var(--line-height-base)] text-v2-text-text-base [font-weight:600]">{props.language.t("home.projects")}</div>
+            <div class="text-v2-text-text-muted [font-weight:530]">{props.language.t("home.projects")}</div>
           </div>
           <Show when={props.servers.length === 1}>
             <Tooltip placement="bottom" value={props.language.t("home.project.add")}>
@@ -343,6 +343,7 @@ export function HomeUtilityNav(props: {
     >
       <HomeProjectNavButton
         type="button"
+        class="text-v2-text-text-faint [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted"
         onClick={props.onOpenSettings}
       >
         <Icon name="settings-gear" size="small" />
@@ -350,6 +351,7 @@ export function HomeUtilityNav(props: {
       </HomeProjectNavButton>
       <HomeProjectNavButton
         type="button"
+        class="text-v2-text-text-faint [&>[data-slot=icon-svg]]:text-v2-icon-icon-muted"
         onClick={props.onOpenHelp}
       >
         <Icon name="help" size="small" />
@@ -678,9 +680,8 @@ function HomeProjectNavButton(props: JSX.ButtonHTMLAttributes<HTMLButtonElement>
     <button
       {...rest}
       class={`
-        flex h-9 min-w-0 w-full shrink-0 cursor-default items-center gap-2.5 rounded-md bg-transparent px-2 text-left
-        text-[15px] leading-[var(--line-height-base)] text-v2-text-text-base [font-weight:480]
-        [&>[data-slot=icon-svg]]:text-v2-icon-icon-base transition-[background-color,color,box-shadow] duration-[120ms] ease-in-out
+        flex h-7 min-w-0 w-full shrink-0 cursor-default items-center gap-2 rounded-md bg-transparent px-1.5 text-left
+        text-v2-text-text-muted [font-weight:440] transition-[background-color,color,box-shadow] duration-[120ms] ease-in-out
         hover:bg-v2-background-bg-layer-01 hover:text-v2-text-text-base
         data-[selected]:bg-v2-background-bg-layer-03 data-[selected]:text-v2-text-text-base
         data-[selected]:hover:bg-v2-background-bg-layer-03
@@ -704,7 +705,6 @@ function HomeProjectAvatar(props: { project: LocalProject; outline?: boolean }) 
       src={props.outline ? undefined : getProjectAvatarSource(props.project.id, props.project.icon)}
       variant={props.outline ? "outline" : getProjectAvatarVariant(props.project.icon?.color)}
       generated={props.outline ? undefined : getProjectAvatarGenerated(props.project)}
-      style={{ width: "20px", height: "20px", "--project-avatar-letter-size": "11px" }}
     />
   )
 }

@@ -901,6 +901,12 @@ export const dict = {
   "settings.about.notices.crates.appliesTo": "Applies to {{names}}",
   "settings.about.tagline": "AI can’t build great software, without you",
   "settings.about.copyright": "© Anomaly Innovations, Inc.",
+  "settings.about.bellu.description": "Bellu Code is a security-first, native AI coding agent.",
+  "settings.about.bellu.origin":
+    "Bellu Code began as a fork of OpenCode and has been reimplemented and transformed into a security-first native coding agent.",
+  "settings.about.bellu.developer": "Developed by Bellu Technologies Private Limited",
+  "settings.about.bellu.copyright": "© Bellu Technologies Private Limited",
+  "settings.about.bellu.attribution": "Based on OpenCode, © Anomaly Innovations, Inc., used under the MIT License.",
   "settings.preferences.description": "Customize preferences and theme and default behavior",
   "settings.appearance.description": "Customize theme and fonts",
   "settings.appearance.row.tabs.title": "Tabs",

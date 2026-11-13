@@ -1,6 +1,6 @@
 import { Popover } from "@kobalte/core/popover"
 import { Button } from "@bellucode/ui/button"
-import { Icon, newIcons } from "@bellucode/ui/icon"
+import { Icon } from "@bellucode/ui/icon"
 import type { IconName } from "@bellucode/ui/icons/catalog"
 import { IconButton } from "@bellucode/ui/icon-button"
 import { LineCommentEditor } from "@bellucode/ui/line-comment"
@@ -617,7 +617,7 @@ export default function SessionBrowserPane(props: {
                     disabled={!reachable()}
                     onPointerDown={(event) => event.preventDefault()}
                     onClick={() => system.openExternal(address())}
-                    icon={<Icon name={newIcons() ? "outline-square-arrow" : "outline-arrow-up-right"} />}
+                    icon={<Icon name="outline-arrow-up-right" />}
                   />
                 </Tooltip>
               </div>
