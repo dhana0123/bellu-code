@@ -148,6 +148,8 @@ export interface ProjectAvatarProps extends ComponentProps<"div"> {
   unread?: boolean
   /** Seeds the generated default avatar shown when there is no image; see getProjectAvatarGenerated. */
   generated?: string
+  /** Draws a soft tint in the project's color behind the mark, e.g. for a session open in a tab. */
+  tinted?: boolean
 }
 
 export function ProjectAvatar(props: ProjectAvatarProps) {
@@ -157,6 +159,7 @@ export function ProjectAvatar(props: ProjectAvatarProps) {
     "variant",
     "unread",
     "generated",
+    "tinted",
     "class",
     "classList",
     "style",
@@ -178,6 +181,7 @@ export function ProjectAvatar(props: ProjectAvatarProps) {
       {...rest}
       data-component="project-avatar-v2"
       data-unread={split.unread ? "" : undefined}
+      data-tinted={split.tinted ? "" : undefined}
       classList={{
         ...split.classList,
         [split.class ?? ""]: !!split.class,
