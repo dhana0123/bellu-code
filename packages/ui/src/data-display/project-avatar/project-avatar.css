@@ -99,6 +99,33 @@
   height: 100%;
 }
 
+/* Default mark: a solid shape in the project color on a clear tile. */
+[data-slot="project-avatar-surface"][data-shape] {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+  font-size: var(--project-avatar-letter-size, 9px);
+  --project-avatar-shape-fill: var(--project-avatar-bg);
+}
+
+/* Dark mode: the dimmed avatar fills read as muddy shapes, so shapes use the bright accent of each color instead. */
+[data-color-scheme="dark"] [data-slot="project-avatar-surface"][data-shape] {
+  --project-avatar-shape-fill: var(--project-avatar-border);
+}
+
+[data-slot="project-avatar-surface"] [data-slot="project-avatar-shape"] {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+[data-slot="project-avatar-surface"] [data-slot="project-avatar-letter"] {
+  position: relative;
+}
+
 [data-slot="project-avatar-surface"][data-has-image] {
   background: var(--project-avatar-bg);
 }

@@ -72,15 +72,15 @@
 
   /* Neutral */
   [data-component="button-v2"][data-variant="neutral"] {
-    background-color: var(--v2-background-bg-button-neutral);
+    background-color: var(--v2-background-bg-layer-02);
     color: var(--v2-text-text-base);
-    box-shadow: var(--v2-elevation-button-neutral);
+    box-shadow: none;
   }
 
   [data-component="button-v2"][data-variant="neutral"]:is(:hover, [data-state="hover"]):not(:disabled) {
     background-image:
       linear-gradient(90deg, var(--v2-overlay-simple-overlay-hover) 0%, var(--v2-overlay-simple-overlay-hover) 100%),
-      linear-gradient(90deg, var(--v2-background-bg-button-neutral) 0%, var(--v2-background-bg-button-neutral) 100%);
+      linear-gradient(90deg, var(--v2-background-bg-layer-02) 0%, var(--v2-background-bg-layer-02) 100%);
   }
 
   [data-component="button-v2"][data-variant="neutral"]:is(:active, [data-state="pressed"]):not(:disabled) {
@@ -90,7 +90,7 @@
         var(--v2-overlay-simple-overlay-pressed) 0%,
         var(--v2-overlay-simple-overlay-pressed) 100%
       ),
-      linear-gradient(90deg, var(--v2-background-bg-button-neutral) 0%, var(--v2-background-bg-button-neutral) 100%);
+      linear-gradient(90deg, var(--v2-background-bg-layer-02) 0%, var(--v2-background-bg-layer-02) 100%);
   }
 
   [data-component="button-v2"][data-variant="neutral"]:is(:disabled, [data-state="disabled"]) {
@@ -100,15 +100,15 @@
 
   /* Danger */
   [data-component="button-v2"][data-variant="danger"] {
-    background-color: var(--v2-background-bg-button-neutral);
+    background-color: var(--v2-background-bg-layer-02);
     color: var(--v2-state-fg-danger);
-    box-shadow: var(--v2-elevation-button-neutral);
+    box-shadow: none;
   }
 
   [data-component="button-v2"][data-variant="danger"]:is(:hover, [data-state="hover"]):not(:disabled) {
     background-image:
       linear-gradient(90deg, var(--v2-overlay-simple-overlay-hover) 0%, var(--v2-overlay-simple-overlay-hover) 100%),
-      linear-gradient(90deg, var(--v2-background-bg-button-neutral) 0%, var(--v2-background-bg-button-neutral) 100%);
+      linear-gradient(90deg, var(--v2-background-bg-layer-02) 0%, var(--v2-background-bg-layer-02) 100%);
   }
 
   [data-component="button-v2"][data-variant="danger"]:is(:active, [data-state="pressed"]):not(:disabled) {
@@ -118,7 +118,7 @@
         var(--v2-overlay-simple-overlay-pressed) 0%,
         var(--v2-overlay-simple-overlay-pressed) 100%
       ),
-      linear-gradient(90deg, var(--v2-background-bg-button-neutral) 0%, var(--v2-background-bg-button-neutral) 100%);
+      linear-gradient(90deg, var(--v2-background-bg-layer-02) 0%, var(--v2-background-bg-layer-02) 100%);
   }
 
   [data-component="button-v2"][data-variant="danger"]:is(:disabled, [data-state="disabled"]) {
@@ -127,15 +127,15 @@
   }
 
   [data-component="button-v2"][data-variant="warning"] {
-    background-color: var(--v2-background-bg-button-neutral);
+    background-color: var(--v2-background-bg-layer-02);
     color: var(--v2-state-fg-warning);
-    box-shadow: var(--v2-elevation-button-neutral);
+    box-shadow: none;
   }
 
   [data-component="button-v2"][data-variant="warning"]:is(:hover, [data-state="hover"]):not(:disabled) {
     background-image:
       linear-gradient(90deg, var(--v2-overlay-simple-overlay-hover) 0%, var(--v2-overlay-simple-overlay-hover) 100%),
-      linear-gradient(90deg, var(--v2-background-bg-button-neutral) 0%, var(--v2-background-bg-button-neutral) 100%);
+      linear-gradient(90deg, var(--v2-background-bg-layer-02) 0%, var(--v2-background-bg-layer-02) 100%);
   }
 
   [data-component="button-v2"][data-variant="warning"]:is(:active, [data-state="pressed"]):not(:disabled) {
@@ -145,7 +145,7 @@
         var(--v2-overlay-simple-overlay-pressed) 0%,
         var(--v2-overlay-simple-overlay-pressed) 100%
       ),
-      linear-gradient(90deg, var(--v2-background-bg-button-neutral) 0%, var(--v2-background-bg-button-neutral) 100%);
+      linear-gradient(90deg, var(--v2-background-bg-layer-02) 0%, var(--v2-background-bg-layer-02) 100%);
   }
 
   [data-component="button-v2"][data-variant="warning"]:is(:disabled, [data-state="disabled"]) {
@@ -155,17 +155,17 @@
 
   /* Outline */
   [data-component="button-v2"][data-variant="outline"] {
-    background-color: transparent;
+    background-color: var(--v2-background-bg-layer-02);
     color: var(--v2-text-text-base);
-    box-shadow: inset 0 0 0 1px var(--v2-border-border-muted);
+    box-shadow: none;
   }
 
   [data-component="button-v2"][data-variant="outline"]:is(:hover, [data-state="hover"]):not(:disabled) {
-    background-color: var(--v2-overlay-simple-overlay-hover);
+    background-image: linear-gradient(90deg, var(--v2-overlay-simple-overlay-hover) 0%, var(--v2-overlay-simple-overlay-hover) 100%);
   }
 
   [data-component="button-v2"][data-variant="outline"]:is(:active, [data-state="pressed"]):not(:disabled) {
-    background-color: var(--v2-overlay-simple-overlay-pressed);
+    background-image: linear-gradient(90deg, var(--v2-overlay-simple-overlay-pressed) 0%, var(--v2-overlay-simple-overlay-pressed) 100%);
   }
 
   [data-component="button-v2"][data-variant="outline"]:is(:disabled, [data-state="disabled"]) {
@@ -177,11 +177,10 @@
   /* Primary action ("contrast" variant): the brand action colour. */
   [data-component="button-v2"][data-variant="contrast"] {
     background-image:
-      linear-gradient(180deg, var(--v2-alpha-light-20) 0%, var(--v2-alpha-light-0) 100%),
       linear-gradient(90deg, var(--v2-background-bg-action-primary) 0%, var(--v2-background-bg-action-primary) 100%);
     color: var(--v2-text-text-on-action-primary);
     text-shadow: none;
-    box-shadow: var(--v2-elevation-button-contrast);
+    box-shadow: none;
   }
 
   [data-component="button-v2"][data-variant="contrast"]:is(:hover, [data-state="hover"]):not(:disabled) {
@@ -191,7 +190,6 @@
         var(--v2-overlay-simple-overlay-contrast-hover) 0%,
         var(--v2-overlay-simple-overlay-contrast-hover) 100%
       ),
-      linear-gradient(180deg, var(--v2-alpha-light-20) 0%, var(--v2-alpha-light-0) 100%),
       linear-gradient(90deg, var(--v2-background-bg-action-primary) 0%, var(--v2-background-bg-action-primary) 100%);
   }
 
@@ -202,7 +200,6 @@
         var(--v2-overlay-simple-overlay-contrast-pressed) 0%,
         var(--v2-overlay-simple-overlay-contrast-pressed) 100%
       ),
-      linear-gradient(180deg, var(--v2-alpha-light-20) 0%, var(--v2-alpha-light-0) 100%),
       linear-gradient(90deg, var(--v2-background-bg-action-primary) 0%, var(--v2-background-bg-action-primary) 100%);
   }
 
@@ -215,7 +212,7 @@
   [data-component="button-v2"][data-variant="loading"] {
     background: var(--v2-background-bg-layer-02);
     color: var(--v2-text-text-base);
-    box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+    box-shadow: none;
     cursor: default;
     pointer-events: none;
   }
