@@ -243,6 +243,9 @@
   --color-v2-background-bg-icon-button-contrast: var(--v2-background-bg-icon-button-contrast);
   --color-v2-background-bg-button-neutral: var(--v2-background-bg-button-neutral);
   --color-v2-background-bg-accent: var(--v2-background-bg-accent);
+  --color-v2-background-bg-action-primary: var(--v2-background-bg-action-primary);
+  --color-v2-background-bg-selection: var(--v2-background-bg-selection);
+  --color-v2-text-text-on-action-primary: var(--v2-text-text-on-action-primary);
   --color-v2-text-text-base: var(--v2-text-text-base);
   --color-v2-text-text-muted: var(--v2-text-text-muted);
   --color-v2-text-text-faint: var(--v2-text-text-faint);

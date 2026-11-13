@@ -1,9 +1,6 @@
 :root,
 :host {
-  --timeline-quote-background: light-dark(
-    rgb(from var(--v2-blue-1100) r g b / 0.1),
-    rgb(from var(--v2-blue-400) r g b / 0.25)
-  );
+  --timeline-quote-background: var(--v2-background-bg-selection);
 }
 
 /* Blink computes a highlight style for every element a highlight rule matches, so rules that reach every element cost
