@@ -28,27 +28,27 @@ Backend shared pieces first (broker auth kinds, device flow, client IDs), then t
   - Run `go build ./...` and `go vet ./...` in `services/bellud`. Ask the user if questions arise.
 
 - [ ] 3. Provider packages
-  - [-] 3.1 GitLab package
+  - [x] 3.1 GitLab package
     - Create `gitlab/manifest.go` and `gitlab/provider.go`: device sign-in (scope `read_api`) when client ID is set, PAT paste, `bearer` auth, allowlist `/api/v4/user` and `/api/v4/personal_access_tokens/self`
     - Verify via `/user`; CheckPermissions reports write-capable PAT scopes in `WriteOffenders`; nil Collector
     - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 3.5_
-  - [-] 3.2 Azure package
+  - [x] 3.2 Azure package
     - Create `azure/manifest.go` and `azure/provider.go`: Entra device code (tenant defaults to `organizations`) when client ID is set, service-principal paste, `bearer` auth, subscriptions and role assignment reads
     - Verify via `/subscriptions`; CheckPermissions reports roles beyond Reader and Security Reader that allow writes; nil Collector
     - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 3.5_
-  - [-] 3.3 Google Cloud package
+  - [x] 3.3 Google Cloud package
     - Create `gcp/manifest.go` and `gcp/provider.go`: service-account JSON paste only, `gcp-sa` auth, allowlist for resource manager, IAM and token exchange
     - Verify by JWT exchange (label `client_email`); CheckPermissions uses `testIamPermissions` with a fixed write probe set; nil Collector
     - _Requirements: 1.1, 1.2, 1.3, 2.2, 2.5, 3.5_
-  - [-] 3.4 Bitbucket package
+  - [x] 3.4 Bitbucket package
     - Create `bitbucket/manifest.go` and `bitbucket/provider.go`: email plus Atlassian API token paste, `basic` auth, `/2.0/user` and `/2.0/workspaces`
     - CheckPermissions reads `X-OAuth-Scopes` and reports `write`, `admin`, `delete` scopes; nil Collector
     - _Requirements: 1.1, 1.2, 1.3, 2.2, 3.5_
-  - [-] 3.5 Cloudflare package
+  - [x] 3.5 Cloudflare package
     - Create `cloudflare/manifest.go` and `cloudflare/provider.go`: API token paste, `bearer` auth, token verify, accounts and zones reads
     - CheckPermissions reports write permission groups, or `Unverifiable` when the token cannot read its policy; nil Collector
     - _Requirements: 1.1, 1.2, 1.3, 2.3, 3.5_
-  - [~] 3.6 Kubernetes package
+  - [-] 3.6 Kubernetes package
     - Create `kubernetes/manifest.go` and `kubernetes/provider.go`: API server URL, ServiceAccount token and CA paste (kubeconfig parsed into the three), `k8s-bearer` auth, `/version`, namespaces and `selfsubjectrulesreviews` reads
     - CheckPermissions reports rules with create, update, patch, delete or `*`; nil Collector
     - _Requirements: 1.1, 1.2, 1.3, 2.3, 3.5_
@@ -83,7 +83,7 @@ Backend shared pieces first (broker auth kinds, device flow, client IDs), then t
     - _Requirements: 2.2, 4.1, 4.3, 4.4, 4.5, 4.6, 4.7_
 
 - [ ] 8. Migrate AWS and GitHub
-  - [~] 8.1 Migrate AWS
+  - [-] 8.1 Migrate AWS
     - Create `descriptors/aws.ts`; fold `aws-wizard.ts` transitions into the generic machine unchanged; reduce `aws-panel.tsx` to descriptor plus shared Wizard
     - _Requirements: 4.2, 5.1_
   - [~] 8.2 Migrate GitHub

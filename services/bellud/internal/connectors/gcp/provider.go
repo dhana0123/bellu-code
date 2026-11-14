@@ -190,6 +190,10 @@ func (p *Provider) projects(ctx context.Context, c lifecycle.Call) ([]string, er
 		} `json:"projects"`
 	}
 	if err := p.do(c, req, &out); err != nil {
+		var se *statusError
+		if errors.As(err, &se) && se.status == http.StatusForbidden {
+			return nil, lifecycle.NewError(lifecycle.CodeInsufficientPermission, "service account lacks permission to list projects", nil)
+		}
 		return nil, err
 	}
 	ids := []string{}
