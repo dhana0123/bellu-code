@@ -178,6 +178,10 @@ func parseCreate(obj map[string]any) (any, []string) {
 	in.ConnectorID, _ = v.str("connectorId", true, 1, -1)
 	in.AuthConfigID, _ = v.str("authConfigId", false, 0, -1)
 	in.Method, _ = v.str("method", true, 1, -1)
+	if in.Method == "device" {
+		// Device Connections are created only by the device-flow service.
+		v.fail("method")
+	}
 	in.Params, _ = v.strMap("params", false)
 	in.Credential, _ = v.strMap("credential", true)
 	in.IntervalSec, _ = v.integer("intervalSec", intervalMin, intervalMax)
@@ -327,4 +331,20 @@ func parseScope(obj map[string]any) (any, []string) {
 		return nil, v.bad
 	}
 	return sc, nil
+}
+
+// startDeviceInput is the validated body of startDeviceAuthorization. The body
+// is closed: other fields (client_secret and the like) are ignored.
+type startDeviceInput struct{ ConnectorID, Alias, ReconnectID string }
+
+func parseStartDevice(obj map[string]any) (any, []string) {
+	v := &validator{obj: obj}
+	var in startDeviceInput
+	in.ConnectorID, _ = v.str("connectorId", true, 1, -1)
+	in.ReconnectID, _ = v.str("reconnectId", false, 1, -1)
+	in.Alias, _ = v.str("alias", in.ReconnectID == "", 1, aliasMax)
+	if len(v.bad) > 0 {
+		return nil, v.bad
+	}
+	return in, nil
 }

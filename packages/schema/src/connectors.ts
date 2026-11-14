@@ -46,6 +46,10 @@ export const ErrorCode = Schema.Literals([
   "validation_failed",
   "payload_too_large",
   "forbidden",
+  "device_code_expired",
+  "authorization_denied",
+  "device_flow_disabled",
+  "already_pending",
 ]).annotate({ identifier: "Connectors.ErrorCode" })
 export type ErrorCode = typeof ErrorCode.Type
 
@@ -117,11 +121,19 @@ export const AuthConfigList = Schema.Struct({
 export interface AuthConfigList extends Schema.Schema.Type<typeof AuthConfigList> {}
 
 // manifest.AuthMethod / Permission / Operation (snake_case JSON).
+export const ManifestDeviceSpec = Schema.Struct({
+  device_code_url: Schema.String,
+  token_url: Schema.String,
+  client_id: Schema.String,
+  scopes: Schema.Array(Schema.String),
+}).annotate({ identifier: "Connectors.ManifestDeviceSpec" })
+export interface ManifestDeviceSpec extends Schema.Schema.Type<typeof ManifestDeviceSpec> {}
 export const ManifestAuthMethod = Schema.Struct({
   id: Schema.String,
   name: Schema.String,
   enabled: Schema.Boolean,
   disabled_reason: optional(Schema.String),
+  device: optional(ManifestDeviceSpec),
 }).annotate({ identifier: "Connectors.ManifestAuthMethod" })
 export interface ManifestAuthMethod extends Schema.Schema.Type<typeof ManifestAuthMethod> {}
 
@@ -141,6 +153,7 @@ export const ManifestOperation = Schema.Struct({
   query: optional(Schema.Boolean),
   strip_keys: optional(Schema.Array(Schema.String)),
   max_bytes: optional(Schema.Int),
+  issues_credential: optional(Schema.Boolean),
 }).annotate({ identifier: "Connectors.ManifestOperation" })
 export interface ManifestOperation extends Schema.Schema.Type<typeof ManifestOperation> {}
 
@@ -275,6 +288,7 @@ export const AwsSetup = Schema.Struct({
   cloudFormation: Schema.String,
   terraform: Schema.String,
   principal: optional(Schema.String),
+  quickCreateUrl: optional(Schema.String),
 }).annotate({ identifier: "Connectors.AwsSetup" })
 export interface AwsSetup extends Schema.Schema.Type<typeof AwsSetup> {}
 
@@ -286,9 +300,44 @@ export interface GithubRepo extends Schema.Schema.Type<typeof GithubRepo> {}
 
 export const GithubRepoList = Schema.Struct({
   items: Schema.Array(GithubRepo),
+  installations: Schema.Int.annotate({ description: "Number of GitHub App installations reachable by the token." }),
+  installUrl: optional(Schema.String),
 }).annotate({ identifier: "Connectors.GithubRepoList" })
 export interface GithubRepoList extends Schema.Schema.Type<typeof GithubRepoList> {}
 
+/** Start of a device authorization. `alias` is required unless `reconnectId` is set. */
+export const StartDeviceAuthorizationInput = Schema.Struct({
+  connectorId: ConnectorID,
+  alias: optional(Alias),
+  reconnectId: optional(ConnectionID),
+}).annotate({ identifier: "Connectors.StartDeviceAuthorizationInput" })
+export interface StartDeviceAuthorizationInput extends Schema.Schema.Type<typeof StartDeviceAuthorizationInput> {}
+/** Never carries the device code; the server keeps it. */
+export const DeviceAuthorization = Schema.Struct({
+  id: Schema.String,
+  userCode: Schema.String,
+  verificationUri: Schema.String,
+  expiresAt: Schema.Int,
+  intervalSec: Schema.Int,
+}).annotate({ identifier: "Connectors.DeviceAuthorization" })
+export interface DeviceAuthorization extends Schema.Schema.Type<typeof DeviceAuthorization> {}
+export const DeviceAuthorizationStatusValue = Schema.Literals(["pending", "connected", "expired", "denied", "failed"]).annotate({
+  identifier: "Connectors.DeviceAuthorizationStatusValue",
+})
+export type DeviceAuthorizationStatusValue = typeof DeviceAuthorizationStatusValue.Type
+export const DeviceAuthorizationStatus = Schema.Struct({
+  status: DeviceAuthorizationStatusValue,
+  expiresAt: optional(Schema.Int),
+  intervalSec: optional(Schema.Int),
+  connection: optional(Connection),
+  error: optional(
+    Schema.Struct({
+      code: ErrorCode,
+      retryAfterSec: optional(Schema.Int),
+    }),
+  ),
+}).annotate({ identifier: "Connectors.DeviceAuthorizationStatus" })
+export interface DeviceAuthorizationStatus extends Schema.Schema.Type<typeof DeviceAuthorizationStatus> {}
 // store.Scope: agent/principal scope entry (Requirement 17).
 export const Scope = Schema.Struct({
   principal: Text,

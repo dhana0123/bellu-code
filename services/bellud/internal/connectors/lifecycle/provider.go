@@ -64,3 +64,17 @@ type Provider interface {
 type CredentialValidator interface {
 	ValidateCredential(secret []byte) error
 }
+
+// MethodCredentialValidator is a method-aware CredentialValidator. The manager
+// prefers it over CredentialValidator when the provider implements both.
+type MethodCredentialValidator interface {
+	ValidateCredentialFor(method string, secret []byte) error
+}
+
+// NonRefreshable is an optional Provider extension for credentials that cannot
+// be renewed. When Refreshable returns false for a connection, the supervisor
+// never calls Refresh for it and marks the connection EXPIRED once the
+// recorded credential expiry has passed.
+type NonRefreshable interface {
+	Refreshable(conn store.Connection) bool
+}

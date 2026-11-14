@@ -42,6 +42,7 @@ const (
 	EventDecryptFailed           = "decrypt_failed"
 	EventVaultForget             = "vault_forget"
 	EventMasterKeyRotate         = "master_key_rotate"
+	EventDeviceAuthorization     = "device_authorization"
 	// EventPluginPrefix prefixes all plugin events (plugin_*).
 	EventPluginPrefix = "plugin_"
 )
@@ -346,7 +347,7 @@ func validEvent(ev string) bool {
 	case EventConnect, EventTest, EventDisconnect, EventRotate, EventCredentialRelease,
 		EventCollect, EventBlockedOperation, EventPermissionChange, EventStatusChange,
 		EventRejectedTransition, EventCredentialOptionIgnored, EventScopeDenied,
-		EventDecryptFailed, EventVaultForget, EventMasterKeyRotate:
+		EventDecryptFailed, EventVaultForget, EventMasterKeyRotate, EventDeviceAuthorization:
 		return true
 	}
 	return strings.HasPrefix(ev, EventPluginPrefix) && len(ev) > len(EventPluginPrefix)

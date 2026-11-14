@@ -25,10 +25,6 @@ import { SettingsWorkspaces } from "./workspaces/workspaces"
 import { useWorkspacesPrefetch } from "./workspaces/queries"
 import { SettingsProjects } from "./workspaces/projects"
 import { SettingsExtensions } from "./providers/extensions"
-import { SettingsConnectors } from "./connectors/connectors-page"
-import { ConnectionList } from "./connectors/connection-list"
-import { ConnectDialog } from "./connectors/connect-dialog"
-import { useConnectorsAvailable } from "./connectors/enabled"
 import { SettingsAbout } from "./about/about"
 import { SettingsServerDataScope } from "./server-scope"
 import { SettingsNavigation, type SettingsNavGroup } from "./navigation"
@@ -189,8 +185,6 @@ function RootSettings() {
   })
 
   const prefetchWorkspaces = useWorkspacesPrefetch(reachable)
-  // Connectors needs the resolved flag and a successful status probe; a disabled service answers 404.
-  const connectorsAvailable = useConnectorsAvailable(reachable)
   const activeDirectory = useSettingsDirectory(reachable)
   createEffect(() => {
     const view = surface.view()
@@ -198,11 +192,6 @@ function RootSettings() {
     if (view.type !== "root") return
 
     if (view.tab === "experimental" && !experimentalSettingsAvailable) surface.open("general")
-  })
-  createEffect(() => {
-    const view = surface.view()
-    if (view.type === "root" && view.tab === "connectors" && reachable() && connectorsAvailable.settled() && !connectorsAvailable())
-      surface.open("general")
   })
 
   const selectServer = (server: ServerConnection.Any) => surface.selectServer(ServerConnection.key(server))
@@ -223,9 +212,6 @@ function RootSettings() {
           label: language.t(item.label),
           onPrefetch: item.value === "workspaces" ? prefetchWorkspaces : undefined,
         })),
-        ...(connectorsAvailable()
-          ? [{ value: "connectors", icon: pageIcons.connectors, label: language.t(pageLabels.connectors) }]
-          : []),
       ],
     },
     {
@@ -354,17 +340,6 @@ function RootSettings() {
                 headerAction={<SettingsServerSwitcher />}
               />
             </Tabs.Content>
-            <Show when={connectorsAvailable()}>
-              <Tabs.Content value="connectors" class="settings-panel">
-                <SettingsConnectors
-                  headerAction={<SettingsServerSwitcher />}
-                  connectionList={({ card, data, open }) => (
-                    <ConnectionList card={card} data={data} onReconnect={open} />
-                  )}
-                  connectDialog={(ctx) => <ConnectDialog {...ctx} />}
-                />
-              </Tabs.Content>
-            </Show>
           </SettingsServerDataScope>
         )}
       </Show>

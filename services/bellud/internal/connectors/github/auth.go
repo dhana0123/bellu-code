@@ -14,6 +14,9 @@ import (
 // PATPrefix is the prefix of every fine-grained personal access token.
 const PATPrefix = "github_pat_"
 
+// UserTokenPrefix is the prefix of a GitHub App user access token.
+const UserTokenPrefix = "ghu_"
+
 // ClassicTokenMessage is shown when a token without PATPrefix is submitted.
 const ClassicTokenMessage = "Classic tokens are not supported because they cannot be limited to read-only permissions and specific repositories. Create a fine-grained personal access token instead."
 

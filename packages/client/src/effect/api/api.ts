@@ -2733,6 +2733,14 @@ export type ExperimentalConnectorsCatalogOutput = {
       readonly name: string
       readonly enabled: boolean
       readonly disabled_reason?: string | undefined
+      readonly device?:
+        | {
+            readonly device_code_url: string
+            readonly token_url: string
+            readonly client_id: string
+            readonly scopes: ReadonlyArray<string>
+          }
+        | undefined
     }>
     readonly permissions: ReadonlyArray<{
       readonly name: string
@@ -2748,6 +2756,7 @@ export type ExperimentalConnectorsCatalogOutput = {
       readonly query?: boolean | undefined
       readonly strip_keys?: ReadonlyArray<string> | undefined
       readonly max_bytes?: number | undefined
+      readonly issues_credential?: boolean | undefined
     }>
     readonly egress: ReadonlyArray<string>
     readonly entities: ReadonlyArray<string>
@@ -3176,6 +3185,7 @@ export type ExperimentalConnectorsAwsSetupOutput = {
   readonly cloudFormation: string
   readonly terraform: string
   readonly principal?: string | undefined
+  readonly quickCreateUrl?: string | undefined
 }
 export type ExperimentalConnectorsAwsSetupOperation<E = never> = (
   input?: ExperimentalConnectorsAwsSetupInput,
@@ -3184,10 +3194,103 @@ export type ExperimentalConnectorsAwsSetupOperation<E = never> = (
 export type ExperimentalConnectorsListGithubReposInput = { readonly id: string }
 export type ExperimentalConnectorsListGithubReposOutput = {
   readonly items: ReadonlyArray<{ readonly fullName: string; readonly private: boolean }>
+  readonly installations: number
+  readonly installUrl?: string | undefined
 }
 export type ExperimentalConnectorsListGithubReposOperation<E = never> = (
   input: ExperimentalConnectorsListGithubReposInput,
 ) => Effect.Effect<ExperimentalConnectorsListGithubReposOutput, E>
+
+export type ExperimentalConnectorsStartDeviceAuthorizationInput = {
+  readonly connectorId: string
+  readonly alias?: string | undefined
+  readonly reconnectId?: string | undefined
+}
+export type ExperimentalConnectorsStartDeviceAuthorizationOutput = {
+  readonly id: string
+  readonly userCode: string
+  readonly verificationUri: string
+  readonly expiresAt: number
+  readonly intervalSec: number
+}
+export type ExperimentalConnectorsStartDeviceAuthorizationOperation<E = never> = (
+  input: ExperimentalConnectorsStartDeviceAuthorizationInput,
+) => Effect.Effect<ExperimentalConnectorsStartDeviceAuthorizationOutput, E>
+
+export type ExperimentalConnectorsGetDeviceAuthorizationInput = { readonly id: string }
+export type ExperimentalConnectorsGetDeviceAuthorizationOutput = {
+  readonly status: "pending" | "connected" | "expired" | "denied" | "failed"
+  readonly expiresAt?: number | undefined
+  readonly intervalSec?: number | undefined
+  readonly connection?:
+    | {
+        readonly id: string
+        readonly connectorId: string
+        readonly alias: string
+        readonly authConfigId: string
+        readonly method: string
+        readonly status: "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+        readonly statusReason: string
+        readonly accountLabel: string
+        readonly externalIdRef?: string | undefined
+        readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+        readonly intervalSec: number
+        readonly allowAgentLiveReads: boolean
+        readonly rotationIntervalDays: number
+        readonly credentialCreatedAt: string | null
+        readonly credentialExpiresAt: string | null
+        readonly lastPermissionCheck: string | null
+        readonly permissionCheck: string
+        readonly lastSync?:
+          | {
+              readonly status: string
+              readonly endedAt?: string | undefined
+              readonly entities: number
+              readonly partial: ReadonlyArray<string>
+            }
+          | undefined
+        readonly removed: boolean
+        readonly createdAt: string
+      }
+    | undefined
+  readonly error?:
+    | {
+        readonly code:
+          | "invalid_credential"
+          | "insufficient_permission"
+          | "excess_permission"
+          | "network"
+          | "rate_limited"
+          | "expired"
+          | "alias_invalid"
+          | "alias_taken"
+          | "blocked_by_policy"
+          | "scope_denied"
+          | "run_in_progress"
+          | "vault_unavailable"
+          | "audit_failed"
+          | "decrypt_failed"
+          | "transition_rejected"
+          | "validation_failed"
+          | "payload_too_large"
+          | "forbidden"
+          | "device_code_expired"
+          | "authorization_denied"
+          | "device_flow_disabled"
+          | "already_pending"
+        readonly retryAfterSec?: number | undefined
+      }
+    | undefined
+}
+export type ExperimentalConnectorsGetDeviceAuthorizationOperation<E = never> = (
+  input: ExperimentalConnectorsGetDeviceAuthorizationInput,
+) => Effect.Effect<ExperimentalConnectorsGetDeviceAuthorizationOutput, E>
+
+export type ExperimentalConnectorsCancelDeviceAuthorizationInput = { readonly id: string }
+export type ExperimentalConnectorsCancelDeviceAuthorizationOutput = { readonly ok: boolean }
+export type ExperimentalConnectorsCancelDeviceAuthorizationOperation<E = never> = (
+  input: ExperimentalConnectorsCancelDeviceAuthorizationInput,
+) => Effect.Effect<ExperimentalConnectorsCancelDeviceAuthorizationOutput, E>
 
 export type ExperimentalConnectorsGetScopeInput = { readonly principal: string }
 export type ExperimentalConnectorsGetScopeOutput = {
@@ -3254,6 +3357,9 @@ export interface ExperimentalConnectorsApi<E = never> {
   readonly deleteAuthConfig: ExperimentalConnectorsDeleteAuthConfigOperation<E>
   readonly awsSetup: ExperimentalConnectorsAwsSetupOperation<E>
   readonly listGithubRepos: ExperimentalConnectorsListGithubReposOperation<E>
+  readonly startDeviceAuthorization: ExperimentalConnectorsStartDeviceAuthorizationOperation<E>
+  readonly getDeviceAuthorization: ExperimentalConnectorsGetDeviceAuthorizationOperation<E>
+  readonly cancelDeviceAuthorization: ExperimentalConnectorsCancelDeviceAuthorizationOperation<E>
   readonly getScope: ExperimentalConnectorsGetScopeOperation<E>
   readonly putScope: ExperimentalConnectorsPutScopeOperation<E>
   readonly unlockVault: ExperimentalConnectorsUnlockVaultOperation<E>
@@ -3943,6 +4049,36 @@ export type ConnectorsListGithubReposOutput = ExperimentalConnectorsListGithubRe
 /** @deprecated Use `ExperimentalConnectorsListGithubReposOperation`. Removed in the next minor. */
 export type ConnectorsListGithubReposOperation<E = never> = ExperimentalConnectorsListGithubReposOperation<E>
 
+/** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsStartDeviceAuthorizationInput = ExperimentalConnectorsStartDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsStartDeviceAuthorizationOutput = ExperimentalConnectorsStartDeviceAuthorizationOutput
+
+/** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationOperation`. Removed in the next minor. */
+export type ConnectorsStartDeviceAuthorizationOperation<E = never> =
+  ExperimentalConnectorsStartDeviceAuthorizationOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsGetDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsGetDeviceAuthorizationInput = ExperimentalConnectorsGetDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsGetDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsGetDeviceAuthorizationOutput = ExperimentalConnectorsGetDeviceAuthorizationOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetDeviceAuthorizationOperation`. Removed in the next minor. */
+export type ConnectorsGetDeviceAuthorizationOperation<E = never> =
+  ExperimentalConnectorsGetDeviceAuthorizationOperation<E>
+
+/** @deprecated Use `ExperimentalConnectorsCancelDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsCancelDeviceAuthorizationInput = ExperimentalConnectorsCancelDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsCancelDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsCancelDeviceAuthorizationOutput = ExperimentalConnectorsCancelDeviceAuthorizationOutput
+
+/** @deprecated Use `ExperimentalConnectorsCancelDeviceAuthorizationOperation`. Removed in the next minor. */
+export type ConnectorsCancelDeviceAuthorizationOperation<E = never> =
+  ExperimentalConnectorsCancelDeviceAuthorizationOperation<E>
+
 /** @deprecated Use `ExperimentalConnectorsGetScopeInput`. Removed in the next minor. */
 export type ConnectorsGetScopeInput = ExperimentalConnectorsGetScopeInput
 
@@ -4172,6 +4308,15 @@ export interface AppApi<E = never> {
 
     /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
     readonly listGithubRepos: ExperimentalConnectorsListGithubReposOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.startDeviceAuthorization`. Removed in the next minor. */
+    readonly startDeviceAuthorization: ExperimentalConnectorsStartDeviceAuthorizationOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.getDeviceAuthorization`. Removed in the next minor. */
+    readonly getDeviceAuthorization: ExperimentalConnectorsGetDeviceAuthorizationOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.cancelDeviceAuthorization`. Removed in the next minor. */
+    readonly cancelDeviceAuthorization: ExperimentalConnectorsCancelDeviceAuthorizationOperation<E>
 
     /** @deprecated Use `client.experimental.connectors.getScope`. Removed in the next minor. */
     readonly getScope: ExperimentalConnectorsGetScopeOperation<E>

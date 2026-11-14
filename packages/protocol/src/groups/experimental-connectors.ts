@@ -176,6 +176,27 @@ export const ExperimentalConnectorsGroup = HttpApiGroup.make("server.connectors"
     }).annotateMerge(experimental("listGithubRepos", "List GitHub repositories", "List repositories the connection can access.")),
   )
   .add(
+    HttpApiEndpoint.post("startDeviceAuthorization", "/api/experimental/connectors/device-authorizations", {
+      payload: Connectors.StartDeviceAuthorizationInput,
+      success: Connectors.DeviceAuthorization,
+      error: errors,
+    }).annotateMerge(experimental("startDeviceAuthorization", "Start device authorization", "Start a device-flow sign-in. The response never contains the device code.")),
+  )
+  .add(
+    HttpApiEndpoint.get("getDeviceAuthorization", "/api/experimental/connectors/device-authorizations/:id", {
+      params: { id: Schema.String },
+      success: Connectors.DeviceAuthorizationStatus,
+      error: errors,
+    }).annotateMerge(experimental("getDeviceAuthorization", "Get device authorization", "Get the status of a device authorization.")),
+  )
+  .add(
+    HttpApiEndpoint.delete("cancelDeviceAuthorization", "/api/experimental/connectors/device-authorizations/:id", {
+      params: { id: Schema.String },
+      success: Connectors.VaultResult,
+      error: errors,
+    }).annotateMerge(experimental("cancelDeviceAuthorization", "Cancel device authorization", "Cancel a pending device authorization.")),
+  )
+  .add(
     HttpApiEndpoint.get("getScope", "/api/experimental/connectors/scopes/:principal", {
       params: { principal: Schema.String },
       success: Connectors.Scope,

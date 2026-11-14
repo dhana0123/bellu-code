@@ -7,7 +7,9 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode/utf8"
 )
@@ -61,7 +63,48 @@ type AuthMethod struct {
 	Name           string `json:"name"`
 	Enabled        bool   `json:"enabled"`
 	DisabledReason string `json:"disabled_reason,omitempty"`
+	// Device declares the device authorization flow endpoints; only valid for
+	// the method with id MethodDevice.
+	Device *DeviceSpec `json:"device,omitempty"`
 }
+
+// MethodDevice is the auth method id of the device authorization flow.
+const MethodDevice = "device"
+
+// MaxDeviceScopes bounds DeviceSpec.Scopes.
+const MaxDeviceScopes = 20
+
+// DeviceSpec declares four of the five provider inputs of a device flow. The
+// fifth, the token verification call, is the connector's lifecycle provider.
+type DeviceSpec struct {
+	DeviceCodeURL string   `json:"device_code_url"`
+	TokenURL      string   `json:"token_url"`
+	ClientID      string   `json:"client_id"`
+	Scopes        []string `json:"scopes"`
+	// TokenGrant is the grant_type sent to the token URL. Empty means
+	// DefaultTokenGrant.
+	TokenGrant string `json:"token_grant,omitempty"`
+	// Tenant fills the {tenant} placeholder of both URLs at start. Empty means
+	// DefaultTenant. Ignored when neither URL has the placeholder.
+	Tenant string `json:"tenant,omitempty"`
+	// Refresh keeps the refresh_token of the token response in the vault. When
+	// false (GitHub) a refresh token is never decoded or stored.
+	Refresh bool `json:"refresh,omitempty"`
+}
+
+// DefaultTokenGrant is the device authorization grant type (RFC 8628).
+const DefaultTokenGrant = "urn:ietf:params:oauth:grant-type:device_code"
+
+// DefaultTenant replaces {tenant} when the spec and the start request give none.
+const DefaultTenant = "organizations"
+
+// TenantPlaceholder marks the tenant segment in DeviceSpec URLs.
+const TenantPlaceholder = "{tenant}"
+
+var tenantRe = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.-]{0,127}$`)
+
+// ValidTenant reports whether t is a safe tenant id or domain.
+func ValidTenant(t string) bool { return tenantRe.MatchString(t) }
 
 // Permission is a requested provider permission. Every permission must be
 // read-only.
@@ -86,6 +129,10 @@ type Operation struct {
 	Query     bool     `json:"query,omitempty"`
 	StripKeys []string `json:"strip_keys,omitempty"`
 	MaxBytes  int      `json:"max_bytes,omitempty"`
+	// IssuesCredential marks an auth operation whose response body carries a
+	// credential for the lifecycle caller. The broker skips token-pattern
+	// redaction for its body. Only valid for class "auth".
+	IssuesCredential bool `json:"issues_credential,omitempty"`
 }
 
 // FieldError names an invalid field. It never contains the offending value.
@@ -140,6 +187,7 @@ func Validate(m Manifest) []FieldError {
 		if utf8.RuneCountInString(a.DisabledReason) > maxFieldLen {
 			add(p+".disabled_reason", "too long")
 		}
+		validateDevice(p, a, m, add)
 	}
 
 	if len(m.Permissions) > MaxPermissions {
@@ -218,9 +266,71 @@ func validateOperation(p string, op Operation, add func(field, msg string)) {
 			add(fmt.Sprintf("%s.strip_keys[%d]", p, i), "must be 1-128 characters")
 		}
 	}
+	if op.IssuesCredential && op.Class != ClassAuth {
+		add(p+".issues_credential", "only valid for class auth")
+	}
 	if op.MaxBytes < 0 || op.MaxBytes > maxOperationMax {
 		add(p+".max_bytes", "out of range")
 	}
+}
+
+// validateDevice checks a device auth method: both URLs are https with a host
+// in egress, each has a matching POST auth operation, and there are at most
+// MaxDeviceScopes scopes. Errors name the field, never the value.
+func validateDevice(p string, a AuthMethod, m Manifest, add func(field, msg string)) {
+	if a.Device == nil {
+		if a.ID == MethodDevice {
+			add(p+".device", "required for the device method")
+		}
+		return
+	}
+	if a.ID != MethodDevice {
+		add(p+".device", "only valid for the device method")
+		return
+	}
+	d := a.Device
+	if blank(d.ClientID, maxFieldLen) {
+		add(p+".device.client_id", "must be 1-256 characters")
+	}
+	if len(d.Scopes) > MaxDeviceScopes {
+		add(p+".device.scopes", "must have 0-20 entries")
+	}
+	if d.TokenGrant != "" && (blank(d.TokenGrant, maxFieldLen) || strings.ContainsAny(d.TokenGrant, " \t\r\n")) {
+		add(p+".device.token_grant", "must be 1-256 characters without whitespace")
+	}
+	if d.Tenant != "" && !ValidTenant(d.Tenant) {
+		add(p+".device.tenant", "must be a tenant id or domain")
+	}
+	for i, sc := range d.Scopes {
+		if blank(sc, 128) {
+			add(fmt.Sprintf("%s.device.scopes[%d]", p, i), "must be 1-128 characters")
+		}
+	}
+	for _, f := range []struct{ field, raw string }{
+		{"device_code_url", d.DeviceCodeURL}, {"token_url", d.TokenURL},
+	} {
+		field := p + ".device." + f.field
+		u, err := url.Parse(f.raw)
+		if f.raw == "" || err != nil || u.Scheme != "https" || u.Hostname() == "" || u.RawQuery != "" || u.User != nil {
+			add(field, "must be an https URL")
+			continue
+		}
+		if !slices.ContainsFunc(m.Egress, func(h string) bool { return egressMatches(h, u.Hostname()) }) {
+			add(field, "host must be listed in egress")
+		}
+		if !slices.ContainsFunc(m.Operations, func(op Operation) bool {
+			return op.Class == ClassAuth && op.Method == "POST" && op.Query && op.Host == u.Hostname() && op.Path == u.Path
+		}) {
+			add(field, "needs a matching POST auth operation")
+		}
+	}
+}
+
+func egressMatches(pattern, host string) bool {
+	if rest, ok := strings.CutPrefix(pattern, "*."); ok {
+		return strings.HasSuffix(host, "."+rest)
+	}
+	return pattern == host
 }
 
 func blank(s string, max int) bool {

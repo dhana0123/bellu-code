@@ -23,6 +23,7 @@ import {
   type MutationEffect,
   type MutationEvent,
 } from "./mutation-machine"
+import { withPlannedCards } from "./planned"
 import { INITIAL_OFFLINE_STATE, buildCards, transitionOffline, type OfflineEffect, type OfflineEvent } from "./machine"
 
 /** The generated client's connectors group, as `client.experimental.connectors`. */
@@ -35,6 +36,9 @@ type Cache = {
   connections?: readonly Connectors.Connection[]
   status?: Connectors.ServiceStatus
 }
+
+/** Sent on credential-bearing requests. bellud refuses them without it, so a cross-site form post cannot reach them. */
+export const CLIENT_HEADERS = { "X-Bellucode-Client": "web" } as const
 
 export type ConnectorsData = ReturnType<typeof createConnectorsData>
 export type ConnectorMutation = ReturnType<ConnectorsData["createMutation"]>
@@ -269,7 +273,7 @@ export function createConnectorsData() {
 
   // -- Reads for the page ---------------------------------------------------------------------------------------
 
-  const cards = createMemo(() => (own() && cache.catalog ? buildCards(cache.catalog, cache.connections ?? []) : []))
+  const cards = createMemo(() => (own() && cache.catalog ? withPlannedCards(buildCards(cache.catalog, cache.connections ?? [])) : []))
 
   return {
     /** One card per catalog connector. Empty until the catalog first loads. */

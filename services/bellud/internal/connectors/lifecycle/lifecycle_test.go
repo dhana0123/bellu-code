@@ -13,7 +13,7 @@ func TestNextTable(t *testing.T) {
 		{StatusInitiated, StatusVerifying}: true,
 		{StatusVerifying, StatusActive}:    true, {StatusVerifying, StatusError}: true,
 		{StatusActive, StatusExpired}: true, {StatusActive, StatusPaused}: true, {StatusActive, StatusError}: true,
-		{StatusPaused, StatusActive}: true, {StatusPaused, StatusError}: true,
+		{StatusPaused, StatusActive}: true, {StatusPaused, StatusExpired}: true, {StatusPaused, StatusError}: true,
 		{StatusExpired, StatusVerifying}: true,
 		{StatusError, StatusVerifying}:   true,
 	}
@@ -58,7 +58,7 @@ func TestErrorRedactedAndBounded(t *testing.T) {
 }
 
 func TestCodeSets(t *testing.T) {
-	if len(VerificationCodes) != 6 || len(AllCodes) != 18 {
+	if len(VerificationCodes) != 6 || len(AllCodes) != 22 {
 		t.Fatalf("got %d/%d codes", len(VerificationCodes), len(AllCodes))
 	}
 	if !IsVerificationCode(CodeExpired) || IsVerificationCode(CodeForbidden) {

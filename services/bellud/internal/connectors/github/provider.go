@@ -1,6 +1,7 @@
 package github
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net"
@@ -8,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/bellu/bellucode/services/bellud/internal/collectors"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/broker"
@@ -48,6 +50,23 @@ func (p *Provider) ValidateCredential(secret []byte) error {
 	return nil
 }
 
+// ValidateCredentialFor applies the credential rule of the method: pat keeps
+// the github_pat_ prefix, device requires a ghu_ user token without
+// whitespace, and any other method is rejected.
+func (p *Provider) ValidateCredentialFor(method string, secret []byte) error {
+	switch method {
+	case "pat":
+		return p.ValidateCredential(secret)
+	case "device":
+		if len(secret) > len(UserTokenPrefix) && strings.HasPrefix(string(secret), UserTokenPrefix) &&
+			!bytes.ContainsFunc(secret, unicode.IsSpace) {
+			return nil
+		}
+		return lifecycle.NewError(lifecycle.CodeValidationFailed, "GitHub user token must start with ghu_ and contain no whitespace", nil)
+	}
+	return lifecycle.NewError(lifecycle.CodeValidationFailed, "unsupported authentication method", nil)
+}
+
 // Verify calls GET /user and lists the accessible repositories. The token
 // expiry from the response header is reported when present.
 func (p *Provider) Verify(ctx context.Context, c lifecycle.Call) (lifecycle.Identity, error) {
@@ -56,7 +75,14 @@ func (p *Provider) Verify(ctx context.Context, c lifecycle.Call) (lifecycle.Iden
 	if err != nil {
 		return lifecycle.Identity{}, mapError(err)
 	}
-	if _, err := cl.Repositories(ctx); err != nil {
+	// A device user token proves itself with /user plus the installations
+	// endpoint, which also works while nothing is installed yet. /user/repos
+	// would fail that case.
+	if c.Connection.Method == MethodDevice {
+		if _, err := cl.InstallationsProbe(ctx); err != nil {
+			return lifecycle.Identity{}, mapError(err)
+		}
+	} else if _, err := cl.Repositories(ctx); err != nil {
 		return lifecycle.Identity{}, mapError(err)
 	}
 	id := lifecycle.Identity{AccountLabel: u.Login}
@@ -73,7 +99,14 @@ func (p *Provider) CheckPermissions(context.Context, lifecycle.Call) (lifecycle.
 	return lifecycle.PermissionReport{Unverifiable: true}, nil
 }
 
-// Refresh is a no-op: a PAT cannot be renewed. It returns the known expiry.
+// Refreshable implements lifecycle.NonRefreshable: a device user token cannot
+// be renewed without the client secret, so the supervisor expires it at its
+// recorded expiry instead of refreshing.
+func (p *Provider) Refreshable(conn store.Connection) bool { return conn.Method != MethodDevice }
+
+// Refresh is a no-op: neither a PAT nor a device user token can be renewed
+// without a client secret, and GitHub is never called. It returns the known
+// expiry.
 func (p *Provider) Refresh(_ context.Context, c lifecycle.Call) (time.Time, error) {
 	if e := c.Connection.CredentialExpiresAt; e != nil {
 		return *e, nil
@@ -83,8 +116,69 @@ func (p *Provider) Refresh(_ context.Context, c lifecycle.Call) (time.Time, erro
 
 // Repositories lists the repositories the token can access, for the picker.
 func (p *Provider) Repositories(ctx context.Context, c lifecycle.Call) ([]Repo, error) {
+	if c.Connection.Method == MethodDevice {
+		l, err := p.RepoList(ctx, c)
+		return l.Repos, err
+	}
 	repos, err := p.client(c.Connection, c.Client).Repositories(ctx)
 	return repos, mapError(err)
+}
+
+// ListTimeout bounds one installation and repository listing.
+const ListTimeout = 10 * time.Second
+
+// RepoList is the repository picker data of a device Connection.
+type RepoList struct {
+	Repos         []Repo
+	Installations int
+}
+
+// Installations lists the App installations the user token can reach.
+func (p *Provider) Installations(ctx context.Context, c lifecycle.Call) ([]Installation, error) {
+	ctx, cancel := context.WithTimeout(ctx, ListTimeout)
+	defer cancel()
+	in, err := p.client(c.Connection, c.Client).UserInstallations(ctx)
+	return in, mapError(err)
+}
+
+// InstallationRepositories lists the repositories of one installation.
+func (p *Provider) InstallationRepositories(ctx context.Context, c lifecycle.Call, installationID int64) ([]Repo, error) {
+	ctx, cancel := context.WithTimeout(ctx, ListTimeout)
+	defer cancel()
+	repos, err := p.client(c.Connection, c.Client).UserInstallationRepositories(ctx, installationID)
+	return repos, mapError(err)
+}
+
+// RepoList lists the repositories reachable through all installations, with
+// one 10 s deadline for the whole listing. Repositories are de-duplicated by
+// full_name and capped at MaxListedRepos.
+func (p *Provider) RepoList(ctx context.Context, c lifecycle.Call) (RepoList, error) {
+	ctx, cancel := context.WithTimeout(ctx, ListTimeout)
+	defer cancel()
+	cl := p.client(c.Connection, c.Client)
+	installs, err := cl.UserInstallations(ctx)
+	if err != nil {
+		return RepoList{}, mapError(err)
+	}
+	out := RepoList{Repos: []Repo{}, Installations: len(installs)}
+	seen := map[string]bool{}
+	for _, in := range installs {
+		repos, err := cl.UserInstallationRepositories(ctx, in.ID)
+		if err != nil {
+			return RepoList{}, mapError(err)
+		}
+		for _, r := range repos {
+			if seen[r.FullName] {
+				continue
+			}
+			seen[r.FullName] = true
+			out.Repos = append(out.Repos, r)
+			if len(out.Repos) >= MaxListedRepos {
+				return out, nil
+			}
+		}
+	}
+	return out, nil
 }
 
 // Collector builds the collector for the connection's selected repositories.
@@ -158,11 +252,17 @@ func ValidateHost(h string) error {
 	return nil
 }
 
+// MaxSelection is the largest repository selection.
+const MaxSelection = 500
+
 // ValidateSelection requires at least one valid "owner/name" repository after
 // a selection event.
 func ValidateSelection(repos []string) error {
 	if len(repos) == 0 {
 		return lifecycle.NewError(lifecycle.CodeValidationFailed, "select at least one repository", nil)
+	}
+	if len(repos) > MaxSelection {
+		return lifecycle.NewError(lifecycle.CodeValidationFailed, "select at most 500 repositories", nil)
 	}
 	for _, r := range repos {
 		owner, name, ok := strings.Cut(r, "/")

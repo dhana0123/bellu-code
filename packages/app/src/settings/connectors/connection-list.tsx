@@ -1,19 +1,24 @@
 import type { Connectors } from "@bellucode/schema/connectors"
-import { Badge } from "@bellucode/ui/badge"
 import { Button } from "@bellucode/ui/button"
 import { useDialog } from "@bellucode/ui/context/dialog"
 import { Dialog, DialogBody, DialogFooter, DialogTitleGroup } from "@bellucode/ui/dialog"
+import { Icon } from "@bellucode/ui/icon"
 import { Loader } from "@bellucode/ui/loader"
+import { Menu } from "@bellucode/ui/menu"
+import { MenuScroll } from "@bellucode/ui/menu-scroll"
 import { Switch as Toggle } from "@bellucode/ui/switch"
 import { TextField } from "@bellucode/ui/text-field"
 import { createUniqueId, For, Show, type Component } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/runtime/i18n/language"
 import type { dict } from "@/runtime/i18n/en"
+import { getRelativeTime } from "@/shell/time"
 import { useConnectorAuditDialog } from "./audit-dialog"
-import type { ConnectorMutation, ConnectorsData } from "./data"
+import { CLIENT_HEADERS, type ConnectorMutation, type ConnectorsData } from "./data"
 import { failureMessage } from "./errors"
-import { clearCredentials, expiresSoon, rotationDue, validateAlias, type ConnectorCard } from "./machine"
+import { selectExpiryWarning } from "./expiry-warning"
+import { clearCredentials, rotationDue, validateAlias, type ConnectorCard } from "./machine"
+import { StatusDot, type StatusTone } from "./status-dot"
 import "./connectors.css"
 type Key = Extract<keyof typeof dict, string>
 const STATUS_LABELS = {
@@ -24,11 +29,21 @@ const STATUS_LABELS = {
   PAUSED: "settings.connectors.connection.status.paused",
   ERROR: "settings.connectors.connection.status.error",
 } as const satisfies Record<Connectors.Status, Key>
+const STATUS_TONES = {
+  INITIATED: "neutral",
+  VERIFYING: "neutral",
+  ACTIVE: "success",
+  EXPIRED: "warning",
+  PAUSED: "neutral",
+  ERROR: "critical",
+} as const satisfies Record<Connectors.Status, StatusTone>
 /** Where a person revokes a credential at the provider. Connectors without an entry show no link. */
 const REVOCATION_URLS: Readonly<Record<string, string>> = {
   aws: "https://console.aws.amazon.com/iam/home#/security_credentials",
   github: "https://github.com/settings/personal-access-tokens",
 }
+/** GitHub App sign-ins are revoked from the account's authorized apps, not from the token page. */
+const GITHUB_APP_REVOCATION_URL = "https://github.com/settings/apps/authorizations"
 const MIN_INTERVAL_MINUTES = 1
 const MAX_INTERVAL_MINUTES = 24 * 60
 /** Whole minutes from 1 minute to 24 hours, or `undefined` when the text is not that. */
@@ -82,7 +97,7 @@ const RotateDialog: Component<{ connection: Connectors.Connection; data: Connect
     if (!ready() || rotate.busy()) return
     const credential = { ...values }
     const result = await rotate.run(
-      (api, signal) => api.rotateCredential({ id: props.connection.id, credential }, { signal }),
+      (api, signal) => api.rotateCredential({ id: props.connection.id, credential }, { signal, headers: CLIENT_HEADERS }),
       () => setValues(clearCredentials(values)),
     )
     if (result) dialog.close()
@@ -144,7 +159,8 @@ const DisconnectDialog: Component<{
   const remove = props.data.createMutation()
   // The service answers ok:false when the vault could not delete the credential; the Connection stays.
   const [result, setResult] = createStore({ vaultFailed: false })
-  const revocation = () => REVOCATION_URLS[props.connection.connectorId]
+  const deviceSignIn = () => props.connection.connectorId === "github" && props.connection.method === "device"
+  const revocation = () => (deviceSignIn() ? GITHUB_APP_REVOCATION_URL : REVOCATION_URLS[props.connection.connectorId])
   const confirm = async () => {
     if (remove.busy()) return
     setResult("vaultFailed", false)
@@ -160,11 +176,17 @@ const DisconnectDialog: Component<{
       <DialogBody>
         <div data-component="connection-dialog-form">
           <p data-slot="connection-note">{language.t("settings.connectors.disconnect.description")}</p>
-          <p data-slot="connection-note">{language.t("settings.connectors.disconnect.revoke")}</p>
+          <p data-slot="connection-note">
+            {language.t(
+              deviceSignIn() ? "settings.connectors.github.signin.revoke" : "settings.connectors.disconnect.revoke",
+            )}
+          </p>
           <Show when={revocation()}>
             {(href) => (
               <a href={href()} target="_blank" rel="noopener noreferrer">
-                {language.t("settings.connectors.disconnect.revokeLink", { service: props.service })}
+                {deviceSignIn()
+                  ? language.t("settings.connectors.github.signin.revokeLink")
+                  : language.t("settings.connectors.disconnect.revokeLink", { service: props.service })}
               </a>
             )}
           </Show>
@@ -208,13 +230,15 @@ type RowState = {
   interval?: string
   test?: Connectors.TestResult
   syncStarted: boolean
+  /** Whether the inline settings panel (rename, live reads, interval) is open. */
+  settings: boolean
 }
 const ConnectionRow: Component<RowProps> = (props) => {
   const language = useLanguage()
   const dialog = useDialog()
   const showAudit = useConnectorAuditDialog()
   const ids = { alias: createUniqueId(), interval: createUniqueId() }
-  const [state, setState] = createStore<RowState>({ syncStarted: false })
+  const [state, setState] = createStore<RowState>({ syncStarted: false, settings: false })
   const update = props.data.createMutation()
   const test = props.data.createMutation()
   const sync = props.data.createMutation()
@@ -229,7 +253,8 @@ const ConnectionRow: Component<RowProps> = (props) => {
     return new Intl.DateTimeFormat(language.intl(), { dateStyle: "medium", timeStyle: "short" }).format(parsed)
   }
   const lastSync = () => {
-    const time = date(connection().lastSync?.endedAt)
+    const ended = connection().lastSync?.endedAt
+    const time = date(ended) && ended ? getRelativeTime(ended, language.t, language.intl()) : undefined
     return time
       ? language.t("settings.connectors.card.lastSync", { time })
       : language.t("settings.connectors.card.neverSynced")
@@ -287,210 +312,110 @@ const ConnectionRow: Component<RowProps> = (props) => {
   const canPause = () => connection().status === "ACTIVE" || connection().status === "PAUSED"
   const canSync = () => connection().status === "ACTIVE"
   const idle = () => connection().status !== "INITIATED" && connection().status !== "VERIFYING"
-  const reconnectable = () =>
-    connection().status === "EXPIRED" || connection().status === "ERROR" || expiresSoon(connection(), now())
+  const expiry = () => selectExpiryWarning(connection(), now())
+  const reconnectable = () => expiry() !== undefined || connection().status === "ERROR"
+  /** One short line for what needs attention: error reason, expiry, rotation reminder, excess permissions. */
+  const warning = () => {
+    if (connection().statusReason)
+      return language.t("settings.connectors.connection.reason", { reason: connection().statusReason })
+    if (expiry() === "soon") return language.t("settings.connectors.badge.expiresSoon")
+    if (rotationDue(connection(), now()))
+      return language.t("settings.connectors.card.rotationReminder", { days: connection().rotationIntervalDays })
+    if (connection().permissionCheck === "excess") return language.t("settings.connectors.connection.permission.excess")
+  }
   return (
     <li data-component="connection-row" data-status={connection().status}>
-      <div data-slot="connection-head">
-        <Show
-          when={state.alias !== undefined}
-          fallback={
-            <>
-              <strong data-slot="connection-alias">{connection().alias}</strong>
+      <div data-slot="connection-line">
+        <strong data-slot="connection-alias">{connection().alias}</strong>
+        <StatusDot
+          tone={STATUS_TONES[connection().status]}
+          hidden={language.t("settings.connectors.connection.status")}
+          label={language.t(
+            connection().status === "ACTIVE" ? "settings.connectors.state.connected" : STATUS_LABELS[connection().status],
+          )}
+        />
+        <span data-slot="connection-meta">{language.t("settings.connectors.card.account", { account: connection().accountLabel })}</span>
+        <span data-slot="connection-meta">{lastSync()}</span>
+        <Menu placement="bottom-end" gutter={4} modal={false}>
+          <Menu.Trigger
+            as={Button}
+            type="button"
+            variant="neutral"
+            size="small"
+            data-slot="connection-menu"
+            aria-label={language.t("settings.connectors.connection.actions", { alias: connection().alias })}
+          >
+            {language.t("settings.connectors.connection.actionsButton")}
+            <Icon name="chevron-down" size="small" />
+          </Menu.Trigger>
+          <Menu.Portal>
+            <Menu.Content>
+              <MenuScroll viewportClass="p-1">
+                <Menu.Item disabled={busy() || !canSync()} onSelect={() => void runSync()}>
+                  {language.t("settings.connectors.action.sync")}
+                </Menu.Item>
+                <Menu.Item disabled={busy() || !idle()} onSelect={() => void runTest()}>
+                  {language.t("settings.connectors.action.test")}
+                </Menu.Item>
+                <Show when={canPause()}>
+                  <Menu.Item disabled={busy()} onSelect={togglePause}>
+                    {language.t(
+                      connection().status === "PAUSED"
+                        ? "settings.connectors.action.resume"
+                        : "settings.connectors.action.pause",
+                    )}
+                  </Menu.Item>
+                </Show>
+                <Show when={reconnectable()}>
+                  <Menu.Item disabled={busy()} onSelect={() => props.onReconnect(props.card, connection())}>
+                    {language.t("settings.connectors.action.reconnect")}
+                  </Menu.Item>
+                </Show>
+                <Show when={idle()}>
+                  <Menu.Item disabled={busy()} onSelect={rotate}>
+                    {language.t("settings.connectors.action.rotate")}
+                  </Menu.Item>
+                </Show>
+                <Menu.Item onSelect={() => setState("settings", true)}>
+                  {language.t("settings.connectors.action.editSettings")}
+                </Menu.Item>
+                <Menu.Item onSelect={() => showAudit({ connectionId: connection().id, alias: connection().alias })}>
+                  {language.t("settings.connectors.action.audit")}
+                </Menu.Item>
+                <Menu.Separator />
+                <Menu.Item onSelect={disconnect}>
+                  <span data-slot="connection-warning">{language.t("settings.connectors.action.disconnect")}</span>
+                </Menu.Item>
+              </MenuScroll>
+            </Menu.Content>
+          </Menu.Portal>
+        </Menu>
+      </div>
+      <Show when={warning()}>
+        {(text) => (
+          <p data-slot="connection-warning">
+            {text()}
+            <Show when={reconnectable()}>
+              {" "}
               <Button
                 type="button"
                 size="small"
                 variant="ghost"
-                aria-label={language.t("settings.connectors.connection.alias.edit", { alias: connection().alias })}
                 disabled={busy()}
-                onClick={() => setState("alias", connection().alias)}
+                onClick={() => props.onReconnect(props.card, connection())}
               >
-                {language.t("settings.connectors.connection.alias")}
+                {language.t("settings.connectors.action.reconnect")}
               </Button>
-            </>
-          }
-        >
-          <form data-slot="connection-edit" onSubmit={saveAlias}>
-            <TextField
-              id={ids.alias}
-              label={language.t("settings.connectors.connection.alias")}
-              autocomplete="off"
-              spellcheck={false}
-              autofocus
-              validationState={aliasError() ? "invalid" : "valid"}
-              disabled={update.busy()}
-              value={state.alias ?? ""}
-              onChange={(value) => {
-                setState("alias", value)
-                update.dismiss()
-              }}
-              description={language.t("settings.connectors.connection.alias.help")}
-            />
-            <Show when={aliasError()}>
-              {(message) => (
-                <p role="alert" data-slot="connection-error">
-                  {message()}
-                </p>
-              )}
             </Show>
-            <div data-slot="connection-actions">
-              <Button type="submit" size="small" variant="submit" disabled={Boolean(aliasError()) || update.busy()}>
-                {language.t("settings.connectors.action.save")}
-              </Button>
-              <Button
-                type="button"
-                size="small"
-                variant="neutral"
-                onClick={() => {
-                  setState("alias", undefined)
-                  update.dismiss()
-                }}
-              >
-                {language.t("settings.connectors.action.cancel")}
-              </Button>
-            </div>
-          </form>
-        </Show>
-        <Badge variant={connection().status === "ACTIVE" ? "accent" : "neutral"}>
-          <span class="sr-only">{language.t("settings.connectors.connection.status")}: </span>
-          {language.t(STATUS_LABELS[connection().status])}
-        </Badge>
-        <Show when={expiresSoon(connection(), now())}>
-          <Badge variant="subtle">{language.t("settings.connectors.badge.expiresSoon")}</Badge>
-        </Show>
-      </div>
-      <div data-slot="connection-details">
-        <span>{language.t("settings.connectors.card.account", { account: connection().accountLabel })}</span>
-        <span>
-          {lastSync()}
-          <Show when={(connection().lastSync?.entities ?? 0) > 0}>
-            {` · ${language.plural("settings.connectors.card.entities", connection().lastSync?.entities ?? 0)}`}
-          </Show>
-        </span>
-        <Show when={partial().length > 0}>
-          <span>{language.t("settings.connectors.connection.partial", { types: partial().join(", ") })}</span>
-        </Show>
-        <Show when={date(connection().credentialExpiresAt)}>
-          {(expires) => <span>{language.t("settings.connectors.connection.expires", { date: expires() })}</span>}
-        </Show>
-        <Show when={rotationDue(connection(), now())}>
-          <span data-slot="connection-warning">
-            {language.t("settings.connectors.card.rotationReminder", { days: connection().rotationIntervalDays })}
-          </span>
-        </Show>
-        <Show when={connection().permissionCheck === "unverifiable" && connection().connectorId === "github"}>
-          <span>{language.t("settings.connectors.github.permissionsUnverifiable")}</span>
-        </Show>
-        <Show when={connection().permissionCheck === "ok"}>
-          <span>{language.t("settings.connectors.connection.permission.ok")}</span>
-        </Show>
-        <Show when={connection().permissionCheck === "excess"}>
-          <span data-slot="connection-warning">{language.t("settings.connectors.connection.permission.excess")}</span>
-        </Show>
-        <Show when={connection().statusReason}>
-          <span data-slot="connection-warning">
-            {language.t("settings.connectors.connection.reason", { reason: connection().statusReason })}
-          </span>
-        </Show>
-      </div>
-      <div
-        role="group"
-        data-slot="connection-actions"
-        aria-label={language.t("settings.connectors.connection.actions", { alias: connection().alias })}
-      >
-        <Button type="button" size="small" variant="neutral" disabled={busy() || !idle()} onClick={() => void runTest()}>
-          <Show when={test.busy()} fallback={language.t("settings.connectors.action.test")}>
-            <Loader class="size-4" aria-hidden="true" />
-          </Show>
-        </Button>
-        <Button type="button" size="small" variant="neutral" disabled={busy() || !canSync()} onClick={() => void runSync()}>
-          <Show when={sync.busy()} fallback={language.t("settings.connectors.action.sync")}>
-            <Loader class="size-4" aria-hidden="true" />
-          </Show>
-        </Button>
-        <Show when={canPause()}>
-          <Button type="button" size="small" variant="neutral" disabled={busy()} onClick={togglePause}>
-            <Show
-              when={pause.busy()}
-              fallback={language.t(
-                connection().status === "PAUSED"
-                  ? "settings.connectors.action.resume"
-                  : "settings.connectors.action.pause",
-              )}
-            >
-              <Loader class="size-4" aria-hidden="true" />
-            </Show>
-          </Button>
-        </Show>
-        <Show when={reconnectable()}>
-          <Button
-            type="button"
-            size="small"
-            variant="neutral"
-            disabled={busy()}
-            onClick={() => props.onReconnect(props.card, connection())}
-          >
-            {language.t("settings.connectors.action.reconnect")}
-          </Button>
-        </Show>
-        <Show when={idle()}>
-          <Button type="button" size="small" variant="neutral" disabled={busy()} onClick={rotate}>
-            {language.t("settings.connectors.action.rotate")}
-          </Button>
-        </Show>
-        <Button
-          type="button"
-          size="small"
-          variant="neutral"
-          onClick={() => showAudit({ connectionId: connection().id, alias: connection().alias })}
-        >
-          {language.t("settings.connectors.action.audit")}
-        </Button>
-        <Button type="button" size="small" variant="ghost-danger" onClick={disconnect}>
-          {language.t("settings.connectors.action.disconnect")}
-        </Button>
-      </div>
-      <Toggle
-        checked={connection().allowAgentLiveReads}
-        disabled={live.busy()}
-        onChange={setLive}
-        description={language.t("settings.connectors.connection.liveReads.description")}
-      >
-        {language.t("settings.connectors.connection.liveReads")}
-      </Toggle>
-      <form data-slot="connection-edit" onSubmit={saveInterval}>
-        <TextField
-          id={ids.interval}
-          label={language.t("settings.connectors.connection.interval")}
-          inputMode="numeric"
-          autocomplete="off"
-          validationState={state.interval !== undefined && intervalMinutes() === undefined ? "invalid" : "valid"}
-          disabled={update.busy()}
-          value={state.interval ?? String(Math.round(connection().intervalSec / 60))}
-          onChange={(value) => {
-            setState("interval", value)
-            update.dismiss()
-          }}
-        />
-        <Show when={state.interval !== undefined}>
-          <Show when={intervalMinutes() === undefined}>
-            <p role="alert" data-slot="connection-error">
-              {language.t("settings.connectors.connection.interval.range")}
-            </p>
-          </Show>
-          <div data-slot="connection-actions">
-            <Button type="submit" size="small" variant="submit" disabled={intervalMinutes() === undefined || update.busy()}>
-              {language.t("settings.connectors.action.save")}
-            </Button>
-            <Button type="button" size="small" variant="neutral" onClick={() => setState("interval", undefined)}>
-              {language.t("settings.connectors.action.cancel")}
-            </Button>
-          </div>
-        </Show>
-      </form>
+          </p>
+        )}
+      </Show>
       <div role="status" aria-live="polite" data-slot="connection-result">
         <Show when={state.syncStarted}>
           <span>{language.t("settings.connectors.connection.sync.started")}</span>
+        </Show>
+        <Show when={test.busy() || sync.busy()}>
+          <Loader class="size-4" aria-hidden="true" />
         </Show>
         <Show when={state.test}>
           {(result) => (
@@ -528,9 +453,130 @@ const ConnectionRow: Component<RowProps> = (props) => {
       <FailureText mutation={sync} />
       <FailureText mutation={pause} />
       <FailureText mutation={live} />
+      <Show when={state.settings}>
+        <div data-slot="connection-settings">
+          <Show
+            when={state.alias !== undefined}
+            fallback={
+              <div data-slot="connection-actions">
+                <span>{connection().alias}</span>
+                <Button
+                  type="button"
+                  size="small"
+                  variant="ghost"
+                  aria-label={language.t("settings.connectors.connection.alias.edit", { alias: connection().alias })}
+                  disabled={busy()}
+                  onClick={() => setState("alias", connection().alias)}
+                >
+                  {language.t("settings.connectors.connection.alias")}
+                </Button>
+              </div>
+            }
+          >
+            <form data-slot="connection-edit" onSubmit={saveAlias}>
+              <TextField
+                id={ids.alias}
+                label={language.t("settings.connectors.connection.alias")}
+                autocomplete="off"
+                spellcheck={false}
+                autofocus
+                validationState={aliasError() ? "invalid" : "valid"}
+                disabled={update.busy()}
+                value={state.alias ?? ""}
+                onChange={(value) => {
+                  setState("alias", value)
+                  update.dismiss()
+                }}
+                description={language.t("settings.connectors.connection.alias.help")}
+              />
+              <Show when={aliasError()}>
+                {(message) => (
+                  <p role="alert" data-slot="connection-error">
+                    {message()}
+                  </p>
+                )}
+              </Show>
+              <div data-slot="connection-actions">
+                <Button type="submit" size="small" variant="submit" disabled={Boolean(aliasError()) || update.busy()}>
+                  {language.t("settings.connectors.action.save")}
+                </Button>
+                <Button
+                  type="button"
+                  size="small"
+                  variant="neutral"
+                  onClick={() => {
+                    setState("alias", undefined)
+                    update.dismiss()
+                  }}
+                >
+                  {language.t("settings.connectors.action.cancel")}
+                </Button>
+              </div>
+            </form>
+          </Show>
+          <Toggle
+            checked={connection().allowAgentLiveReads}
+            disabled={live.busy()}
+            onChange={setLive}
+            description={language.t("settings.connectors.connection.liveReads.description")}
+          >
+            {language.t("settings.connectors.connection.liveReads")}
+          </Toggle>
+          <form data-slot="connection-edit" onSubmit={saveInterval}>
+            <TextField
+              id={ids.interval}
+              label={language.t("settings.connectors.connection.interval")}
+              inputMode="numeric"
+              autocomplete="off"
+              validationState={state.interval !== undefined && intervalMinutes() === undefined ? "invalid" : "valid"}
+              disabled={update.busy()}
+              value={state.interval ?? String(Math.round(connection().intervalSec / 60))}
+              onChange={(value) => {
+                setState("interval", value)
+                update.dismiss()
+              }}
+            />
+            <Show when={state.interval !== undefined}>
+              <Show when={intervalMinutes() === undefined}>
+                <p role="alert" data-slot="connection-error">
+                  {language.t("settings.connectors.connection.interval.range")}
+                </p>
+              </Show>
+              <div data-slot="connection-actions">
+                <Button type="submit" size="small" variant="submit" disabled={intervalMinutes() === undefined || update.busy()}>
+                  {language.t("settings.connectors.action.save")}
+                </Button>
+                <Button type="button" size="small" variant="neutral" onClick={() => setState("interval", undefined)}>
+                  {language.t("settings.connectors.action.cancel")}
+                </Button>
+              </div>
+            </Show>
+          </form>
+          <div data-slot="connection-details">
+            <Show when={date(connection().credentialExpiresAt)}>
+              {(expires) => <span>{language.t("settings.connectors.connection.expires", { date: expires() })}</span>}
+            </Show>
+            <Show when={partial().length > 0}>
+              <span>{language.t("settings.connectors.connection.partial", { types: partial().join(", ") })}</span>
+            </Show>
+            <Show when={connection().permissionCheck === "unverifiable" && connection().connectorId === "github"}>
+              <span>{language.t("settings.connectors.github.permissionsUnverifiable")}</span>
+            </Show>
+            <Show when={connection().permissionCheck === "ok"}>
+              <span>{language.t("settings.connectors.connection.permission.ok")}</span>
+            </Show>
+          </div>
+          <div data-slot="connection-actions">
+            <Button type="button" size="small" variant="neutral" onClick={() => setState("settings", false)}>
+              {language.t("settings.connectors.action.done")}
+            </Button>
+          </div>
+        </div>
+      </Show>
     </li>
   )
 }
+
 export type ConnectionListProps = {
   card: ConnectorCard
   data: ConnectorsData

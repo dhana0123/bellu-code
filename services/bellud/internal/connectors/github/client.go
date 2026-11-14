@@ -199,6 +199,69 @@ func (c *Client) InstallationRepositories(ctx context.Context) ([]Repo, error) {
 	return out, nil
 }
 
+// Installation is one installation of the GitHub App reachable by a user token.
+type Installation struct {
+	ID int64 `json:"id"`
+}
+
+// MaxListedRepos caps one repository listing.
+const MaxListedRepos = maxPages * perPage
+
+// InstallationsProbe calls GET /user/installations?per_page=1. It proves the
+// endpoint class works for the token and returns the total installation count.
+func (c *Client) InstallationsProbe(ctx context.Context) (int, error) {
+	var w struct {
+		TotalCount    int            `json:"total_count"`
+		Installations []Installation `json:"installations"`
+	}
+	if _, err := c.get(ctx, "/user/installations", url.Values{"per_page": {"1"}}, &w); err != nil {
+		return 0, err
+	}
+	return max(w.TotalCount, len(w.Installations)), nil
+}
+
+// UserInstallations lists the installations the user token can reach
+// (GET /user/installations).
+func (c *Client) UserInstallations(ctx context.Context) ([]Installation, error) {
+	var out []Installation
+	for page := 1; page <= maxPages; page++ {
+		var w struct {
+			Installations []Installation `json:"installations"`
+		}
+		if _, err := c.get(ctx, "/user/installations", pageQuery(nil, page), &w); err != nil {
+			return nil, err
+		}
+		out = append(out, w.Installations...)
+		if len(w.Installations) < perPage {
+			break
+		}
+	}
+	return out, nil
+}
+
+// UserInstallationRepositories lists the repositories of one installation that
+// the user token can reach (GET /user/installations/{id}/repositories).
+func (c *Client) UserInstallationRepositories(ctx context.Context, installationID int64) ([]Repo, error) {
+	if installationID <= 0 {
+		return nil, ErrBadName
+	}
+	path := "/user/installations/" + strconv.FormatInt(installationID, 10) + "/repositories"
+	var out []Repo
+	for page := 1; page <= maxPages; page++ {
+		var w struct {
+			Repositories []Repo `json:"repositories"`
+		}
+		if _, err := c.get(ctx, path, pageQuery(nil, page), &w); err != nil {
+			return nil, err
+		}
+		out = append(out, w.Repositories...)
+		if len(w.Repositories) < perPage {
+			break
+		}
+	}
+	return out, nil
+}
+
 // Org returns one organization.
 func (c *Client) Org(ctx context.Context, org string) (Org, error) {
 	var o Org

@@ -374,7 +374,12 @@ export type ConnectorsServiceStatus = {
 
 export type ConnectorsConnectorID = string
 
-export type ConnectorsManifestAuthMethod = { id: string; name: string; enabled: boolean; disabled_reason?: string }
+export type ConnectorsManifestDeviceSpec = {
+  device_code_url: string
+  token_url: string
+  client_id: string
+  scopes: Array<string>
+}
 
 export type ConnectorsManifestPermission = { name: string; description?: string; read_only: boolean }
 
@@ -387,6 +392,7 @@ export type ConnectorsManifestOperation = {
   query?: boolean
   strip_keys?: Array<string>
   max_bytes?: number
+  issues_credential?: boolean
 }
 
 export type ConnectorsConnectionID = string
@@ -415,9 +421,49 @@ export type ConnectorsAuditEntry = {
 
 export type ConnectorsAuthConfigID = string
 
-export type ConnectorsAwsSetup = { externalId: string; cloudFormation: string; terraform: string; principal?: string }
+export type ConnectorsAwsSetup = {
+  externalId: string
+  cloudFormation: string
+  terraform: string
+  principal?: string
+  quickCreateUrl?: string
+}
 
 export type ConnectorsGithubRepo = { fullName: string; private: boolean }
+
+export type ConnectorsDeviceAuthorization = {
+  id: string
+  userCode: string
+  verificationUri: string
+  expiresAt: number
+  intervalSec: number
+}
+
+export type ConnectorsDeviceAuthorizationStatusValue = "pending" | "connected" | "expired" | "denied" | "failed"
+
+export type ConnectorsErrorCode =
+  | "invalid_credential"
+  | "insufficient_permission"
+  | "excess_permission"
+  | "network"
+  | "rate_limited"
+  | "expired"
+  | "alias_invalid"
+  | "alias_taken"
+  | "blocked_by_policy"
+  | "scope_denied"
+  | "run_in_progress"
+  | "vault_unavailable"
+  | "audit_failed"
+  | "decrypt_failed"
+  | "transition_rejected"
+  | "validation_failed"
+  | "payload_too_large"
+  | "forbidden"
+  | "device_code_expired"
+  | "authorization_denied"
+  | "device_flow_disabled"
+  | "already_pending"
 
 export type ConnectorsScope = {
   principal: string
@@ -1078,16 +1124,12 @@ export type GraphSchemaSummary = { entity_types: Array<GraphSchemaType>; relatio
 
 export type GraphStatus = { engine: GraphEngineState; ts_child: GraphChildState; detail?: string }
 
-export type ConnectorsManifest = {
-  id: ConnectorsConnectorID
-  version: string
+export type ConnectorsManifestAuthMethod = {
+  id: string
   name: string
-  icon: string
-  auth_methods: Array<ConnectorsManifestAuthMethod>
-  permissions: Array<ConnectorsManifestPermission>
-  operations: Array<ConnectorsManifestOperation>
-  egress: Array<string>
-  entities: Array<string>
+  enabled: boolean
+  disabled_reason?: string
+  device?: ConnectorsManifestDeviceSpec
 }
 
 export type ConnectorsConnection = {
@@ -1133,7 +1175,11 @@ export type ConnectorsAuthConfig = {
   settings: { [x: string]: string }
 }
 
-export type ConnectorsGithubRepoList = { items: Array<ConnectorsGithubRepo> }
+export type ConnectorsGithubRepoList = {
+  items: Array<ConnectorsGithubRepo>
+  installations: number
+  installUrl?: string
+}
 
 export type VcsInfo = { provider?: string; branch: VcsBranch }
 
@@ -2409,11 +2455,29 @@ export type GraphEdgePage = { items: Array<GraphEdge>; total: number; truncated:
 
 export type GraphChangePage = { items: Array<GraphChange>; total: number; truncated: boolean; limit: number }
 
-export type ConnectorsCatalog = { items: Array<ConnectorsManifest> }
+export type ConnectorsManifest = {
+  id: ConnectorsConnectorID
+  version: string
+  name: string
+  icon: string
+  auth_methods: Array<ConnectorsManifestAuthMethod>
+  permissions: Array<ConnectorsManifestPermission>
+  operations: Array<ConnectorsManifestOperation>
+  egress: Array<string>
+  entities: Array<string>
+}
 
 export type ConnectorsConnectionList = { items: Array<ConnectorsConnection> }
 
 export type ConnectorsSyncResult = { started: boolean; connection: ConnectorsConnection }
+
+export type ConnectorsDeviceAuthorizationStatus = {
+  status: ConnectorsDeviceAuthorizationStatusValue
+  expiresAt?: number
+  intervalSec?: number
+  connection?: ConnectorsConnection
+  error?: { code: ConnectorsErrorCode; retryAfterSec?: number }
+}
 
 export type ConnectorsAuthConfigList = { items: Array<ConnectorsAuthConfig> }
 
@@ -2848,6 +2912,8 @@ export type ScheduleInfo = {
   lastOutput?: string
   time: { created: number; updated: number }
 }
+
+export type ConnectorsCatalog = { items: Array<ConnectorsManifest> }
 
 export type AgentInfo = {
   id: AgentID
@@ -3446,9 +3512,14 @@ export type ConnectorError = {
     | "validation_failed"
     | "payload_too_large"
     | "forbidden"
+    | "device_code_expired"
+    | "authorization_denied"
+    | "device_flow_disabled"
+    | "already_pending"
   readonly message: string
   readonly offenders?: ReadonlyArray<string> | undefined
   readonly inUse?: number | undefined
+  readonly retryAfterSec?: number | undefined
 }
 export const isConnectorError = (value: unknown): value is ConnectorError =>
   typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "ConnectorError"
@@ -5078,6 +5149,22 @@ export type ExperimentalConnectorsListGithubReposInput = { readonly id: string }
 
 export type ExperimentalConnectorsListGithubReposOutput = ConnectorsGithubRepoList
 
+export type ExperimentalConnectorsStartDeviceAuthorizationInput = {
+  readonly connectorId: string
+  readonly alias?: string | undefined
+  readonly reconnectId?: string | undefined
+}
+
+export type ExperimentalConnectorsStartDeviceAuthorizationOutput = ConnectorsDeviceAuthorization
+
+export type ExperimentalConnectorsGetDeviceAuthorizationInput = { readonly id: string }
+
+export type ExperimentalConnectorsGetDeviceAuthorizationOutput = ConnectorsDeviceAuthorizationStatus
+
+export type ExperimentalConnectorsCancelDeviceAuthorizationInput = { readonly id: string }
+
+export type ExperimentalConnectorsCancelDeviceAuthorizationOutput = ConnectorsVaultResult
+
 export type ExperimentalConnectorsGetScopeInput = { readonly principal: string }
 
 export type ExperimentalConnectorsGetScopeOutput = ConnectorsScope
@@ -5533,6 +5620,24 @@ export type ConnectorsListGithubReposInput = ExperimentalConnectorsListGithubRep
 
 /** @deprecated Use `ExperimentalConnectorsListGithubReposOutput`. Removed in the next minor. */
 export type ConnectorsListGithubReposOutput = ExperimentalConnectorsListGithubReposOutput
+
+/** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsStartDeviceAuthorizationInput = ExperimentalConnectorsStartDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsStartDeviceAuthorizationOutput = ExperimentalConnectorsStartDeviceAuthorizationOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsGetDeviceAuthorizationInput = ExperimentalConnectorsGetDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsGetDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsGetDeviceAuthorizationOutput = ExperimentalConnectorsGetDeviceAuthorizationOutput
+
+/** @deprecated Use `ExperimentalConnectorsCancelDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsCancelDeviceAuthorizationInput = ExperimentalConnectorsCancelDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsCancelDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsCancelDeviceAuthorizationOutput = ExperimentalConnectorsCancelDeviceAuthorizationOutput
 
 /** @deprecated Use `ExperimentalConnectorsGetScopeInput`. Removed in the next minor. */
 export type ConnectorsGetScopeInput = ExperimentalConnectorsGetScopeInput

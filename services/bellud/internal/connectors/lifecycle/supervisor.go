@@ -31,6 +31,10 @@ const (
 	minFailureBackoff = time.Minute
 	maxFailureBackoff = 15 * time.Minute
 	minRefreshSpacing = 30 * time.Second
+	// ExpiryCheckInterval is the longest the supervisor sleeps while a
+	// non-refreshable credential has an expiry, so EXPIRED is set and the
+	// collector stops within 60 seconds of the expiry even if the clock jumps.
+	ExpiryCheckInterval = 60 * time.Second
 
 	// LastSync.Status values written by the supervisor.
 	SyncOK      = "ok"
@@ -148,6 +152,7 @@ type entry struct {
 
 	running atomic.Bool
 	col     atomic.Pointer[observed]
+	prov    Provider // set by setup; read only by the run goroutine
 
 	mu           sync.Mutex // guards the fields below
 	collectDue   time.Time
@@ -293,7 +298,17 @@ func (s *CollectorSupervisor) run(e *entry) {
 			return
 		}
 		now = s.now()
+		expiring := nonRefreshableExpiry(e.prov, conn)
+		if expiring != nil && !now.Before(*expiring) {
+			// No refresh exists for this credential: stop collection and
+			// keep the last graph data. Reconnect replaces the token.
+			s.finish(e, StatusExpired, "credential expired")
+			return
+		}
 		refreshDue, hasRefresh := s.refreshDue(e, conn)
+		if expiring != nil {
+			hasRefresh = false
+		}
 		e.mu.Lock()
 		collectDue := e.collectDue
 		e.mu.Unlock()
@@ -303,6 +318,9 @@ func (s *CollectorSupervisor) run(e *entry) {
 		}
 		if hasRefresh && refreshDue.Before(next) {
 			next = refreshDue
+		}
+		if expiring != nil {
+			next = minTime(next, minTime(*expiring, now.Add(ExpiryCheckInterval)))
 		}
 		if d := next.Sub(now); d > 0 {
 			select {
@@ -329,6 +347,23 @@ func (s *CollectorSupervisor) run(e *entry) {
 	}
 }
 
+// nonRefreshableExpiry returns the credential expiry of a connection whose
+// provider cannot renew it, else nil.
+func nonRefreshableExpiry(p Provider, conn store.Connection) *time.Time {
+	nr, ok := p.(NonRefreshable)
+	if !ok || conn.CredentialExpiresAt == nil || nr.Refreshable(conn) {
+		return nil
+	}
+	return conn.CredentialExpiresAt
+}
+
+func minTime(a, b time.Time) time.Time {
+	if b.Before(a) {
+		return b
+	}
+	return a
+}
+
 func (s *CollectorSupervisor) setup(e *entry) bool {
 	h := s.hostOrNil()
 	if h == nil {
@@ -345,6 +380,7 @@ func (s *CollectorSupervisor) setup(e *entry) bool {
 		return false
 	}
 	e.col.Store(&observed{Collector: c})
+	e.prov = p
 	return true
 }
 

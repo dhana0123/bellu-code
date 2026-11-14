@@ -23,6 +23,11 @@ const (
 	CodeValidationFailed   Code = "validation_failed"
 	CodePayloadTooLarge    Code = "payload_too_large"
 	CodeForbidden          Code = "forbidden"
+
+	CodeDeviceCodeExpired   Code = "device_code_expired"
+	CodeAuthorizationDenied Code = "authorization_denied"
+	CodeDeviceFlowDisabled  Code = "device_flow_disabled"
+	CodeAlreadyPending      Code = "already_pending"
 )
 
 // VerificationCodes is the set from which verification returns exactly one.
@@ -35,7 +40,8 @@ var VerificationCodes = []Code{
 var AllCodes = append(append([]Code{}, VerificationCodes...),
 	CodeAliasInvalid, CodeAliasTaken, CodeBlockedByPolicy, CodeScopeDenied,
 	CodeRunInProgress, CodeVaultUnavailable, CodeAuditFailed, CodeDecryptFailed,
-	CodeTransitionRejected, CodeValidationFailed, CodePayloadTooLarge, CodeForbidden)
+	CodeTransitionRejected, CodeValidationFailed, CodePayloadTooLarge, CodeForbidden,
+	CodeDeviceCodeExpired, CodeAuthorizationDenied, CodeDeviceFlowDisabled, CodeAlreadyPending)
 
 // MaxMessage is the maximum message length in characters.
 const MaxMessage = 200
@@ -51,6 +57,8 @@ type Error struct {
 	Offenders []string `json:"offenders,omitempty"`
 	// InUse is the number of connections using an Auth_Config being deleted.
 	InUse int `json:"inUse,omitempty"`
+	// RetryAfterSec is the wait before retrying (already_pending, rate_limited).
+	RetryAfterSec int `json:"retryAfterSec,omitempty"`
 }
 
 func (e *Error) Error() string { return string(e.Code) + ": " + e.Message }

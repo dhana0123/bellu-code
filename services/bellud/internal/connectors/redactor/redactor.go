@@ -154,6 +154,19 @@ func (r *Redactor) JSON(b []byte) []byte {
 	return []byte(r.String(string(b)))
 }
 
+// Registered replaces only registered values (all encodings) and skips the
+// token-pattern rules. It is for responses that legitimately carry a fresh
+// credential for the lifecycle caller (manifest issues_credential).
+func (r *Redactor) Registered(b []byte) []byte {
+	s := string(b)
+	for _, n := range r.snapshot() {
+		if strings.Contains(s, n) {
+			s = strings.ReplaceAll(s, n, Marker)
+		}
+	}
+	return []byte(s)
+}
+
 // Contains reports whether s holds any registered value in any encoding.
 func (r *Redactor) Contains(s string) bool {
 	for _, n := range r.snapshot() {

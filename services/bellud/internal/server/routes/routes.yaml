@@ -278,6 +278,24 @@ routes:
     owner: go
     public: false
     stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/device-authorizations"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "DELETE"
+    pattern: "/api/experimental/connectors/device-authorizations/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/device-authorizations/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "*"
     pattern: "/api/experimental/connectors/mcp"
     group: experimental
