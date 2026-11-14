@@ -31,8 +31,20 @@ export type WizardProps = {
   onBack: () => void
   /** Shown on `choose` while a sign-in authorization is running. */
   devicePrompt?: DevicePromptProps
-  /** The source-specific scope picker for the `scope` step. */
+  /** Source-specific content for the `create` step. Replaces the method's copy blocks when set. */
+  create?: JSX.Element
+  /** Source-specific content shown under the paste fields. */
+  pasteExtra?: JSX.Element
+  /** Source-specific content of the `scope` step, such as a region or repository picker. */
   scope?: JSX.Element
+  /** Source-specific content shown on `choose` while a sign-in authorization runs. Takes precedence over `devicePrompt`. */
+  authorize?: JSX.Element
+  /** Hides Back, for sources whose earlier step cannot be repeated once its work is saved (a created Connection). */
+  backDisabled?: boolean
+  /** Also offers Cancel on `scope`. */
+  cancelOnScope?: boolean
+  /** When set, `choose` offers a Cancel button. */
+  onCancel?: () => void
   /** Disables Verify on `paste` or `scope` until the input is complete. */
   verifyDisabled?: boolean
   /** Set once the connection exists. Shows the Connected screen. */
@@ -52,6 +64,7 @@ export const Wizard: Component<WizardProps> = (props) => {
   const method = () => props.descriptor.methods.find((item) => item.id === props.state.methodId)
   const unavailable = (id: string) => props.unavailableMethodIds?.has(id) ?? false
   const noSignIn = () =>
+    !props.descriptor.hideSigninNote &&
     !props.descriptor.methods.some((item) => item.kind === "signin" && !unavailable(item.id))
   const guide = (): StepGuide | undefined => {
     const step = props.state.step
@@ -59,12 +72,15 @@ export const Wizard: Component<WizardProps> = (props) => {
     if (step === "done") return undefined
     return method()?.guides[step]
   }
-  const stepKey = (step: WizardStepId) => `settings.connectors.wizard.step.${step}`
+  const stepKey = (step: WizardStepId) =>
+    method()?.stepKeys?.[step] ?? `settings.connectors.wizard.step.${step}`
+  const action = (step: "create" | "paste" | "scope" | "choose", fallback: string) =>
+    (step === "choose" ? undefined : method()?.actionKeys?.[step]) ?? fallback
   const current = () => (props.connection ? view().steps.length : view().index)
 
   return (
     <div class="connector-wizard" data-component="connector-wizard">
-      <ol data-slot="github-wizard-steps" aria-label={t("settings.connectors.wizard.label")}>
+      <ol data-slot="github-wizard-steps" aria-label={t(props.descriptor.stepsLabelKey ?? "settings.connectors.wizard.label")}>
         <For each={view().steps}>
           {(step, index) => {
             const status = () => (index() < current() || step === "done" && props.connection ? "done" : index() === current() ? "active" : "todo")
@@ -87,14 +103,17 @@ export const Wizard: Component<WizardProps> = (props) => {
             <div class="flex flex-col gap-3" data-slot="connect-page-connected" role="status">
               <div class="flex items-center gap-2">
                 <Icon name="circle-check" class="size-5 text-[color:var(--v2-state-fg-success)]" aria-hidden="true" />
-                <h4 class="m-0 text-14-medium text-v2-text-text-base">{t("settings.connectors.wizard.connected.title")}</h4>
+                <h4 class="m-0 text-14-medium text-v2-text-text-base">{t(props.descriptor.connected?.titleKey ?? "settings.connectors.wizard.connected.title")}</h4>
               </div>
               <Show when={connection.accountLabel}>
                 {(account) => (
                   <p class="m-0 text-13-regular text-v2-text-text-base">
-                    {t("settings.connectors.wizard.connected.account", { account: account() })}
+                    {t(props.descriptor.connected?.accountKey ?? "settings.connectors.wizard.connected.account", { account: account() })}
                   </p>
                 )}
+              </Show>
+              <Show when={props.descriptor.connected?.noteKey}>
+                {(note) => <p class="m-0 text-13-regular text-v2-text-text-muted">{t(note())}</p>}
               </Show>
               <div class="connector-wizard-actions">
                 <Button type="button" variant="submit" onClick={props.onDone}>
@@ -111,7 +130,7 @@ export const Wizard: Component<WizardProps> = (props) => {
                 <p class="connector-wizard-note">
                   {t(item().instructionKey)}{" "}
                   <a href={item().docsUrl} target="_blank" rel="noopener noreferrer" class="connector-wizard-link">
-                    {t("settings.connectors.wizard.docs")}
+                    {t(item().docsLabelKey ?? "settings.connectors.wizard.docs")}
                   </a>
                 </p>
               )}
@@ -120,14 +139,16 @@ export const Wizard: Component<WizardProps> = (props) => {
               <Match when={props.state.step === "choose"}>
                 <Show when={noSignIn()}>
                   <p class="connector-wizard-note" data-slot="connector-wizard-signin-unavailable">
-                    {t("settings.connectors.wizard.signinUnavailable")}
+                    {t(props.descriptor.signinUnavailableKey ?? "settings.connectors.wizard.signinUnavailable")}
                   </p>
                 </Show>
                 <Show
-                  when={props.state.authorizing && props.devicePrompt}
+                  when={props.state.authorizing && (props.authorize || props.devicePrompt)}
                   fallback={
                     <fieldset data-slot="github-wizard-options">
-                      <legend class="sr-only">{t("settings.connectors.wizard.step.choose")}</legend>
+                      <legend class="sr-only">
+                        {t(props.descriptor.methodsLabelKey ?? "settings.connectors.wizard.step.choose")}
+                      </legend>
                       <For each={props.descriptor.methods}>
                         {(item, index) => (
                           <label data-slot="github-wizard-option" data-disabled={unavailable(item.id) ? "" : undefined}>
@@ -142,7 +163,7 @@ export const Wizard: Component<WizardProps> = (props) => {
                             <span data-slot="github-wizard-option-body">
                               <span data-slot="github-wizard-option-title">
                                 {t(item.titleKey)}
-                                <Show when={index() === 0 && !unavailable(item.id)}>
+                                <Show when={index() === 0 && !unavailable(item.id) && !props.descriptor.hideRecommendedBadge}>
                                   <span data-slot="github-wizard-recommended">
                                     {t("settings.connectors.wizard.recommended")}
                                   </span>
@@ -156,16 +177,19 @@ export const Wizard: Component<WizardProps> = (props) => {
                     </fieldset>
                   }
                 >
-                  {(_) => <DevicePrompt {...props.devicePrompt!} />}
+                  {(_) => <Show when={props.authorize} fallback={<DevicePrompt {...props.devicePrompt!} />}>{props.authorize}</Show>}
                 </Show>
               </Match>
               <Match when={props.state.step === "create"}>
-                <For each={method()?.copyBlocks ?? []}>{(block) => <CodeBlock block={block} t={t} />}</For>
+                <Show when={props.create} fallback={<For each={method()?.copyBlocks ?? []}>{(block) => <CodeBlock block={block} t={t} />}</For>}>
+                  {props.create}
+                </Show>
               </Match>
               <Match when={props.state.step === "paste"}>
                 <For each={method()?.fields ?? []}>
                   {(field) => <Field field={field} value={props.values[field.id] ?? ""} onValue={props.onValue} t={t} />}
                 </For>
+                {props.pasteExtra}
               </Match>
               <Match when={props.state.step === "scope"}>{props.scope}</Match>
             </Switch>
@@ -178,9 +202,20 @@ export const Wizard: Component<WizardProps> = (props) => {
             </Show>
           </section>
           <div class="connector-wizard-actions">
-            <Show when={selectCanGoBack(props.state, props.busy ?? false)}>
+            <Show when={!props.backDisabled && selectCanGoBack(props.state, props.busy ?? false)}>
               <Button type="button" variant="ghost" onClick={props.onBack}>
                 {t("settings.connectors.wizard.back")}
+              </Button>
+            </Show>
+            <Show
+              when={
+                props.onCancel &&
+                ((props.state.step === "choose" && !props.state.authorizing) ||
+                  (props.cancelOnScope && props.state.step === "scope"))
+              }
+            >
+              <Button type="button" variant="ghost" onClick={() => props.onCancel?.()}>
+                {t("settings.connectors.action.cancel")}
               </Button>
             </Show>
             <Switch>
@@ -193,7 +228,12 @@ export const Wizard: Component<WizardProps> = (props) => {
                 >
                   {props.busy
                     ? t("settings.connectors.wizard.verifying")
-                    : t(props.state.step === "paste" ? "settings.connectors.wizard.verify" : "settings.connectors.wizard.save")}
+                    : t(
+                        action(
+                          props.state.step as "paste" | "scope",
+                          props.state.step === "paste" ? "settings.connectors.wizard.verify" : "settings.connectors.wizard.save",
+                        ),
+                      )}
                 </Button>
               </Match>
               <Match when={!props.state.authorizing}>
@@ -203,7 +243,7 @@ export const Wizard: Component<WizardProps> = (props) => {
                   disabled={props.busy || unavailable(props.state.methodId)}
                   onClick={props.onContinue}
                 >
-                  {t("settings.connectors.wizard.continue")}
+                  {t(action(props.state.step as "create" | "choose", "settings.connectors.wizard.continue"))}
                 </Button>
               </Match>
             </Switch>
@@ -226,9 +266,11 @@ const Field: Component<{
     type={props.field.secret ? "password" : "text"}
     multiline={props.field.multiline}
     onChange={(value: string) => props.onValue(props.field.id, value)}
+    placeholder={props.field.placeholder}
     autocomplete="off"
     spellcheck={false}
-    required
+    required={!props.field.optional}
+    description={props.field.descriptionKey ? props.t(props.field.descriptionKey) : undefined}
   />
 )
 

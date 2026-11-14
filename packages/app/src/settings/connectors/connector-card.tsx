@@ -42,8 +42,15 @@ const SERVICES = {
   supabase: ["settings.connectors.service.supabase", "settings.connectors.service.supabase.description"],
 } as const satisfies Record<ConnectorIconID, readonly [Key, Key]>
 
+/** Manifest ids or icons that name a logo differently (the Google Cloud manifest is `gcp`). */
+const ICON_ALIASES: Record<string, ConnectorIconID> = { gcp: "google-cloud" }
+
 export function iconID(manifest: Connectors.Manifest): ConnectorIconID | undefined {
-  return connectorIconIDs.find((id) => id === manifest.icon || id === manifest.id)
+  return (
+    connectorIconIDs.find((id) => id === manifest.icon || id === manifest.id) ??
+    ICON_ALIASES[manifest.icon ?? ""] ??
+    ICON_ALIASES[manifest.id]
+  )
 }
 
 /** The translated name and description keys of a built-in service. */

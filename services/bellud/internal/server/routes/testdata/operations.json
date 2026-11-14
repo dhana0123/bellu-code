@@ -266,6 +266,13 @@
     "stream": false
   },
   {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections/{id}/scope-options",
+    "operationId": "experimental.connectors.listScopeOptions",
+    "group": "experimental",
+    "stream": false
+  },
+  {
     "method": "POST",
     "path": "/api/experimental/connectors/connections/{id}/sync",
     "operationId": "experimental.connectors.syncConnection",

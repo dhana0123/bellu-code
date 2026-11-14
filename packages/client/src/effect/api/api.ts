@@ -2739,6 +2739,9 @@ export type ExperimentalConnectorsCatalogOutput = {
             readonly token_url: string
             readonly client_id: string
             readonly scopes: ReadonlyArray<string>
+            readonly token_grant?: string | undefined
+            readonly tenant?: string | undefined
+            readonly refresh?: boolean | undefined
           }
         | undefined
     }>
@@ -2778,7 +2781,11 @@ export type ExperimentalConnectorsListConnectionsOutput = {
     readonly statusReason: string
     readonly accountLabel: string
     readonly externalIdRef?: string | undefined
-    readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+    readonly selection: {
+      readonly regions: ReadonlyArray<string>
+      readonly repos: ReadonlyArray<string>
+      readonly items?: ReadonlyArray<string> | undefined
+    }
     readonly intervalSec: number
     readonly allowAgentLiveReads: boolean
     readonly rotationIntervalDays: number
@@ -2822,7 +2829,11 @@ export type ExperimentalConnectorsCreateConnectionOutput = {
   readonly statusReason: string
   readonly accountLabel: string
   readonly externalIdRef?: string | undefined
-  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly selection: {
+    readonly regions: ReadonlyArray<string>
+    readonly repos: ReadonlyArray<string>
+    readonly items?: ReadonlyArray<string> | undefined
+  }
   readonly intervalSec: number
   readonly allowAgentLiveReads: boolean
   readonly rotationIntervalDays: number
@@ -2856,7 +2867,11 @@ export type ExperimentalConnectorsGetConnectionOutput = {
   readonly statusReason: string
   readonly accountLabel: string
   readonly externalIdRef?: string | undefined
-  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly selection: {
+    readonly regions: ReadonlyArray<string>
+    readonly repos: ReadonlyArray<string>
+    readonly items?: ReadonlyArray<string> | undefined
+  }
   readonly intervalSec: number
   readonly allowAgentLiveReads: boolean
   readonly rotationIntervalDays: number
@@ -2884,7 +2899,13 @@ export type ExperimentalConnectorsUpdateConnectionInput = {
   readonly alias?: string | undefined
   readonly intervalSec?: number | undefined
   readonly allowAgentLiveReads?: boolean | undefined
-  readonly selection?: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> } | undefined
+  readonly selection?:
+    | {
+        readonly regions: ReadonlyArray<string>
+        readonly repos: ReadonlyArray<string>
+        readonly items?: ReadonlyArray<string> | undefined
+      }
+    | undefined
   readonly rotationIntervalDays?: number | undefined
 }
 export type ExperimentalConnectorsUpdateConnectionOutput = {
@@ -2897,7 +2918,11 @@ export type ExperimentalConnectorsUpdateConnectionOutput = {
   readonly statusReason: string
   readonly accountLabel: string
   readonly externalIdRef?: string | undefined
-  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly selection: {
+    readonly regions: ReadonlyArray<string>
+    readonly repos: ReadonlyArray<string>
+    readonly items?: ReadonlyArray<string> | undefined
+  }
   readonly intervalSec: number
   readonly allowAgentLiveReads: boolean
   readonly rotationIntervalDays: number
@@ -2951,7 +2976,11 @@ export type ExperimentalConnectorsSyncConnectionOutput = {
     readonly statusReason: string
     readonly accountLabel: string
     readonly externalIdRef?: string | undefined
-    readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+    readonly selection: {
+      readonly regions: ReadonlyArray<string>
+      readonly repos: ReadonlyArray<string>
+      readonly items?: ReadonlyArray<string> | undefined
+    }
     readonly intervalSec: number
     readonly allowAgentLiveReads: boolean
     readonly rotationIntervalDays: number
@@ -2986,7 +3015,11 @@ export type ExperimentalConnectorsPauseConnectionOutput = {
   readonly statusReason: string
   readonly accountLabel: string
   readonly externalIdRef?: string | undefined
-  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly selection: {
+    readonly regions: ReadonlyArray<string>
+    readonly repos: ReadonlyArray<string>
+    readonly items?: ReadonlyArray<string> | undefined
+  }
   readonly intervalSec: number
   readonly allowAgentLiveReads: boolean
   readonly rotationIntervalDays: number
@@ -3020,7 +3053,11 @@ export type ExperimentalConnectorsResumeConnectionOutput = {
   readonly statusReason: string
   readonly accountLabel: string
   readonly externalIdRef?: string | undefined
-  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly selection: {
+    readonly regions: ReadonlyArray<string>
+    readonly repos: ReadonlyArray<string>
+    readonly items?: ReadonlyArray<string> | undefined
+  }
   readonly intervalSec: number
   readonly allowAgentLiveReads: boolean
   readonly rotationIntervalDays: number
@@ -3057,7 +3094,11 @@ export type ExperimentalConnectorsReconnectConnectionOutput = {
   readonly statusReason: string
   readonly accountLabel: string
   readonly externalIdRef?: string | undefined
-  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly selection: {
+    readonly regions: ReadonlyArray<string>
+    readonly repos: ReadonlyArray<string>
+    readonly items?: ReadonlyArray<string> | undefined
+  }
   readonly intervalSec: number
   readonly allowAgentLiveReads: boolean
   readonly rotationIntervalDays: number
@@ -3094,7 +3135,11 @@ export type ExperimentalConnectorsRotateCredentialOutput = {
   readonly statusReason: string
   readonly accountLabel: string
   readonly externalIdRef?: string | undefined
-  readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+  readonly selection: {
+    readonly regions: ReadonlyArray<string>
+    readonly repos: ReadonlyArray<string>
+    readonly items?: ReadonlyArray<string> | undefined
+  }
   readonly intervalSec: number
   readonly allowAgentLiveReads: boolean
   readonly rotationIntervalDays: number
@@ -3201,6 +3246,14 @@ export type ExperimentalConnectorsListGithubReposOperation<E = never> = (
   input: ExperimentalConnectorsListGithubReposInput,
 ) => Effect.Effect<ExperimentalConnectorsListGithubReposOutput, E>
 
+export type ExperimentalConnectorsListScopeOptionsInput = { readonly id: string }
+export type ExperimentalConnectorsListScopeOptionsOutput = {
+  readonly items: ReadonlyArray<{ readonly id: string; readonly name: string }>
+}
+export type ExperimentalConnectorsListScopeOptionsOperation<E = never> = (
+  input: ExperimentalConnectorsListScopeOptionsInput,
+) => Effect.Effect<ExperimentalConnectorsListScopeOptionsOutput, E>
+
 export type ExperimentalConnectorsStartDeviceAuthorizationInput = {
   readonly connectorId: string
   readonly alias?: string | undefined
@@ -3233,7 +3286,11 @@ export type ExperimentalConnectorsGetDeviceAuthorizationOutput = {
         readonly statusReason: string
         readonly accountLabel: string
         readonly externalIdRef?: string | undefined
-        readonly selection: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> }
+        readonly selection: {
+          readonly regions: ReadonlyArray<string>
+          readonly repos: ReadonlyArray<string>
+          readonly items?: ReadonlyArray<string> | undefined
+        }
         readonly intervalSec: number
         readonly allowAgentLiveReads: boolean
         readonly rotationIntervalDays: number
@@ -3357,6 +3414,7 @@ export interface ExperimentalConnectorsApi<E = never> {
   readonly deleteAuthConfig: ExperimentalConnectorsDeleteAuthConfigOperation<E>
   readonly awsSetup: ExperimentalConnectorsAwsSetupOperation<E>
   readonly listGithubRepos: ExperimentalConnectorsListGithubReposOperation<E>
+  readonly listScopeOptions: ExperimentalConnectorsListScopeOptionsOperation<E>
   readonly startDeviceAuthorization: ExperimentalConnectorsStartDeviceAuthorizationOperation<E>
   readonly getDeviceAuthorization: ExperimentalConnectorsGetDeviceAuthorizationOperation<E>
   readonly cancelDeviceAuthorization: ExperimentalConnectorsCancelDeviceAuthorizationOperation<E>
@@ -4049,6 +4107,15 @@ export type ConnectorsListGithubReposOutput = ExperimentalConnectorsListGithubRe
 /** @deprecated Use `ExperimentalConnectorsListGithubReposOperation`. Removed in the next minor. */
 export type ConnectorsListGithubReposOperation<E = never> = ExperimentalConnectorsListGithubReposOperation<E>
 
+/** @deprecated Use `ExperimentalConnectorsListScopeOptionsInput`. Removed in the next minor. */
+export type ConnectorsListScopeOptionsInput = ExperimentalConnectorsListScopeOptionsInput
+
+/** @deprecated Use `ExperimentalConnectorsListScopeOptionsOutput`. Removed in the next minor. */
+export type ConnectorsListScopeOptionsOutput = ExperimentalConnectorsListScopeOptionsOutput
+
+/** @deprecated Use `ExperimentalConnectorsListScopeOptionsOperation`. Removed in the next minor. */
+export type ConnectorsListScopeOptionsOperation<E = never> = ExperimentalConnectorsListScopeOptionsOperation<E>
+
 /** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationInput`. Removed in the next minor. */
 export type ConnectorsStartDeviceAuthorizationInput = ExperimentalConnectorsStartDeviceAuthorizationInput
 
@@ -4308,6 +4375,9 @@ export interface AppApi<E = never> {
 
     /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
     readonly listGithubRepos: ExperimentalConnectorsListGithubReposOperation<E>
+
+    /** @deprecated Use `client.experimental.connectors.listScopeOptions`. Removed in the next minor. */
+    readonly listScopeOptions: ExperimentalConnectorsListScopeOptionsOperation<E>
 
     /** @deprecated Use `client.experimental.connectors.startDeviceAuthorization`. Removed in the next minor. */
     readonly startDeviceAuthorization: ExperimentalConnectorsStartDeviceAuthorizationOperation<E>

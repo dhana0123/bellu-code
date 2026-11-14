@@ -707,10 +707,15 @@ func (m *Manager) brokerRef(conn store.Connection, p Provider, cred vault.Ref) (
 	if err != nil {
 		return broker.ConnectionRef{}, err
 	}
-	return broker.ConnectionRef{
+	ref := broker.ConnectionRef{
 		ID: conn.ID, ConnectorID: conn.ConnectorID, Manifest: entry.Manifest, Policy: pol,
 		Auth: d.Auth, Credential: cred, APIHost: d.APIHost, BasePath: d.BasePath,
-	}, nil
+		AllowPrivate: d.AllowPrivate,
+	}
+	if d.CASlot != "" {
+		ref.CACredential = vault.Ref{Owner: vault.OwnerConnection, OwnerID: conn.ID, Slot: d.CASlot}
+	}
+	return ref, nil
 }
 
 // live returns a connection that exists and is not removed.

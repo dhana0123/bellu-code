@@ -8,9 +8,15 @@ import (
 	"strings"
 
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/aws"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/azure"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/bitbucket"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/broker"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/cloudflare"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/gcp"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/github"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/gitlab"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/keysource"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/kubernetes"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/policy"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/store"
@@ -116,6 +122,85 @@ func (s *Service) GithubRepoList(ctx context.Context, id string) (GithubRepoList
 			return GithubRepoList{}, err
 		}
 		return GithubRepoList{}, lifecycle.NewError(lifecycle.CodeNetwork, "repositories could not be listed", s.red)
+	}
+	return out, nil
+}
+
+// ScopeOption is one selectable item of a connection's scope step.
+type ScopeOption struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// ScopeOptions lists what the connection's credential can reach, using the
+// provider's own listing: GitLab projects, Azure subscriptions, Google Cloud
+// projects, Bitbucket workspaces, Cloudflare zones or Kubernetes namespaces.
+// The user's pick is stored in store.Selection.Items through Update.
+func (s *Service) ScopeOptions(ctx context.Context, id string) ([]ScopeOption, error) {
+	if !s.Enabled() {
+		return nil, ErrDisabled
+	}
+	conn, ok := s.Connection(id)
+	if !ok {
+		return nil, s.invalid("connection not found", "id")
+	}
+	call, err := s.lifecycleCall(conn)
+	if err != nil {
+		return nil, err
+	}
+	out := []ScopeOption{}
+	switch conn.ConnectorID {
+	case gitlab.ConnectorID:
+		var ps []gitlab.ProjectScope
+		if ps, err = s.gitlabPrv.Projects(ctx, call); err == nil {
+			for _, p := range ps {
+				out = append(out, ScopeOption{ID: p.FullPath, Name: p.FullPath})
+			}
+		}
+	case azure.ConnectorID:
+		var subs []azure.Subscription
+		if subs, err = s.azurePrv.Subscriptions(ctx, call); err == nil {
+			for _, x := range subs {
+				out = append(out, ScopeOption{ID: x.ID, Name: first(x.Name, x.ID)})
+			}
+		}
+	case gcp.ConnectorID:
+		var ids []string
+		if ids, err = s.gcpPrv.ProjectIDs(ctx, call); err == nil {
+			for _, x := range ids {
+				out = append(out, ScopeOption{ID: x, Name: x})
+			}
+		}
+	case bitbucket.ConnectorID:
+		var ws []bitbucket.Workspace
+		if ws, err = s.bitbktPrv.Workspaces(ctx, call); err == nil {
+			for _, w := range ws {
+				out = append(out, ScopeOption{ID: w.Slug, Name: first(w.Name, w.Slug)})
+			}
+		}
+	case cloudflare.ConnectorID:
+		var zs []cloudflare.Zone
+		if zs, err = s.cfPrv.Zones(ctx, call); err == nil {
+			for _, z := range zs {
+				out = append(out, ScopeOption{ID: z.ID, Name: first(z.Name, z.ID)})
+			}
+		}
+	case kubernetes.ConnectorID:
+		var ns []string
+		if ns, err = s.k8sPrv.Namespaces(ctx, call); err == nil {
+			for _, n := range ns {
+				out = append(out, ScopeOption{ID: n, Name: n})
+			}
+		}
+	default:
+		return nil, s.invalid("connector has no scope options", "id")
+	}
+	if err != nil {
+		var le *lifecycle.Error
+		if errors.As(err, &le) {
+			return nil, err
+		}
+		return nil, lifecycle.NewError(lifecycle.CodeNetwork, "scope options could not be listed", s.red)
 	}
 	return out, nil
 }

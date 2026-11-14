@@ -70,7 +70,7 @@ func Manifest(clientID string) manifest.Manifest {
 				Refresh:       true,
 			}})
 	}
-	methods = append(methods, manifest.AuthMethod{ID: MethodServicePrincipal, Name: "Service principal", Enabled: false})
+	methods = append(methods, manifest.AuthMethod{ID: MethodServicePrincipal, Name: "Service principal", Enabled: false, DisabledReason: "Coming soon"})
 	read := func(name, path string) manifest.Operation {
 		return manifest.Operation{Name: "GET " + name, Class: manifest.ClassRead, Method: "GET", Host: ARMHost, Path: path}
 	}

@@ -379,6 +379,9 @@ export type ConnectorsManifestDeviceSpec = {
   token_url: string
   client_id: string
   scopes: Array<string>
+  token_grant?: string
+  tenant?: string
+  refresh?: boolean
 }
 
 export type ConnectorsManifestPermission = { name: string; description?: string; read_only: boolean }
@@ -399,7 +402,7 @@ export type ConnectorsConnectionID = string
 
 export type ConnectorsStatus = "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
 
-export type ConnectorsSelection = { regions: Array<string>; repos: Array<string> }
+export type ConnectorsSelection = { regions: Array<string>; repos: Array<string>; items?: Array<string> }
 
 export type ConnectorsLastSync = { status: string; endedAt?: string; entities: number; partial: Array<string> }
 
@@ -430,6 +433,8 @@ export type ConnectorsAwsSetup = {
 }
 
 export type ConnectorsGithubRepo = { fullName: string; private: boolean }
+
+export type ConnectorsScopeOption = { id: string; name: string }
 
 export type ConnectorsDeviceAuthorization = {
   id: string
@@ -1180,6 +1185,8 @@ export type ConnectorsGithubRepoList = {
   installations: number
   installUrl?: string
 }
+
+export type ConnectorsScopeOptionList = { items: Array<ConnectorsScopeOption> }
 
 export type VcsInfo = { provider?: string; branch: VcsBranch }
 
@@ -5078,7 +5085,13 @@ export type ExperimentalConnectorsUpdateConnectionInput = {
   readonly alias?: string | undefined
   readonly intervalSec?: number | undefined
   readonly allowAgentLiveReads?: boolean | undefined
-  readonly selection?: { readonly regions: ReadonlyArray<string>; readonly repos: ReadonlyArray<string> } | undefined
+  readonly selection?:
+    | {
+        readonly regions: ReadonlyArray<string>
+        readonly repos: ReadonlyArray<string>
+        readonly items?: ReadonlyArray<string>
+      }
+    | undefined
   readonly rotationIntervalDays?: number | undefined
 }
 
@@ -5148,6 +5161,10 @@ export type ExperimentalConnectorsAwsSetupOutput = ConnectorsAwsSetup
 export type ExperimentalConnectorsListGithubReposInput = { readonly id: string }
 
 export type ExperimentalConnectorsListGithubReposOutput = ConnectorsGithubRepoList
+
+export type ExperimentalConnectorsListScopeOptionsInput = { readonly id: string }
+
+export type ExperimentalConnectorsListScopeOptionsOutput = ConnectorsScopeOptionList
 
 export type ExperimentalConnectorsStartDeviceAuthorizationInput = {
   readonly connectorId: string
@@ -5620,6 +5637,12 @@ export type ConnectorsListGithubReposInput = ExperimentalConnectorsListGithubRep
 
 /** @deprecated Use `ExperimentalConnectorsListGithubReposOutput`. Removed in the next minor. */
 export type ConnectorsListGithubReposOutput = ExperimentalConnectorsListGithubReposOutput
+
+/** @deprecated Use `ExperimentalConnectorsListScopeOptionsInput`. Removed in the next minor. */
+export type ConnectorsListScopeOptionsInput = ExperimentalConnectorsListScopeOptionsInput
+
+/** @deprecated Use `ExperimentalConnectorsListScopeOptionsOutput`. Removed in the next minor. */
+export type ConnectorsListScopeOptionsOutput = ExperimentalConnectorsListScopeOptionsOutput
 
 /** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationInput`. Removed in the next minor. */
 export type ConnectorsStartDeviceAuthorizationInput = ExperimentalConnectorsStartDeviceAuthorizationInput

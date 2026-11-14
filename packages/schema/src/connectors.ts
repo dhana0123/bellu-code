@@ -62,6 +62,7 @@ export type PermissionCheck = typeof PermissionCheck.Type
 export const Selection = Schema.Struct({
   regions: Schema.Array(Schema.String),
   repos: Schema.Array(Schema.String),
+  items: optional(Schema.Array(Schema.String)),
 }).annotate({ identifier: "Connectors.Selection" })
 export interface Selection extends Schema.Schema.Type<typeof Selection> {}
 
@@ -126,6 +127,9 @@ export const ManifestDeviceSpec = Schema.Struct({
   token_url: Schema.String,
   client_id: Schema.String,
   scopes: Schema.Array(Schema.String),
+  token_grant: optional(Schema.String),
+  tenant: optional(Schema.String),
+  refresh: optional(Schema.Boolean),
 }).annotate({ identifier: "Connectors.ManifestDeviceSpec" })
 export interface ManifestDeviceSpec extends Schema.Schema.Type<typeof ManifestDeviceSpec> {}
 export const ManifestAuthMethod = Schema.Struct({
@@ -305,6 +309,16 @@ export const GithubRepoList = Schema.Struct({
 }).annotate({ identifier: "Connectors.GithubRepoList" })
 export interface GithubRepoList extends Schema.Schema.Type<typeof GithubRepoList> {}
 
+/** One selectable item of a Source scope step: a GitLab project, Azure subscription, and so on. */
+export const ScopeOption = Schema.Struct({
+  id: Text,
+  name: Schema.String,
+}).annotate({ identifier: "Connectors.ScopeOption" })
+export interface ScopeOption extends Schema.Schema.Type<typeof ScopeOption> {}
+export const ScopeOptionList = Schema.Struct({
+  items: Schema.Array(ScopeOption),
+}).annotate({ identifier: "Connectors.ScopeOptionList" })
+export interface ScopeOptionList extends Schema.Schema.Type<typeof ScopeOptionList> {}
 /** Start of a device authorization. `alias` is required unless `reconnectId` is set. */
 export const StartDeviceAuthorizationInput = Schema.Struct({
   connectorId: ConnectorID,

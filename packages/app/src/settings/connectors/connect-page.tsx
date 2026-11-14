@@ -11,6 +11,13 @@ import { AwsPanel } from "./aws-panel"
 import { iconID, serviceKeys } from "./connector-card"
 import type { ConnectorsData } from "./data"
 import { GithubPanel } from "./github-panel"
+import { AZURE_SOURCE } from "./descriptors/azure"
+import { BITBUCKET_SOURCE } from "./descriptors/bitbucket"
+import { CLOUDFLARE_SOURCE } from "./descriptors/cloudflare"
+import { GCP_SOURCE } from "./descriptors/gcp"
+import { GITLAB_SOURCE } from "./descriptors/gitlab"
+import { KUBERNETES_SOURCE } from "./descriptors/kubernetes"
+import { SourcePanel, type SourcePanelConfig } from "./source-panel"
 import { defaultAlias, validateAlias } from "./machine"
 import "./connectors.css"
 
@@ -22,6 +29,17 @@ type PanelContext = {
   close: () => void
 }
 
+/** A Source on the generic panel. */
+const sourcePanel = (config: SourcePanelConfig) => (context: PanelContext) => (
+  <SourcePanel
+    config={config}
+    alias={context.alias}
+    authConfigId={context.authConfigId}
+    data={context.data}
+    onDone={context.done}
+    onCancel={context.close}
+  />
+)
 /** The connect panel of each connector that has one, by connector id. */
 const PANELS: Readonly<Record<string, (context: PanelContext) => JSX.Element>> = {
   aws: (context) => (
@@ -42,6 +60,12 @@ const PANELS: Readonly<Record<string, (context: PanelContext) => JSX.Element>> =
       onCancel={context.close}
     />
   ),
+  gitlab: sourcePanel(GITLAB_SOURCE),
+  bitbucket: sourcePanel(BITBUCKET_SOURCE),
+  azure: sourcePanel(AZURE_SOURCE),
+  gcp: sourcePanel(GCP_SOURCE),
+  cloudflare: sourcePanel(CLOUDFLARE_SOURCE),
+  kubernetes: sourcePanel(KUBERNETES_SOURCE),
 }
 
 /**
@@ -62,7 +86,7 @@ export function ConnectPage(props: { manifest: Connectors.Manifest; data: Connec
   const options = () => (configs.state === "ready" || configs.state === "refreshing" ? (configs.latest ?? []) : [])
   const methods = () => props.manifest.auth_methods.filter((method) => method.enabled)
   // The wizard panels show their own steps, so the list of methods is redundant.
-  const hasWizard = () => props.manifest.id === "github" || props.manifest.id === "aws"
+  const hasWizard = () => Object.hasOwn(PANELS, props.manifest.id)
   const keys = () => serviceKeys(props.manifest)
   const name = () => {
     const known = keys()

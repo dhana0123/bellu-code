@@ -142,13 +142,25 @@ func (v *validator) selection(name string) (store.Selection, bool) {
 		v.fail(name)
 		return store.Selection{}, false
 	}
-	regions, ok1 := asStringSlice(o["regions"])
-	repos, ok2 := asStringSlice(o["repos"])
-	if !ok1 || !ok2 {
+	// regions, repos and items are each optional; a missing list is empty.
+	list := func(key string) ([]string, bool) {
+		raw, present := o[key]
+		if !present {
+			return []string{}, true
+		}
+		return asStringSlice(raw)
+	}
+	regions, ok1 := list("regions")
+	repos, ok2 := list("repos")
+	items, ok3 := list("items")
+	if len(items) == 0 {
+		items = nil
+	}
+	if !ok1 || !ok2 || !ok3 {
 		v.fail(name)
 		return store.Selection{}, false
 	}
-	return store.Selection{Regions: regions, Repos: repos}, true
+	return store.Selection{Regions: regions, Repos: repos, Items: items}, true
 }
 
 // createInput is the validated body of createConnection.

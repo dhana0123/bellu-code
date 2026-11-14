@@ -60,6 +60,7 @@ var routeTable = []Route{
 	{Name: "deleteAuthConfig", Method: "DELETE", Pattern: "/auth-configs/{id}"},
 	{Name: "awsSetup", Method: "POST", Pattern: "/aws/setup", body: parseAwsSetup, known: fields("alias")},
 	{Name: "listGithubRepos", Method: "GET", Pattern: "/connections/{id}/github/repos"},
+	{Name: "listScopeOptions", Method: "GET", Pattern: "/connections/{id}/scope-options"},
 	{Name: "startDeviceAuthorization", Method: "POST", Pattern: "/device-authorizations", Credential: true,
 		body: parseStartDevice, known: fields("connectorId", "alias", "reconnectId")},
 	{Name: "getDeviceAuthorization", Method: "GET", Pattern: "/device-authorizations/{id}", Credential: true},
@@ -146,6 +147,7 @@ func NewAPI(cfg APIConfig) *Handler {
 		"deleteAuthConfig":          h.deleteAuthConfig,
 		"awsSetup":                  h.awsSetup,
 		"listGithubRepos":           h.listGithubRepos,
+		"listScopeOptions":          h.listScopeOptions,
 		"startDeviceAuthorization":  h.startDeviceAuthorization,
 		"getDeviceAuthorization":    h.getDeviceAuthorization,
 		"cancelDeviceAuthorization": h.cancelDeviceAuthorization,
@@ -604,6 +606,22 @@ func (h *Handler) listGithubRepos(w http.ResponseWriter, r *http.Request, c *cal
 		out["installUrl"] = list.InstallURL
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+func (h *Handler) listScopeOptions(w http.ResponseWriter, r *http.Request, c *call) {
+	if _, ok := h.connection(w, c); !ok {
+		return
+	}
+	opts, err := h.svc.ScopeOptions(r.Context(), c.id)
+	if err != nil {
+		h.writeErr(w, err)
+		return
+	}
+	items := make([]map[string]string, 0, len(opts))
+	for _, o := range opts {
+		items = append(items, map[string]string{"id": o.ID, "name": o.Name})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": items})
 }
 
 // startDeviceAuthorization answers expiresAt in epoch milliseconds, the unit
