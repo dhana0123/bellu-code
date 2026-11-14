@@ -1,4 +1,5 @@
 import type { GraphData } from "../model"
+import { iterationBudget } from "./compute"
 import type { LayoutRequest, LayoutResponse } from "./worker"
 import { gridPositions, seedByHierarchy } from "./seed"
 
@@ -104,14 +105,6 @@ export function createLayoutClient() {
       }
     },
   }
-}
-
-/** Fewer iterations for larger graphs: the hierarchical seed is already close. */
-function iterationBudget(count: number) {
-  if (count <= 1000) return 400
-  if (count <= 5000) return 250
-  if (count <= 20_000) return 120
-  return 60
 }
 
 /** Places entities without a cached position near their parent, on the main thread (O(new)). */

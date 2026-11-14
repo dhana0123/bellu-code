@@ -7,8 +7,10 @@ export function HomeProjects(props: {
   scroll: HomeScrollController
   dropdown?: boolean
   connectorsAvailable?: boolean
-  securityPage?: "connectors"
+  securityPage?: "connectors" | "graph"
   onOpenConnectors?: () => void
+  graphAvailable?: boolean
+  onOpenGraph?: () => void
 }) {
   return (
     <HomeProjectsView
@@ -47,6 +49,8 @@ export function HomeProjects(props: {
       connectorsAvailable={props.connectorsAvailable}
       securityPage={props.securityPage}
       onOpenConnectors={props.onOpenConnectors}
+      graphAvailable={props.graphAvailable}
+      onOpenGraph={props.onOpenGraph}
     />
   )
 }
