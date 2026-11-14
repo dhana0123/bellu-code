@@ -1,6 +1,7 @@
 package connectors
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -19,10 +20,16 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/collectors"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/audit"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/aws"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/azure"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/bitbucket"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/broker"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/cloudflare"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/deviceflow"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/gcp"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/github"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/gitlab"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/keysource"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/kubernetes"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/manifest"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/policy"
@@ -44,6 +51,7 @@ var ErrDisabled = errors.New("connectors: disabled")
 const (
 	slotExternalID = "external-id"
 	slotParams     = "params"
+	slotCA         = kubernetes.CASlot
 
 	// DefaultPageSize is the audit page size.
 	DefaultPageSize = 50
@@ -93,6 +101,12 @@ type Service struct {
 	authCfgs  *lifecycle.AuthConfigService
 	awsProv   *aws.Provider
 	githubPrv *github.Provider
+	gitlabPrv *gitlab.Provider
+	azurePrv  *azure.Provider
+	gcpPrv    *gcp.Provider
+	bitbktPrv *bitbucket.Provider
+	cfPrv     *cloudflare.Provider
+	k8sPrv    *kubernetes.Provider
 	device    *deviceflow.Service
 
 	pwMu    sync.Mutex
@@ -111,9 +125,12 @@ type Service struct {
 
 // connParams are the per-connection settings the providers need.
 type connParams struct {
-	RoleARN    string `json:"roleArn,omitempty"`
-	Source     string `json:"source,omitempty"`
-	Host       string `json:"host,omitempty"`
+	RoleARN string `json:"roleArn,omitempty"`
+	Source  string `json:"source,omitempty"`
+	Host    string `json:"host,omitempty"`
+	// Server is the Kubernetes API server URL (not secret; the token and CA
+	// live in the credential and "ca" slots).
+	Server     string `json:"server,omitempty"`
 	ExternalID string `json:"-"`
 }
 
@@ -200,13 +217,26 @@ func New(ctx context.Context, opt Options) (*Service, error) {
 	if err := s.registry.Register(github.Manifest(github.EffectiveClientID(opt.Getenv))); err != nil {
 		return nil, err
 	}
+	for _, m := range []manifest.Manifest{
+		gitlab.Manifest(gitlab.EffectiveClientID(opt.Getenv)),
+		azure.Manifest(azure.EffectiveClientID(opt.Getenv)),
+		gcp.Manifest(), bitbucket.Manifest(), cloudflare.Manifest(), kubernetes.Manifest(),
+	} {
+		if err := s.registry.Register(m); err != nil {
+			return nil, err
+		}
+	}
 
 	// Session_Scope gates every agent call; nil clock means time.Now.
 	s.scope = scope.New(s.store, s.registry, nil)
 	s.broker = broker.New(broker.Config{
 		AgentGate: s.scope,
 		Opener:    s.vault, Audit: s.auditLog, Redactor: s.red, Inner: opt.Transport, Now: opt.Now,
-		QueryValidators: map[string]func([]byte) bool{github.ConnectorID: github.IsGraphQLRequestBody},
+		QueryValidators: map[string]func([]byte) bool{
+			github.ConnectorID:     github.IsGraphQLRequestBody,
+			gcp.ConnectorID:        gcp.IsTestIAMPermissionsBody,
+			kubernetes.ConnectorID: kubernetes.IsSelfSubjectRulesReviewBody,
+		},
 	})
 	s.runner = collectors.New(opt.Engine, nil,
 		collectors.WithLogger(opt.Logger), collectors.WithGuard(s.red.Guard(redact.New())))
@@ -236,6 +266,22 @@ func New(ctx context.Context, opt Options) (*Service, error) {
 	s.githubPrv = github.NewProvider(github.ProviderConfig{Clients: s.broker, HostFor: s.githubHost})
 	s.mgr.RegisterProvider(aws.ConnectorID, s.awsProv)
 	s.mgr.RegisterProvider(github.ConnectorID, s.githubPrv)
+	s.gitlabPrv = gitlab.NewProvider(gitlab.ProviderConfig{
+		ClientID: gitlab.EffectiveClientID(opt.Getenv), Vault: s.vault, Redactor: s.red, HostFor: s.githubHost,
+	})
+	s.azurePrv = azure.NewProvider(azure.ProviderConfig{
+		ClientID: azure.EffectiveClientID(opt.Getenv), Vault: s.vault, Redactor: s.red,
+	})
+	s.gcpPrv = gcp.NewProvider(gcp.ProviderConfig{Opener: s.vault})
+	s.bitbktPrv = bitbucket.NewProvider()
+	s.cfPrv = cloudflare.NewProvider()
+	s.k8sPrv = kubernetes.NewProvider(kubernetes.ProviderConfig{ServerFor: s.kubernetesServer})
+	s.mgr.RegisterProvider(gitlab.ConnectorID, s.gitlabPrv)
+	s.mgr.RegisterProvider(azure.ConnectorID, s.azurePrv)
+	s.mgr.RegisterProvider(gcp.ConnectorID, s.gcpPrv)
+	s.mgr.RegisterProvider(bitbucket.ConnectorID, s.bitbktPrv)
+	s.mgr.RegisterProvider(cloudflare.ConnectorID, s.cfPrv)
+	s.mgr.RegisterProvider(kubernetes.ConnectorID, s.k8sPrv)
 	s.device = s.newDeviceFlow()
 	return s, nil
 }
@@ -398,6 +444,18 @@ func (s *Service) BrokerRef(connectionID string) (broker.ConnectionRef, error) {
 		d = s.awsProv.Describe(conn)
 	case github.ConnectorID:
 		d = s.githubPrv.Describe(conn)
+	case gitlab.ConnectorID:
+		d = s.gitlabPrv.Describe(conn)
+	case azure.ConnectorID:
+		d = s.azurePrv.Describe(conn)
+	case gcp.ConnectorID:
+		d = s.gcpPrv.Describe(conn)
+	case bitbucket.ConnectorID:
+		d = s.bitbktPrv.Describe(conn)
+	case cloudflare.ConnectorID:
+		d = s.cfPrv.Describe(conn)
+	case kubernetes.ConnectorID:
+		d = s.k8sPrv.Describe(conn)
 	default:
 		return broker.ConnectionRef{}, lifecycle.NewError(lifecycle.CodeValidationFailed, "unknown connector", s.red)
 	}
@@ -408,7 +466,8 @@ func (s *Service) BrokerRef(connectionID string) (broker.ConnectionRef, error) {
 	return broker.ConnectionRef{
 		ID: conn.ID, ConnectorID: conn.ConnectorID, Manifest: e.Manifest, Policy: pol, Auth: d.Auth,
 		Credential: vault.Ref{Owner: vault.OwnerConnection, OwnerID: conn.ID, Slot: "credential"},
-		APIHost:    d.APIHost, BasePath: d.BasePath,
+		APIHost:    d.APIHost, BasePath: d.BasePath, AllowPrivate: d.AllowPrivate,
+		CACredential: caRef(conn.ID, d.CASlot),
 	}, nil
 }
 
@@ -525,6 +584,10 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (store.Connection,
 	if err != nil {
 		return store.Connection{}, err
 	}
+	secret, ca, err := splitCredential(in.ConnectorID, secret, &p)
+	if err != nil {
+		return store.Connection{}, err
+	}
 
 	s.createMu.Lock()
 	defer s.createMu.Unlock()
@@ -543,6 +606,13 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (store.Connection,
 		clear(secret)
 		return store.Connection{}, err
 	}
+	if len(ca) > 0 {
+		if err := s.vault.Put(ctx, slotRef(id, slotCA), in.ConnectorID, ca, time.Time{}); err != nil {
+			s.dropSlots(ctx, id, staged)
+			clear(secret)
+			return store.Connection{}, vaultError(err, s.red)
+		}
+	}
 	if p.ExternalID != "" {
 		cmin.ExternalIDRef = externalIDRef(id)
 	}
@@ -555,7 +625,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (store.Connection,
 
 // stageSlots writes the params and external ID slots and primes the cache.
 func (s *Service) stageSlots(ctx context.Context, id, connectorID string, p connParams) (staged bool, err error) {
-	if p.ExternalID == "" && p.RoleARN == "" && p.Source == "" && p.Host == "" {
+	if p.ExternalID == "" && p.RoleARN == "" && p.Source == "" && p.Host == "" && p.Server == "" {
 		return false, nil
 	}
 	if doc, _ := json.Marshal(p); string(doc) != "{}" {
@@ -576,6 +646,7 @@ func (s *Service) stageSlots(ctx context.Context, id, connectorID string, p conn
 func (s *Service) dropSlots(ctx context.Context, id string, _ bool) {
 	_ = s.vault.Delete(ctx, slotRef(id, slotParams))
 	_ = s.vault.Delete(ctx, slotRef(id, slotExternalID))
+	_ = s.vault.Delete(ctx, slotRef(id, slotCA))
 	s.mu.Lock()
 	if c := s.params[id]; c != nil {
 		c.release()
@@ -619,7 +690,67 @@ func (s *Service) replace(ctx context.Context, id string, cred map[string]string
 	if err != nil {
 		return err
 	}
-	return fn(ctx, id, lifecycle.CredentialInput{Secret: secret})
+	old := p
+	secret, ca, err := splitCredential(conn.ConnectorID, secret, &p)
+	if err != nil {
+		return err
+	}
+	if len(ca) == 0 {
+		return fn(ctx, id, lifecycle.CredentialInput{Secret: secret})
+	}
+	// The candidate is verified against the new CA and server, so they are
+	// written first and restored when verification fails.
+	oldCA := s.readSlot(ctx, id, slotCA)
+	if err := s.writeKubernetesSlots(ctx, conn, p, ca); err != nil {
+		return err
+	}
+	if err := fn(ctx, id, lifecycle.CredentialInput{Secret: secret}); err != nil {
+		if oldCA != nil {
+			_ = s.writeKubernetesSlots(ctx, conn, old, oldCA)
+		}
+		return err
+	}
+	return nil
+}
+
+// readSlot returns a copy of a vault slot, or nil when it is empty or unreadable.
+func (s *Service) readSlot(ctx context.Context, id, slot string) []byte {
+	var out []byte
+	err := s.vault.Use(ctx, slotRef(id, slot), func(b []byte) error { out = append([]byte(nil), b...); return nil })
+	if err != nil {
+		return nil
+	}
+	return out
+}
+
+// writeKubernetesSlots stores the CA and the params (server) of a connection.
+func (s *Service) writeKubernetesSlots(ctx context.Context, conn store.Connection, p connParams, ca []byte) error {
+	if err := s.vault.Put(ctx, slotRef(conn.ID, slotCA), conn.ConnectorID, bytes.Clone(ca), time.Time{}); err != nil {
+		return vaultError(err, s.red)
+	}
+	doc, _ := json.Marshal(p)
+	if err := s.vault.Put(ctx, slotRef(conn.ID, slotParams), conn.ConnectorID, doc, time.Time{}); err != nil {
+		return vaultError(err, s.red)
+	}
+	s.setCache(conn.ID, p)
+	return nil
+}
+
+// splitCredential turns the encoded Kubernetes credential (canonical JSON from
+// encodeKubernetesCredential) into the token for the credential slot and the
+// CA for the "ca" slot, and records the server in p. Other connectors pass
+// through unchanged with a nil CA.
+func splitCredential(connectorID string, secret []byte, p *connParams) ([]byte, []byte, error) {
+	if connectorID != kubernetes.ConnectorID {
+		return secret, nil, nil
+	}
+	defer clear(secret)
+	c, err := kubernetes.Normalize(kubernetes.MethodToken, secret)
+	if err != nil {
+		return nil, nil, err
+	}
+	p.Server = c.Server
+	return []byte(c.Token), []byte(c.CA), nil
 }
 
 // Disconnect removes a connection, its credential and its extra vault slots.
@@ -731,6 +862,9 @@ func (s *Service) buildParams(connectorID, method string, in map[string]string, 
 	if v := split(in["repos"]); len(v) > 0 {
 		sel.Repos = v
 	}
+	if v := split(in["items"]); len(v) > 0 {
+		sel.Items = v
+	}
 	switch connectorID {
 	case aws.ConnectorID:
 		switch method {
@@ -755,6 +889,35 @@ func (s *Service) buildParams(connectorID, method string, in map[string]string, 
 				return p, sel, s.invalid("external id is invalid", "params.externalId")
 			}
 		default:
+			return p, sel, s.invalid("unsupported auth method", "method")
+		}
+	case gitlab.ConnectorID:
+		if method != gitlab.MethodPAT {
+			return p, sel, s.invalid("unsupported auth method", "method")
+		}
+		if h := in["host"]; h != "" {
+			if err := gitlab.ValidateHost(h); err != nil {
+				return p, sel, s.invalid("GitLab host is invalid", "params.host")
+			}
+			p.Host = h
+		}
+	case azure.ConnectorID:
+		// The service-principal method is declared but disabled in the manifest.
+		return p, sel, s.invalid("unsupported auth method", "method")
+	case gcp.ConnectorID:
+		if method != gcp.MethodServiceAccount {
+			return p, sel, s.invalid("unsupported auth method", "method")
+		}
+	case bitbucket.ConnectorID:
+		if method != bitbucket.MethodAPIToken {
+			return p, sel, s.invalid("unsupported auth method", "method")
+		}
+	case cloudflare.ConnectorID:
+		if method != cloudflare.MethodToken {
+			return p, sel, s.invalid("unsupported auth method", "method")
+		}
+	case kubernetes.ConnectorID:
+		if method != kubernetes.MethodToken && method != kubernetes.MethodKubeconfig {
 			return p, sel, s.invalid("unsupported auth method", "method")
 		}
 	case github.ConnectorID:
@@ -785,6 +948,13 @@ type credentialEncoder func(method, source string, f map[string]string) ([]byte,
 var credentialEncoders = map[string]credentialEncoder{
 	github.ConnectorID: encodeGithubCredential,
 	aws.ConnectorID:    encodeAWSCredential,
+
+	gitlab.ConnectorID:     encodeTokenCredential,
+	cloudflare.ConnectorID: encodeTokenCredential,
+	azure.ConnectorID:      encodeAzureCredential,
+	gcp.ConnectorID:        encodeGCPCredential,
+	bitbucket.ConnectorID:  encodeBitbucketCredential,
+	kubernetes.ConnectorID: encodeKubernetesCredential,
 }
 
 // missingFields returns a validation error naming each blank credential field.
@@ -815,6 +985,57 @@ func encodeGithubCredential(_, _ string, f map[string]string) ([]byte, error) {
 		return nil, err
 	}
 	return []byte(f["token"]), nil
+}
+func encodeTokenCredential(_, _ string, f map[string]string) ([]byte, error) {
+	if err := missingFields(f, "token"); err != nil {
+		return nil, err
+	}
+	return []byte(f["token"]), nil
+}
+func encodeAzureCredential(_, _ string, f map[string]string) ([]byte, error) {
+	if err := missingFields(f, "tenant_id", "client_id", "client_secret"); err != nil {
+		return nil, err
+	}
+	return azure.EncodeServicePrincipal(azure.ServicePrincipal{
+		TenantID: f["tenant_id"], ClientID: f["client_id"], ClientSecret: f["client_secret"],
+	}), nil
+}
+func encodeGCPCredential(_, _ string, f map[string]string) ([]byte, error) {
+	if err := missingFields(f, "key_json"); err != nil {
+		return nil, err
+	}
+	return []byte(f["key_json"]), nil
+}
+func encodeBitbucketCredential(_, _ string, f map[string]string) ([]byte, error) {
+	if err := missingFields(f, "email", "api_token"); err != nil {
+		return nil, err
+	}
+	return []byte(strings.TrimSpace(f["email"]) + "\n" + f["api_token"]), nil
+}
+
+// encodeKubernetesCredential validates the pasted fields (server, token, ca or
+// kubeconfig) and returns the canonical JSON; splitCredential separates it
+// into the token, the CA and the server.
+func encodeKubernetesCredential(method, _ string, f map[string]string) ([]byte, error) {
+	var raw []byte
+	switch method {
+	case kubernetes.MethodKubeconfig:
+		if err := missingFields(f, "kubeconfig"); err != nil {
+			return nil, err
+		}
+		raw = []byte(f["kubeconfig"])
+	default:
+		if err := missingFields(f, "server", "token", "ca"); err != nil {
+			return nil, err
+		}
+		raw, _ = json.Marshal(kubernetes.Credential{Server: f["server"], Token: f["token"], CA: f["ca"]})
+	}
+	c, err := kubernetes.Normalize(method, raw)
+	clear(raw)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(c)
 }
 func encodeAWSCredential(method, source string, f map[string]string) ([]byte, error) {
 	if method == aws.MethodAssumeRole && source == aws.SourceAmbient {
@@ -847,6 +1068,15 @@ func (s *Service) githubHost(conn store.Connection) string {
 		return ""
 	}
 	return p.Host
+}
+
+// kubernetesServer returns the persisted API server URL of a connection.
+func (s *Service) kubernetesServer(conn store.Connection) string {
+	p, err := s.paramsOf(context.Background(), conn)
+	if err != nil {
+		return ""
+	}
+	return p.Server
 }
 
 // paramsOf resolves a connection's params: the vault params slot, then the
@@ -966,4 +1196,12 @@ func split(v string) []string {
 		}
 	}
 	return out
+}
+
+// caRef is the vault slot of a connection's CA bundle, or the zero Ref.
+func caRef(connectionID, slot string) vault.Ref {
+	if slot == "" {
+		return vault.Ref{}
+	}
+	return vault.Ref{Owner: vault.OwnerConnection, OwnerID: connectionID, Slot: slot}
 }

@@ -254,6 +254,12 @@ routes:
     owner: go
     public: false
     stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections/{id}/scope-options"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "POST"
     pattern: "/api/experimental/connectors/connections/{id}/sync"
     group: experimental

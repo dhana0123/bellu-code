@@ -27,7 +27,7 @@ Backend shared pieces first (broker auth kinds, device flow, client IDs), then t
 - [x] 2. Checkpoint - backend shared build
   - Run `go build ./...` and `go vet ./...` in `services/bellud`. Ask the user if questions arise.
 
-- [ ] 3. Provider packages
+- [x] 3. Provider packages
   - [x] 3.1 GitLab package
     - Create `gitlab/manifest.go` and `gitlab/provider.go`: device sign-in (scope `read_api`) when client ID is set, PAT paste, `bearer` auth, allowlist `/api/v4/user` and `/api/v4/personal_access_tokens/self`
     - Verify via `/user`; CheckPermissions reports write-capable PAT scopes in `WriteOffenders`; nil Collector
@@ -48,29 +48,29 @@ Backend shared pieces first (broker auth kinds, device flow, client IDs), then t
     - Create `cloudflare/manifest.go` and `cloudflare/provider.go`: API token paste, `bearer` auth, token verify, accounts and zones reads
     - CheckPermissions reports write permission groups, or `Unverifiable` when the token cannot read its policy; nil Collector
     - _Requirements: 1.1, 1.2, 1.3, 2.3, 3.5_
-  - [-] 3.6 Kubernetes package
+  - [x] 3.6 Kubernetes package
     - Create `kubernetes/manifest.go` and `kubernetes/provider.go`: API server URL, ServiceAccount token and CA paste (kubeconfig parsed into the three), `k8s-bearer` auth, `/version`, namespaces and `selfsubjectrulesreviews` reads
     - CheckPermissions reports rules with create, update, patch, delete or `*`; nil Collector
     - _Requirements: 1.1, 1.2, 1.3, 2.3, 3.5_
 
-- [~] 4. Checkpoint - providers build
+- [x] 4. Checkpoint - providers build
   - Run `go build ./...` and `go vet ./...` in `services/bellud`. Ask the user if questions arise.
 
-- [ ] 5. Wiring, API and client
-  - [~] 5.1 Register Sources in the service
+- [x] 5. Wiring, API and client
+  - [x] 5.1 Register Sources in the service
     - In `service.go`, register the six manifests and providers in the Catalog next to `github` and `aws`, using `EffectiveClientID(os.Getenv)` for GitLab and Azure
     - Hide the six Sources while the `connectors` flag is off
     - Wire scope listing per Source and store the selection on the connection
     - _Requirements: 1.1, 1.5, 2.4, 2.5_
-  - [~] 5.2 Update protocol and schema
+  - [x] 5.2 Update protocol and schema
     - Add manifest fields (`token_grant`, new auth method ids, per-source scope kinds) to the Protocol and Schema packages; keep dependency direction Schema → Core/Protocol → Server
     - Ensure responses never contain credential values
     - _Requirements: 3.3, 5.2_
-  - [~] 5.3 Regenerate client and route table
+  - [x] 5.3 Regenerate client and route table
     - Run `bun run generate` from `packages/client`; regenerate the route table in `services/bellud/internal/api/connectors` if routes changed. Do not edit generated files by hand
     - _Requirements: 5.2_
 
-- [~] 6. Checkpoint - backend and client build
+- [x] 6. Checkpoint - backend and client build
   - Run `go build ./...` in `services/bellud` and `bun typecheck` in `packages/client`. Ask the user if questions arise.
 
 - [x] 7. Shared Wizard
@@ -82,44 +82,44 @@ Backend shared pieces first (broker auth kinds, device flow, client IDs), then t
     - Create `wizard/wizard.tsx` and CSS: stepper, method cards, copy block, device prompt (copyable code and provider link), paste fields, scope list, Connected screen with the Describe result, failure reason display, "sign-in unavailable" note when no device method
     - _Requirements: 2.2, 4.1, 4.3, 4.4, 4.5, 4.6, 4.7_
 
-- [ ] 8. Migrate AWS and GitHub
-  - [-] 8.1 Migrate AWS
+- [x] 8. Migrate AWS and GitHub
+  - [x] 8.1 Migrate AWS
     - Create `descriptors/aws.ts`; fold `aws-wizard.ts` transitions into the generic machine unchanged; reduce `aws-panel.tsx` to descriptor plus shared Wizard
     - _Requirements: 4.2, 5.1_
-  - [~] 8.2 Migrate GitHub
+  - [x] 8.2 Migrate GitHub
     - Create `descriptors/github.ts`; fold `github-wizard.ts` and `signin-machine.ts` into the generic machine unchanged; reduce `github-panel.tsx` to descriptor plus shared Wizard
     - Keep `connect-page.tsx` building each panel once, untracked, with untracked connection list reads
     - _Requirements: 4.2, 5.1_
 
-- [~] 9. Checkpoint - app typecheck
+- [x] 9. Checkpoint - app typecheck
   - Run `bun typecheck` in `packages/app`. Ask the user if questions arise.
 
-- [ ] 10. New Source panels
-  - [~] 10.1 GitLab and Bitbucket descriptors
+- [x] 10. New Source panels
+  - [x] 10.1 GitLab and Bitbucket descriptors
     - Create `descriptors/gitlab.ts` (sign-in plus PAT) and `descriptors/bitbucket.ts` (email plus API token), register in the `PANELS` record in `connect-page.tsx`
     - _Requirements: 1.1, 2.1, 2.2, 4.2, 4.5_
-  - [~] 10.2 Azure and Google Cloud descriptors
+  - [x] 10.2 Azure and Google Cloud descriptors
     - Create `descriptors/azure.ts` (sign-in plus service principal) and `descriptors/gcp.ts` (service-account JSON, role list copy block), register in `PANELS`
     - _Requirements: 1.1, 2.1, 2.2, 4.2, 4.5_
-  - [~] 10.3 Cloudflare and Kubernetes descriptors
+  - [x] 10.3 Cloudflare and Kubernetes descriptors
     - Create `descriptors/cloudflare.ts` (API token) and `descriptors/kubernetes.ts` (URL, token, CA or kubeconfig parse, kubectl YAML copy block), register in `PANELS`
     - _Requirements: 1.1, 2.3, 4.2, 4.5_
 
-- [ ] 11. Logos, planned list and text
-  - [~] 11.1 Logos
+- [x] 11. Logos, planned list and text
+  - [x] 11.1 Logos
     - Run `packages/ui/script/connector-icons.ts` and use the generated `connectorLogos` entries on cards, detail and wizard header
     - _Requirements: 6.1, 6.2_
-  - [~] 11.2 Remove planned entries and apply the flag and naming
+  - [x] 11.2 Remove planned entries and apply the flag and naming
     - Remove the six entries from `planned.ts` (keep the mechanism); confirm the six Sources are hidden through `enabled.ts` when the flag is off
     - Change user-facing text from "connectors" to "Sources"; keep code names
     - _Requirements: 1.4, 1.5, 4.8_
 
-- [ ] 12. Docs
-  - [~] 12.1 Per-source docs
+- [x] 12. Docs
+  - [x] 12.1 Per-source docs
     - Add a short page per Source under `docs/connectors` (auth method, required read-only permissions, how to connect, client ID env var for GitLab and Azure)
     - _Requirements: 2.1, 2.2, 3.5_
 
-- [~] 13. Final checkpoint - build
+- [x] 13. Final checkpoint - build
   - Run `go build ./...` and `go vet ./...` in `services/bellud`, `bun typecheck` in `packages/client`, `packages/ui` and `packages/app`, then the app build, and `bun run check` from the root. Do not restart services. Ask the user if questions arise.
 
 ## Notes

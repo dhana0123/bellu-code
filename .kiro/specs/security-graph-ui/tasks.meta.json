@@ -1,0 +1,392 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add the feature flag, enable check and i18n keys": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673103353
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673189432
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673298913
+      }
+    ],
+    "1.2 Define the model and `GraphSource` interface": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673106033
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673190947
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673300163
+      }
+    ],
+    "1.3 Implement the mock graph generator": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673108362
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673309892
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673468809
+      }
+    ],
+    "1.4 Create the theme tokens file": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673110673
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673192271
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673301563
+      }
+    ],
+    "1.5 Implement the simulated agent event stream": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673113273
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673311144
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673471869
+      }
+    ],
+    "2.1 Implement hierarchy and LOD cut": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673115935
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673313144
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673470533
+      }
+    ],
+    "2.2 Implement aggregation and edge lifting": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673118162
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673484352
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673629293
+      }
+    ],
+    "2.3 Implement attack-path aggregation, deltas and the engine API": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673120553
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674298011
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674687678
+      }
+    ],
+    "2.4 Write unit tests for the projection engine": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673123004
+      }
+    ],
+    "3.1 Implement the global layout worker": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673125436
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673486251
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673630656
+      }
+    ],
+    "3.2 Implement local expansion layout and anchoring": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673128073
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673645803
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674287532
+      }
+    ],
+    "3.3 Implement trust-boundary hulls": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673130492
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673643057
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674288658
+      }
+    ],
+    "3.4 Build the texture atlas and Sigma programs": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673133409
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673644577
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674289997
+      }
+    ],
+    "3.5 Implement the Sigma renderer and canvas overlay": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673136012
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674299207
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674689112
+      }
+    ],
+    "3.6 Implement the expand/collapse animation": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673138372
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674300518
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674690367
+      }
+    ],
+    "4.1 Implement the interaction machine": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673140932
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673488196
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673632244
+      }
+    ],
+    "4.2 Write unit tests for the machine transition": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673143838
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674301589
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794674691578
+      }
+    ],
+    "4.3 Implement the driver and graph view": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673146772
+      }
+    ],
+    "5.1 Create the view store and Inspector": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673149448
+      }
+    ],
+    "5.2 Implement search and breadcrumb": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673152467
+      }
+    ],
+    "5.3 Implement filters": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673154972
+      }
+    ],
+    "5.4 Implement the minimap and hover tooltip": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673157322
+      }
+    ],
+    "5.5 Implement export": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673159698
+      }
+    ],
+    "5.6 Compose docked panels and register the route": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673161984
+      }
+    ],
+    "6.1 Implement the agent event reducer": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673164412
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673490503
+      },
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673633973
+      }
+    ],
+    "6.2 Implement the Activity panel and event-driven highlights": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673166872
+      }
+    ],
+    "6.3 Implement attack-path search and boundary crossings": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673169782
+      }
+    ],
+    "6.4 Add the attack-path UI": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673172593
+      }
+    ],
+    "7.1 Write the benchmark script": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673175107
+      }
+    ],
+    "7.2 Write the README": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673177413
+      }
+    ],
+    "8. Final checkpoint": [
+      {
+        "executionId": "88fc70a6-4328-40d3-a904-bd30695058ff",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794673179992
+      }
+    ]
+  }
+}

@@ -81,6 +81,10 @@ type AuthConfig struct {
 type Selection struct {
 	Regions []string `json:"regions"`
 	Repos   []string `json:"repos"`
+	// Items is the generic per-source scope selection (GitLab project paths,
+	// Azure subscription ids, GCP project ids, Bitbucket workspaces, Cloudflare
+	// zone ids, Kubernetes namespaces).
+	Items []string `json:"items,omitempty"`
 }
 
 // LastSync describes the most recent collection run.

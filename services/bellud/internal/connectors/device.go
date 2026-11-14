@@ -3,9 +3,11 @@ package connectors
 import (
 	"context"
 
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/azure"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/broker"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/deviceflow"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/github"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/gitlab"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/policy"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/store"
@@ -32,13 +34,24 @@ func (s *Service) devicePreRef(connectorID, authID string) (broker.ConnectionRef
 	if !ok {
 		return broker.ConnectionRef{}, s.invalid("unknown connector", "connectorId")
 	}
-	// Device sign-in is github.com only; the host fills the manifest's host
-	// placeholder, which Compile requires.
-	pol, err := policy.Compile(e.Manifest, policy.Selection{Host: github.DefaultAPIHost})
+	// The connector's own sign-in host fills the manifest's host placeholder,
+	// which Compile requires.
+	pol, err := policy.Compile(e.Manifest, policy.Selection{Host: deviceHost(connectorID)})
 	if err != nil {
 		return broker.ConnectionRef{}, s.invalid("connection policy is invalid", "connectorId")
 	}
 	return broker.PreConnectionRef(connectorID, e.Manifest, pol, authID), nil
+}
+
+// deviceHost is the host used by a connector's pre-connection policy.
+func deviceHost(connectorID string) string {
+	switch connectorID {
+	case gitlab.ConnectorID:
+		return gitlab.GitLabHost
+	case azure.ConnectorID:
+		return azure.LoginHost
+	}
+	return github.DefaultAPIHost
 }
 
 // deviceConnect turns a device-flow token into a new Connection (method

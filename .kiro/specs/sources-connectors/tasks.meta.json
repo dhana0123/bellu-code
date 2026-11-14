@@ -181,6 +181,11 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794660372664
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660930661
       }
     ],
     "4. Checkpoint - providers build": [
@@ -188,6 +193,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659033100
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660943747
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660972686
       }
     ],
     "5.1 Register Sources in the service": [
@@ -195,6 +210,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659035936
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660982208
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661803683
       }
     ],
     "5.2 Update protocol and schema": [
@@ -202,6 +227,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659038880
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660983796
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661802133
       }
     ],
     "5.3 Regenerate client and route table": [
@@ -209,6 +244,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659041626
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661819395
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661958082
       }
     ],
     "6. Checkpoint - backend and client build": [
@@ -216,6 +261,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659045559
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661961795
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661975934
       }
     ],
     "7.1 Step machine and descriptor types": [
@@ -262,6 +317,11 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794660374009
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660932207
       }
     ],
     "8.2 Migrate GitHub": [
@@ -269,6 +329,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659066701
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660985114
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661805630
       }
     ],
     "9. Checkpoint - app typecheck": [
@@ -276,6 +346,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659089538
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661977362
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661978656
       }
     ],
     "10.1 GitLab and Bitbucket descriptors": [
@@ -283,6 +363,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659107952
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661989588
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794662803855
       }
     ],
     "10.2 Azure and Google Cloud descriptors": [
@@ -290,6 +380,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659111034
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794662816175
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794663264132
       }
     ],
     "10.3 Cloudflare and Kubernetes descriptors": [
@@ -297,6 +397,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659113679
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794663271910
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794663567273
       }
     ],
     "11.1 Logos": [
@@ -304,6 +414,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659116754
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794663702803
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794663778255
       }
     ],
     "11.2 Remove planned entries and apply the flag and naming": [
@@ -311,6 +431,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659119449
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794663784593
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794664131760
       }
     ],
     "12.1 Per-source docs": [
@@ -318,6 +448,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659122884
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794663788955
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794664179493
       }
     ],
     "13. Final checkpoint - build": [
@@ -325,6 +465,16 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794659126132
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794664202493
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794664445486
       }
     ],
     "7. Shared Wizard": [
@@ -332,6 +482,48 @@
         "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
         "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
         "timestamp": 1794660089346
+      }
+    ],
+    "3. Provider packages": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660933609
+      }
+    ],
+    "8. Migrate AWS and GitHub": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661809242
+      }
+    ],
+    "5. Wiring, API and client": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794661964249
+      }
+    ],
+    "10. New Source panels": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794663579669
+      }
+    ],
+    "11. Logos, planned list and text": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794664181169
+      }
+    ],
+    "12. Docs": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794664183274
       }
     ]
   }

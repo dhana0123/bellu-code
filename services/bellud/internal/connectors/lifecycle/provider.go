@@ -34,6 +34,11 @@ type Descriptor struct {
 	BasePath string
 	// Host replaces {host} in manifest host patterns (GitHub Enterprise Server).
 	Host string
+	// CASlot names the connection vault slot holding the PEM CA bundle
+	// (AuthK8sBearer). Empty means the connection has no CA slot.
+	CASlot string
+	// AllowPrivate permits private-range destinations (AuthK8sBearer).
+	AllowPrivate bool
 }
 
 // Call is the input to Verify, CheckPermissions and Refresh. Client is built on

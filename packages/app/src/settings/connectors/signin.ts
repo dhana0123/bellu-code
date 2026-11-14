@@ -26,6 +26,8 @@ export type SignInOptions = {
   data: ConnectorsData
   /** The Account_Alias the dialog collected. Not needed for a reconnect. */
   alias: () => string | undefined
+  /** The Source to sign in to. Defaults to "github". Other Sources load their scope themselves, not GitHub repositories. */
+  connectorId?: string
 }
 
 /**
@@ -127,7 +129,7 @@ export function createSignIn(options: SignInOptions) {
     const result = await guarded(owner, START_TIMEOUT_MS, (signal) =>
       Promise.try(() =>
         api().startDeviceAuthorization(
-          { connectorId: "github", alias: options.alias(), reconnectId: effect.reconnectId },
+          { connectorId: options.connectorId ?? "github", alias: options.alias(), reconnectId: effect.reconnectId },
           { signal, headers: CLIENT_HEADERS },
         ),
       ),
@@ -171,6 +173,9 @@ export function createSignIn(options: SignInOptions) {
 
   const loadRepos = async (effect: Extract<SignInEffect, { type: "repos.load" }>, owner: Attempt) => {
     const { attempt, loadAttempt } = effect
+    // Only GitHub has repositories here; another Source's panel loads its own scope from the connection id.
+    if (options.connectorId !== undefined && options.connectorId !== "github")
+      return dispatch({ type: "repos.loaded", attempt, loadAttempt, items: [] })
     const result = await guarded(owner, REPOS_TIMEOUT_MS, (signal) =>
       Promise.try(() => api().listGithubRepos({ id: effect.connectionId }, { signal })),
     )

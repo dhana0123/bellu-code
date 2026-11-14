@@ -320,6 +320,8 @@ import type {
   ExperimentalConnectorsAwsSetupOutput,
   ExperimentalConnectorsListGithubReposInput,
   ExperimentalConnectorsListGithubReposOutput,
+  ExperimentalConnectorsListScopeOptionsInput,
+  ExperimentalConnectorsListScopeOptionsOutput,
   ExperimentalConnectorsStartDeviceAuthorizationInput,
   ExperimentalConnectorsStartDeviceAuthorizationOutput,
   ExperimentalConnectorsGetDeviceAuthorizationInput,
@@ -2113,6 +2115,17 @@ export function make(options: ClientOptions) {
             },
             requestOptions,
           ),
+        listScopeOptions: (input: ExperimentalConnectorsListScopeOptionsInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalConnectorsListScopeOptionsOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/connections/${encodeURIComponent(input.id)}/scope-options`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
         startDeviceAuthorization: (
           input: ExperimentalConnectorsStartDeviceAuthorizationInput,
           requestOptions?: RequestOptions,
@@ -3342,6 +3355,8 @@ export function make(options: ClientOptions) {
       awsSetup: client.experimental.connectors.awsSetup,
       /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
       listGithubRepos: client.experimental.connectors.listGithubRepos,
+      /** @deprecated Use `client.experimental.connectors.listScopeOptions`. Removed in the next minor. */
+      listScopeOptions: client.experimental.connectors.listScopeOptions,
       /** @deprecated Use `client.experimental.connectors.startDeviceAuthorization`. Removed in the next minor. */
       startDeviceAuthorization: client.experimental.connectors.startDeviceAuthorization,
       /** @deprecated Use `client.experimental.connectors.getDeviceAuthorization`. Removed in the next minor. */

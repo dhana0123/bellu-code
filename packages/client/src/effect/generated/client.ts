@@ -318,6 +318,8 @@ import type {
   ExperimentalConnectorsAwsSetupOutput,
   ExperimentalConnectorsListGithubReposInput,
   ExperimentalConnectorsListGithubReposOutput,
+  ExperimentalConnectorsListScopeOptionsInput,
+  ExperimentalConnectorsListScopeOptionsOutput,
   ExperimentalConnectorsStartDeviceAuthorizationInput,
   ExperimentalConnectorsStartDeviceAuthorizationOutput,
   ExperimentalConnectorsGetDeviceAuthorizationInput,
@@ -2013,6 +2015,12 @@ const EndpointExperimentalConnectorsListGithubRepos =
       raw["listGithubRepos"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
     )
 
+const EndpointExperimentalConnectorsListScopeOptions =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsListScopeOptionsInput) =>
+    preserveEffect<ExperimentalConnectorsListScopeOptionsOutput>()(
+      raw["listScopeOptions"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
 const EndpointExperimentalConnectorsStartDeviceAuthorization =
   (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsStartDeviceAuthorizationInput) =>
     preserveEffect<ExperimentalConnectorsStartDeviceAuthorizationOutput>()(
@@ -2086,6 +2094,7 @@ const adaptGroupExperimentalConnectors = (raw: RawClient["server.connectors"]) =
   deleteAuthConfig: EndpointExperimentalConnectorsDeleteAuthConfig(raw),
   awsSetup: EndpointExperimentalConnectorsAwsSetup(raw),
   listGithubRepos: EndpointExperimentalConnectorsListGithubRepos(raw),
+  listScopeOptions: EndpointExperimentalConnectorsListScopeOptions(raw),
   startDeviceAuthorization: EndpointExperimentalConnectorsStartDeviceAuthorization(raw),
   getDeviceAuthorization: EndpointExperimentalConnectorsGetDeviceAuthorization(raw),
   cancelDeviceAuthorization: EndpointExperimentalConnectorsCancelDeviceAuthorization(raw),
@@ -2489,6 +2498,8 @@ const adaptClient = (raw: RawClient) => {
       awsSetup: client.experimental.connectors.awsSetup,
       /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
       listGithubRepos: client.experimental.connectors.listGithubRepos,
+      /** @deprecated Use `client.experimental.connectors.listScopeOptions`. Removed in the next minor. */
+      listScopeOptions: client.experimental.connectors.listScopeOptions,
       /** @deprecated Use `client.experimental.connectors.startDeviceAuthorization`. Removed in the next minor. */
       startDeviceAuthorization: client.experimental.connectors.startDeviceAuthorization,
       /** @deprecated Use `client.experimental.connectors.getDeviceAuthorization`. Removed in the next minor. */

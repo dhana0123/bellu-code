@@ -176,6 +176,13 @@ export const ExperimentalConnectorsGroup = HttpApiGroup.make("server.connectors"
     }).annotateMerge(experimental("listGithubRepos", "List GitHub repositories", "List repositories the connection can access.")),
   )
   .add(
+    HttpApiEndpoint.get("listScopeOptions", "/api/experimental/connectors/connections/:id/scope-options", {
+      params: ConnectionParams,
+      success: Connectors.ScopeOptionList,
+      error: errors,
+    }).annotateMerge(experimental("listScopeOptions", "List scope options", "List the items a connection can select for its scope step. Never contains credentials.")),
+  )
+  .add(
     HttpApiEndpoint.post("startDeviceAuthorization", "/api/experimental/connectors/device-authorizations", {
       payload: Connectors.StartDeviceAuthorizationInput,
       success: Connectors.DeviceAuthorization,

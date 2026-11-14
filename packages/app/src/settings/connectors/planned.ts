@@ -2,14 +2,7 @@ import type { Connectors } from "@bellucode/schema/connectors"
 import type { ConnectorCard } from "./machine"
 
 /** Connectors planned but not yet in the backend catalog. They show as "Coming soon" cards and cannot be connected. */
-const PLANNED = [
-  ["google-cloud", "Google Cloud"],
-  ["azure", "Microsoft Azure"],
-  ["gitlab", "GitLab"],
-  ["bitbucket", "Bitbucket"],
-  ["kubernetes", "Kubernetes"],
-  ["cloudflare", "Cloudflare"],
-] as const
+const PLANNED: readonly (readonly [id: string, name: string])[] = []
 
 /**
  * Catalog cards first (live ones before the catalog's own coming-soon ones), then the planned connectors the catalog
