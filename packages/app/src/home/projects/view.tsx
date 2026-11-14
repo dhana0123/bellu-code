@@ -84,8 +84,11 @@ export type HomeProjectsViewProps = {
   /** Connectors shows in the Security menu while the server offers it. */
   connectorsAvailable?: boolean
   /** The Security page Home shows in place of the session list, if any. */
-  securityPage?: "connectors"
+  securityPage?: "connectors" | "graph"
   onOpenConnectors?: () => void
+  /** The Security Graph shows in the Security menu while its flag is on. */
+  graphAvailable?: boolean
+  onOpenGraph?: () => void
 }
 
 export function HomeProjectsView(props: HomeProjectsViewProps) {
@@ -332,6 +335,8 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
               connectors={props.connectorsAvailable}
               page={props.securityPage}
               onOpenConnectors={props.onOpenConnectors}
+              graph={props.graphAvailable}
+              onOpenGraph={props.onOpenGraph}
             />
           </Show>
         </div>
@@ -363,8 +368,10 @@ function HomeSecurityNav(props: {
   class?: string
   language: ReturnType<typeof useLanguage>
   connectors?: boolean
-  page?: "connectors"
+  page?: "connectors" | "graph"
   onOpenConnectors?: () => void
+  graph?: boolean
+  onOpenGraph?: () => void
 }) {
   const [state, setState] = createStore({ open: true })
   const soon = (label: (typeof SECURITY_ITEMS)[number]["label"]) =>
@@ -405,7 +412,12 @@ function HomeSecurityNav(props: {
       </Show>
       <For each={state.open ? SECURITY_ITEMS : []}>
         {(item) => (
-          <HomeProjectNavButton type="button" onClick={() => soon(item.label)}>
+          <HomeProjectNavButton
+            type="button"
+            data-selected={item.icon === "security-graph" && props.graph && props.page === "graph" ? "" : undefined}
+            aria-current={item.icon === "security-graph" && props.graph && props.page === "graph" ? "page" : undefined}
+            onClick={() => (item.icon === "security-graph" && props.graph ? props.onOpenGraph?.() : soon(item.label))}
+          >
             <Icon name={item.icon} size="small" />
             <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t(item.label)}</span>
           </HomeProjectNavButton>

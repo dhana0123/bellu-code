@@ -9,7 +9,7 @@
 import Graph from "graphology"
 import { DEFAULT_STYLES, Sigma } from "sigma"
 import { brandIcons, type Atlas } from "./atlas"
-import { createOverlay, nodeGeometry, sigmaSize, type Scene } from "./overlay"
+import { createOverlay, nodeGeometry, sigmaSize, type OverlayOptions, type Scene } from "./overlay"
 import { securityGraphPrimitives } from "./programs"
 import {
   emptyHighlight,
@@ -30,6 +30,7 @@ export type RendererOptions = {
   atlas: Atlas
   typeLabel?: (type: string) => string
   relationLabel?: (relation: string) => string
+  drawCrossing?: OverlayOptions["drawCrossing"]
 }
 
 type NodeAttributes = Record<string, string | number | undefined>
@@ -58,6 +59,7 @@ export function createRenderer(container: HTMLElement, options: RendererOptions)
     atlas: options.atlas,
     typeLabel: options.typeLabel,
     relationLabel: options.relationLabel,
+    drawCrossing: options.drawCrossing,
     view: {
       toViewport: (x, y) => sigma.graphToViewport({ x, y }),
       toGraph: (x, y) => sigma.viewportToGraph({ x, y }),
@@ -328,6 +330,10 @@ export function createRenderer(container: HTMLElement, options: RendererOptions)
     },
     getScale: scale,
     getViewport: viewport,
+    /** Renders synchronously without reindexing, so the WebGL canvases can be read in the same task (PNG export). */
+    renderNow() {
+      sigma.refresh({ partialGraph: { nodes: [], edges: [] } })
+    },
     zoomTo(target: number, camera?: CameraOptions) {
       return animate({ ratio: ratioFor(target) }, camera)
     },
@@ -336,6 +342,10 @@ export function createRenderer(container: HTMLElement, options: RendererOptions)
       if (!record) return Promise.resolve()
       const at = sigma.graphToFramedGraph({ x: record.x, y: record.y })
       return animate({ x: at.x, y: at.y, ...(target?.scale ? { ratio: ratioFor(target.scale) } : {}) }, target)
+    },
+    centerAt(x: number, y: number, camera?: CameraOptions) {
+      const at = sigma.graphToFramedGraph({ x, y })
+      return animate({ x: at.x, y: at.y }, camera)
     },
     fit(camera?: CameraOptions & { padding?: number }) {
       if (nodes.size === 0) return Promise.resolve()

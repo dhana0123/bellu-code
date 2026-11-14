@@ -68,6 +68,8 @@ export type Engine = {
   applyDelta(delta: GraphDelta): void
   entity(id: string): Entity | undefined
   relationship(id: string): Relationship | undefined
+  /** Relationships with the entity as source or target, in ingest order. */
+  relationshipsOf(id: string): Relationship[]
   /** Ancestor ids from the parent up to the area root. */
   ancestors(id: string): string[]
   search(query: string, limit?: number): Entity[]
@@ -337,6 +339,7 @@ export function createEngine(data: GraphData, positions: ReadonlyMap<string, Poi
     applyDelta,
     entity: (id) => entities.get(id),
     relationship: (id) => relationships.get(id),
+    relationshipsOf: (id) => rels().filter((rel) => rel.source === id || rel.target === id),
     ancestors: (id) => hierarchyAncestors(base.h, id),
     search,
     position: (id) => cache.get(id),
