@@ -11,6 +11,7 @@ import (
 
 	svc "github.com/bellu/bellucode/services/bellud/internal/connectors"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/audit"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/deviceflow"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/manifest"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/scope"
@@ -59,6 +60,10 @@ var routeTable = []Route{
 	{Name: "deleteAuthConfig", Method: "DELETE", Pattern: "/auth-configs/{id}"},
 	{Name: "awsSetup", Method: "POST", Pattern: "/aws/setup", body: parseAwsSetup, known: fields("alias")},
 	{Name: "listGithubRepos", Method: "GET", Pattern: "/connections/{id}/github/repos"},
+	{Name: "startDeviceAuthorization", Method: "POST", Pattern: "/device-authorizations", Credential: true,
+		body: parseStartDevice, known: fields("connectorId", "alias", "reconnectId")},
+	{Name: "getDeviceAuthorization", Method: "GET", Pattern: "/device-authorizations/{id}", Credential: true},
+	{Name: "cancelDeviceAuthorization", Method: "DELETE", Pattern: "/device-authorizations/{id}", Credential: true},
 	{Name: "getScope", Method: "GET", Pattern: "/scopes/{principal}"},
 	{Name: "putScope", Method: "PUT", Pattern: "/scopes/{principal}", body: parseScope,
 		known: fields("connectors", "connections", "operations")},
@@ -129,23 +134,26 @@ func NewAPI(cfg APIConfig) *Handler {
 		"updateConnection": h.updateConnection,
 		"deleteConnection": h.deleteConnection,
 
-		"testConnection":      h.testConnection,
-		"syncConnection":      h.syncConnection,
-		"pauseConnection":     h.pauseConnection,
-		"resumeConnection":    h.resumeConnection,
-		"reconnectConnection": h.reconnectConnection,
-		"rotateCredential":    h.rotateCredential,
-		"listAudit":           h.listAudit,
-		"listAuthConfigs":     h.listAuthConfigs,
-		"createAuthConfig":    h.createAuthConfig,
-		"deleteAuthConfig":    h.deleteAuthConfig,
-		"awsSetup":            h.awsSetup,
-		"listGithubRepos":     h.listGithubRepos,
-		"getScope":            h.getScope,
-		"putScope":            h.putScope,
-		"unlockVault":         h.unlockVault,
-		"rotateMasterKey":     h.rotateMasterKey,
-		"forgetAll":           h.forgetAll,
+		"testConnection":            h.testConnection,
+		"syncConnection":            h.syncConnection,
+		"pauseConnection":           h.pauseConnection,
+		"resumeConnection":          h.resumeConnection,
+		"reconnectConnection":       h.reconnectConnection,
+		"rotateCredential":          h.rotateCredential,
+		"listAudit":                 h.listAudit,
+		"listAuthConfigs":           h.listAuthConfigs,
+		"createAuthConfig":          h.createAuthConfig,
+		"deleteAuthConfig":          h.deleteAuthConfig,
+		"awsSetup":                  h.awsSetup,
+		"listGithubRepos":           h.listGithubRepos,
+		"startDeviceAuthorization":  h.startDeviceAuthorization,
+		"getDeviceAuthorization":    h.getDeviceAuthorization,
+		"cancelDeviceAuthorization": h.cancelDeviceAuthorization,
+		"getScope":                  h.getScope,
+		"putScope":                  h.putScope,
+		"unlockVault":               h.unlockVault,
+		"rotateMasterKey":           h.rotateMasterKey,
+		"forgetAll":                 h.forgetAll,
 	}
 	for _, rt := range routeTable {
 		fn, ok := fns[rt.Name]
@@ -572,6 +580,9 @@ func (h *Handler) awsSetup(w http.ResponseWriter, r *http.Request, c *call) {
 	if res.Principal != "" {
 		out["principal"] = res.Principal
 	}
+	if res.QuickCreateURL != "" {
+		out["quickCreateUrl"] = res.QuickCreateURL
+	}
 	writeJSON(w, http.StatusOK, out)
 }
 
@@ -579,16 +590,80 @@ func (h *Handler) listGithubRepos(w http.ResponseWriter, r *http.Request, c *cal
 	if _, ok := h.connection(w, c); !ok {
 		return
 	}
-	repos, err := h.svc.GithubRepos(r.Context(), c.id)
+	list, err := h.svc.GithubRepoList(r.Context(), c.id)
 	if err != nil {
 		h.writeErr(w, err)
 		return
 	}
-	items := make([]map[string]any, 0, len(repos))
-	for _, rp := range repos {
+	items := make([]map[string]any, 0, len(list.Repos))
+	for _, rp := range list.Repos {
 		items = append(items, map[string]any{"fullName": rp.FullName, "private": rp.Private})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"items": items})
+	out := map[string]any{"items": items, "installations": list.Installations}
+	if list.InstallURL != "" {
+		out["installUrl"] = list.InstallURL
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// startDeviceAuthorization answers expiresAt in epoch milliseconds, the unit
+// the sign-in machine uses. The device code never leaves the service.
+func (h *Handler) startDeviceAuthorization(w http.ResponseWriter, r *http.Request, c *call) {
+	in := c.in.(startDeviceInput)
+	a, err := h.svc.StartDeviceAuthorization(r.Context(), deviceflow.StartInput{
+		ConnectorID: in.ConnectorID, Alias: in.Alias, ReconnectID: in.ReconnectID,
+	})
+	if err != nil {
+		h.writeErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"id": a.ID, "userCode": a.UserCode, "verificationUri": a.VerifyURI,
+		"expiresAt": a.ExpiresAt.UnixMilli(), "intervalSec": a.IntervalSec,
+	})
+}
+
+func (h *Handler) getDeviceAuthorization(w http.ResponseWriter, _ *http.Request, c *call) {
+	st, err := h.svc.DeviceAuthorizationStatus(c.id)
+	if err != nil {
+		h.writeErr(w, err)
+		return
+	}
+	out := map[string]any{"status": st.Status}
+	if !st.ExpiresAt.IsZero() {
+		out["expiresAt"] = st.ExpiresAt.UnixMilli()
+	}
+	if st.IntervalSec > 0 {
+		out["intervalSec"] = st.IntervalSec
+	}
+	if st.Connection != nil {
+		out["connection"] = normalizeConnection(*st.Connection)
+	}
+	code := st.ErrorCode
+	if code == "" {
+		switch st.Status {
+		case deviceflow.StatusDenied:
+			code = lifecycle.CodeAuthorizationDenied
+		case deviceflow.StatusExpired:
+			code = lifecycle.CodeDeviceCodeExpired
+		}
+	}
+	if code != "" {
+		e := map[string]any{"code": string(code)}
+		if st.RetryAfterSec > 0 {
+			e["retryAfterSec"] = st.RetryAfterSec
+		}
+		out["error"] = e
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (h *Handler) cancelDeviceAuthorization(w http.ResponseWriter, r *http.Request, c *call) {
+	if err := h.svc.CancelDeviceAuthorization(r.Context(), c.id); err != nil {
+		h.writeErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 func normalizeScope(sc store.Scope) store.Scope {
@@ -718,6 +793,8 @@ type connectorError struct {
 	Message   string   `json:"message"`
 	Offenders []string `json:"offenders,omitempty"`
 	InUse     int      `json:"inUse,omitempty"`
+
+	RetryAfterSec int `json:"retryAfterSec,omitempty"`
 }
 
 // writeErr maps a service error to its wire form. Typed lifecycle errors keep
@@ -740,8 +817,8 @@ func (h *Handler) writeErr(w http.ResponseWriter, err error) {
 		case lifecycle.CodePayloadTooLarge:
 			status = http.StatusRequestEntityTooLarge
 		}
-		writeJSON(w, status, connectorError{Tag: "ConnectorError", Code: string(le.Code), Message: le.Message, Offenders: le.Offenders, InUse: le.InUse})
-	case errors.Is(err, svc.ErrDisabled), errors.Is(err, store.ErrNotFound):
+		writeJSON(w, status, connectorError{Tag: "ConnectorError", Code: string(le.Code), Message: le.Message, Offenders: le.Offenders, InUse: le.InUse, RetryAfterSec: le.RetryAfterSec})
+	case errors.Is(err, svc.ErrDisabled), errors.Is(err, store.ErrNotFound), errors.Is(err, deviceflow.ErrNotFound):
 		writeNotFound(w, "not found")
 	default:
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"_tag": "UnknownError", "message": "internal error"})

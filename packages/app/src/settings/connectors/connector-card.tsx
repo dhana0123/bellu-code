@@ -2,16 +2,18 @@ import type { Connectors } from "@bellucode/schema/connectors"
 import { Badge } from "@bellucode/ui/badge"
 import { Button } from "@bellucode/ui/button"
 import { ConnectorIcon, connectorIconIDs, type ConnectorIconID } from "@bellucode/ui/connector-icon"
-import { createEffect, createUniqueId, on, Show, type Component, type JSX } from "solid-js"
+import { createEffect, createUniqueId, on, Show, type Component } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/runtime/i18n/language"
 import type { dict } from "@/runtime/i18n/en"
+import { selectExpiryWarning } from "./expiry-warning"
 import { selectCardConnectionCount, selectConnectEnabled, type CardState, type ConnectorCard } from "./machine"
+import { StatusDot } from "./status-dot"
 import "./connectors.css"
 
 type Key = Extract<keyof typeof dict, string>
 
-const STATE_LABELS = {
+export const STATE_LABELS = {
   available: "settings.connectors.state.available",
   "coming-soon": "settings.connectors.state.comingSoon",
   connecting: "settings.connectors.state.connecting",
@@ -34,35 +36,35 @@ const SERVICES = {
     "settings.connectors.service.googleCloud",
     "settings.connectors.service.googleCloud.description",
   ],
+  bitbucket: ["settings.connectors.service.bitbucket", "settings.connectors.service.bitbucket.description"],
+  kubernetes: ["settings.connectors.service.kubernetes", "settings.connectors.service.kubernetes.description"],
   render: ["settings.connectors.service.render", "settings.connectors.service.render.description"],
   supabase: ["settings.connectors.service.supabase", "settings.connectors.service.supabase.description"],
 } as const satisfies Record<ConnectorIconID, readonly [Key, Key]>
 
-function iconID(manifest: Connectors.Manifest): ConnectorIconID | undefined {
+export function iconID(manifest: Connectors.Manifest): ConnectorIconID | undefined {
   return connectorIconIDs.find((id) => id === manifest.icon || id === manifest.id)
 }
 
-/** The Connection whose details the card shows: the first one in the card's own state, else the first. */
-function featured(card: ConnectorCard): Connectors.Connection | undefined {
-  const wanted: Record<CardState, readonly Connectors.Status[]> = {
-    "needs-attention": ["EXPIRED", "ERROR"],
-    connecting: ["INITIATED", "VERIFYING"],
-    connected: ["ACTIVE"],
-    paused: ["PAUSED"],
-    available: [],
-    "coming-soon": [],
-  }
-  return card.connections.find((connection) => wanted[card.state].includes(connection.status)) ?? card.connections[0]
+/** The translated name and description keys of a built-in service. */
+export function serviceKeys(manifest: Connectors.Manifest) {
+  return SERVICES[iconID(manifest) ?? ("" as ConnectorIconID)]
+}
+
+/** The displayed (translated) name and description of a card, as the card renders them. */
+export function cardText(manifest: Connectors.Manifest, t: ReturnType<typeof useLanguage>["t"]) {
+  const keys = serviceKeys(manifest)
+  return { name: keys ? t(keys[0]) : manifest.name, description: keys ? t(keys[1]) : undefined }
 }
 
 export type ConnectorCardProps = {
   card: ConnectorCard
   /** True while the service does not answer; disables Connect. */
   offline: boolean
-  /** Opens the connect dialog for this connector. `reconnect` names the Connection to reconnect. */
-  onConnect: (card: ConnectorCard, reconnect?: Connectors.Connection) => void
-  /** The connection list (12.7) renders here, below the card summary. */
-  children?: JSX.Element
+  /** Opens the connect page for this connector. */
+  onConnect: (card: ConnectorCard) => void
+  /** Opens the connector detail page of a card that has connections. */
+  onManage: (card: ConnectorCard) => void
 }
 
 export const ConnectorCardView: Component<ConnectorCardProps> = (props) => {
@@ -79,20 +81,7 @@ export const ConnectorCardView: Component<ConnectorCardProps> = (props) => {
   }
   const stateLabel = () => language.t(STATE_LABELS[props.card.state])
   const count = () => selectCardConnectionCount(props.card)
-  const connection = () => featured(props.card)
   const enabled = () => selectConnectEnabled(props.card, props.offline)
-  const attention = () => props.card.state === "needs-attention"
-  const lastSync = () => {
-    const current = connection()
-    const ended = current?.lastSync?.endedAt
-    if (!current || !ended) return language.t("settings.connectors.card.neverSynced")
-    const date = new Date(ended)
-    if (Number.isNaN(date.getTime())) return language.t("settings.connectors.card.neverSynced")
-    const time = new Intl.DateTimeFormat(language.intl(), { dateStyle: "medium", timeStyle: "short" }).format(date)
-    return language.t("settings.connectors.card.lastSync", { time })
-  }
-  const entities = () => language.plural("settings.connectors.card.entities", connection()?.lastSync?.entities ?? 0)
-
   // The live region stays mounted and only its text changes, so assistive technology announces each change.
   const [live, setLive] = createStore({ text: "" })
   createEffect(
@@ -103,20 +92,27 @@ export const ConnectorCardView: Component<ConnectorCardProps> = (props) => {
     ),
   )
 
-  const action = () => {
-    if (attention()) return "settings.connectors.action.reconnect" as const
-    if (count() > 0) return "settings.connectors.action.addConnection" as const
-    return "settings.connectors.action.connect" as const
+  const connected = () => count() > 0
+  const summary = () => {
+    const connections = props.card.connections
+    const account = connections.length === 1 ? connections[0]?.accountLabel : undefined
+    return account
+      ? language.plural("settings.connectors.card.summary", connections.length, { account })
+      : language.plural("settings.connectors.card.connections", connections.length)
   }
-  const click = () => {
-    const current = connection()
-    props.onConnect(props.card, attention() ? current : undefined)
-  }
-
+  const needsAttention = () =>
+    props.card.connections.some(
+      (connection) =>
+        connection.status === "ERROR" ||
+        connection.status === "EXPIRED" ||
+        selectExpiryWarning(connection, Date.now()) !== undefined,
+    )
+  const click = () => (connected() ? props.onManage(props.card) : props.onConnect(props.card))
   return (
     <section
       data-component="connector-card"
       data-state={props.card.state}
+      data-connected={connected() ? "" : undefined}
       data-connector={props.card.manifest.id}
       aria-label={language.t("settings.connectors.card.label", { service: name(), state: stateLabel() })}
     >
@@ -135,47 +131,37 @@ export const ConnectorCardView: Component<ConnectorCardProps> = (props) => {
       </header>
       <div data-slot="connector-card-badges">
         <Badge variant="subtle">{language.t("settings.connectors.readOnly")}</Badge>
-        <Badge id={ids.state} variant={props.card.state === "connected" ? "accent" : "neutral"} data-slot="connector-card-state">
-          {stateLabel()}
-        </Badge>
+        <span id={ids.state} data-slot="connector-card-state">
+          <Show
+            when={props.card.state === "connected"}
+            fallback={<Badge variant="neutral">{stateLabel()}</Badge>}
+          >
+            <StatusDot tone="success" label={stateLabel()} />
+          </Show>
+        </span>
       </div>
-      <Show when={count() > 0}>
-        <div data-slot="connector-card-details">
-          <span>{language.plural("settings.connectors.card.connections", count())}</span>
-          <Show when={props.card.state === "connected" && connection()}>
-            {(current) => (
-              <>
-                <span>{language.t("settings.connectors.card.account", { account: current().accountLabel })}</span>
-                <span>
-                  {lastSync()}
-                  <Show when={(current().lastSync?.entities ?? 0) > 0}>{` · ${entities()}`}</Show>
-                </span>
-              </>
-            )}
+      <div data-slot="connector-card-summary">
+        <Show when={connected()}>
+          <span>{summary()}</span>
+          <Show when={needsAttention()}>
+            <span data-slot="connector-card-reason">{language.t("settings.connectors.state.needsAttention")}</span>
           </Show>
-          <Show when={attention() && connection()}>
-            {(current) => (
-              <Show when={current().statusReason}>
-                <span data-slot="connector-card-reason">
-                  {language.t("settings.connectors.connection.reason", { reason: current().statusReason })}
-                </span>
-              </Show>
-            )}
-          </Show>
-        </div>
-      </Show>
+        </Show>
+      </div>
       <div data-slot="connector-card-actions">
-        <Button
-          variant={attention() || count() === 0 ? "submit" : "neutral"}
-          size="small"
-          disabled={!enabled()}
-          aria-describedby={ids.name}
-          onClick={click}
-        >
-          {language.t(action())}
-        </Button>
+        <Show when={props.card.state !== "coming-soon"}>
+          <Button
+            variant={connected() ? "neutral" : "submit"}
+            size="small"
+            data-slot="connector-card-action"
+            disabled={!enabled()}
+            aria-describedby={ids.name}
+            onClick={click}
+          >
+            {language.t(connected() ? "settings.connectors.action.manage" : "settings.connectors.action.connect")}
+          </Button>
+        </Show>
       </div>
-      {props.children}
       <span data-slot="connector-card-live" role="status" aria-live="polite" aria-atomic="true">
         {live.text}
       </span>

@@ -29,7 +29,7 @@ var transitions = map[Status][]Status{
 	StatusInitiated: {StatusVerifying},
 	StatusVerifying: {StatusActive, StatusError},
 	StatusActive:    {StatusExpired, StatusPaused, StatusError},
-	StatusPaused:    {StatusActive, StatusError},
+	StatusPaused:    {StatusActive, StatusExpired, StatusError},
 	StatusExpired:   {StatusVerifying},
 	StatusError:     {StatusVerifying},
 }

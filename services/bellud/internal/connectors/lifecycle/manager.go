@@ -30,8 +30,14 @@ const (
 	// StopTimeout bounds stopping a connection's collector.
 	StopTimeout = 5 * time.Second
 
+	// MethodDevice is the auth method of a GitHub App user token obtained
+	// through the device authorization flow. Its verification failures drop the
+	// stored credential.
+	MethodDevice = "device"
+
 	slotCredential = "credential"
 	slotCandidate  = "candidate"
+	slotRefresh    = "refresh"
 )
 
 // ErrRunInProgress is returned by Supervisor.SyncNow when a run is active.
@@ -129,6 +135,9 @@ type CreateInput struct {
 type CredentialInput struct {
 	Secret    []byte
 	ExpiresAt time.Time
+	// RefreshToken is stored in its own vault slot beside the credential. Empty
+	// for credentials that cannot be renewed.
+	RefreshToken []byte
 }
 
 // TestReport is the outcome of a successful verification.
@@ -170,7 +179,11 @@ func (m *Manager) Create(ctx context.Context, in CreateInput) (store.Connection,
 	if len(in.Credential.Secret) == 0 {
 		return store.Connection{}, NewError(CodeValidationFailed, "credential is required", m.red)
 	}
-	if err := m.validateCredential(in.ConnectorID, in.Credential.Secret); err != nil {
+	method := in.Method
+	if method == "" {
+		method = createMethod(snap, in.AuthConfigID)
+	}
+	if err := m.validateCredential(in.ConnectorID, method, in.Credential.Secret); err != nil {
 		return store.Connection{}, err
 	}
 	release := m.red.Register(in.Credential.Secret)
@@ -198,6 +211,13 @@ func (m *Manager) Create(ctx context.Context, in CreateInput) (store.Connection,
 		m.tombstone(conn.ID)
 		return store.Connection{}, m.classify(err)
 	}
+	if len(in.Credential.RefreshToken) > 0 {
+		if err := m.putRefresh(ctx, conn, in.Credential); err != nil {
+			m.dropCredential(ctx, cred)
+			m.tombstone(conn.ID)
+			return store.Connection{}, err
+		}
+	}
 	now := m.now().UTC()
 	conn = m.patch(conn.ID, func(c *store.Connection) {
 		c.CredentialCreatedAt, c.CredentialExpiresAt = &now, timePtr(exp)
@@ -207,21 +227,25 @@ func (m *Manager) Create(ctx context.Context, in CreateInput) (store.Connection,
 		m.tombstone(conn.ID)
 		return store.Connection{}, err
 	}
-	return m.finishVerification(ctx, conn.ID, cred, true)
+	return m.finishVerification(ctx, conn.ID, cred, true, in.Method == MethodDevice)
 }
 
 // finishVerification verifies the stored credential and moves a VERIFYING
 // connection to ACTIVE or ERROR.
-func (m *Manager) finishVerification(ctx context.Context, id string, cred vault.Ref, dropOnExcess bool) (store.Connection, error) {
+//
+// With dropOnFailure (method device) any verification failure deletes the
+// stored credential, so no token outlives a failed sign-in.
+func (m *Manager) finishVerification(ctx context.Context, id string, cred vault.Ref, dropOnExcess, dropOnFailure bool) (store.Connection, error) {
 	conn, _ := m.cfg.Store.Connection(id)
 	v, verr := m.verify(ctx, conn, cred)
 	if verr != nil {
 		check := ""
 		if verr.Code == CodeExcessPermission {
 			check = store.PermissionExcess
-			if dropOnExcess {
-				m.dropCredential(ctx, cred)
-			}
+		}
+		if dropOnFailure || (check != "" && dropOnExcess) {
+			m.dropCredential(ctx, cred)
+			m.dropCredential(ctx, refRef(id))
 		}
 		m.patch(id, func(c *store.Connection) {
 			if check != "" {
@@ -268,7 +292,7 @@ func (m *Manager) Reconnect(ctx context.Context, id string, in CredentialInput) 
 	if len(in.Secret) == 0 {
 		return NewError(CodeValidationFailed, "credential is required", m.red)
 	}
-	if err := m.validateCredential(conn.ConnectorID, in.Secret); err != nil {
+	if err := m.validateCredential(conn.ConnectorID, conn.Method, in.Secret); err != nil {
 		return err
 	}
 	release := m.red.Register(in.Secret)
@@ -295,6 +319,52 @@ func (m *Manager) Reconnect(ctx context.Context, id string, in CredentialInput) 
 	return err
 }
 
+// ReconnectVerified replaces the credential of an EXPIRED or ERROR connection
+// with a device user token. The candidate is staged and verified first, like
+// Rotate: on any failure nothing changes. On success it audits, commits the
+// candidate, sets Method to device and the new expiry, and moves the
+// connection to ACTIVE through VERIFYING. Id, alias and source tag are kept.
+func (m *Manager) ReconnectVerified(ctx context.Context, id string, in CredentialInput) error {
+	defer clear(in.Secret)
+	conn, err := m.live(id)
+	if err != nil {
+		return err
+	}
+	if st := Status(conn.Status); st != StatusExpired && st != StatusError {
+		return NewError(CodeTransitionRejected, "connection is not expired or in error", m.red)
+	}
+	if len(in.Secret) == 0 {
+		return NewError(CodeValidationFailed, "credential is required", m.red)
+	}
+	if err := m.validateCredential(conn.ConnectorID, MethodDevice, in.Secret); err != nil {
+		return err
+	}
+	release := m.red.Register(in.Secret)
+	defer release()
+	// The candidate is verified as a device token whatever the old method was.
+	vconn := conn
+	vconn.Method = MethodDevice
+	v, verr := m.stage(ctx, vconn, in)
+	if verr != nil {
+		_ = m.record(ctx, audit.EventConnect, audit.OutcomeFailure, conn, map[string]string{"reconnect": "true", "code": string(verr.Code)})
+		return verr
+	}
+	if err := m.record(ctx, audit.EventConnect, audit.OutcomeSuccess, conn, map[string]string{"reconnect": "true", "method": MethodDevice}); err != nil {
+		m.dropCredential(ctx, candRef(id))
+		return err
+	}
+	if err := m.commit(ctx, conn, in); err != nil {
+		return err
+	}
+	m.patch(id, func(c *store.Connection) { c.Method = MethodDevice })
+	if _, err := m.transition(ctx, id, StatusVerifying, "", true); err != nil {
+		return err
+	}
+	m.applyVerified(id, v)
+	_, err = m.transition(ctx, id, StatusActive, "", false)
+	return err
+}
+
 // Rotate verifies the candidate credential first and swaps it in only if the
 // identity and permission checks both pass. The status does not change.
 func (m *Manager) Rotate(ctx context.Context, id string, in CredentialInput) error {
@@ -306,7 +376,7 @@ func (m *Manager) Rotate(ctx context.Context, id string, in CredentialInput) err
 	if len(in.Secret) == 0 {
 		return NewError(CodeValidationFailed, "credential is required", m.red)
 	}
-	if err := m.validateCredential(conn.ConnectorID, in.Secret); err != nil {
+	if err := m.validateCredential(conn.ConnectorID, conn.Method, in.Secret); err != nil {
 		return err
 	}
 	release := m.red.Register(in.Secret)
@@ -421,7 +491,7 @@ func (m *Manager) Disconnect(ctx context.Context, id string) error {
 		_ = m.cfg.Supervisor.Stop(sctx, id)
 		cancel()
 	}
-	for _, ref := range []vault.Ref{credRef(id), candRef(id)} {
+	for _, ref := range []vault.Ref{credRef(id), candRef(id), refRef(id)} {
 		if err := m.cfg.Vault.Delete(ctx, ref); err != nil {
 			_ = m.record(ctx, audit.EventDisconnect, audit.OutcomeFailure, conn, map[string]string{"step": "credential_delete"})
 			return m.classify(err)
@@ -561,6 +631,9 @@ func (m *Manager) commit(ctx context.Context, conn store.Connection, in Credenti
 	if err := m.cfg.Vault.Put(ctx, credRef(conn.ID), conn.ConnectorID, bytes.Clone(in.Secret), in.ExpiresAt); err != nil {
 		return m.classify(err)
 	}
+	if err := m.putRefresh(ctx, conn, in); err != nil {
+		return err
+	}
 	now := m.now().UTC()
 	m.patch(conn.ID, func(c *store.Connection) {
 		c.CredentialCreatedAt, c.CredentialExpiresAt = &now, timePtr(in.ExpiresAt)
@@ -682,6 +755,30 @@ func credRef(id string) vault.Ref {
 	return vault.Ref{Owner: vault.OwnerConnection, OwnerID: id, Slot: slotCredential}
 }
 
+// CredentialRef is the vault slot of the active credential of a connection.
+func CredentialRef(id string) vault.Ref { return credRef(id) }
+
+// RefreshRef is the vault slot of the refresh token of a connection.
+func RefreshRef(id string) vault.Ref { return refRef(id) }
+
+func refRef(id string) vault.Ref {
+	return vault.Ref{Owner: vault.OwnerConnection, OwnerID: id, Slot: slotRefresh}
+}
+
+// putRefresh stores the refresh token of in, or removes a stale one when the
+// new credential has none. The input token is zeroed.
+func (m *Manager) putRefresh(ctx context.Context, conn store.Connection, in CredentialInput) error {
+	if len(in.RefreshToken) == 0 {
+		m.dropCredential(ctx, refRef(conn.ID))
+		return nil
+	}
+	defer clear(in.RefreshToken)
+	if err := m.cfg.Vault.Put(ctx, refRef(conn.ID), conn.ConnectorID, bytes.Clone(in.RefreshToken), time.Time{}); err != nil {
+		return m.classify(err)
+	}
+	return nil
+}
+
 func candRef(id string) vault.Ref {
 	return vault.Ref{Owner: vault.OwnerConnection, OwnerID: id, Slot: slotCandidate}
 }
@@ -725,21 +822,37 @@ func storeError(err error, r Redactor) error {
 
 // validateCredential runs the provider's optional pre-store credential check.
 // A rejection is returned as a credential-free validation_failed error.
-func (m *Manager) validateCredential(connectorID string, secret []byte) error {
+func (m *Manager) validateCredential(connectorID, method string, secret []byte) error {
 	p, ok := m.provider(connectorID)
 	if !ok {
 		return nil
 	}
-	v, ok := p.(CredentialValidator)
-	if !ok {
-		return nil
+	var verr error
+	if mv, ok := p.(MethodCredentialValidator); ok {
+		verr = mv.ValidateCredentialFor(method, secret)
+	} else if v, ok := p.(CredentialValidator); ok {
+		verr = v.ValidateCredential(secret)
 	}
-	if err := v.ValidateCredential(secret); err != nil {
+	if err := verr; err != nil {
 		var le *Error
 		if errors.As(err, &le) && le.Code == CodeValidationFailed {
-			return NewError(CodeValidationFailed, le.Message, m.red)
+			out := NewError(CodeValidationFailed, le.Message, m.red)
+			if len(le.Offenders) > 0 {
+				out.WithOffenders(le.Offenders, m.red)
+			}
+			return out
 		}
 		return NewError(CodeValidationFailed, "credential rejected", m.red)
 	}
 	return nil
+}
+
+// createMethod returns the method of the auth config a new connection uses.
+func createMethod(snap store.State, authConfigID string) string {
+	for _, a := range snap.AuthConfigs {
+		if a.ID == authConfigID {
+			return a.Method
+		}
+	}
+	return ""
 }

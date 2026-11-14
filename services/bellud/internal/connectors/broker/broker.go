@@ -41,13 +41,37 @@ type AuthKind string
 
 // Auth kinds.
 const (
-	// AuthGitHubToken injects "Authorization: Bearer <secret>" from the vault.
-	AuthGitHubToken AuthKind = "github-token"
+	// AuthBearer injects "Authorization: Bearer <secret>" from the vault.
+	AuthBearer AuthKind = "bearer"
+	// AuthGitHubToken is the former name of AuthBearer, kept with the same
+	// value so existing call sites and stored connections keep working.
+	AuthGitHubToken = AuthBearer
+	// AuthBasic injects "Authorization: Basic base64(user:secret)". The vault
+	// slot holds "user\nsecret".
+	AuthBasic AuthKind = "basic"
+	// AuthGCPServiceAccount signs an RS256 JWT with the service-account key in
+	// the vault, exchanges it for an access token (a ClassAuth operation) and
+	// injects it as bearer. The token is cached in memory until 60 s before expiry.
+	AuthGCPServiceAccount AuthKind = "gcp-sa"
+	// AuthK8sBearer injects a bearer token and dials ConnectionRef.APIHost with
+	// the CA pool from ConnectionRef.CACredential, still through the dial guard.
+	AuthK8sBearer AuthKind = "k8s-bearer"
 	// AuthAWSVault: the SDK signs with CredentialsProvider (vault backed).
 	AuthAWSVault AuthKind = "aws-vault"
 	// AuthAWSAmbient: ambient SDK chain, restricted to STS.
 	AuthAWSAmbient AuthKind = "aws-ambient"
+	// AuthNone injects no Authorization header (device-flow endpoints).
+	AuthNone AuthKind = "none"
 )
+
+// PreConnectionRef builds the ref for calls made before a Connection exists
+// (device authorization). The synthetic id keys the rate limiter and audit.
+func PreConnectionRef(connectorID string, m manifest.Manifest, pol *policy.Policy, authID string) ConnectionRef {
+	return ConnectionRef{
+		ID: "device:" + authID, ConnectorID: connectorID,
+		Manifest: m, Policy: pol, Auth: AuthNone,
+	}
+}
 
 // ConnectionRef is what the broker needs to know about one connection.
 type ConnectionRef struct {
@@ -62,6 +86,11 @@ type ConnectionRef struct {
 	// or a GHES host with "/api/v3"). Empty APIHost uses the operation host.
 	APIHost  string
 	BasePath string
+	// CACredential is the vault slot with the PEM CA bundle (AuthK8sBearer).
+	CACredential vault.Ref
+	// AllowPrivate permits private-range (RFC 1918, CGNAT, ULA) destinations
+	// for this connection (AuthK8sBearer). The default is denied.
+	AllowPrivate bool
 }
 
 // Call is one generic read.
@@ -172,6 +201,9 @@ type Broker struct {
 
 	mu     sync.Mutex
 	states map[string]*connState
+
+	k8sMu sync.Mutex
+	k8s   map[string]k8sEntry
 }
 
 type connState struct {
@@ -180,6 +212,11 @@ type connState struct {
 	// sends holds the (possibly reserved, future) send times of the last
 	// `limit` requests, in ascending order: a strict sliding 1 s window.
 	sends []time.Time
+
+	// tokMu guards the cached GCP access token.
+	tokMu  sync.Mutex
+	token  string
+	tokExp time.Time
 }
 
 // reserve claims the next send slot so that at most limit sends fall in any
@@ -221,7 +258,7 @@ func (s *connState) release(at time.Time) {
 
 // New returns a Broker.
 func New(cfg Config) *Broker {
-	b := &Broker{cfg: cfg, states: map[string]*connState{}, now: cfg.Now, rps: cfg.RatePerSecond}
+	b := &Broker{cfg: cfg, states: map[string]*connState{}, k8s: map[string]k8sEntry{}, now: cfg.Now, rps: cfg.RatePerSecond}
 	if b.now == nil {
 		b.now = time.Now
 	}

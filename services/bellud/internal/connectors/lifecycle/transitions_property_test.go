@@ -46,6 +46,7 @@ func TestPropertyLifecycleTransitions(t *testing.T) {
 		{StatusActive, StatusPaused}:       true,
 		{StatusActive, StatusError}:        true,
 		{StatusPaused, StatusActive}:       true,
+		{StatusPaused, StatusExpired}:      true,
 		{StatusPaused, StatusError}:        true,
 		{StatusExpired, StatusVerifying}:   true,
 		{StatusError, StatusVerifying}:     true,

@@ -120,6 +120,8 @@
     "@tsconfig/node22": "catalog:",
     "@types/bun": "catalog:",
     "@typescript/native": "catalog:",
+    "devicon": "2.18.0",
+    "simple-icons": "16.37.0",
     "solid-js": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",

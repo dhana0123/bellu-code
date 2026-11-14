@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { ClientError } from "@bellucode/client"
 import type { Connectors } from "@bellucode/schema/connectors"
 import { createAuditState, transitionAudit, type AuditEffect, type AuditEvent, type AuditState } from "./audit-machine"
-import { classifyConnectorFailure, failureMessage } from "./errors"
+import { classifyConnectorFailure, failureMessage, signInFailureMessage } from "./errors"
 import {
   INITIAL_MUTATION_STATE,
   selectMutationBusy,
@@ -29,6 +29,15 @@ describe("classifyConnectorFailure", () => {
     })
   })
 
+  test("maps the sign-in codes and the rate-limit retry time to keys", () => {
+    expect(signInFailureMessage("device_code_expired").key).toBe("settings.connectors.error.device_code_expired")
+    expect(signInFailureMessage("request_timeout").key).toBe("settings.connectors.error.request_timeout")
+    expect(signInFailureMessage("rate_limited", 30)).toEqual({
+      key: "settings.connectors.error.rateLimited",
+      plural: { key: "settings.connectors.error.rateLimited.retry", count: 30 },
+    })
+    expect(signInFailureMessage("rate_limited", 0)).toEqual({ key: "settings.connectors.error.rateLimited" })
+  })
   test("names 403 and 413, which the client rejects without a body, by status", () => {
     expect(failureMessage(classifyConnectorFailure(unexpected(403), false)).key).toBe(
       "settings.connectors.error.authorization",

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,7 +18,6 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/broker/opname"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/manifest"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/policy"
-	"github.com/bellu/bellucode/services/bellud/internal/connectors/vault"
 )
 
 // memBody is a fully buffered, already redacted response body.
@@ -78,7 +78,11 @@ func (t *policyTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 
 	// 1b. Query operations: the body must be a read-only query.
 	if op.Query && !t.isAWS() {
-		if err := t.checkQueryBody(ctx, req, op); err != nil {
+		check := t.checkQueryBody
+		if op.Class == manifest.ClassAuth {
+			check = t.checkAuthBody
+		}
+		if err := check(ctx, req, op); err != nil {
 			return nil, err
 		}
 	}
@@ -95,7 +99,10 @@ func (t *policyTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 	// 3. Credential injection. Nothing is sent when the vault fails.
 	out := req.Clone(ctx)
 	release := func() {}
-	if t.ref.Auth == AuthGitHubToken {
+	if t.injects() {
+		if t.ref.Auth == AuthK8sBearer && t.ref.APIHost != "" && req.URL.Host != t.ref.APIHost {
+			return nil, t.block(ctx, op.Name, req.Method, req.URL.Host, policy.ReasonHostBlocked, "host")
+		}
 		out.Header.Del("Authorization")
 		r, err := t.inject(ctx, out)
 		if err != nil {
@@ -106,7 +113,14 @@ func (t *policyTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 	defer release()
 
 	// 4. Dial (guarded in the inner transport).
-	raw, err := t.b.inner.RoundTrip(out)
+	inner := t.b.inner
+	if t.ref.Auth == AuthK8sBearer && t.b.cfg.Inner == nil {
+		inner, err = t.b.k8sTransport(ctx, t.ref)
+		if err != nil {
+			return nil, err
+		}
+	}
+	raw, err := inner.RoundTrip(out)
 	if err != nil {
 		return nil, t.networkError(parent, ctx, err)
 	}
@@ -128,7 +142,13 @@ func (t *policyTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 		return nil, t.networkError(parent, ctx, err)
 	}
 	t.notePause(st, raw, body)
-	body = t.b.cfg.Redactor.JSON(body)
+	if op.IssuesCredential {
+		// The body carries a credential for the lifecycle caller: token
+		// patterns stay, registered values are still replaced. Never audited.
+		body = t.b.cfg.Redactor.Registered(body)
+	} else {
+		body = t.b.cfg.Redactor.JSON(body)
+	}
 	body = stripKeys(body, op.StripKeys)
 
 	raw.Body = newMemBody(body)
@@ -198,6 +218,67 @@ func (t *policyTransport) checkQueryBody(ctx context.Context, req *http.Request,
 	req.ContentLength = int64(len(data))
 	return nil
 }
+
+// MaxAuthBody bounds the request body of an auth-class operation.
+const MaxAuthBody = 4 << 10
+
+var authBodyKeys = map[string]bool{"assertion": true, "client_id": true, "device_code": true, "grant_type": true, "scope": true, "refresh_token": true}
+
+// checkAuthBody allows only a small form or JSON body whose keys are all in
+// authBodyKeys. A client_secret key, an unparseable or oversized body, or a
+// missing body is blocked (audited, nothing sent).
+func (t *policyTransport) checkAuthBody(ctx context.Context, req *http.Request, op manifest.Operation) error {
+	deny := func() error {
+		return t.block(ctx, op.Name, req.Method, req.URL.Host, policy.ReasonNotReadOnly, "auth_body")
+	}
+	if req.Body == nil || req.Body == http.NoBody {
+		return deny()
+	}
+	data, err := io.ReadAll(io.LimitReader(req.Body, MaxAuthBody+1))
+	_ = req.Body.Close()
+	if err != nil || len(data) > MaxAuthBody || !authBodyAllowed(data, req.Header.Get("Content-Type")) {
+		return deny()
+	}
+	req.Body = io.NopCloser(bytes.NewReader(data))
+	req.GetBody = func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(data)), nil }
+	req.ContentLength = int64(len(data))
+	return nil
+}
+
+func authBodyAllowed(data []byte, contentType string) bool {
+	keys := []string{}
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) > 0 && trimmed[0] == '{' {
+		var m map[string]json.RawMessage
+		if json.Unmarshal(trimmed, &m) != nil {
+			return false
+		}
+		for k := range m {
+			keys = append(keys, k)
+		}
+	} else {
+		if strings.Contains(strings.ToLower(contentType), "json") {
+			return false
+		}
+		vals, err := url.ParseQuery(string(data))
+		if err != nil {
+			return false
+		}
+		for k := range vals {
+			keys = append(keys, k)
+		}
+	}
+	if len(keys) == 0 {
+		return false
+	}
+	for _, k := range keys {
+		if !authBodyKeys[strings.ToLower(k)] { // also rejects client_secret
+			return false
+		}
+	}
+	return true
+}
+
 func (t *policyTransport) check(ctx context.Context, req *http.Request, pr policy.Request, name string) (manifest.Operation, error) {
 	op, ok := t.ops[name]
 	if !ok {
@@ -299,33 +380,6 @@ func (b *Broker) appendAudit(ctx context.Context, e audit.Entry) error {
 	}
 	// The call context may already be done; the audit must still be written.
 	return b.cfg.Audit.Append(context.WithoutCancel(ctx), e)
-}
-
-// inject sets the GitHub Authorization header from the vault. The secret is
-// registered with the redactor until the response has been processed.
-func (t *policyTransport) inject(ctx context.Context, out *http.Request) (func(), error) {
-	var release func()
-	err := t.b.cfg.Opener.Use(ctx, t.ref.Credential, func(secret []byte) error {
-		release = t.b.cfg.Redactor.Register(secret)
-		out.Header.Set("Authorization", "Bearer "+string(secret))
-		return nil
-	})
-	if err != nil {
-		code := "unavailable"
-		switch {
-		case errors.Is(err, vault.ErrNotFound):
-			code = "not_found"
-		case errors.Is(err, vault.ErrDecrypt):
-			code = "decrypt"
-		}
-		_ = t.b.appendAudit(ctx, audit.Entry{
-			ConnectionID: t.ref.ID, ConnectorID: t.ref.ConnectorID,
-			Event: audit.EventCredentialRelease, Outcome: audit.OutcomeFailure, Actor: orSystem(t.caller),
-			Detail: map[string]string{"caller": t.caller, "code": code},
-		})
-		return nil, &CredentialError{Code: code}
-	}
-	return release, nil
 }
 
 func (t *policyTransport) networkError(parent, ctx context.Context, err error) error {

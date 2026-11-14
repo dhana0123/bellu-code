@@ -161,3 +161,60 @@ resource "aws_iam_role_policy" "simulate_self" {
   })
 }
 `
+
+// CloudFormationTemplateParameterized returns the static, parameterized
+// CloudFormation template (Parameters: TrustedPrincipalArn, ExternalId). It
+// can be hosted once in S3 and reused by every connection through a
+// quick-create link.
+func CloudFormationTemplateParameterized() string { return cfnParameterizedTemplate }
+
+const cfnParameterizedTemplate = `AWSTemplateFormatVersion: "2010-09-09"
+Description: Read-only role for Bellu cloud connector
+Parameters:
+  TrustedPrincipalArn:
+    Type: String
+    Description: ARN trusted to assume the role (Bellu's principal)
+    AllowedPattern: '^arn:aws[a-z-]*:iam::[0-9]{12}:(root|role/[A-Za-z0-9+=,.@_/-]+|user/[A-Za-z0-9+=,.@_/-]+)$'
+  ExternalId:
+    Type: String
+    Description: sts:ExternalId condition value
+    AllowedPattern: '^[A-Za-z0-9+=,.@:/_-]{2,1000}$'
+  RoleName:
+    Type: String
+    Default: bellu-read
+    Description: Name of the role to create
+    AllowedPattern: '^[A-Za-z0-9+=,.@_-]{1,64}$'
+Resources:
+  BelluRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref TrustedPrincipalArn
+            Action: "sts:AssumeRole"
+            Condition:
+              StringEquals:
+                "sts:ExternalId": !Ref ExternalId
+      # ReadOnlyAccess and SecurityAudit grant read-only access. For least
+      # privilege, replace them with a custom policy limited to the
+      # operations Bellu uses (ec2/s3/iam/lambda/rds read and list calls).
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/ReadOnlyAccess"
+        - "arn:aws:iam::aws:policy/SecurityAudit"
+      Policies:
+        - PolicyName: BelluSimulateSelf
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "iam:SimulatePrincipalPolicy"
+                Resource: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${RoleName}"
+Outputs:
+  RoleArn:
+    Value: !GetAtt BelluRole.Arn
+`

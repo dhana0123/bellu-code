@@ -186,7 +186,7 @@ func drawGen(t *rapid.T) (*genAPI, []string) {
 func checkHygiene(t tb, b graph.Batch, connID, name, forbidden string) {
 	t.Helper()
 	kinds := map[string]bool{}
-	for _, k := range Manifest().Entities {
+	for _, k := range Manifest("").Entities {
 		kinds[k] = true
 	}
 	ids := map[string]bool{}
@@ -312,7 +312,7 @@ func realClient(t tb, rt http.RoundTripper, viaBroker bool) *Client {
 	if !viaBroker {
 		return NewClient(&http.Client{Transport: rt}, DefaultAPIHost, "")
 	}
-	m := Manifest()
+	m := Manifest("")
 	pol, err := policy.Compile(m, policy.Selection{Host: DefaultAPIHost})
 	if err != nil {
 		t.Fatal(err)

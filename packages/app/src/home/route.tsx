@@ -1,6 +1,15 @@
 import { ScrollView } from "@bellucode/ui/scroll-view"
 import { createMediaQuery } from "@solid-primitives/media"
-import { Show } from "solid-js"
+import { createEffect, createMemo, on, Show } from "solid-js"
+import { createStore } from "solid-js/store"
+import { Button } from "@bellucode/ui/button"
+import { ServerConnection } from "@/runtime/server/registry"
+import { ServerProvider } from "@/runtime/server/current"
+import { useLanguage } from "@/runtime/i18n/language"
+import { SettingsConnectors } from "@/settings/connectors/connectors-page"
+import { ConnectionList } from "@/settings/connectors/connection-list"
+import { ConnectDialog } from "@/settings/connectors/connect-dialog"
+import { useConnectorsAvailable } from "@/settings/connectors/enabled"
 import { createHomeController } from "./model"
 import { createHomeProjectsController } from "./projects/controller"
 import { HomeUtilityNav } from "./projects/view"
@@ -17,6 +26,20 @@ export function Home() {
   const sessions = createHomeSessionsController(home)
   const search = createHomeSessionSearchController(home, sessions)
   const scroll = createHomeScrollController(sessions.data.groups)
+  // Security pages Home shows in place of the session list. Picking a project goes back to the sessions.
+  const [view, setView] = createStore<{ page: "sessions" | "connectors" }>({ page: "sessions" })
+  // Same server, same object: a refreshed server list must not remount the Connectors page (and end a sign-in).
+  const connection = createMemo(
+    () => {
+      const key = sessions.session.server()
+      return key ? projects.server.list().find((conn) => ServerConnection.key(conn) === key) : undefined
+    },
+    undefined,
+    { equals: (a, b) => (a ? ServerConnection.key(a) : undefined) === (b ? ServerConnection.key(b) : undefined) },
+  )
+  const connectors = useConnectorsAvailable(connection)
+  const securityPage = () => (view.page === "connectors" && connectors() ? "connectors" : undefined)
+  createEffect(on(() => projects.selection.value(), () => setView("page", "sessions"), { defer: true }))
 
   return (
     <div
@@ -45,9 +68,20 @@ export function Home() {
           `}
         >
           <Show when={!mobile()}>
-            <HomeProjects projects={projects} scroll={scroll} />
+            <HomeProjects
+              projects={projects}
+              scroll={scroll}
+              connectorsAvailable={connectors()}
+              securityPage={securityPage()}
+              onOpenConnectors={() => setView("page", "connectors")}
+            />
           </Show>
-          <HomeSessions sessions={sessions} search={search} scroll={scroll} />
+          <Show
+            when={securityPage() && connection()}
+            fallback={<HomeSessions sessions={sessions} search={search} scroll={scroll} />}
+          >
+            {(server) => <HomeConnectors server={server()} onBack={() => setView("page", "sessions")} />}
+          </Show>
         </div>
       </ScrollView>
       <div class="hidden shrink-0 px-3 py-2 md:block lg:hidden">
@@ -59,5 +93,25 @@ export function Home() {
         />
       </div>
     </div>
+  )
+}
+
+// The Connectors page of the Security menu, shown in Home's main column for the server the sessions list shows.
+function HomeConnectors(props: { server: ServerConnection.Any; onBack: () => void }) {
+  const language = useLanguage()
+  return (
+    <ServerProvider conn={props.server}>
+      <div data-slot="home-connectors" class="min-w-0 lg:mx-auto lg:w-full lg:max-w-[920px]">
+        <SettingsConnectors
+          headerAction={
+            <Button size="small" variant="ghost" onClick={() => props.onBack()}>
+              {language.t("home.security.backToSessions")}
+            </Button>
+          }
+          connectionList={({ card, data, open }) => <ConnectionList card={card} data={data} onReconnect={open} />}
+          connectDialog={(ctx) => <ConnectDialog {...ctx} />}
+        />
+      </div>
+    </ServerProvider>
   )
 }

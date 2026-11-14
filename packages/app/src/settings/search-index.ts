@@ -24,8 +24,6 @@ export function settingsSearchIndex(input: {
   desktop: boolean
   browser: boolean
   mobile: boolean
-  /** Whether the selected server offers Connectors (flag on and status probe succeeded). */
-  connectors?: boolean
   translate: ReturnType<typeof useLanguage>["t"]
   plugins?: readonly SettingsSearchPlugin[]
 }) {
@@ -148,7 +146,6 @@ export function settingsSearchIndex(input: {
 
     if (!server.connected || server.key !== input.selected) return
     serverSettings.forEach((entry) => {
-      if (entry.feature === "connectors" && !input.connectors) return
       add(entry, view(entry.tab, entry.target, entry.subtab), server.name, server.key)
     })
     // Sections on the servers page render with each server's connection.

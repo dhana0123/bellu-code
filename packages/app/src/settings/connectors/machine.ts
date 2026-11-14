@@ -98,6 +98,23 @@ export function validateAlias(
   return taken ? "taken" : undefined
 }
 
+/**
+ * The name a new Connection gets when the user types none: the connector id, then `-2`, `-3` and so on until it is
+ * unused for that connector.
+ */
+export function defaultAlias(connectorId: Connectors.ConnectorID, connections: readonly Connectors.Connection[]) {
+  const taken = new Set(
+    connections
+      .filter((connection) => !connection.removed && connection.connectorId === connectorId)
+      .map((connection) => connection.alias),
+  )
+  if (!taken.has(connectorId)) return connectorId
+  const next = Array.from({ length: taken.size + 1 }, (_, index) => `${connectorId}-${index + 2}`).find(
+    (alias) => !taken.has(alias),
+  )
+  return next ?? `${connectorId}-${taken.size + 2}`
+}
+
 // ---------------------------------------------------------------------------
 // Credential fields (Requirements 2.9, 10.6)
 // ---------------------------------------------------------------------------
@@ -122,6 +139,7 @@ export function expiresSoon(connection: Connectors.Connection, now: number) {
 /** A static credential (one that never expires) older than its rotation interval. */
 export function rotationDue(connection: Connectors.Connection, now: number) {
   if (connection.removed || connection.credentialExpiresAt || !connection.credentialCreatedAt) return false
+  if (!(connection.rotationIntervalDays > 0)) return false
   const created = Date.parse(connection.credentialCreatedAt)
   if (Number.isNaN(created)) return false
   return now - created > connection.rotationIntervalDays * DAY_MS

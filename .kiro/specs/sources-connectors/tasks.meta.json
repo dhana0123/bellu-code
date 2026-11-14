@@ -1,0 +1,303 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add broker auth kinds": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659000714
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659180446
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659951487
+      }
+    ],
+    "1.2 Generalize the device flow": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659003998
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659196893
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659953006
+      }
+    ],
+    "1.3 Add client ID constants": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659006809
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659964992
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660085207
+      }
+    ],
+    "1.4 Add credential validation hook": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659009748
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659963648
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660088001
+      }
+    ],
+    "2. Checkpoint - backend shared build": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659013058
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660105037
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660136305
+      }
+    ],
+    "3.1 GitLab package": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659015703
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660148488
+      }
+    ],
+    "3.2 Azure package": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659018668
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660152487
+      }
+    ],
+    "3.3 Google Cloud package": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659021956
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660149614
+      }
+    ],
+    "3.4 Bitbucket package": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659025081
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660151086
+      }
+    ],
+    "3.5 Cloudflare package": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659027813
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660147137
+      }
+    ],
+    "3.6 Kubernetes package": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659030469
+      }
+    ],
+    "4. Checkpoint - providers build": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659033100
+      }
+    ],
+    "5.1 Register Sources in the service": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659035936
+      }
+    ],
+    "5.2 Update protocol and schema": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659038880
+      }
+    ],
+    "5.3 Regenerate client and route table": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659041626
+      }
+    ],
+    "6. Checkpoint - backend and client build": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659045559
+      }
+    ],
+    "7.1 Step machine and descriptor types": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659049791
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659206551
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659954210
+      }
+    ],
+    "7.2 Wizard component": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659053432
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659966300
+      },
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660086370
+      }
+    ],
+    "8.1 Migrate AWS": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659055980
+      }
+    ],
+    "8.2 Migrate GitHub": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659066701
+      }
+    ],
+    "9. Checkpoint - app typecheck": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659089538
+      }
+    ],
+    "10.1 GitLab and Bitbucket descriptors": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659107952
+      }
+    ],
+    "10.2 Azure and Google Cloud descriptors": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659111034
+      }
+    ],
+    "10.3 Cloudflare and Kubernetes descriptors": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659113679
+      }
+    ],
+    "11.1 Logos": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659116754
+      }
+    ],
+    "11.2 Remove planned entries and apply the flag and naming": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659119449
+      }
+    ],
+    "12.1 Per-source docs": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659122884
+      }
+    ],
+    "13. Final checkpoint - build": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794659126132
+      }
+    ],
+    "7. Shared Wizard": [
+      {
+        "executionId": "259e1ce1-856a-4dc5-8275-7b322037027f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794660089346
+      }
+    ]
+  }
+}

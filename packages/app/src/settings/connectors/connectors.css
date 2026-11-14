@@ -140,6 +140,7 @@
   font-size: 13px;
   line-height: var(--line-height-compact);
 }
+[data-slot="connection-line"],
 [data-slot="connection-head"],
 [data-slot="connection-actions"] {
   display: flex;
@@ -174,4 +175,319 @@
 [data-slot="connection-warning"] {
   margin: 0;
   color: var(--v2-state-fg-danger);
+}
+
+[data-component="connect-page"] {
+  display: flex;
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 0 32px;
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--v2-text-text-base);
+}
+[data-slot="connect-page-header"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+[data-slot="connect-page-icon"] {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  color: var(--v2-icon-icon-base);
+}
+[data-slot="connect-page-title"] {
+  margin: 0;
+  font-size: 18px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-base);
+}
+[data-slot="connect-page-section"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background-color: var(--v2-background-bg-layer-01);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+}
+[data-slot="connect-page-section-head"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+[data-slot="connect-page-section-title"] {
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-compact);
+}
+summary[data-slot="connect-page-section-title"] {
+  cursor: pointer;
+}
+[data-slot="connect-page-methods"],
+[data-slot="connect-page-list"] {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-slot="connect-page-list"] {
+  color: var(--v2-text-text-muted);
+  overflow-wrap: anywhere;
+}
+details[data-slot="connect-page-section"] > [data-slot="connect-page-list"] {
+  margin-top: 12px;
+}
+[data-slot="connect-page-method"] {
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+}
+[data-slot="connect-page-method"][data-selected] {
+  box-shadow: inset 0 0 0 1px var(--v2-border-border-base);
+}
+[data-slot="connect-page-actions"] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--v2-border-border-muted);
+}
+[data-slot="connect-page-panel"] {
+  padding-top: 12px;
+  border-top: 0.5px solid var(--v2-border-border-muted);
+}
+
+[data-slot="github-wizard-steps"] {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-slot="github-wizard-step"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--v2-text-text-muted);
+}
+[data-slot="github-wizard-step"]:not(:last-child)::after {
+  content: "";
+  width: 24px;
+  height: 0;
+  border-top: 0.5px solid var(--v2-border-border-base);
+}
+[data-slot="github-wizard-step"][data-status="active"] {
+  color: var(--v2-text-text-base);
+}
+[data-slot="github-wizard-circle"] {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: var(--line-height-compact);
+  font-weight: var(--font-weight-medium);
+  box-shadow: inset 0 0 0 1px var(--v2-border-border-base);
+}
+[data-slot="github-wizard-step"][data-status="active"] [data-slot="github-wizard-circle"] {
+  background-color: var(--v2-text-text-base);
+  color: var(--v2-background-bg-layer-01);
+  box-shadow: none;
+}
+[data-slot="github-wizard-step"][data-status="done"] [data-slot="github-wizard-circle"] {
+  color: var(--v2-state-fg-success);
+  box-shadow: inset 0 0 0 1px var(--v2-state-fg-success);
+}
+[data-slot="github-wizard-step-label"] {
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+}
+[data-slot="github-wizard-step"][data-status="active"] [data-slot="github-wizard-step-label"] {
+  font-weight: var(--font-weight-medium);
+}
+[data-slot="github-wizard-options"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+[data-slot="github-wizard-option"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+}
+[data-slot="github-wizard-option"]:has(input:checked) {
+  box-shadow: inset 0 0 0 1px var(--v2-border-border-base);
+}
+[data-slot="github-wizard-option"]:has(input:focus-visible) {
+  outline: 2px solid var(--v2-border-border-base);
+  outline-offset: 2px;
+}
+[data-slot="github-wizard-option"][data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+[data-slot="github-wizard-option"] input {
+  margin: 2px 0 0;
+  flex: none;
+  accent-color: currentColor;
+}
+[data-slot="github-wizard-option-body"] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+[data-slot="github-wizard-option-title"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-base);
+}
+[data-slot="github-wizard-recommended"] {
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  line-height: var(--line-height-compact);
+  color: var(--v2-text-text-muted);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-base);
+}
+[data-slot="github-wizard-option-text"] {
+  color: var(--v2-text-text-muted);
+  line-height: var(--line-height-compact);
+}
+
+[data-slot="connection-line"] [data-slot="connection-menu"] {
+  margin-inline-start: auto;
+}
+[data-slot="connection-meta"] {
+  color: var(--v2-text-text-muted);
+}
+[data-slot="connection-settings"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+}
+
+/* The whole connected card is one target: the Manage button stretches over it. */
+[data-component="connector-card"][data-connected] [data-slot="connector-card-action"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+}
+[data-component="connector-card"][data-connected]:hover {
+  background-color: var(--v2-background-bg-layer-02, var(--v2-background-bg-layer-01));
+}
+[data-component="connector-card"][data-connected] [data-slot="connector-card-action"] {
+  position: static;
+}
+[data-component="connector-card"]:has([data-slot="connector-card-action"]:focus-visible) {
+  outline: 2px solid var(--v2-border-border-focus, var(--v2-border-border-base));
+  outline-offset: 2px;
+}
+[data-slot="connector-card-summary"] {
+  display: flex;
+  min-height: var(--line-height-compact);
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--v2-text-text-muted);
+}
+[data-component="connector-detail-actions"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+[data-component="connector-status"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--v2-text-text-base);
+}
+[data-slot="connector-status-dot"] {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--v2-icon-icon-faint);
+}
+[data-component="connector-status"][data-tone="success"] [data-slot="connector-status-dot"] {
+  background: var(--icon-success-base);
+}
+[data-component="connector-status"][data-tone="warning"] [data-slot="connector-status-dot"] {
+  background: var(--icon-warning-base);
+}
+[data-component="connector-status"][data-tone="critical"] [data-slot="connector-status-dot"] {
+  background: var(--icon-critical-base);
+}
+[data-component="connector-status"][data-tone="neutral"] {
+  color: var(--v2-text-text-muted);
+}
+[data-component="connector-card"][data-state="coming-soon"] [data-slot="connector-card-icon"] {
+  opacity: 0.6;
+}
+/* A card without an action (coming soon) keeps the height of a card with a button. */
+[data-slot="connector-card-actions"] {
+  min-height: 32px;
+}
+[data-component="connectors-toolbar"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+[data-component="connectors-toolbar"] [data-slot="connectors-search"] {
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 360px;
+}
+[data-slot="connectors-filter"] {
+  display: inline-flex;
+  gap: 4px;
+}
+[data-slot="connectors-filter-option"] {
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--v2-text-text-muted);
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  cursor: pointer;
+}
+[data-slot="connectors-filter-option"][aria-pressed="true"] {
+  background: var(--v2-background-bg-layer-03);
+  color: var(--v2-text-text-base);
+}
+[data-slot="connectors-filter-option"]:focus-visible {
+  outline: 2px solid var(--v2-border-border-base);
+  outline-offset: 2px;
 }

@@ -3,6 +3,7 @@ package connectors
 import (
 	"context"
 	"errors"
+	"os"
 	"regexp"
 	"strings"
 
@@ -69,31 +70,54 @@ func (s *Service) lifecycleCall(conn store.Connection) (lifecycle.Call, error) {
 	return lifecycle.Call{Connection: conn, Ref: ref, Client: s.broker.HTTPClient(ref, policy.CallerLifecycle)}, nil
 }
 
+// GithubRepoList is the repository picker data of a GitHub connection.
+type GithubRepoList struct {
+	Repos []github.Repo
+	// Installations and InstallURL are set for device Connections only.
+	Installations int
+	InstallURL    string
+}
+
 // GithubRepos lists the repositories a GitHub connection can access.
 func (s *Service) GithubRepos(ctx context.Context, id string) ([]github.Repo, error) {
+	l, err := s.GithubRepoList(ctx, id)
+	return l.Repos, err
+}
+
+// GithubRepoList lists the repositories a GitHub connection can access. For a
+// device Connection it also reports the installation count and the install URL.
+func (s *Service) GithubRepoList(ctx context.Context, id string) (GithubRepoList, error) {
 	if !s.Enabled() {
-		return nil, ErrDisabled
+		return GithubRepoList{}, ErrDisabled
 	}
 	conn, ok := s.Connection(id)
 	if !ok {
-		return nil, s.invalid("connection not found", "id")
+		return GithubRepoList{}, s.invalid("connection not found", "id")
 	}
 	if conn.ConnectorID != github.ConnectorID {
-		return nil, s.invalid("connection is not a GitHub connection", "id")
+		return GithubRepoList{}, s.invalid("connection is not a GitHub connection", "id")
 	}
 	call, err := s.lifecycleCall(conn)
 	if err != nil {
-		return nil, err
+		return GithubRepoList{}, err
 	}
-	repos, err := s.githubPrv.Repositories(ctx, call)
+	var out GithubRepoList
+	if conn.Method == github.MethodDevice {
+		var l github.RepoList
+		l, err = s.githubPrv.RepoList(ctx, call)
+		out = GithubRepoList{Repos: l.Repos, Installations: l.Installations,
+			InstallURL: github.InstallURL(github.EffectiveAppSlug(s.getenv))}
+	} else {
+		out.Repos, err = s.githubPrv.Repositories(ctx, call)
+	}
 	if err != nil {
 		var le *lifecycle.Error
 		if errors.As(err, &le) {
-			return nil, err
+			return GithubRepoList{}, err
 		}
-		return nil, lifecycle.NewError(lifecycle.CodeNetwork, "repositories could not be listed", s.red)
+		return GithubRepoList{}, lifecycle.NewError(lifecycle.CodeNetwork, "repositories could not be listed", s.red)
 	}
-	return repos, nil
+	return out, nil
 }
 
 // AWSSetup is the assume-role onboarding material.
@@ -102,6 +126,7 @@ type AWSSetup struct {
 	CloudFormation string
 	Terraform      string
 	Principal      string // empty when no ambient principal was detected
+	QuickCreateURL string // empty unless a template URL is configured and a principal is known
 }
 
 // placeholderPrincipal keeps the templates valid when no ambient principal can
@@ -140,7 +165,11 @@ func (s *Service) AWSSetup(ctx context.Context, alias string) (AWSSetup, error) 
 	if err != nil {
 		return AWSSetup{}, s.invalid("setup template could not be rendered", "alias")
 	}
-	return AWSSetup{ExternalID: id, CloudFormation: cfn, Terraform: tf, Principal: principal}, nil
+	quick := ""
+	if principal != "" {
+		quick = aws.QuickCreateURL(aws.EffectiveRegion(os.Getenv), aws.EffectiveTemplateURL(os.Getenv), principal, id)
+	}
+	return AWSSetup{ExternalID: id, CloudFormation: cfn, Terraform: tf, Principal: principal, QuickCreateURL: quick}, nil
 }
 
 // detectPrincipal returns the ARN of the ambient AWS identity, or "".

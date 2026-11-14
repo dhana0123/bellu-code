@@ -13,12 +13,14 @@ import (
 // ConnectorID is the id of the built-in GitHub connector.
 const ConnectorID = "github"
 
-// Auth method ids, in the preference order of Requirement 4.1.
+// Auth method ids.
 const (
-	MethodApp    = "github_app"
-	MethodDevice = "device_flow"
+	MethodDevice = manifest.MethodDevice
 	MethodPAT    = "pat"
 )
+
+// GitHubHost serves the device-flow endpoints.
+const GitHubHost = "github.com"
 
 // DefaultAPIHost is the public GitHub API host.
 const DefaultAPIHost = "api.github.com"
@@ -28,9 +30,6 @@ const GHESBasePath = "/api/v3"
 
 // UnverifiableMessage is shown for the permission check of a PAT.
 const UnverifiableMessage = "Permissions can't be verified; write requests are still blocked by the allowlist"
-
-// LaterRelease is the reason shown on disabled auth methods.
-const LaterRelease = "Available in a later release"
 
 // hostPlaceholder is filled by the policy with Descriptor.Host: always the API
 // host of the connection (api.github.com or the validated GHES host).
@@ -46,14 +45,22 @@ func get(name, path string, strip ...string) manifest.Operation {
 // Manifest returns the built-in GitHub connector manifest. Every operation is
 // a GET read, except POST /graphql which is a read only when its body is a
 // query (see IsGraphQLQuery). Secret-scanning responses drop the "secret" key.
-func Manifest() manifest.Manifest {
+// The device method is listed only when clientID is non-empty.
+func Manifest(clientID string) manifest.Manifest {
+	methods := []manifest.AuthMethod{}
+	if clientID != "" {
+		methods = append(methods, manifest.AuthMethod{ID: MethodDevice, Name: "Sign in with GitHub", Enabled: true,
+			Device: &manifest.DeviceSpec{
+				DeviceCodeURL: "https://" + GitHubHost + "/login/device/code",
+				TokenURL:      "https://" + GitHubHost + "/login/oauth/access_token",
+				ClientID:      clientID,
+				Scopes:        []string{},
+			}})
+	}
+	methods = append(methods, manifest.AuthMethod{ID: MethodPAT, Name: "Fine-grained personal access token", Enabled: true})
 	return manifest.Manifest{
 		ID: ConnectorID, Version: "1.0.0", Name: "GitHub", Icon: "github", Builtin: true,
-		AuthMethods: []manifest.AuthMethod{
-			{ID: MethodApp, Name: "GitHub App installation", Enabled: false, DisabledReason: LaterRelease},
-			{ID: MethodDevice, Name: "OAuth device flow", Enabled: false, DisabledReason: LaterRelease},
-			{ID: MethodPAT, Name: "Fine-grained personal access token", Enabled: true},
-		},
+		AuthMethods: methods,
 		Permissions: []manifest.Permission{
 			{Name: "Metadata", Description: "Read repository metadata", ReadOnly: true},
 			{Name: "Contents", Description: "Read repository contents", ReadOnly: true},
@@ -69,6 +76,7 @@ func Manifest() manifest.Manifest {
 			get("/user/repos", "/user/repos"),
 			get("/user/installations", "/user/installations"),
 			get("/installation/repositories", "/installation/repositories"),
+			get("/user/installations/{i}/repositories", "/user/installations/{i}/repositories"),
 			get("/orgs/{org}", "/orgs/{org}"),
 			get("/repos/{o}/{r}", "/repos/{o}/{r}"),
 			get("/repos/{o}/{r}/pulls", "/repos/{o}/{r}/pulls"),
@@ -80,8 +88,12 @@ func Manifest() manifest.Manifest {
 			get("/repos/{o}/{r}/issues", "/repos/{o}/{r}/issues"),
 			{Name: "POST /graphql", Class: manifest.ClassRead, Method: "POST", Query: true,
 				Host: hostPlaceholder, Path: "/graphql"},
+			{Name: "POST /login/device/code", Class: manifest.ClassAuth, Method: "POST", Query: true,
+				Host: GitHubHost, Path: "/login/device/code", MaxBytes: 16 << 10},
+			{Name: "POST /login/oauth/access_token", Class: manifest.ClassAuth, Method: "POST", Query: true,
+				Host: GitHubHost, Path: "/login/oauth/access_token", MaxBytes: 16 << 10, IssuesCredential: true},
 		},
-		Egress:   []string{DefaultAPIHost, hostPlaceholder},
+		Egress:   []string{DefaultAPIHost, GitHubHost, hostPlaceholder},
 		Entities: []string{"github_org", "github_repo", "github_workflow", "github_pull_request", "github_alert"},
 	}
 }

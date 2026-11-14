@@ -294,6 +294,27 @@
     "stream": false
   },
   {
+    "method": "POST",
+    "path": "/api/experimental/connectors/device-authorizations",
+    "operationId": "experimental.connectors.startDeviceAuthorization",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/experimental/connectors/device-authorizations/{id}",
+    "operationId": "experimental.connectors.cancelDeviceAuthorization",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/device-authorizations/{id}",
+    "operationId": "experimental.connectors.getDeviceAuthorization",
+    "group": "experimental",
+    "stream": false
+  },
+  {
     "method": "GET",
     "path": "/api/experimental/connectors/scopes/{principal}",
     "operationId": "experimental.connectors.getScope",

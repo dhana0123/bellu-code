@@ -16,19 +16,25 @@ import (
 )
 
 func TestManifestValidAndOrdered(t *testing.T) {
-	m := Manifest()
+	m := Manifest("")
 	if errs := manifest.Validate(m); len(errs) > 0 {
 		t.Fatalf("invalid manifest: %v", errs)
 	}
-	var ids []string
-	for _, a := range m.AuthMethods {
-		ids = append(ids, a.ID)
-		if a.ID != MethodPAT && (a.Enabled || a.DisabledReason != LaterRelease) {
-			t.Errorf("%s must be disabled with reason", a.ID)
-		}
+	if len(m.AuthMethods) != 1 || m.AuthMethods[0].ID != MethodPAT {
+		t.Errorf("empty client id must list the PAT method only: %v", m.AuthMethods)
 	}
-	if strings.Join(ids, ",") != "github_app,device_flow,pat" || !m.AuthMethods[2].Enabled {
-		t.Errorf("auth methods: %v", ids)
+	dm := Manifest("Iv1.abc")
+	if errs := manifest.Validate(dm); len(errs) > 0 {
+		t.Fatalf("invalid device manifest: %v", errs)
+	}
+	if len(dm.AuthMethods) != 2 || dm.AuthMethods[0].ID != MethodDevice || dm.AuthMethods[0].Device.ClientID != "Iv1.abc" {
+		t.Errorf("device method: %v", dm.AuthMethods)
+	}
+	if got := EffectiveClientID(func(string) string { return "  Iv1.x " }); got != "Iv1.x" {
+		t.Errorf("override: %q", got)
+	}
+	if got := EffectiveClientID(func(string) string { return " " }); got != ClientID {
+		t.Errorf("fallback: %q", got)
 	}
 	var strip, userRepos, install bool
 	for _, op := range m.Operations {
@@ -60,7 +66,7 @@ func TestPolicyHosts(t *testing.T) {
 		if d.APIHost != tc.host || d.BasePath != tc.base || d.Auth != broker.AuthGitHubToken {
 			t.Fatalf("describe %+v", d)
 		}
-		pol, err := policy.Compile(Manifest(), policy.Selection{Host: d.Host})
+		pol, err := policy.Compile(Manifest(""), policy.Selection{Host: d.Host})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -194,6 +200,29 @@ func TestIsGraphQLRequestBody(t *testing.T) {
 	} {
 		if IsGraphQLRequestBody([]byte(body)) != want {
 			t.Errorf("%s: want %v", body, want)
+		}
+	}
+}
+
+func TestValidateCredentialFor(t *testing.T) {
+	p := NewProvider(ProviderConfig{})
+	cases := []struct {
+		method, secret string
+		ok             bool
+	}{
+		{"pat", "github_pat_abc", true},
+		{"pat", "ghu_abc", false},
+		{"device", "ghu_abc", true},
+		{"device", "github_pat_abc", false},
+		{"device", "ghu_a bc", false},
+		{"device", "ghu_abc\n", false},
+		{"device", "ghu_", false},
+		{"app", "ghu_abc", false},
+	}
+	for _, c := range cases {
+		err := p.ValidateCredentialFor(c.method, []byte(c.secret))
+		if (err == nil) != c.ok {
+			t.Errorf("%s %q: err=%v", c.method, c.secret, err)
 		}
 	}
 }

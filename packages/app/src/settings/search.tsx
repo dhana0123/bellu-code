@@ -15,7 +15,6 @@ import { useSettingsServers } from "./servers/inventory"
 import { canIndexServerSettings } from "./servers/machine"
 import { useSettingsSurface } from "./surface"
 import { rankSettings, type SettingsSearchResult } from "./search-results"
-import { useConnectorsAvailable } from "./connectors/enabled"
 import { settingsSearchIndex } from "./search-index"
 import { SettingsSearchEmpty } from "./search-empty"
 
@@ -257,10 +256,6 @@ export function createSettingsSearchCatalog() {
   const surface = useSettingsSurface()
   const mobile = createMediaQuery("(max-width: 767px)")
 
-  const connectors = useConnectorsAvailable(() => {
-    const selected = surface.server()
-    return selected && canIndexServerSettings(selected.availability) ? selected.connection : undefined
-  })
   const inventory = createMemo(() =>
     servers().map((server) => {
       // Indexed exactly while the server's pages can open, so a result never leads to its unavailable state.
@@ -281,7 +276,6 @@ export function createSettingsSearchCatalog() {
       desktop: platform.platform === "desktop",
       browser: platform.platform === "desktop",
       mobile: mobile(),
-      connectors: connectors(),
       translate: language.t,
       plugins: surface.plugins.items(),
     }),

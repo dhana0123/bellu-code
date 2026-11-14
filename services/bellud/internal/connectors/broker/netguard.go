@@ -1,6 +1,7 @@
 package broker
 
 import (
+	"crypto/tls"
 	"errors"
 	"net"
 	"net/http"
@@ -41,6 +42,33 @@ func blockedIP(ip netip.Addr) bool {
 	return false
 }
 
+// privateBlocked reports private-range addresses: RFC 1918, ULA and CGNAT.
+func privateBlocked(ip netip.Addr) bool {
+	ip = ip.Unmap()
+	return ip.IsPrivate() || cgnat.Contains(ip)
+}
+
+var cgnat = netip.MustParsePrefix("100.64.0.0/10")
+
+// controlForK8s is the dial guard of a Kubernetes connection: the usual
+// blocks plus private ranges unless the connection allows them.
+func controlForK8s(allowPrivate bool) func(network, address string, _ syscall.RawConn) error {
+	base := controlFor(false)
+	return func(network, address string, c syscall.RawConn) error {
+		if err := base(network, address, c); err != nil {
+			return err
+		}
+		if allowPrivate {
+			return nil
+		}
+		ap, err := netip.ParseAddrPort(address)
+		if err != nil || privateBlocked(ap.Addr()) {
+			return errBlockedAddr
+		}
+		return nil
+	}
+}
+
 func controlFor(allowIMDS bool) func(network, address string, _ syscall.RawConn) error {
 	return func(_, address string, _ syscall.RawConn) error {
 		ap, err := netip.ParseAddrPort(address)
@@ -65,8 +93,13 @@ func controlFor(allowIMDS bool) func(network, address string, _ syscall.RawConn)
 }
 
 func newTransport(allowIMDS bool) *http.Transport {
-	d := &net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second, Control: controlFor(allowIMDS)}
+	return newGuardedTransport(controlFor(allowIMDS), nil)
+}
+
+func newGuardedTransport(control func(network, address string, _ syscall.RawConn) error, tlsCfg *tls.Config) *http.Transport {
+	d := &net.Dialer{Timeout: 10 * time.Second, KeepAlive: 30 * time.Second, Control: control}
 	return &http.Transport{
+		TLSClientConfig:       tlsCfg,
 		Proxy:                 nil, // a proxy would bypass the dial guard
 		DialContext:           d.DialContext,
 		ForceAttemptHTTP2:     true,

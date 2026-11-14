@@ -361,6 +361,7 @@ export class ConnectorError extends Schema.TaggedError<ConnectorError>()(
     message: Schema.String,
     offenders: Schema.optional(Schema.Array(Schema.String)),
     inUse: Schema.optional(Schema.Int),
+    retryAfterSec: Schema.optional(Schema.Int),
   },
   { httpApiStatus: 400 },
 ) {}

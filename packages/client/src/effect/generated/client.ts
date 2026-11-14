@@ -318,6 +318,12 @@ import type {
   ExperimentalConnectorsAwsSetupOutput,
   ExperimentalConnectorsListGithubReposInput,
   ExperimentalConnectorsListGithubReposOutput,
+  ExperimentalConnectorsStartDeviceAuthorizationInput,
+  ExperimentalConnectorsStartDeviceAuthorizationOutput,
+  ExperimentalConnectorsGetDeviceAuthorizationInput,
+  ExperimentalConnectorsGetDeviceAuthorizationOutput,
+  ExperimentalConnectorsCancelDeviceAuthorizationInput,
+  ExperimentalConnectorsCancelDeviceAuthorizationOutput,
   ExperimentalConnectorsGetScopeInput,
   ExperimentalConnectorsGetScopeOutput,
   ExperimentalConnectorsPutScopeInput,
@@ -2007,6 +2013,26 @@ const EndpointExperimentalConnectorsListGithubRepos =
       raw["listGithubRepos"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
     )
 
+const EndpointExperimentalConnectorsStartDeviceAuthorization =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsStartDeviceAuthorizationInput) =>
+    preserveEffect<ExperimentalConnectorsStartDeviceAuthorizationOutput>()(
+      raw["startDeviceAuthorization"]({
+        payload: { connectorId: input["connectorId"], alias: input["alias"], reconnectId: input["reconnectId"] },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsGetDeviceAuthorization =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsGetDeviceAuthorizationInput) =>
+    preserveEffect<ExperimentalConnectorsGetDeviceAuthorizationOutput>()(
+      raw["getDeviceAuthorization"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsCancelDeviceAuthorization =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsCancelDeviceAuthorizationInput) =>
+    preserveEffect<ExperimentalConnectorsCancelDeviceAuthorizationOutput>()(
+      raw["cancelDeviceAuthorization"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
 const EndpointExperimentalConnectorsGetScope =
   (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsGetScopeInput) =>
     preserveEffect<ExperimentalConnectorsGetScopeOutput>()(
@@ -2060,6 +2086,9 @@ const adaptGroupExperimentalConnectors = (raw: RawClient["server.connectors"]) =
   deleteAuthConfig: EndpointExperimentalConnectorsDeleteAuthConfig(raw),
   awsSetup: EndpointExperimentalConnectorsAwsSetup(raw),
   listGithubRepos: EndpointExperimentalConnectorsListGithubRepos(raw),
+  startDeviceAuthorization: EndpointExperimentalConnectorsStartDeviceAuthorization(raw),
+  getDeviceAuthorization: EndpointExperimentalConnectorsGetDeviceAuthorization(raw),
+  cancelDeviceAuthorization: EndpointExperimentalConnectorsCancelDeviceAuthorization(raw),
   getScope: EndpointExperimentalConnectorsGetScope(raw),
   putScope: EndpointExperimentalConnectorsPutScope(raw),
   unlockVault: EndpointExperimentalConnectorsUnlockVault(raw),
@@ -2460,6 +2489,12 @@ const adaptClient = (raw: RawClient) => {
       awsSetup: client.experimental.connectors.awsSetup,
       /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
       listGithubRepos: client.experimental.connectors.listGithubRepos,
+      /** @deprecated Use `client.experimental.connectors.startDeviceAuthorization`. Removed in the next minor. */
+      startDeviceAuthorization: client.experimental.connectors.startDeviceAuthorization,
+      /** @deprecated Use `client.experimental.connectors.getDeviceAuthorization`. Removed in the next minor. */
+      getDeviceAuthorization: client.experimental.connectors.getDeviceAuthorization,
+      /** @deprecated Use `client.experimental.connectors.cancelDeviceAuthorization`. Removed in the next minor. */
+      cancelDeviceAuthorization: client.experimental.connectors.cancelDeviceAuthorization,
       /** @deprecated Use `client.experimental.connectors.getScope`. Removed in the next minor. */
       getScope: client.experimental.connectors.getScope,
       /** @deprecated Use `client.experimental.connectors.putScope`. Removed in the next minor. */

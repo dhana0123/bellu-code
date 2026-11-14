@@ -320,6 +320,12 @@ import type {
   ExperimentalConnectorsAwsSetupOutput,
   ExperimentalConnectorsListGithubReposInput,
   ExperimentalConnectorsListGithubReposOutput,
+  ExperimentalConnectorsStartDeviceAuthorizationInput,
+  ExperimentalConnectorsStartDeviceAuthorizationOutput,
+  ExperimentalConnectorsGetDeviceAuthorizationInput,
+  ExperimentalConnectorsGetDeviceAuthorizationOutput,
+  ExperimentalConnectorsCancelDeviceAuthorizationInput,
+  ExperimentalConnectorsCancelDeviceAuthorizationOutput,
   ExperimentalConnectorsGetScopeInput,
   ExperimentalConnectorsGetScopeOutput,
   ExperimentalConnectorsPutScopeInput,
@@ -2107,6 +2113,49 @@ export function make(options: ClientOptions) {
             },
             requestOptions,
           ),
+        startDeviceAuthorization: (
+          input: ExperimentalConnectorsStartDeviceAuthorizationInput,
+          requestOptions?: RequestOptions,
+        ) =>
+          request<ExperimentalConnectorsStartDeviceAuthorizationOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/connectors/device-authorizations`,
+              body: { connectorId: input["connectorId"], alias: input["alias"], reconnectId: input["reconnectId"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        getDeviceAuthorization: (
+          input: ExperimentalConnectorsGetDeviceAuthorizationInput,
+          requestOptions?: RequestOptions,
+        ) =>
+          request<ExperimentalConnectorsGetDeviceAuthorizationOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/connectors/device-authorizations/${encodeURIComponent(input.id)}`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        cancelDeviceAuthorization: (
+          input: ExperimentalConnectorsCancelDeviceAuthorizationInput,
+          requestOptions?: RequestOptions,
+        ) =>
+          request<ExperimentalConnectorsCancelDeviceAuthorizationOutput>(
+            {
+              method: "DELETE",
+              path: `/api/experimental/connectors/device-authorizations/${encodeURIComponent(input.id)}`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 403, 404, 409, 413, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
         getScope: (input: ExperimentalConnectorsGetScopeInput, requestOptions?: RequestOptions) =>
           request<ExperimentalConnectorsGetScopeOutput>(
             {
@@ -3293,6 +3342,12 @@ export function make(options: ClientOptions) {
       awsSetup: client.experimental.connectors.awsSetup,
       /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
       listGithubRepos: client.experimental.connectors.listGithubRepos,
+      /** @deprecated Use `client.experimental.connectors.startDeviceAuthorization`. Removed in the next minor. */
+      startDeviceAuthorization: client.experimental.connectors.startDeviceAuthorization,
+      /** @deprecated Use `client.experimental.connectors.getDeviceAuthorization`. Removed in the next minor. */
+      getDeviceAuthorization: client.experimental.connectors.getDeviceAuthorization,
+      /** @deprecated Use `client.experimental.connectors.cancelDeviceAuthorization`. Removed in the next minor. */
+      cancelDeviceAuthorization: client.experimental.connectors.cancelDeviceAuthorization,
       /** @deprecated Use `client.experimental.connectors.getScope`. Removed in the next minor. */
       getScope: client.experimental.connectors.getScope,
       /** @deprecated Use `client.experimental.connectors.putScope`. Removed in the next minor. */

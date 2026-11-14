@@ -136,13 +136,18 @@ type svStatusCall struct {
 type svHost struct {
 	st *store.Store
 	p  *svProvider
-	a  *mgrAudit
+	// over, when set, is returned instead of p (a wrapper of p).
+	over Provider
+	a    *mgrAudit
 
 	mu    sync.Mutex
 	calls []svStatusCall
 }
 
 func (h *svHost) Prepare(c store.Connection) (Provider, Call, error) {
+	if h.over != nil {
+		return h.over, Call{Connection: c}, nil
+	}
 	return h.p, Call{Connection: c}, nil
 }
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/keysource"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/store"
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
 )
 
@@ -272,4 +273,53 @@ func assertNoSecret(t *testing.T, dir, secret string) {
 		}
 		return nil
 	})
+}
+
+func TestStartupReconcileExpiresCredentialLess(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	src := &memSource{slots: map[string][]byte{}}
+	eng := testEngine(t)
+	s := newSvc(t, dir, src, eng, ghTransport{})
+	if err := s.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	mk := func(alias string) string {
+		c, err := s.Create(ctx, CreateInput{
+			ConnectorID: "github", Alias: alias, Method: "pat",
+			Params:     map[string]string{"repos": "octo/hello"},
+			Credential: map[string]string{"token": "github_pat_" + strings.Repeat("a", 30)},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return c.ID
+	}
+	lost, paused := mk("lost"), mk("paused")
+	if err := s.Close(ctx); err != nil {
+		t.Fatal(err)
+	}
+	// Simulate vault loss for two connections; one of them is PAUSED.
+	st, err := store.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.UpdateConnection(paused, func(c *store.Connection) error { c.Status = "PAUSED"; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	// Losing vault.json empties every slot.
+	if err := os.Remove(filepath.Join(dir, "vault", "vault.json")); err != nil {
+		t.Fatal(err)
+	}
+
+	s2 := newSvc(t, dir, src, eng, ghTransport{})
+	if err := s2.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer s2.Close(ctx)
+	for id, want := range map[string]string{lost: "EXPIRED", paused: "EXPIRED"} {
+		if got, _ := s2.Connection(id); got.Status != want {
+			t.Fatalf("%s: status %s want %s", id, got.Status, want)
+		}
+	}
 }

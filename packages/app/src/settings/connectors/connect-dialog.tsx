@@ -4,17 +4,19 @@ import { Button } from "@bellucode/ui/button"
 import { Dialog, DialogBody, DialogFooter, DialogTitleGroup } from "@bellucode/ui/dialog"
 import { Loader } from "@bellucode/ui/loader"
 import { TextField } from "@bellucode/ui/text-field"
-import { createResource, createUniqueId, For, Match, Show, Switch } from "solid-js"
+import { createEffect, For, Match, on, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/runtime/i18n/language"
-import { useServerSDK } from "@/runtime/server/client"
-import { AwsPanel } from "./aws-panel"
 import { credentialFields } from "./connection-list"
-import type { ConnectorsData } from "./data"
+import { CLIENT_HEADERS, type ConnectorsData } from "./data"
 import { failureMessage } from "./errors"
-import { GithubPanel } from "./github-panel"
-import { clearCredentials, validateAlias } from "./machine"
+import { clearCredentials } from "./machine"
+import { createSignIn } from "./signin"
+import { selectAnnouncement, selectError, selectPanel, selectPrompt, selectRetryable } from "./signin-machine"
+import { DevicePrompt } from "./device-prompt"
+import { signInFailureMessage } from "./errors"
 import type { ConnectTarget } from "./connectors-page"
+import { ConnectPage } from "./connect-page"
 import "./connectors.css"
 
 /**
@@ -22,6 +24,8 @@ import "./connectors.css"
  * supplies the dialog root the shared `Dialog` content needs, with an overlay, and closes through `props.close`.
  */
 export function ConnectDialog(props: { target: ConnectTarget; data: ConnectorsData; close: () => void }) {
+  // A new connection is a full page, hosted by the connectors page in place of its content.
+  if (!props.target.reconnect) return <ConnectPage manifest={props.target.card.manifest} data={props.data} close={props.close} />
   return (
     <Kobalte
       open
@@ -40,22 +44,18 @@ export function ConnectDialog(props: { target: ConnectTarget; data: ConnectorsDa
 
 function ConnectDialogContent(props: { target: ConnectTarget; data: ConnectorsData; close: () => void }) {
   const language = useLanguage()
-  const manifest = () => props.target.card.manifest
   return (
     <Dialog size="large">
       <DialogTitleGroup
         title={
           props.target.reconnect
             ? language.t("settings.connectors.dialog.reconnect.title", { alias: props.target.reconnect.alias })
-            : language.t("settings.connectors.dialog.connect.title", { service: manifest().name })
+            : language.t("settings.connectors.dialog.connect.title", { service: props.target.card.manifest.name })
         }
         description={language.t("settings.connectors.dialog.connect.description")}
       />
       <DialogBody>
-        <Show
-          when={props.target.reconnect}
-          fallback={<ConnectForm manifest={manifest()} data={props.data} close={props.close} />}
-        >
+        <Show when={props.target.reconnect}>
           {(connection) => <ReconnectForm connection={connection()} data={props.data} close={props.close} />}
         </Show>
       </DialogBody>
@@ -63,179 +63,112 @@ function ConnectDialogContent(props: { target: ConnectTarget; data: ConnectorsDa
   )
 }
 
-/** The manifest's methods, permissions and hosts, exactly as the catalog payload carries them. */
-function ManifestSummary(props: { manifest: Connectors.Manifest }) {
-  const language = useLanguage()
-  const id = createUniqueId()
-  return (
-    <div data-component="connection-dialog-form">
-      <p data-slot="connection-note">{language.t("settings.connectors.readOnly")}</p>
-      <section aria-labelledby={`${id}-methods`}>
-        <h3 id={`${id}-methods`} class="text-13-medium">
-          {language.t("settings.connectors.dialog.authMethod")}
-        </h3>
-        <ul>
-          <For
-            each={props.manifest.auth_methods}
-            fallback={<li>{language.t("settings.connectors.dialog.authMethods.none")}</li>}
-          >
-            {(method) => (
-              <li>
-                {method.name}
-                <Show when={!method.enabled}>
-                  {" "}
-                  <span data-slot="connection-note">{language.t("settings.connectors.badge.laterRelease")}</span>
-                </Show>
-              </li>
-            )}
-          </For>
-        </ul>
-      </section>
-      <section aria-labelledby={`${id}-permissions`}>
-        <h3 id={`${id}-permissions`} class="text-13-medium">
-          {language.t("settings.connectors.dialog.permissions")}
-        </h3>
-        <ul>
-          <For each={props.manifest.permissions}>
-            {(permission) => (
-              <li>
-                {permission.name}
-                <Show when={permission.description}>
-                  {(description) => <span data-slot="connection-note"> {description()}</span>}
-                </Show>
-              </li>
-            )}
-          </For>
-        </ul>
-      </section>
-      <section aria-labelledby={`${id}-hosts`}>
-        <h3 id={`${id}-hosts`} class="text-13-medium">
-          {language.t("settings.connectors.dialog.hosts")}
-        </h3>
-        <ul>
-          <For each={props.manifest.egress}>{(host) => <li class="font-mono">{host}</li>}</For>
-        </ul>
-      </section>
-    </div>
-  )
-}
-
-function ConnectForm(props: { manifest: Connectors.Manifest; data: ConnectorsData; close: () => void }) {
-  const language = useLanguage()
-  const sdk = useServerSDK()
-  const id = createUniqueId()
-  const [form, setForm] = createStore({ alias: "", authConfigId: "" })
-  const [configs] = createResource(
-    () => props.manifest.id,
-    async (cid) => (await sdk.api.experimental.connectors.listAuthConfigs({ cid })).items,
-  )
-  // A failed list leaves only the default; the choice is optional.
-  const options = () => (configs.state === "ready" || configs.state === "refreshing" ? (configs.latest ?? []) : [])
-  const aliasError = () =>
-    validateAlias(form.alias, props.manifest.id, props.data.connections()) as
-      | ReturnType<typeof validateAlias>
-      | undefined
-  const aliasMessage = () => {
-    const error = aliasError()
-    if (!form.alias || !error) return
-    if (error === "taken")
-      return language.t("settings.connectors.connection.alias.duplicate", { service: props.manifest.name })
-    return language.t("settings.connectors.connection.alias.length")
-  }
-  const authConfigId = () => form.authConfigId || undefined
-  const done = () => {
-    props.data.refresh()
-    props.close()
-  }
-  return (
-    <div data-component="connection-dialog-form">
-      <ManifestSummary manifest={props.manifest} />
-      <TextField
-        label={language.t("settings.connectors.connection.alias")}
-        description={language.t("settings.connectors.connection.alias.help")}
-        autocomplete="off"
-        spellcheck={false}
-        required
-        disabled={props.data.offline()}
-        value={form.alias}
-        validationState={aliasMessage() ? "invalid" : "valid"}
-        error={aliasMessage()}
-        onChange={(value) => setForm("alias", value)}
-      />
-      <div data-slot="connection-edit">
-        <label for={`${id}-auth-config`}>{language.t("settings.connectors.dialog.authConfig")}</label>
-        <select
-          id={`${id}-auth-config`}
-          aria-describedby={`${id}-auth-config-help`}
-          disabled={props.data.offline()}
-          value={form.authConfigId}
-          onChange={(event) => setForm("authConfigId", event.currentTarget.value)}
-        >
-          <option value="">{language.t("settings.connectors.dialog.authConfig.default")}</option>
-          <For each={options()}>{(config) => <option value={config.id}>{config.name}</option>}</For>
-        </select>
-        <p id={`${id}-auth-config-help`} data-slot="connection-note">
-          {language.t("settings.connectors.dialog.authConfig.help")}
-        </p>
-      </div>
-      <Switch>
-        <Match when={props.manifest.id !== "aws" && props.manifest.id !== "github"}>
-          <p role="status" data-slot="connection-note">
-            {language.t("settings.connectors.state.comingSoon")}.{" "}
-            {language.t("settings.connectors.dialog.comingSoon", { service: props.manifest.name })}
-          </p>
-          <DialogFooter>
-            <Button type="button" variant="neutral" onClick={props.close}>
-              {language.t("settings.connectors.action.cancel")}
-            </Button>
-            <Button type="button" variant="submit" disabled>
-              {language.t("settings.connectors.state.comingSoon")}
-            </Button>
-          </DialogFooter>
-        </Match>
-        <Match when={props.data.offline()}>
-          <p role="alert" data-slot="connection-error">
-            {language.t("settings.connectors.offline.description")}
-          </p>
-          <DialogFooter>
-            <Button type="button" variant="neutral" onClick={props.close}>
-              {language.t("settings.connectors.action.cancel")}
-            </Button>
-          </DialogFooter>
-        </Match>
-        <Match when={aliasError()}>
-          <p data-slot="connection-note">{language.t("settings.connectors.dialog.aliasFirst")}</p>
-          <DialogFooter>
-            <Button type="button" variant="neutral" onClick={props.close}>
-              {language.t("settings.connectors.action.cancel")}
-            </Button>
-          </DialogFooter>
-        </Match>
-        <Match when={props.manifest.id === "aws"}>
-          <AwsPanel
-            alias={form.alias}
-            authConfigId={authConfigId()}
-            disabled={props.data.offline()}
-            onDone={done}
-            onCancel={props.close}
-          />
-        </Match>
-        <Match when={props.manifest.id === "github"}>
-          <GithubPanel
-            alias={form.alias}
-            authConfigId={authConfigId()}
-            data={props.data}
-            onDone={done}
-            onCancel={props.close}
-          />
-        </Match>
-      </Switch>
-    </div>
-  )
-}
-
 /** Replaces the credential of one Connection. Fields are emptied after success and after failure. */
 function ReconnectForm(props: { connection: Connectors.Connection; data: ConnectorsData; close: () => void }) {
+  return (
+    <Show
+      when={props.connection.connectorId === "github" && props.connection.method === "device"}
+      fallback={<TokenReconnectForm {...props} />}
+    >
+      <GithubReconnect {...props} />
+    </Show>
+  )
+}
+
+/** Signs in again with GitHub to replace the sign-in of a device Connection. */
+function GithubReconnect(props: { connection: Connectors.Connection; data: ConnectorsData; close: () => void }) {
+  const language = useLanguage()
+  const signin = createSignIn({ data: props.data, alias: () => props.connection.alias })
+  // A cancel also returns the machine to idle; only a finished sign-in closes the dialog.
+  const [view, setView] = createStore({ cancelled: false })
+  createEffect(
+    on(
+      () => selectPanel(signin.state()),
+      (panel, previous) => {
+        if (previous === "prompt" && panel === "signin" && !view.cancelled) props.close()
+      },
+    ),
+  )
+  const cancel = () => {
+    setView("cancelled", true)
+    signin.cancel()
+  }
+  const start = () => {
+    setView("cancelled", false)
+    signin.signIn(props.connection.id)
+  }
+  const error = () => {
+    const current = selectError(signin.state())
+    if (!current) return
+    const message = signInFailureMessage(current.code, current.retryAfterSec)
+    return message.plural ? language.plural(message.plural.key, message.plural.count) : language.t(message.key)
+  }
+  const announcement = () => (selectAnnouncement(signin.state()) === "prompt" ? language.t("settings.connectors.github.signin.announce.codeShown") : "")
+  return (
+    <div data-component="connection-dialog-form">
+      <TextField label={language.t("settings.connectors.connection.alias")} value={props.connection.alias} readOnly />
+      <p data-slot="connection-note">{language.t("settings.connectors.github.signin.expiredConnection")}</p>
+      <div class="sr-only" role="status" aria-live="polite">
+        {announcement()}
+      </div>
+      <Show when={props.data.offline()}>
+        <p role="alert" data-slot="connection-error">
+          {language.t("settings.connectors.offline.description")}
+        </p>
+      </Show>
+      <Show when={error()}>
+        {(message) => (
+          <p role="alert" data-slot="connection-error">
+            {language.t("settings.connectors.github.reconnect.failed")} {message()}
+          </p>
+        )}
+      </Show>
+      <Switch>
+        <Match when={selectPanel(signin.state()) === "starting"}>
+          <div class="flex items-center gap-2">
+            <Loader class="size-4" aria-hidden="true" />
+            {language.t("settings.connectors.github.signin.starting")}
+          </div>
+        </Match>
+        <Match when={selectPrompt(signin.state())} keyed>
+          {(prompt) => (
+            <DevicePrompt
+              userCode={prompt.userCode}
+              verificationUri={prompt.verificationUri}
+              expiresAt={prompt.expiresAt}
+              labels={{
+                instructions: language.t("settings.connectors.github.signin.prompt"),
+                code: language.t("settings.connectors.github.signin.code.label"),
+                copy: language.t("settings.connectors.github.signin.code.copy"),
+                copied: language.t("settings.connectors.github.signin.code.copied"),
+                copyFailed: language.t("settings.connectors.github.signin.code.copyFailed"),
+                open: language.t("settings.connectors.github.signin.open"),
+                remaining: (time: string) => language.t("settings.connectors.github.signin.remaining", { time }),
+                expiresSoon: language.t("settings.connectors.github.signin.expiresSoon"),
+                expired: language.t("settings.connectors.github.signin.expired"),
+                waiting: language.t("settings.connectors.github.device.waiting"),
+                cancel: language.t("settings.connectors.github.signin.cancel"),
+              }}
+              onCancel={cancel}
+            />
+          )}
+        </Match>
+      </Switch>
+      <DialogFooter>
+        <Button type="button" variant="neutral" onClick={props.close}>
+          {language.t("settings.connectors.action.cancel")}
+        </Button>
+        <Show when={selectPanel(signin.state()) === "signin" || selectRetryable(signin.state())}>
+          <Button type="button" variant="submit" disabled={props.data.offline()} onClick={start}>
+            {language.t("settings.connectors.github.signin.action")}
+          </Button>
+        </Show>
+      </DialogFooter>
+    </div>
+  )
+}
+
+function TokenReconnectForm(props: { connection: Connectors.Connection; data: ConnectorsData; close: () => void }) {
   const language = useLanguage()
   const reconnect = props.data.createMutation()
   const fields = credentialFields(props.connection)
@@ -248,7 +181,7 @@ function ReconnectForm(props: { connection: Connectors.Connection; data: Connect
     if (!ready() || reconnect.busy() || props.data.offline()) return
     const credential = { ...values }
     const result = await reconnect.run(
-      (api, signal) => api.reconnectConnection({ id: props.connection.id, credential }, { signal }),
+      (api, signal) => api.reconnectConnection({ id: props.connection.id, credential }, { signal, headers: CLIENT_HEADERS }),
       () => setValues(clearCredentials(values)),
     )
     if (result) props.close()

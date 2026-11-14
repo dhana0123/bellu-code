@@ -6,6 +6,9 @@ export function HomeProjects(props: {
   projects: HomeProjectsController
   scroll: HomeScrollController
   dropdown?: boolean
+  connectorsAvailable?: boolean
+  securityPage?: "connectors"
+  onOpenConnectors?: () => void
 }) {
   return (
     <HomeProjectsView
@@ -41,6 +44,9 @@ export function HomeProjects(props: {
       onHideProject={props.projects.project.hide}
       onOpenSettings={props.projects.utility.settings}
       onOpenHelp={props.projects.utility.help}
+      connectorsAvailable={props.connectorsAvailable}
+      securityPage={props.securityPage}
+      onOpenConnectors={props.onOpenConnectors}
     />
   )
 }

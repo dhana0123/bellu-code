@@ -1,0 +1,727 @@
+{
+  "pbtResults": {
+    "2.4 Write property test for token prefix validation": {
+      "status": "passed",
+      "lastRunTimestamp": 1794629307436
+    },
+    "4.5 Write property test for the poll schedule": {
+      "status": "passed",
+      "lastRunTimestamp": 1794629319370
+    },
+    "2.6 Write property test for failed verification": {
+      "status": "passed",
+      "lastRunTimestamp": 1794629769095
+    },
+    "2.7 Write property test for expiry recording": {
+      "status": "passed",
+      "lastRunTimestamp": 1794629787429
+    },
+    "2.8 Write property test for reconnect identity": {
+      "status": "passed",
+      "lastRunTimestamp": 1794629835909
+    },
+    "2.12 Write property test for selection bounds (Go)": {
+      "status": "failed",
+      "failingExample": "Service.Update with Selection{Repos: []} (n=0) is accepted instead of rejected",
+      "lastRunTimestamp": 1794629979704
+    },
+    "2.9 Write property test for failed reconnect": {
+      "status": "passed",
+      "lastRunTimestamp": 1794629993688
+    },
+    "2.10 Write property test for startup reconcile": {
+      "status": "passed",
+      "lastRunTimestamp": 1794630422998
+    }
+  },
+  "executionHistory": {
+    "1.1 Add `github/clientid.go` (`ClientID` constant, `AppSlug`, `EffectiveClientID`) and extend the manifest": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628497898
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628582664
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628767288
+      }
+    ],
+    "1.2 Broker changes": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628501978
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628777778
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628908321
+      }
+    ],
+    "2.1 Error codes and method-aware validation": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628505768
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628584088
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628768838
+      }
+    ],
+    "2.2 Verification, reconnect and expiry": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628509118
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629376122
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629699610
+      }
+    ],
+    "2.3 Startup reconcile in `service.go`": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628512811
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629715780
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629882369
+      }
+    ],
+    "3. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628516728
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630593548
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630676118
+      }
+    ],
+    "4.1 Pure `Poller` (`Next`: interval, `slow_down`, backoff capped at 60 s, expiry cutoff)": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628520277
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628585838
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628770388
+      }
+    ],
+    "4.2 `Service` (`Start`, `Status`, `Cancel`, `Close`) and wiring in `service.go`": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628523369
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630343878
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630585071
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630683120
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630810429
+      }
+    ],
+    "4.3 Update `arch_test.go` (every non-infrastructure connector directory and `deviceflow` use the broker only), with a violating fixture": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628527640
+      }
+    ],
+    "5.1 Schema and protocol": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628532037
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628779240
+      },
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628909948
+      }
+    ],
+    "5.2 Go handlers and routes": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628535745
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630818319
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630986081
+      }
+    ],
+    "5.3 Run `bun run generate` from `packages/client`; do not edit generated files": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628540479
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630998886
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631059526
+      }
+    ],
+    "6. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628543965
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631072206
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631079571
+      }
+    ],
+    "7.1 `signin-machine.ts`: six-phase union, closed events and effects, pure `transition`, selectors; compose `github-machine.ts` and accept `repos.retried` from `ready`": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628547403
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629377730
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629702780
+      }
+    ],
+    "7.2 `signin.ts` driver: per-attempt abort, 2 s status poll with 5 s timeout, expiry timer, 15 s and 10 s request timeouts, `disposed` cleanup within 100 ms": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628550359
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631087977
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631212756
+      }
+    ],
+    "7.3 `errors.ts` (`CODE_KEYS satisfies Record<...>`), `request_timeout`, and all new English i18n keys": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628553868
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629380088
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629704200
+      }
+    ],
+    "7.4 Components": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628557404
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631220291
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631520920
+      }
+    ],
+    "8.1 Write `docs/connectors/github-app.md`: registration checklist, secret policy, fork setup (`BELLUCODE_GITHUB_CLIENT_ID`, `BELLUCODE_GITHUB_APP_SLUG`), expiration disabled, master key setup; note the owner supplies the Client ID": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628561329
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630820016
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630988029
+      }
+    ],
+    "8.2 Write `docs/connectors/device-flow-connectors.md` with a non-GitHub worked example": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628564789
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630821589
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630990487
+      }
+    ],
+    "9. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628568769
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631537382
+      },
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631592941
+      }
+    ],
+    "1. Client ID, manifest and broker": [
+      {
+        "executionId": "a0550e10-09e0-44aa-9a68-22d8c9f6e1f6",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794628911558
+      }
+    ],
+    "1.3 Write property test for client id override": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629191424
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629223437
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629354078
+      }
+    ],
+    "1.4 Write property test for device manifest validation": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629194388
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629221854
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629352468
+      }
+    ],
+    "2.4 Write property test for token prefix validation": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629196388
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629225100
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629356913
+      }
+    ],
+    "4.5 Write property test for the poll schedule": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629198393
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629226512
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629358588
+      }
+    ],
+    "4.6 Write property test for network backoff": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629200768
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629228028
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629360209
+      }
+    ],
+    "1.6 Write property test for the device endpoint allowlist": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629371308
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629701010
+      }
+    ],
+    "1.5 Write property test for device-flow request bodies": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629373941
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629698168
+      }
+    ],
+    "2.5 Write property test for the account label": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629717258
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629883969
+      }
+    ],
+    "2.6 Write property test for failed verification": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629719224
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629885588
+      }
+    ],
+    "2.7 Write property test for expiry recording": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629721074
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629887148
+      }
+    ],
+    "2.8 Write property test for reconnect identity": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629722506
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629889005
+      }
+    ],
+    "2. Lifecycle and GitHub provider": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629890825
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629891813
+      }
+    ],
+    "2.9 Write property test for failed reconnect": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629904148
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630011603
+      }
+    ],
+    "2.11 Write property test for repository union": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629905898
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630013070
+      }
+    ],
+    "2.12 Write property test for selection bounds (Go)": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629907671
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630144698
+      }
+    ],
+    "7.5 Write property test for one request per activation (table test over event sequences)": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629909369
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630014801
+      }
+    ],
+    "7.7 Write property test for transition totality": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794629910695
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630016804
+      }
+    ],
+    "7.6 Write property test for sign-in availability": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630140029
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630240693
+      }
+    ],
+    "7.8 Write property test for attempt ids": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630142970
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630237759
+      }
+    ],
+    "7.9 Write property test for selectors": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630146518
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630239218
+      }
+    ],
+    "7.10 Write property test for countdown formatting": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630148000
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630242209
+      }
+    ],
+    "7.11 Write property test for terminal outcomes in the machine": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630149570
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630243678
+      }
+    ],
+    "7.12 Write property test for \"Expires soon\"": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630250208
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630330159
+      }
+    ],
+    "7.14 Write property test for selection message (UI)": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630251994
+      },
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630331903
+      }
+    ],
+    "7.15 Write property test for error messages": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630253636
+      }
+    ],
+    "2.10 Write property test for startup reconcile": [
+      {
+        "executionId": "1747ba4b-29b8-4600-b1db-c51a135b818e",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794630342183
+      }
+    ],
+    "5. API and protocol": [
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631063128
+      }
+    ],
+    "7. Sign-in UI (`packages/app/src/settings/connectors`)": [
+      {
+        "executionId": "4af30e11-4555-42f8-b28b-93236155e22f",
+        "chatSessionId": "sess_5a1b4db4-533c-4964-b47b-02a073579b12",
+        "timestamp": 1794631524312
+      }
+    ]
+  }
+}

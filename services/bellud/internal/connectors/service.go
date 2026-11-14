@@ -20,6 +20,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/audit"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/aws"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/broker"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/deviceflow"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/github"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/keysource"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
@@ -92,6 +93,7 @@ type Service struct {
 	authCfgs  *lifecycle.AuthConfigService
 	awsProv   *aws.Provider
 	githubPrv *github.Provider
+	device    *deviceflow.Service
 
 	pwMu    sync.Mutex
 	pending []byte // passphrase handed over by Unlock, consumed by the key source prompt
@@ -195,7 +197,7 @@ func New(ctx context.Context, opt Options) (*Service, error) {
 	if err := aws.Register(s.registry); err != nil {
 		return nil, err
 	}
-	if err := s.registry.Register(github.Manifest()); err != nil {
+	if err := s.registry.Register(github.Manifest(github.EffectiveClientID(opt.Getenv))); err != nil {
 		return nil, err
 	}
 
@@ -234,6 +236,7 @@ func New(ctx context.Context, opt Options) (*Service, error) {
 	s.githubPrv = github.NewProvider(github.ProviderConfig{Clients: s.broker, HostFor: s.githubHost})
 	s.mgr.RegisterProvider(aws.ConnectorID, s.awsProv)
 	s.mgr.RegisterProvider(github.ConnectorID, s.githubPrv)
+	s.device = s.newDeviceFlow()
 	return s, nil
 }
 
@@ -263,12 +266,36 @@ func (s *Service) Start(ctx context.Context) error {
 	s.mu.Unlock()
 
 	go func() { defer close(end); s.auditLog.Run(rctx) }()
+	s.reconcileMissingCredentials()
 	for _, c := range s.store.Snapshot().Connections {
 		if !c.Removed && lifecycle.Status(c.Status) == lifecycle.StatusActive {
 			s.sup.Start(c)
 		}
 	}
 	return nil
+}
+
+// reconcileMissingCredentials marks EXPIRED every non-removed GitHub
+// Connection whose method stores a credential (pat, device) but whose vault
+// slot is empty, for example after the vault was lost. It runs synchronously
+// before any collector starts (Requirement 14.3). Connections already EXPIRED
+// are left untouched.
+func (s *Service) reconcileMissingCredentials() {
+	for _, c := range s.store.Snapshot().Connections {
+		if c.Removed || c.ConnectorID != github.ConnectorID ||
+			(c.Method != github.MethodPAT && c.Method != github.MethodDevice) ||
+			lifecycle.Status(c.Status) == lifecycle.StatusExpired {
+			continue
+		}
+		if _, ok := s.vault.Meta(slotRef(c.ID, "credential")); ok {
+			continue
+		}
+		_ = s.store.UpdateConnection(c.ID, func(x *store.Connection) error {
+			x.Status = string(lifecycle.StatusExpired)
+			x.StatusReason = "credential missing"
+			return nil
+		})
+	}
 }
 
 // Close stops every supervisor (each bounded by lifecycle.StopTimeout), drops
@@ -287,6 +314,10 @@ func (s *Service) Close(ctx context.Context) error {
 	s.mu.Unlock()
 
 	var errs []error
+	// Cancels every poll first so no token becomes a Connection mid-shutdown.
+	if s.device != nil {
+		errs = append(errs, s.device.Close(ctx))
+	}
 	for _, c := range s.store.Snapshot().Connections {
 		sctx, stop := context.WithTimeout(ctx, lifecycle.StopTimeout)
 		if err := s.sup.Stop(sctx, c.ID); err != nil {
@@ -635,7 +666,7 @@ func (s *Service) Update(ctx context.Context, id string, p lifecycle.ConnectionP
 		return ErrDisabled
 	}
 	if p.Selection != nil {
-		if conn, ok := s.Connection(id); ok && conn.ConnectorID == github.ConnectorID && len(p.Selection.Repos) > 0 {
+		if conn, ok := s.Connection(id); ok && conn.ConnectorID == github.ConnectorID {
 			if err := github.ValidateSelection(p.Selection.Repos); err != nil {
 				return err
 			}
@@ -745,45 +776,61 @@ func (s *Service) buildParams(connectorID, method string, in map[string]string, 
 	return p, sel, nil
 }
 
+// credentialEncoder turns the pasted credential fields of one connector into
+// the secret bytes its provider expects. Errors name fields, never values.
+type credentialEncoder func(method, source string, f map[string]string) ([]byte, error)
+
+// credentialEncoders maps connector IDs to their encoders. Provider tasks add
+// an entry per connector.
+var credentialEncoders = map[string]credentialEncoder{
+	github.ConnectorID: encodeGithubCredential,
+	aws.ConnectorID:    encodeAWSCredential,
+}
+
+// missingFields returns a validation error naming each blank credential field.
+func missingFields(f map[string]string, names ...string) error {
+	var bad []string
+	for _, n := range names {
+		if strings.TrimSpace(f[n]) == "" {
+			bad = append(bad, "credential."+n)
+		}
+	}
+	if len(bad) == 0 {
+		return nil
+	}
+	return lifecycle.NewError(lifecycle.CodeValidationFailed, "required: "+strings.Join(bad, ", "), nil).WithOffenders(bad, nil)
+}
+
 // credentialSecret encodes the credential fields as the provider expects them.
 // Errors name fields, never values.
 func credentialSecret(connectorID, method, source string, f map[string]string) ([]byte, error) {
-	missing := func(names ...string) error {
-		var bad []string
-		for _, n := range names {
-			if strings.TrimSpace(f[n]) == "" {
-				bad = append(bad, "credential."+n)
-			}
-		}
-		if len(bad) == 0 {
-			return nil
-		}
-		return lifecycle.NewError(lifecycle.CodeValidationFailed, "required: "+strings.Join(bad, ", "), nil).WithOffenders(bad, nil)
+	enc, ok := credentialEncoders[connectorID]
+	if !ok {
+		return nil, lifecycle.NewError(lifecycle.CodeValidationFailed, "unknown connector", nil)
 	}
-	switch connectorID {
-	case github.ConnectorID:
-		if err := missing("token"); err != nil {
-			return nil, err
-		}
-		return []byte(f["token"]), nil
-	case aws.ConnectorID:
-		if method == aws.MethodAssumeRole && source == aws.SourceAmbient {
-			// The ambient source needs no secret; the vault requires a non-empty
-			// slot, so a marker is stored.
-			return []byte(`{"source":"ambient"}`), nil
-		}
-		if err := missing("access_key_id", "secret_access_key"); err != nil {
-			return nil, err
-		}
-		doc := map[string]string{"access_key_id": f["access_key_id"], "secret_access_key": f["secret_access_key"]}
-		if f["session_token"] != "" {
-			doc["session_token"] = f["session_token"]
-		}
-		return json.Marshal(doc)
-	}
-	return nil, lifecycle.NewError(lifecycle.CodeValidationFailed, "unknown connector", nil)
+	return enc(method, source, f)
 }
-
+func encodeGithubCredential(_, _ string, f map[string]string) ([]byte, error) {
+	if err := missingFields(f, "token"); err != nil {
+		return nil, err
+	}
+	return []byte(f["token"]), nil
+}
+func encodeAWSCredential(method, source string, f map[string]string) ([]byte, error) {
+	if method == aws.MethodAssumeRole && source == aws.SourceAmbient {
+		// The ambient source needs no secret; the vault requires a non-empty
+		// slot, so a marker is stored.
+		return []byte(`{"source":"ambient"}`), nil
+	}
+	if err := missingFields(f, "access_key_id", "secret_access_key"); err != nil {
+		return nil, err
+	}
+	doc := map[string]string{"access_key_id": f["access_key_id"], "secret_access_key": f["secret_access_key"]}
+	if f["session_token"] != "" {
+		doc["session_token"] = f["session_token"]
+	}
+	return json.Marshal(doc)
+}
 func (s *Service) awsParams(ctx context.Context, conn store.Connection) (aws.Params, error) {
 	p, err := s.paramsOf(ctx, conn)
 	if err != nil {
