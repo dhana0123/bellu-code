@@ -446,6 +446,18 @@ routes:
     owner: go
     public: false
     stream: true
+  - method: "GET"
+    pattern: "/api/experimental/graph/intel/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/graph/lenses"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "*"
     pattern: "/api/experimental/graph/mcp"
     group: experimental
@@ -459,7 +471,19 @@ routes:
     public: false
     stream: false
   - method: "GET"
+    pattern: "/api/experimental/graph/overlay"
+    group: experimental
+    owner: go
+    public: false
+    stream: true
+  - method: "GET"
     pattern: "/api/experimental/graph/schema"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/graph/slice"
     group: experimental
     owner: go
     public: false

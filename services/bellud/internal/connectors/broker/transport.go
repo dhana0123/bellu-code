@@ -88,8 +88,12 @@ func (t *policyTransport) RoundTrip(req *http.Request) (resp *http.Response, err
 	}
 	// 2. Rate limit.
 	st := t.b.state(t.ref.ID)
-	if err := t.wait(ctx, st); err != nil {
+	pause, err := t.wait(ctx, st)
+	if err != nil {
 		return nil, err
+	}
+	if obs, ok := parent.Value(keyWaitObserver).(func(RateWait)); ok && pause.Waited > 0 {
+		obs(pause)
 	}
 	// 2b. The wait may have been long: agent scope is re-read before dialing.
 	if err := t.recheckAgent(ctx, req, op); err != nil {
@@ -401,17 +405,21 @@ func (t *policyTransport) networkError(parent, ctx context.Context, err error) e
 
 // wait applies the per-connection pause (Retry-After and friends) and the
 // 10 req/s limiter. It never waits past the call deadline.
-func (t *policyTransport) wait(ctx context.Context, st *connState) error {
+// It returns the provider-requested pause it waited out; the limiter's own
+// smoothing delay is not reported.
+func (t *policyTransport) wait(ctx context.Context, st *connState) (RateWait, error) {
+	var rw RateWait
 	st.mu.Lock()
 	until := st.until
 	st.mu.Unlock()
 	if d := until.Sub(t.b.now()); d > 0 {
 		if dl, ok := ctx.Deadline(); ok && t.b.now().Add(d).After(dl) {
-			return &RateLimitedError{RetryAfter: d}
+			return rw, &RateLimitedError{RetryAfter: d}
 		}
 		if err := t.b.sleep(ctx, d); err != nil {
-			return &NetworkError{Timeout: errors.Is(ctx.Err(), context.DeadlineExceeded), cause: ctx.Err()}
+			return rw, &NetworkError{Timeout: errors.Is(ctx.Err(), context.DeadlineExceeded), cause: ctx.Err()}
 		}
+		rw = RateWait{Until: until, Waited: d}
 	}
 	// Strict sliding window on the broker clock: at most max(1, rps) sends in
 	// any 1 s span; bursts are allowed.
@@ -422,15 +430,15 @@ func (t *policyTransport) wait(ctx context.Context, st *connState) error {
 	}
 	at, ok := st.reserve(now, max(1, int(t.b.rps)), maxDelay)
 	if !ok {
-		return &RateLimitedError{RetryAfter: at.Sub(now)}
+		return rw, &RateLimitedError{RetryAfter: at.Sub(now)}
 	}
 	if delay := at.Sub(now); delay > 0 {
 		if err := t.b.sleep(ctx, delay); err != nil {
 			st.release(at)
-			return &NetworkError{Timeout: errors.Is(ctx.Err(), context.DeadlineExceeded), cause: ctx.Err()}
+			return rw, &NetworkError{Timeout: errors.Is(ctx.Err(), context.DeadlineExceeded), cause: ctx.Err()}
 		}
 	}
-	return nil
+	return rw, nil
 }
 
 // notePause records a provider-requested pause from Retry-After,

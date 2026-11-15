@@ -132,7 +132,7 @@ func TestGitHubLifecycleAndRestart(t *testing.T) {
 	if st := s.Status(); !st.Enabled || !st.Persistent || st.KeySource != "mem" {
 		t.Fatalf("status %+v", st)
 	}
-	if len(s.Catalog()) != 2 {
+	if len(s.Catalog()) != 8 {
 		t.Fatalf("catalog %d", len(s.Catalog()))
 	}
 	if acs, err := s.AuthConfigs("github"); err != nil || len(acs) == 0 {

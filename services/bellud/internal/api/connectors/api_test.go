@@ -127,7 +127,7 @@ func TestCRUDAndMasking(t *testing.T) {
 	if w := do(h, "GET", Prefix+"/status", "", nil); w.Code != 200 || decode(t, w)["enabled"] != true {
 		t.Fatalf("status %d %s", w.Code, w.Body)
 	}
-	if w := do(h, "GET", Prefix+"/catalog", "", nil); w.Code != 200 || len(decode(t, w)["items"].([]any)) != 2 {
+	if w := do(h, "GET", Prefix+"/catalog", "", nil); w.Code != 200 || len(decode(t, w)["items"].([]any)) != 8 {
 		t.Fatalf("catalog %d %s", w.Code, w.Body)
 	}
 	w := do(h, "POST", Prefix+"/connections", createBody(""), writeHdr)
@@ -287,7 +287,7 @@ func TestBodyLimitAndValidation(t *testing.T) {
 			t.Fatalf("%q: %d", body, w.Code)
 		}
 	}
-	for _, body := range []string{`{"intervalSec":59}`, `{"intervalSec":1.5}`, `{"rotationIntervalDays":0}`, `{"alias":"` + strings.Repeat("a", 41) + `"}`, `{"selection":{"regions":[]}}`, `{"allowAgentLiveReads":"yes"}`} {
+	for _, body := range []string{`{"intervalSec":59}`, `{"intervalSec":1.5}`, `{"rotationIntervalDays":0}`, `{"alias":"` + strings.Repeat("a", 41) + `"}`, `{"selection":{"regions":"us-east-1"}}`, `{"allowAgentLiveReads":"yes"}`} {
 		if w := do(h, "PATCH", Prefix+"/connections/x", body, writeHdr); w.Code != 400 {
 			t.Fatalf("%s: %d", body, w.Code)
 		}

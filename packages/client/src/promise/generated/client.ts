@@ -285,6 +285,12 @@ import type {
   ExperimentalGraphDiffOutput,
   ExperimentalGraphSchemaOutput,
   ExperimentalGraphStatusOutput,
+  ExperimentalGraphLensesOutput,
+  ExperimentalGraphSliceInput,
+  ExperimentalGraphSliceOutput,
+  ExperimentalGraphIntelStatusOutput,
+  ExperimentalGraphOverlayInput,
+  ExperimentalGraphOverlayOutput,
   ExperimentalConnectorsStatusOutput,
   ExperimentalConnectorsCatalogOutput,
   ExperimentalConnectorsListConnectionsOutput,
@@ -1877,6 +1883,61 @@ export function make(options: ClientOptions) {
             },
             requestOptions,
           ),
+        lenses: (requestOptions?: RequestOptions) =>
+          request<ExperimentalGraphLensesOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/graph/lenses`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        slice: (input: ExperimentalGraphSliceInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalGraphSliceOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/graph/slice`,
+              query: {
+                lens: input["lens"],
+                entity: input["entity"],
+                target: input["target"],
+                depth: input["depth"],
+                limit: input["limit"],
+              },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        intelStatus: (requestOptions?: RequestOptions) =>
+          request<ExperimentalGraphIntelStatusOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/graph/intel/status`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        overlay: (
+          input?: ExperimentalGraphOverlayInput,
+          requestOptions?: RequestOptions,
+        ): AsyncIterable<ExperimentalGraphOverlayOutput> =>
+          sse<ExperimentalGraphOverlayOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/graph/overlay`,
+              query: { replay: input?.["replay"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 503],
+              empty: false,
+            },
+            requestOptions,
+          ),
       },
       connectors: {
         status: (requestOptions?: RequestOptions) =>
@@ -3314,6 +3375,14 @@ export function make(options: ClientOptions) {
       schema: client.experimental.graph.schema,
       /** @deprecated Use `client.experimental.graph.status`. Removed in the next minor. */
       status: client.experimental.graph.status,
+      /** @deprecated Use `client.experimental.graph.lenses`. Removed in the next minor. */
+      lenses: client.experimental.graph.lenses,
+      /** @deprecated Use `client.experimental.graph.slice`. Removed in the next minor. */
+      slice: client.experimental.graph.slice,
+      /** @deprecated Use `client.experimental.graph.intelStatus`. Removed in the next minor. */
+      intelStatus: client.experimental.graph.intelStatus,
+      /** @deprecated Use `client.experimental.graph.overlay`. Removed in the next minor. */
+      overlay: client.experimental.graph.overlay,
     },
     /** @deprecated Use `client.experimental.connectors`. Removed in the next minor. */
     connectors: {

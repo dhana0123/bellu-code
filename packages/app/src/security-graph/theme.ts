@@ -17,6 +17,11 @@ export const KIND_COLOR = {
   framework: "#2FC9B8",
   // A service has no fill of its own: it takes the theme's raised surface, read by the renderer.
   service: "#FFFFFF",
+  repository: "#3B82C4",
+  "cloud-resource": "#E8833A",
+  package: "#8B6FE0",
+  vulnerability: "#D64550",
+  account: "#4C6A92",
 } as const satisfies Record<NodeKind, string>
 
 /** Type label of each node kind. A service has none: it shows its category instead. */
@@ -27,6 +32,11 @@ export const KIND_KEY = {
   "internal-dependency": "security.graph.kind.internalDependency",
   module: "security.graph.kind.module",
   framework: "security.graph.kind.framework",
+  repository: "security.graph.kind.repository",
+  "cloud-resource": "security.graph.kind.cloudResource",
+  package: "security.graph.kind.package",
+  vulnerability: "security.graph.kind.vulnerability",
+  account: "security.graph.kind.account",
 } as const satisfies Record<Exclude<NodeKind, "service">, Key>
 
 export const CATEGORY_KEY = {
@@ -54,7 +64,40 @@ export const RISK_TAGS: ReadonlySet<Tag> = new Set(["internet-exposed", "sensiti
 export const EDGE_KEY = {
   uses: "security.graph.edge.uses",
   contains: "security.graph.edge.contains",
+  runs_on: "security.graph.edge.runs_on",
+  on: "security.graph.edge.on",
+  owned_by: "security.graph.edge.owned_by",
+  attached_to: "security.graph.edge.attached_to",
+  mounts: "security.graph.edge.mounts",
+  depends_on: "security.graph.edge.depends_on",
+  resolves_to: "security.graph.edge.resolves_to",
+  found_in: "security.graph.edge.found_in",
+  affected_by: "security.graph.edge.affected_by",
+  same_as: "security.graph.edge.same_as",
+  likely_same_as: "security.graph.edge.likely_same_as",
+  related: "security.graph.edge.related",
 } as const satisfies Record<EdgeKind, Key>
 
 export const BOUNDARY_KEY = "security.graph.boundary" as const satisfies Key
 export type { Key as GraphKey }
+
+/** Lens names and descriptions the app has copy for. A lens id outside this map shows the name the server sends. */
+export const LENS_KEY = {
+  "code-to-cloud": {
+    name: "security.graph.lens.code-to-cloud.name",
+    description: "security.graph.lens.code-to-cloud.description",
+  },
+  cloud: { name: "security.graph.lens.cloud.name", description: "security.graph.lens.cloud.description" },
+  "blast-radius": {
+    name: "security.graph.lens.blast-radius.name",
+    description: "security.graph.lens.blast-radius.description",
+  },
+  "attack-path": {
+    name: "security.graph.lens.attack-path.name",
+    description: "security.graph.lens.attack-path.description",
+  },
+  "vulnerability-reachability": {
+    name: "security.graph.lens.vulnerability-reachability.name",
+    description: "security.graph.lens.vulnerability-reachability.description",
+  },
+} as const satisfies Record<string, { name: Key; description: Key }>

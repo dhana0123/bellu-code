@@ -1,6 +1,6 @@
 import { Graph } from "@bellucode/schema/graph"
 import { Schema } from "effect"
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/http-api"
 import { InvalidRequestError, ServiceUnavailableError } from "../errors.js"
 
 const errors = [InvalidRequestError, ServiceUnavailableError] as const
@@ -108,4 +108,44 @@ export const ExperimentalGraphGroup = HttpApiGroup.make("server.graph")
       success: Graph.Status,
       error: errors,
     }).annotateMerge(experimental("status", "Get graph status", "Report graph engine and child process state.")),
+  )
+  .add(
+    HttpApiEndpoint.get("lenses", "/api/experimental/graph/lenses", {
+      success: Schema.Array(Graph.Lens),
+      error: errors,
+    }).annotateMerge(experimental("lenses", "List graph lenses", "List the lenses available for graph slices.")),
+  )
+  .add(
+    HttpApiEndpoint.get("slice", "/api/experimental/graph/slice", {
+      query: {
+        lens: Schema.String.annotate({ description: "Lens id from the lens catalog." }),
+        entity: Schema.optional(Schema.String).annotate({ description: "Root entity id for the lens." }),
+        target: Schema.optional(Schema.String).annotate({ description: "Target entity id for path lenses." }),
+        depth: Schema.optional(
+          Schema.NumberFromString.pipe(Schema.decodeTo(Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)))),
+        ).annotate({ description: "Traversal depth; clamped by the server." }),
+        limit: Schema.optional(
+          Schema.NumberFromString.pipe(Schema.decodeTo(Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)))),
+        ).annotate({ description: "Maximum number of nodes; clamped by the server." }),
+      },
+      success: Graph.LensSlice,
+      error: errors,
+    }).annotateMerge(experimental("slice", "Get lens slice", "Build a bounded graph slice for one lens.")),
+  )
+  .add(
+    HttpApiEndpoint.get("intelStatus", "/api/experimental/graph/intel/status", {
+      success: Graph.IntelStatus,
+      error: errors,
+    }).annotateMerge(experimental("intelStatus", "Get intel status", "Report vulnerability intelligence sync state.")),
+  )
+  .add(
+    HttpApiEndpoint.get("overlay", "/api/experimental/graph/overlay", {
+      query: {
+        replay: Schema.optional(Schema.String).annotate({ description: "Script id to replay for this connection (for example demo)." }),
+      },
+      success: HttpApiSchema.StreamSse({ data: Graph.OverlayEvent }),
+      error: errors,
+    }).annotateMerge(
+      experimental("overlay", "Stream agent overlay events", "Subscribe to transient agent overlay events as server-sent events."),
+    ),
   )

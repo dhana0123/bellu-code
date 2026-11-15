@@ -2698,6 +2698,87 @@ export type ExperimentalGraphStatusOutput = {
 }
 export type ExperimentalGraphStatusOperation<E = never> = () => Effect.Effect<ExperimentalGraphStatusOutput, E>
 
+export type ExperimentalGraphLensesOutput = ReadonlyArray<{
+  readonly id: string
+  readonly name: string
+  readonly description: string
+  readonly layout: "force" | "radial" | "chain"
+  readonly default: boolean
+  readonly params: ReadonlyArray<{ readonly name: string; readonly required: boolean }>
+}>
+export type ExperimentalGraphLensesOperation<E = never> = () => Effect.Effect<ExperimentalGraphLensesOutput, E>
+
+export type ExperimentalGraphSliceInput = {
+  readonly lens: string
+  readonly entity?: string | undefined
+  readonly target?: string | undefined
+  readonly depth?: number | undefined
+  readonly limit?: number | undefined
+}
+export type ExperimentalGraphSliceOutput = {
+  readonly lens: string
+  readonly generated_at: string
+  readonly truncated: boolean
+  readonly counts: { readonly nodes: number; readonly edges: number; readonly omitted_nodes: number }
+  readonly nodes: ReadonlyArray<{
+    readonly id: string
+    readonly kind: string
+    readonly label: string
+    readonly group: string | null
+    readonly hops: number
+    readonly attrs: { readonly [x: string]: string }
+    readonly risk: {
+      readonly score: number
+      readonly severity: string
+      readonly cvss: number
+      readonly epss: number
+      readonly kev: boolean
+      readonly reachable: boolean | null
+    } | null
+  }>
+  readonly edges: ReadonlyArray<{
+    readonly from: string
+    readonly to: string
+    readonly type: string
+    readonly confidence: "extracted" | "inferred"
+  }>
+  readonly groups: ReadonlyArray<{
+    readonly id: string
+    readonly label: string
+    readonly members: ReadonlyArray<string>
+  }>
+  readonly paths?:
+    | ReadonlyArray<{ readonly nodes: ReadonlyArray<string>; readonly confidence: "extracted" | "inferred" }>
+    | undefined
+}
+export type ExperimentalGraphSliceOperation<E = never> = (
+  input: ExperimentalGraphSliceInput,
+) => Effect.Effect<ExperimentalGraphSliceOutput, E>
+
+export type ExperimentalGraphIntelStatusOutput = {
+  readonly state: "not_configured" | "disabled" | "idle" | "syncing" | "ok" | "error"
+  readonly version: string
+  readonly records: number
+  readonly last_synced_at: string
+  readonly last_error: string
+}
+export type ExperimentalGraphIntelStatusOperation<E = never> = () => Effect.Effect<
+  ExperimentalGraphIntelStatusOutput,
+  E
+>
+
+export type ExperimentalGraphOverlayInput = { readonly replay?: string | undefined }
+export type ExperimentalGraphOverlayOutput = {
+  readonly seq: number
+  readonly entity: string
+  readonly action: "focus_node" | "walk_path" | "proposed_change"
+  readonly path?: ReadonlyArray<string> | undefined
+  readonly explanation: string
+}
+export type ExperimentalGraphOverlayOperation<E = never> = (
+  input?: ExperimentalGraphOverlayInput,
+) => Stream.Stream<ExperimentalGraphOverlayOutput, E>
+
 export interface ExperimentalGraphApi<E = never> {
   readonly find: ExperimentalGraphFindOperation<E>
   readonly entity: ExperimentalGraphEntityOperation<E>
@@ -2707,6 +2788,10 @@ export interface ExperimentalGraphApi<E = never> {
   readonly diff: ExperimentalGraphDiffOperation<E>
   readonly schema: ExperimentalGraphSchemaOperation<E>
   readonly status: ExperimentalGraphStatusOperation<E>
+  readonly lenses: ExperimentalGraphLensesOperation<E>
+  readonly slice: ExperimentalGraphSliceOperation<E>
+  readonly intelStatus: ExperimentalGraphIntelStatusOperation<E>
+  readonly overlay: ExperimentalGraphOverlayOperation<E>
 }
 
 export type ExperimentalConnectorsStatusOutput = {
@@ -3945,6 +4030,36 @@ export type GraphStatusOutput = ExperimentalGraphStatusOutput
 /** @deprecated Use `ExperimentalGraphStatusOperation`. Removed in the next minor. */
 export type GraphStatusOperation<E = never> = ExperimentalGraphStatusOperation<E>
 
+/** @deprecated Use `ExperimentalGraphLensesOutput`. Removed in the next minor. */
+export type GraphLensesOutput = ExperimentalGraphLensesOutput
+
+/** @deprecated Use `ExperimentalGraphLensesOperation`. Removed in the next minor. */
+export type GraphLensesOperation<E = never> = ExperimentalGraphLensesOperation<E>
+
+/** @deprecated Use `ExperimentalGraphSliceInput`. Removed in the next minor. */
+export type GraphSliceInput = ExperimentalGraphSliceInput
+
+/** @deprecated Use `ExperimentalGraphSliceOutput`. Removed in the next minor. */
+export type GraphSliceOutput = ExperimentalGraphSliceOutput
+
+/** @deprecated Use `ExperimentalGraphSliceOperation`. Removed in the next minor. */
+export type GraphSliceOperation<E = never> = ExperimentalGraphSliceOperation<E>
+
+/** @deprecated Use `ExperimentalGraphIntelStatusOutput`. Removed in the next minor. */
+export type GraphIntelStatusOutput = ExperimentalGraphIntelStatusOutput
+
+/** @deprecated Use `ExperimentalGraphIntelStatusOperation`. Removed in the next minor. */
+export type GraphIntelStatusOperation<E = never> = ExperimentalGraphIntelStatusOperation<E>
+
+/** @deprecated Use `ExperimentalGraphOverlayInput`. Removed in the next minor. */
+export type GraphOverlayInput = ExperimentalGraphOverlayInput
+
+/** @deprecated Use `ExperimentalGraphOverlayOutput`. Removed in the next minor. */
+export type GraphOverlayOutput = ExperimentalGraphOverlayOutput
+
+/** @deprecated Use `ExperimentalGraphOverlayOperation`. Removed in the next minor. */
+export type GraphOverlayOperation<E = never> = ExperimentalGraphOverlayOperation<E>
+
 /** @deprecated Use `ExperimentalConnectorsStatusOutput`. Removed in the next minor. */
 export type ConnectorsStatusOutput = ExperimentalConnectorsStatusOutput
 
@@ -4315,6 +4430,18 @@ export interface AppApi<E = never> {
 
     /** @deprecated Use `client.experimental.graph.status`. Removed in the next minor. */
     readonly status: ExperimentalGraphStatusOperation<E>
+
+    /** @deprecated Use `client.experimental.graph.lenses`. Removed in the next minor. */
+    readonly lenses: ExperimentalGraphLensesOperation<E>
+
+    /** @deprecated Use `client.experimental.graph.slice`. Removed in the next minor. */
+    readonly slice: ExperimentalGraphSliceOperation<E>
+
+    /** @deprecated Use `client.experimental.graph.intelStatus`. Removed in the next minor. */
+    readonly intelStatus: ExperimentalGraphIntelStatusOperation<E>
+
+    /** @deprecated Use `client.experimental.graph.overlay`. Removed in the next minor. */
+    readonly overlay: ExperimentalGraphOverlayOperation<E>
   }
 
   /** @deprecated Use `client.experimental.connectors`. Removed in the next minor. */

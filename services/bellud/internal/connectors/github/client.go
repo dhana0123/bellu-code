@@ -320,6 +320,53 @@ func (c *Client) DependabotAlerts(ctx context.Context, owner, repo string) ([]De
 	return repoList[DependabotAlert](ctx, c, owner, repo, "/dependabot/alerts", url.Values{"state": {"open"}})
 }
 
+// Package is one SBOM package that carries a purl.
+type Package struct {
+	Name      string
+	Version   string
+	Purl      string
+	Ecosystem string
+}
+
+// SBOM reads the repository's dependency graph SBOM and returns its packages
+// that have a purl. Packages without a purl (including the repository itself)
+// are omitted.
+func (c *Client) SBOM(ctx context.Context, owner, repo string) ([]Package, error) {
+	p, err := repoPath(owner, repo, "/dependency-graph/sbom")
+	if err != nil {
+		return nil, err
+	}
+	var body struct {
+		SBOM struct {
+			Packages []struct {
+				Name         string `json:"name"`
+				VersionInfo  string `json:"versionInfo"`
+				ExternalRefs []struct {
+					Type    string `json:"referenceType"`
+					Locator string `json:"referenceLocator"`
+				} `json:"externalRefs"`
+			} `json:"packages"`
+		} `json:"sbom"`
+	}
+	if _, err := c.get(ctx, p, nil, &body); err != nil {
+		return nil, err
+	}
+	var out []Package
+	for _, sp := range body.SBOM.Packages {
+		for _, r := range sp.ExternalRefs {
+			if strings.EqualFold(r.Type, "purl") && r.Locator != "" {
+				pk := Package{Name: sp.Name, Version: sp.VersionInfo, Purl: r.Locator}
+				if rest, ok := strings.CutPrefix(strings.ToLower(r.Locator), "pkg:"); ok {
+					pk.Ecosystem, _, _ = strings.Cut(rest, "/")
+				}
+				out = append(out, pk)
+				break
+			}
+		}
+	}
+	return out, nil
+}
+
 // SecretScanningAlerts lists open secret-scanning alert metadata.
 func (c *Client) SecretScanningAlerts(ctx context.Context, owner, repo string) ([]SecretScanningAlert, error) {
 	return repoList[SecretScanningAlert](ctx, c, owner, repo, "/secret-scanning/alerts", url.Values{"state": {"open"}})

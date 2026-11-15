@@ -39,6 +39,8 @@ const ICON_MIN_DIAMETER = 18
 const EDGE_LABEL_MIN_GAP = 64
 /** Sigma fits the whole graph at camera ratio 1. When that would shrink the layout below this scale, open zoomed in. */
 const MIN_OPEN_SCALE = 0.62
+/** Duration of one programmatic camera move. */
+const FLY_MS = 600
 /** Spacing of the dot grid in graph units. */
 const GRID = 56
 /** How far past the viewport edge an element is still placed, so it does not pop in while panning. */
@@ -149,7 +151,11 @@ export function mountGraph(input: MountInput) {
   boundary?.append(element("span", "boundary-caption", input.t(BOUNDARY_KEY)))
   const edgeLayer = element("div", "edge-labels")
   const nodeLayer = element("div", "nodes")
-  input.overlay.replaceChildren(...(boundary ? [boundary] : []), edgeLayer, nodeLayer)
+  const cardLayer = element("div", "cards")
+  input.overlay.replaceChildren(...(boundary ? [boundary] : []), edgeLayer, nodeLayer, cardLayer)
+
+  const highlighted = new Set<string>()
+  let card: { entry: NodeEntry; view: HTMLElement } | undefined
 
   let labelled = new Set<EdgeEntry>()
   const sync = () => {
@@ -165,6 +171,7 @@ export function mountGraph(input: MountInput) {
       if (point.x < -MARGIN || point.x > width + MARGIN || point.y < -MARGIN || point.y > height + MARGIN) return
       inView.add(entry)
       const view = (entry.view ??= createNodeView(entry.node, input.t, nodeLayer))
+      if (highlighted.has(entry.node.id)) view.dataset.highlight = ""
       view.style.transform = `translate(${point.x.toFixed(1)}px, ${point.y.toFixed(1)}px)`
       if (view.dataset.d !== entry.diameter.toFixed(0)) {
         view.dataset.d = entry.diameter.toFixed(0)
@@ -188,6 +195,10 @@ export function mountGraph(input: MountInput) {
       entry.view.dataset.detail = String(level)
     })
 
+    if (card) {
+      const point = sigma.graphToViewport(card.entry)
+      card.view.style.transform = `translate(${point.x.toFixed(1)}px, ${point.y.toFixed(1)}px)`
+    }
     labelled = syncEdgeLabels(inView.size <= DETAIL_LIMIT, width, height, labelled)
     if (boundary && input.layout.boundary) syncBoundary(sigma, boundary, input.layout.boundary)
   }
@@ -221,6 +232,46 @@ export function mountGraph(input: MountInput) {
   }
 
   openCamera(sigma, opening, input.layout.boundary)
+  // The camera only counts as user-panned when its center moves outside our own animations.
+  const camera = sigma.getCamera()
+  let animating = 0
+  let center = { x: camera.x, y: camera.y }
+  const panListeners = new Set<() => void>()
+  const selectListeners = new Set<(id: string | undefined) => void>()
+  sigma.on("clickNode", (payload) => selectListeners.forEach((listener) => listener(payload.node)))
+  sigma.on("clickStage", () => selectListeners.forEach((listener) => listener(undefined)))
+  const onCamera = () => {
+    const moved = camera.x !== center.x || camera.y !== center.y
+    center = { x: camera.x, y: camera.y }
+    if (animating > 0 || !moved) return
+    panListeners.forEach((listener) => listener())
+  }
+  camera.on("updated", onCamera)
+
+  const fly = async (id: string) => {
+    const entry = byId.get(id)
+    if (!entry) return
+    const framed = sigma.graphToFramedGraph(entry)
+    animating++
+    try {
+      await camera.animate({ x: framed.x, y: framed.y, ratio: Math.max(0.2, opening * 0.5) }, { duration: FLY_MS })
+    } catch {
+      // The animation is cancelled when the graph is killed mid-flight.
+    } finally {
+      animating--
+      center = { x: camera.x, y: camera.y }
+    }
+  }
+  const mark = (ids: readonly string[]) => {
+    highlighted.forEach((id) => delete byId.get(id)?.view?.dataset.highlight)
+    highlighted.clear()
+    ids.forEach((id) => {
+      if (!byId.has(id)) return
+      highlighted.add(id)
+      const view = byId.get(id)?.view
+      if (view) view.dataset.highlight = ""
+    })
+  }
   sigma.on("afterRender", sync)
   // Sigma draws once while it is constructed, before this listener exists.
   sync()
@@ -235,12 +286,47 @@ export function mountGraph(input: MountInput) {
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-color-scheme"] })
 
   return {
-    kill() {
+    /** Animates the camera to a node. Resolves when the animation ends; an unknown id resolves at once. */
+    focus: fly,
+    /** Marks exactly these nodes. An empty list clears the marks. */
+    highlight: mark,
+    /** Marks the path and flies the camera along it, node by node. */
+    async walk(path: readonly string[]) {
+      mark(path)
+      for (const id of path) await fly(id)
+    },
+    /** Shows one tooltip card anchored to a node, or removes it when `id` is undefined. */
+    card(id: string | undefined, text?: string) {
+      card?.view.remove()
+      card = undefined
+      const entry = id ? byId.get(id) : undefined
+      if (!entry) return
+      const view = element("div", "card", text)
+      cardLayer.append(view)
+      card = { entry, view }
+      sync()
+    },
+    /** Calls back when the user moves the camera. Returns the unsubscribe function. */
+    onPan(listener: () => void) {
+      panListeners.add(listener)
+      return () => void panListeners.delete(listener)
+    },
+    /** Calls back with the clicked node id, or undefined when the empty canvas is clicked. Returns the unsubscribe function. */
+    onSelect(listener: (id: string | undefined) => void) {
+      selectListeners.add(listener)
+      return () => void selectListeners.delete(listener)
+    },
+    /** `keepFrame` leaves the dot grid alone, for when another mount already took over the same frame. */
+    kill(keepFrame = false) {
+      camera.off("updated", onCamera)
+      panListeners.clear()
+      selectListeners.clear()
       observer.disconnect()
       themeObserver.disconnect()
       sigma.off("afterRender", sync)
       sigma.kill()
       input.overlay.replaceChildren()
+      if (keepFrame) return
       input.frame.style.removeProperty("background-size")
       input.frame.style.removeProperty("background-position")
     },

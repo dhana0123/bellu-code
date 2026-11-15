@@ -18,5 +18,9 @@ export const ExperimentalGraphHandler = HttpApiBuilder.group(Api, "server.graph"
     .handle("changes", notServed)
     .handle("diff", notServed)
     .handle("schema", notServed)
-    .handle("status", notServed),
+    .handle("status", notServed)
+    .handle("slice", notServed)
+    .handle("overlay", notServed)
+    .handle("lenses", notServed)
+    .handle("intelStatus", notServed),
 )

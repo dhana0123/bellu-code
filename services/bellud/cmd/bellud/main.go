@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -27,9 +28,16 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/collectors/iac"
 	"github.com/bellu/bellucode/services/bellud/internal/collectors/secrets"
 	"github.com/bellu/bellucode/services/bellud/internal/config"
+	"github.com/bellu/bellucode/services/bellud/internal/correlate"
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
+	intelbundle "github.com/bellu/bellucode/services/bellud/internal/intel/bundle"
+	intelstore "github.com/bellu/bellucode/services/bellud/internal/intel/store"
+	intelsync "github.com/bellu/bellucode/services/bellud/internal/intel/sync"
+	"github.com/bellu/bellucode/services/bellud/internal/lens"
+	"github.com/bellu/bellucode/services/bellud/internal/lens/lensmcp"
 	"github.com/bellu/bellucode/services/bellud/internal/logx"
 	"github.com/bellu/bellucode/services/bellud/internal/mcptoken"
+	"github.com/bellu/bellucode/services/bellud/internal/overlay"
 	"github.com/bellu/bellucode/services/bellud/internal/proxy"
 	"github.com/bellu/bellucode/services/bellud/internal/sdnotify"
 	"github.com/bellu/bellucode/services/bellud/internal/server"
@@ -102,9 +110,13 @@ func serve(args []string) error {
 	if err != nil {
 		return fmt.Errorf("graph tokens: %w", err)
 	}
-	engine, runner := openGraph(logger, set, scanRoots(filepath.Dir(filepath.Dir(cliDir))))
+	lensSvc := lens.NewService()
+	engine, runner, intel := openGraph(logger, set, lensSvc, scanRoots(filepath.Dir(filepath.Dir(cliDir))))
 
 	if engine != nil {
+		if berr := lensSvc.Bind(engine); berr != nil {
+			logger.Println("warning: lenses unavailable:", berr)
+		}
 		if dd, derr := config.DataDir(); derr != nil {
 			logger.Println("warning: graph tokens file:", derr)
 		} else if werr := writeGraphTokens(dd, set); werr != nil {
@@ -116,7 +128,7 @@ func serve(args []string) error {
 	conn := openConnectors(logger, engine, set, allowedHostsOf(cfg.Hostname))
 	closeAll := func() {
 		conn.close(logger) // before the graph: its collectors write to the engine
-		stopGraph(engine, runner, logger)
+		stopGraph(engine, runner, intel, logger)
 	}
 
 	// Bind first so a bind failure never starts the child.
@@ -193,7 +205,7 @@ func serve(args []string) error {
 	handler := &server.Server{
 		Table:  table,
 		Auth:   authn,
-		Go:     conn.wrap(goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) })),
+		Go:     conn.wrap(goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) }, intel.option(), apigraph.WithLens(lensSvc), apigraph.WithOverlay(overlay.NewHub()))),
 		GoAuth: conn.auth(graphGoAuth(table, set, authn.Authorize)),
 		Proxy:  proxy.New(sup.Current),
 		CORS:   origins,
@@ -246,21 +258,22 @@ func serve(args []string) error {
 
 // openGraph opens the graph engine and, when it is enabled and ready, starts the
 // collector runner. A failed open leaves the engine disabled; serving continues.
-func openGraph(logger *log.Logger, set mcptoken.Set, roots []string) (graph.Engine, *collectors.Runner) {
+func openGraph(logger *log.Logger, set mcptoken.Set, lensSvc *lens.Service, roots []string) (graph.Engine, *collectors.Runner, *intelStack) {
 	gcfg, err := graph.LoadConfig()
 	if err != nil {
 		logger.Println("warning: graph config:", err)
-		return nil, nil
+		return nil, nil, nil
 	}
 	gcfg.MCPToken = set.Write.String()
 	gcfg.Grants = grantsOf(set)
+	gcfg.MCPExtras = lensmcp.Extras(lensSvc)
 	eng, err := graph.Open(context.Background(), gcfg)
 	if err != nil {
 		logger.Println("warning: graph unavailable:", err)
-		return nil, nil
+		return nil, nil, nil
 	}
 	if graph.StateOf(eng).Kind != graph.StateReady {
-		return eng, nil
+		return eng, nil, nil
 	}
 	cols := []collectors.Collector{
 		host.New(15 * time.Second),
@@ -269,16 +282,99 @@ func openGraph(logger *log.Logger, set mcptoken.Set, roots []string) (graph.Engi
 	if len(roots) > 0 {
 		cols = append(cols, codesec.New(roots...), iac.New(roots...), secrets.New(roots...))
 	}
+	// The Syncer is created before the Correlator, so its callback reaches the
+	// Correlator through a pointer set once the Correlator exists.
+	var cor atomic.Pointer[correlate.Correlator]
+	in := openIntel(logger, gcfg.Dir, func() {
+		if c := cor.Load(); c != nil {
+			c.Wake()
+		}
+	})
+	if in != nil {
+		in.cor = correlate.New(eng, in.store)
+		cor.Store(in.cor)
+		cols = append(cols, in.cor)
+	}
 	r := collectors.New(eng, cols, collectors.WithLogger(logger))
 	r.Start(context.Background())
-	return eng, r
+	if in != nil {
+		in.cor.Start(context.Background(), r)
+	}
+	return eng, r, in
 }
 
-// stopGraph stops the runner, then closes the engine.
-func stopGraph(eng graph.Engine, r *collectors.Runner, logger *log.Logger) {
+// intelStack is the intel store and the Syncer that keeps it current.
+type intelStack struct {
+	store  *intelstore.Store
+	syncer *intelsync.Syncer
+	cor    *correlate.Correlator
+	cancel context.CancelFunc
+	done   chan struct{}
+}
+
+// option returns the API option serving the intel status; nil-safe.
+func (i *intelStack) option() apigraph.Option {
+	if i == nil {
+		return apigraph.WithIntel(nil)
+	}
+	return apigraph.WithIntel(i.syncer.Status)
+}
+
+// stopSyncer cancels the Syncer and waits for it to return.
+func (i *intelStack) stopSyncer() {
+	if i == nil {
+		return
+	}
+	i.cancel()
+	<-i.done
+	i.cor.Stop()
+}
+
+// intelDir returns BELLU_INTEL_DIR, else an "intel" directory beside the graph directory.
+func intelDir(graphDir string) string {
+	if v := strings.TrimSpace(os.Getenv("BELLU_INTEL_DIR")); v != "" {
+		return v
+	}
+	return filepath.Join(filepath.Dir(graphDir), "intel")
+}
+
+// openIntel opens the intel store and starts the Syncer. A failure leaves
+// intel disabled; serving continues.
+func openIntel(logger *log.Logger, graphDir string, onImported func()) *intelStack {
+	st, err := intelstore.Open(intelDir(graphDir))
+	if err != nil {
+		logger.Println("warning: intel unavailable:", err)
+		return nil
+	}
+	cfg := intelsync.Config{URL: strings.TrimSpace(os.Getenv("BELLU_INTEL_URL"))}
+	if key, kerr := intelbundle.LoadPinnedKey(); kerr != nil {
+		logger.Println("warning: intel sync disabled:", kerr)
+	} else {
+		cfg.Key = key
+	}
+	sy := intelsync.New(cfg, st, onImported)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		sy.Run(ctx)
+	}()
+	return &intelStack{store: st, syncer: sy, cancel: cancel, done: done}
+}
+
+// stopGraph stops the syncer, the runner, then closes the engine and the intel store.
+func stopGraph(eng graph.Engine, r *collectors.Runner, in *intelStack, logger *log.Logger) {
+	in.stopSyncer()
 	if r != nil {
 		r.Stop()
 	}
+	defer func() {
+		if in != nil {
+			if err := in.store.Close(); err != nil {
+				logger.Println("intel close:", err)
+			}
+		}
+	}()
 	if eng == nil {
 		return
 	}
@@ -300,14 +396,14 @@ func stopChild(sup *tschild.Supervisor, logger interface{ Println(...any) }) err
 }
 
 // goHandler serves the Go-owned routes: the MCP endpoint and the graph read API.
-func goHandler(eng graph.Engine, set mcptoken.Set, child func() apigraph.ChildState) http.Handler {
+func goHandler(eng graph.Engine, set mcptoken.Set, child func() apigraph.ChildState, opts ...apigraph.Option) http.Handler {
 	var mcp http.Handler
 	if eng == nil {
 		mcp = graph.UnavailableHandler("graph disabled")
 	} else {
 		mcp = eng.MCPHandler()
 	}
-	api := apigraph.New(eng, child)
+	api := apigraph.New(eng, child, opts...)
 	mux := http.NewServeMux()
 	hs := graph.HandlersOf(eng)
 	mux.Handle(apigraph.Prefix+"/mcp", mcp)

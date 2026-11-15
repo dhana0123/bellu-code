@@ -40,6 +40,11 @@ var identityAttrs = map[string][]string{
 	"github_workflow":     {"connection", "repo", "path"},
 	"github_pull_request": {"connection", "repo", "number"},
 	"github_alert":        {"connection", "repo", "alert_type", "number"},
+	"package":             {"connection", "scope", "purl"},
+
+	// vulnerability is global: one node per canonical id, shared by every
+	// package it affects, so it has no connection attribute.
+	"vulnerability": {"id"},
 }
 
 // Kinds lists the registered kinds, sorted.
@@ -118,6 +123,10 @@ var relDirections = map[string]Direction{
 	"depends_on":  Reverse,
 	"resolves_to": Reverse,
 	"found_in":    Forward,
+
+	"affected_by":    Reverse,
+	"same_as":        Reverse,
+	"likely_same_as": Reverse,
 }
 
 // RelationTypes lists the registered relation types, sorted.

@@ -79,7 +79,8 @@ func TestMCPExactlyTwelveToolsAndName(t *testing.T) {
 	for _, tl := range res.Tools {
 		got = append(got, tl.Name)
 	}
-	want := append([]string(nil), MCPTools...)
+	// The last four MCPTools come from Config.MCPExtras, which this engine does not set.
+	want := append([]string(nil), MCPTools[:12]...)
 	sort.Strings(got)
 	sort.Strings(want)
 	if strings.Join(got, ",") != strings.Join(want, ",") || len(got) != 12 {

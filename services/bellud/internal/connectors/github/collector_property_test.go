@@ -521,3 +521,5 @@ type tb interface {
 	Fatal(args ...any)
 	Fatalf(format string, args ...any)
 }
+
+func (g *genAPI) SBOM(_ context.Context, _, _ string) ([]Package, error) { return nil, nil }

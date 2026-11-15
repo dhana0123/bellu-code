@@ -30,6 +30,11 @@ const BODY = {
   dependency: `<rect x="3" y="3" width="18" height="4.6" rx="1.6"/><rect x="3" y="9.7" width="18" height="4.6" rx="1.6"/><rect x="3" y="16.4" width="18" height="4.6" rx="1.6"/><path d="M7 5.3h.01M7 12h.01M7 18.7h.01"/>`,
   module: `<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/>`,
   framework: `<rect x="3" y="3" width="18" height="18" rx="3.5"/><path d="m8.8 6.2-2.2 1.8 2.2 1.8M15.2 6.2l2.2 1.8-2.2 1.8M13 6l-2 4"/><rect x="10" y="11.8" width="4" height="2.4" rx=".8"/><path d="M12 14.2v1.1M8 17v-1.7h8V17"/><rect x="6" y="17" width="4" height="2.2" rx=".7"/><rect x="14" y="17" width="4" height="2.2" rx=".7"/>`,
+  repository: `<circle cx="6" cy="5.5" r="2.2"/><circle cx="6" cy="18.5" r="2.2"/><circle cx="18" cy="9" r="2.2"/><path d="M6 7.7v8.6M18 11.2c0 3.6-6 2.4-11 5.4"/>`,
+  "cloud-resource": `<path d="M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 10.5a4 4 0 0 1-.5 8Z"/>`,
+  package: `<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m7.5 4.3 9 5.2M3.3 7 12 12l8.7-5M12 22V12"/>`,
+  vulnerability: `<path d="M12 3 2.5 20h19Z"/><path d="M12 10v4.5M12 17.4v.01"/>`,
+  account: `<circle cx="12" cy="8.5" r="3.6"/><path d="M4.5 20c.8-3.8 3.8-6 7.5-6s6.7 2.2 7.5 6"/>`,
 } as const satisfies Record<Exclude<NodeKind, "internal-dependency" | "service">, string>
 
 /** White line icon of a node kind. The internal dependency shares the dependency icon. */

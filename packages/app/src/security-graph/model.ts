@@ -1,4 +1,16 @@
-export type NodeKind = "api" | "data-model" | "dependency" | "internal-dependency" | "module" | "framework" | "service"
+export type NodeKind =
+  | "api"
+  | "data-model"
+  | "dependency"
+  | "internal-dependency"
+  | "module"
+  | "framework"
+  | "service"
+  | "repository"
+  | "cloud-resource"
+  | "package"
+  | "vulnerability"
+  | "account"
 export type Tag =
   | "internet-exposed"
   | "sensitive-logic"
@@ -10,7 +22,21 @@ export type Tag =
   | "writes-to-log"
 export type Language = "csharp" | "java"
 export type Brand = "stripe" | "auth0" | "openai"
-export type EdgeKind = "uses" | "contains"
+export type EdgeKind =
+  | "uses"
+  | "contains"
+  | "runs_on"
+  | "on"
+  | "owned_by"
+  | "attached_to"
+  | "mounts"
+  | "depends_on"
+  | "resolves_to"
+  | "found_in"
+  | "affected_by"
+  | "same_as"
+  | "likely_same_as"
+  | "related"
 
 export type GraphNode = {
   id: string
@@ -34,6 +60,8 @@ export type GraphEdge = {
   kind: EdgeKind
   /** Bends the edge: 0 is straight. */
   curvature?: number
+  /** Drawn dashed: the relation was inferred, not extracted from a source. */
+  inferred?: boolean
 }
 
 export type GraphData = { nodes: readonly GraphNode[]; edges: readonly GraphEdge[] }

@@ -113,6 +113,8 @@ func TestArchCollectorsDoNotImportHTTPOrAWSSDK(t *testing.T) {
 //   - broker/*: the Opener is the broker's credential-injection source.
 //   - lifecycle/{manager,supervisor,authconfig}.go: credential lifecycle
 //     (store, rotate, forget) and provider auth config assembly.
+//   - deviceflow/refresh.go, gcp/provider.go: use vault types (Ref, Opener)
+//     in interfaces only; they never construct or open the store.
 //   - connectors/service.go: wiring only; it constructs the vault.Store
 //     (vault.Open) and reads its own non-credential slots (params,
 //     external-id) via Vault.Use when preparing auth config.
@@ -122,7 +124,9 @@ func TestArchVaultImportedOnlyByAllowedFiles(t *testing.T) {
 	allowed := map[string]bool{
 		"internal/connectors/service.go":              true,
 		"internal/connectors/broker/broker.go":        true,
-		"internal/connectors/broker/transport.go":     true,
+		"internal/connectors/broker/auth.go":          true, // vault.ErrNotFound/ErrDecrypt sentinels
+		"internal/connectors/deviceflow/refresh.go":   true, // vault.Ref in the token-store interface
+		"internal/connectors/gcp/provider.go":         true, // vault.Opener type; Use stays with the broker
 		"internal/connectors/lifecycle/manager.go":    true,
 		"internal/connectors/lifecycle/supervisor.go": true,
 		"internal/connectors/lifecycle/authconfig.go": true,

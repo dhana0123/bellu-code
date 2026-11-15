@@ -93,6 +93,19 @@ type LastSync struct {
 	EndedAt  *time.Time `json:"endedAt,omitempty"`
 	Entities int        `json:"entities"`
 	Partial  []string   `json:"partial"`
+	// RateLimitWaits, AuthError and DeniedScopes are the Run_Status fields
+	// the collector reported for the run.
+	RateLimitWaits []RateLimitWait `json:"rateLimitWaits,omitempty"`
+	AuthError      string          `json:"authError,omitempty"`
+	DeniedScopes   []string        `json:"deniedScopes,omitempty"`
+}
+
+// RateLimitWait is one wait a collector performed until a source's rate-limit
+// reset time.
+type RateLimitWait struct {
+	Scope    string    `json:"scope"`
+	Until    time.Time `json:"until"`
+	WaitedMS int64     `json:"waitedMs"`
 }
 
 // Connection is one configured account of a connector.

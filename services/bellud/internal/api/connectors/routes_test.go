@@ -13,7 +13,8 @@ func TestRouteTableCoversProtocol(t *testing.T) {
 		"status", "catalog", "listConnections", "createConnection", "getConnection", "updateConnection",
 		"deleteConnection", "testConnection", "syncConnection", "pauseConnection", "resumeConnection",
 		"reconnectConnection", "rotateCredential", "listAudit", "listAuthConfigs", "createAuthConfig",
-		"deleteAuthConfig", "awsSetup", "listGithubRepos", "getScope", "putScope", "unlockVault",
+		"deleteAuthConfig", "awsSetup", "listGithubRepos", "listScopeOptions", "startDeviceAuthorization",
+		"getDeviceAuthorization", "cancelDeviceAuthorization", "getScope", "putScope", "unlockVault",
 		"rotateMasterKey", "forgetAll",
 	}
 	got := map[string]Route{}

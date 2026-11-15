@@ -127,6 +127,7 @@ var (
 		"connection": true, "arn": true, "source": true, "service": true, "resource_type": true, "region": true,
 		"name": true, "state": true, "tag_count": true, "instance_type": true, "created_at": true,
 		"runtime": true, "engine": true, "account_id": true, "alias": true, "regions": true,
+		"canonical_key": true, "internet_exposed": true,
 	}
 )
 
