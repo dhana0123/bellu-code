@@ -64,6 +64,22 @@ func ExpiresSoon(c store.Connection, now time.Time) bool {
 	return c.CredentialExpiresAt != nil && c.CredentialExpiresAt.Sub(now) < ExpiresSoonWindow
 }
 
+// RunStatus and RateLimitWait are the Run_Status a collector reports. They are
+// defined in collectors so collectors can report them without importing this
+// package.
+type (
+	RunStatus     = collectors.RunStatus
+	RateLimitWait = collectors.RateLimitWait
+)
+
+// HTTP status codes collectors report through HTTPStatusError, so collectors
+// need not import net/http.
+const (
+	StatusUnauthorized = 401
+	StatusForbidden    = 403
+	StatusNotFound     = 404
+)
+
 // HTTPStatusError lets a collector report the HTTP status that ended its run.
 // 401 sets the connection EXPIRED and 403 sets it to ERROR, both without retry.
 type HTTPStatusError struct{ Code int }
@@ -188,6 +204,14 @@ func (o *observed) Collect(ctx context.Context) (graph.Batch, error) {
 	}
 	o.mu.Unlock()
 	return b, err
+}
+
+// runStatus returns what the collector reported for its last run.
+func (o *observed) runStatus() RunStatus {
+	if r, ok := o.Collector.(collectors.StatusReporter); ok {
+		return r.RunStatus()
+	}
+	return RunStatus{}
 }
 
 func (o *observed) result() ([]string, int) {
@@ -452,12 +476,17 @@ func (s *CollectorSupervisor) afterRun(e *entry, err error) {
 			status = SyncPartial
 		}
 		t := now.UTC()
+		rs := e.col.Load().runStatus()
 		s.setSync(e.id, func(l *store.LastSync) {
 			*l = store.LastSync{Status: status, EndedAt: &t, Entities: n, Partial: append([]string{}, partial...)}
+			applyRunStatus(l, rs)
 		})
 		return
 	}
 	kind := classifyRun(err)
+	// Written before the terminal transitions below, which return early.
+	rs := e.col.Load().runStatus()
+	s.setSync(e.id, func(l *store.LastSync) { applyRunStatus(l, rs) })
 	switch kind {
 	case kindExpired:
 		s.finish(e, StatusExpired, "provider rejected the credential (HTTP 401)")
@@ -492,6 +521,14 @@ func (s *CollectorSupervisor) afterRun(e *entry, err error) {
 			l.Partial = []string{}
 		}
 	})
+}
+
+// applyRunStatus copies the collector-reported Run_Status into LastSync,
+// replacing the values of the previous run.
+func applyRunStatus(l *store.LastSync, rs RunStatus) {
+	l.RateLimitWaits = rs.RateLimitWaits
+	l.AuthError = rs.AuthError
+	l.DeniedScopes = rs.DeniedScopes
 }
 
 func (s *CollectorSupervisor) setSync(id string, fn func(*store.LastSync)) {

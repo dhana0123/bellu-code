@@ -152,7 +152,7 @@ func TestValidateSelectionMaximum(t *testing.T) {
 func TestInstallURLHonorsSlugOverride(t *testing.T) {
 	env := map[string]string{}
 	get := func(k string) string { return env[k] }
-	if got := InstallURL(EffectiveAppSlug(get)); got != "https://github.com/apps/bellu-code/installations/new" {
+	if got := InstallURL(EffectiveAppSlug(get)); got != "https://github.com/apps/bellucode/installations/new" {
 		t.Fatal(got)
 	}
 	env[EnvAppSlug] = " my-fork "

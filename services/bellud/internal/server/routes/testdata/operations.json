@@ -456,8 +456,36 @@
   },
   {
     "method": "GET",
+    "path": "/api/experimental/graph/intel/status",
+    "operationId": "experimental.graph.intelStatus",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/graph/lenses",
+    "operationId": "experimental.graph.lenses",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/graph/overlay",
+    "operationId": "experimental.graph.overlay",
+    "group": "experimental",
+    "stream": true
+  },
+  {
+    "method": "GET",
     "path": "/api/experimental/graph/schema",
     "operationId": "experimental.graph.schema",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/graph/slice",
+    "operationId": "experimental.graph.slice",
     "group": "experimental",
     "stream": false
   },

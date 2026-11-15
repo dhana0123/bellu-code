@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ type fakeAPI struct {
 	errs    map[string]error // key: method or method:owner/repo
 	calls   []string
 	secrets []SecretScanningAlert
+	sbom    []Package
 }
 
 func (f *fakeAPI) err(m, o, r string) error {
@@ -68,6 +70,9 @@ func (f *fakeAPI) SecretScanningAlerts(_ context.Context, o, r string) ([]Secret
 	return f.secrets, f.err("SecretScanningAlerts", o, r)
 }
 
+func (f *fakeAPI) SBOM(_ context.Context, o, r string) ([]Package, error) {
+	return f.sbom, f.err("SBOM", o, r)
+}
 func newFake() *fakeAPI {
 	return &fakeAPI{
 		repos: map[string]Repo{
@@ -215,5 +220,46 @@ func TestEmptySelectionCollectsNothing(t *testing.T) {
 	b, err := NewCollector("cn_1", f, nil, time.Minute).Collect(context.Background())
 	if err != nil || len(b.Entities) != 0 || len(f.calls) != 0 {
 		t.Fatalf("err=%v entities=%d calls=%v", err, len(b.Entities), f.calls)
+	}
+}
+
+type sbomAPI struct {
+	*fakeAPI
+	pkgs []Package
+}
+
+func (s sbomAPI) SBOM(context.Context, string, string) ([]Package, error) { return s.pkgs, nil }
+
+func TestSBOMPackages(t *testing.T) {
+	pkgs := []Package{{Name: "npm:lodash", Purl: "pkg:npm/Lodash@4.17.21", Ecosystem: "npm"}, {Name: "dup", Purl: "pkg:npm/Lodash@4.17.21"}, {Name: "norepo"}}
+	for i := 0; i < MaxPackagesPerRepo+5; i++ {
+		pkgs = append(pkgs, Package{Name: "p", Purl: "pkg:npm/p@" + strconv.Itoa(i)})
+	}
+	c := NewCollector("c1", sbomAPI{newFake(), pkgs}, []string{"acme/web"}, 0)
+	b, err := c.Collect(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	n, dep := 0, 0
+	for _, e := range b.Entities {
+		switch e.Type {
+		case "package":
+			n++
+			if e.Attributes["canonical_key"] == "" || e.Attributes["canonical_key"] == nil {
+				t.Fatal("missing canonical_key")
+			}
+		case "github_repo":
+			if e.Attributes["canonical_key"] != "git:github.com/acme/web" || e.Attributes["packages_truncated"] != "true" {
+				t.Fatalf("repo attrs: %v", e.Attributes)
+			}
+		}
+	}
+	for _, r := range b.Relations {
+		if r.Type == "depends_on" {
+			dep++
+		}
+	}
+	if n != MaxPackagesPerRepo || dep != n {
+		t.Fatalf("packages=%d depends_on=%d", n, dep)
 	}
 }

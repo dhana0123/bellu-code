@@ -62,6 +62,7 @@ type Instance struct {
 	VPCID            string
 	SubnetID         string
 	SecurityGroupIDs []string
+	PublicIP         string
 	LaunchTime       time.Time
 	TagCount         int
 }
@@ -80,6 +81,8 @@ type SecurityGroup struct {
 	Name     string
 	VPCID    string
 	TagCount int
+	// OpenToInternet is true when an ingress rule allows 0.0.0.0/0 or ::/0.
+	OpenToInternet bool
 }
 
 // VPC is an EC2 VPC projection.
@@ -311,6 +314,7 @@ func (c *client) Instances(ctx context.Context, region string) ([]Instance, erro
 					Type: string(i.InstanceType), VPCID: awssdk.ToString(i.VpcId),
 					SubnetID: awssdk.ToString(i.SubnetId), TagCount: len(i.Tags),
 				}
+				in.PublicIP = awssdk.ToString(i.PublicIpAddress)
 				if i.State != nil {
 					in.State = string(i.State.Name)
 				}
@@ -360,6 +364,7 @@ func (c *client) SecurityGroups(ctx context.Context, region string) ([]SecurityG
 			res = append(res, SecurityGroup{
 				ID: awssdk.ToString(g.GroupId), Region: region, Name: awssdk.ToString(g.GroupName),
 				VPCID: awssdk.ToString(g.VpcId), TagCount: len(g.Tags),
+				OpenToInternet: openIngress(g.IpPermissions),
 			})
 		}
 		return nil
@@ -478,4 +483,21 @@ func IsRootARN(arn string) bool {
 		}
 	}
 	return true
+}
+
+// openIngress reports whether any ingress rule allows all IPv4 or IPv6 sources.
+func openIngress(ps []ec2types.IpPermission) bool {
+	for _, p := range ps {
+		for _, r := range p.IpRanges {
+			if awssdk.ToString(r.CidrIp) == "0.0.0.0/0" {
+				return true
+			}
+		}
+		for _, r := range p.Ipv6Ranges {
+			if awssdk.ToString(r.CidrIpv6) == "::/0" {
+				return true
+			}
+		}
+	}
+	return false
 }

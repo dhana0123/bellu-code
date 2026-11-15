@@ -53,7 +53,7 @@ func Manifest() manifest.Manifest {
 				Host: hostPlaceholder, Path: rulesReviewPath, MaxBytes: 16 << 10},
 		},
 		Egress:   []string{hostPlaceholder},
-		Entities: []string{},
+		Entities: []string{"kubernetes_namespace"},
 	}
 }
 

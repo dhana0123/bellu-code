@@ -142,17 +142,18 @@ func (v *validator) selection(name string) (store.Selection, bool) {
 		v.fail(name)
 		return store.Selection{}, false
 	}
-	// regions, repos and items are each optional; a missing list is empty.
-	list := func(key string) ([]string, bool) {
+	// regions and repos are required; items is optional (matches
+	// Connectors.Selection in packages/schema).
+	list := func(key string, required bool) ([]string, bool) {
 		raw, present := o[key]
 		if !present {
-			return []string{}, true
+			return []string{}, !required
 		}
 		return asStringSlice(raw)
 	}
-	regions, ok1 := list("regions")
-	repos, ok2 := list("repos")
-	items, ok3 := list("items")
+	regions, ok1 := list("regions", true)
+	repos, ok2 := list("repos", true)
+	items, ok3 := list("items", false)
 	if len(items) == 0 {
 		items = nil
 	}

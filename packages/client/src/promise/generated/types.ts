@@ -363,6 +363,25 @@ export type GraphEngineState = "disabled" | "starting" | "ready" | "failed"
 
 export type GraphChildState = "starting" | "ready" | "restarting" | "degraded" | "stopped"
 
+export type GraphLensParam = { name: string; required: boolean }
+
+export type GraphLensRisk = {
+  score: number | "Infinity" | "-Infinity" | "NaN"
+  severity: string
+  cvss: number | "Infinity" | "-Infinity" | "NaN"
+  epss: number | "Infinity" | "-Infinity" | "NaN"
+  kev: boolean
+  reachable: boolean | null
+}
+
+export type GraphConfidence = "extracted" | "inferred"
+
+export type GraphLensGroup = { id: string; label: string; members: Array<string> }
+
+export type GraphIntelState = "not_configured" | "disabled" | "idle" | "syncing" | "ok" | "error"
+
+export type GraphOverlayAction = "focus_node" | "walk_path" | "proposed_change"
+
 export type ConnectorsServiceStatus = {
   enabled: boolean
   offline: boolean
@@ -1128,6 +1147,45 @@ export type GraphChange = {
 export type GraphSchemaSummary = { entity_types: Array<GraphSchemaType>; relation_types: Array<GraphSchemaType> }
 
 export type GraphStatus = { engine: GraphEngineState; ts_child: GraphChildState; detail?: string }
+
+export type GraphLens = {
+  id: string
+  name: string
+  description: string
+  layout: "force" | "radial" | "chain"
+  default: boolean
+  params: Array<GraphLensParam>
+}
+
+export type GraphLensNode = {
+  id: string
+  kind: string
+  label: string
+  group: string | null
+  hops: number
+  attrs: { [x: string]: string }
+  risk: GraphLensRisk | null
+}
+
+export type GraphLensEdge = { from: string; to: string; type: string; confidence: GraphConfidence }
+
+export type GraphLensPath = { nodes: Array<string>; confidence: GraphConfidence }
+
+export type GraphIntelStatus = {
+  state: GraphIntelState
+  version: string
+  records: number
+  last_synced_at: string
+  last_error: string
+}
+
+export type GraphOverlayEvent = {
+  seq: number
+  entity: string
+  action: GraphOverlayAction
+  path?: Array<string>
+  explanation: string
+}
 
 export type ConnectorsManifestAuthMethod = {
   id: string
@@ -2461,6 +2519,17 @@ export type GraphDiff = {
 export type GraphEdgePage = { items: Array<GraphEdge>; total: number; truncated: boolean; limit: number }
 
 export type GraphChangePage = { items: Array<GraphChange>; total: number; truncated: boolean; limit: number }
+
+export type GraphLensSlice = {
+  lens: string
+  generated_at: string
+  truncated: boolean
+  counts: { nodes: number; edges: number; omitted_nodes: number }
+  nodes: Array<GraphLensNode>
+  edges: Array<GraphLensEdge>
+  groups: Array<GraphLensGroup>
+  paths?: Array<GraphLensPath>
+}
 
 export type ConnectorsManifest = {
   id: ConnectorsConnectorID
@@ -5058,6 +5127,24 @@ export type ExperimentalGraphSchemaOutput = GraphSchemaSummary
 
 export type ExperimentalGraphStatusOutput = GraphStatus
 
+export type ExperimentalGraphLensesOutput = Array<GraphLens>
+
+export type ExperimentalGraphSliceInput = {
+  readonly lens: string
+  readonly entity?: string | undefined
+  readonly target?: string | undefined
+  readonly depth?: number | undefined
+  readonly limit?: number | undefined
+}
+
+export type ExperimentalGraphSliceOutput = GraphLensSlice
+
+export type ExperimentalGraphIntelStatusOutput = GraphIntelStatus
+
+export type ExperimentalGraphOverlayInput = { readonly replay?: string | undefined }
+
+export type ExperimentalGraphOverlayOutput = GraphOverlayEvent
+
 export type ExperimentalConnectorsStatusOutput = ConnectorsServiceStatus
 
 export type ExperimentalConnectorsCatalogOutput = ConnectorsCatalog
@@ -5532,6 +5619,24 @@ export type GraphSchemaOutput = ExperimentalGraphSchemaOutput
 
 /** @deprecated Use `ExperimentalGraphStatusOutput`. Removed in the next minor. */
 export type GraphStatusOutput = ExperimentalGraphStatusOutput
+
+/** @deprecated Use `ExperimentalGraphLensesOutput`. Removed in the next minor. */
+export type GraphLensesOutput = ExperimentalGraphLensesOutput
+
+/** @deprecated Use `ExperimentalGraphSliceInput`. Removed in the next minor. */
+export type GraphSliceInput = ExperimentalGraphSliceInput
+
+/** @deprecated Use `ExperimentalGraphSliceOutput`. Removed in the next minor. */
+export type GraphSliceOutput = ExperimentalGraphSliceOutput
+
+/** @deprecated Use `ExperimentalGraphIntelStatusOutput`. Removed in the next minor. */
+export type GraphIntelStatusOutput = ExperimentalGraphIntelStatusOutput
+
+/** @deprecated Use `ExperimentalGraphOverlayInput`. Removed in the next minor. */
+export type GraphOverlayInput = ExperimentalGraphOverlayInput
+
+/** @deprecated Use `ExperimentalGraphOverlayOutput`. Removed in the next minor. */
+export type GraphOverlayOutput = ExperimentalGraphOverlayOutput
 
 /** @deprecated Use `ExperimentalConnectorsStatusOutput`. Removed in the next minor. */
 export type ConnectorsStatusOutput = ExperimentalConnectorsStatusOutput

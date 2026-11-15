@@ -306,7 +306,21 @@ type ctxKey int
 const (
 	keyOperation ctxKey = iota
 	keyMaxBytes
+	keyWaitObserver
 )
+
+// RateWait is a provider-requested pause the broker waited out before
+// sending a request: Until is the reset time, Waited the time slept.
+type RateWait struct {
+	Until  time.Time
+	Waited time.Duration
+}
+
+// WithWaitObserver returns a context whose requests report each rate-limit
+// wait to fn, so a collector can record it in its Run_Status.
+func WithWaitObserver(ctx context.Context, fn func(RateWait)) context.Context {
+	return context.WithValue(ctx, keyWaitObserver, fn)
+}
 
 // HTTPClient returns a client for SDK wrappers. Its Transport is the policy
 // RoundTripper; redirects are limited and every hop is re-checked.

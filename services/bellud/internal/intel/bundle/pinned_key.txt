@@ -1,0 +1,2 @@
+# Base64 ed25519 public key that signs intel bundles. Set it here or override with BELLU_INTEL_PUBKEY.
+# While no key is set, intel sync stays disabled.

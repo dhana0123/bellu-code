@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // Environment variable names.
@@ -39,6 +41,9 @@ type Config struct {
 
 	// Logger receives engine logs. Nil means slog.Default().
 	Logger *slog.Logger
+	// MCPExtras, when set, is called by MCPHandler with the MCP server after
+	// the built-in tools are registered, so callers can add read-only tools.
+	MCPExtras func(*mcp.Server)
 	// OpenTimeout bounds Open; zero means 5s.
 	OpenTimeout time.Duration
 }

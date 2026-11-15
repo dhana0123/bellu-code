@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/store"
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
 	"github.com/bellu/bellucode/services/bellud/internal/redact"
@@ -27,6 +28,73 @@ type Collector interface {
 
 // Timeouter is an optional Collector interface overriding the per-tick timeout.
 type Timeouter interface{ Timeout() time.Duration }
+
+// RateLimitWait is one wait a collector performed for a source's rate limit.
+type RateLimitWait = store.RateLimitWait
+
+// RunStatus is what a collector reports about its last run beyond the batch.
+type RunStatus struct {
+	RateLimitWaits []RateLimitWait // waits performed until the source's reset time
+	AuthError      string          // set when credentials were rejected; the run ended
+	DeniedScopes   []string        // access-denied scopes; the run continued
+}
+
+// StatusReporter is an optional Collector interface. RunStatus is read after
+// Collect returns and describes that call.
+type StatusReporter interface{ RunStatus() RunStatus }
+
+// StatusRecorder collects a RunStatus while a collector runs. The zero value
+// is ready to use and is safe for concurrent use.
+type StatusRecorder struct {
+	mu sync.Mutex
+	st RunStatus
+}
+
+// Reset clears the recorded status at the start of a run.
+func (r *StatusRecorder) Reset() {
+	r.mu.Lock()
+	r.st = RunStatus{}
+	r.mu.Unlock()
+}
+
+// Wait records a rate-limit wait.
+func (r *StatusRecorder) Wait(scope string, until time.Time, waited time.Duration) {
+	r.mu.Lock()
+	r.st.RateLimitWaits = append(r.st.RateLimitWaits, RateLimitWait{Scope: scope, Until: until.UTC(), WaitedMS: waited.Milliseconds()})
+	r.mu.Unlock()
+}
+
+// Auth records an authorization error. The first one wins.
+func (r *StatusRecorder) Auth(msg string) {
+	r.mu.Lock()
+	if r.st.AuthError == "" {
+		r.st.AuthError = msg
+	}
+	r.mu.Unlock()
+}
+
+// Deny records an access-denied scope once.
+func (r *StatusRecorder) Deny(scope string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, s := range r.st.DeniedScopes {
+		if s == scope {
+			return
+		}
+	}
+	r.st.DeniedScopes = append(r.st.DeniedScopes, scope)
+}
+
+// Status returns a copy of the recorded status.
+func (r *StatusRecorder) Status() RunStatus {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return RunStatus{
+		RateLimitWaits: append([]RateLimitWait(nil), r.st.RateLimitWaits...),
+		AuthError:      r.st.AuthError,
+		DeniedScopes:   append([]string(nil), r.st.DeniedScopes...),
+	}
+}
 
 // ConnectorTimeout is the per-run timeout for cloud connector collectors.
 const ConnectorTimeout = 120 * time.Second

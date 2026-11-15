@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/rds v1.133.0
 	github.com/cockroachdb/pebble v1.1.5
 	github.com/gorilla/websocket v1.5.3
+	github.com/klauspost/compress v1.18.7
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/prometheus/client_golang v1.15.0
@@ -67,7 +68,6 @@ require (
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect

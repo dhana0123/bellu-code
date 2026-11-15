@@ -30,6 +30,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bellu/bellucode/services/bellud/internal/canonical"
 	"github.com/bellu/bellucode/services/bellud/internal/collectors"
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
@@ -238,11 +239,15 @@ func (c *Collector) Collect(ctx context.Context) (graph.Batch, error) {
 		if im.ID == "" {
 			continue
 		}
-		if err := add("image", im.ID, map[string]string{"id": im.ID}, map[string]any{
+		attrs := map[string]any{
 			"repo_tags":    sortedCopy(im.RepoTags),
 			"repo_digests": sortedCopy(im.Digests),
 			"size":         im.Size,
-		}); err != nil {
+		}
+		if k, ok := canonical.Key(canonical.KindImage, im.ID); ok {
+			attrs[canonical.AttrCanonicalKey] = k
+		}
+		if err := add("image", im.ID, map[string]string{"id": im.ID}, attrs); err != nil {
 			return out, err
 		}
 	}

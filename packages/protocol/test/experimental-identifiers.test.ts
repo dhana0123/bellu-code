@@ -32,7 +32,7 @@ test("graph endpoints are exactly /api/experimental/graph/* <-> experimental.gra
   )
   const byPath = operations.filter(({ path }) => path.startsWith("/api/experimental/graph/"))
   const byIdentifier = operations.filter(({ identifier }) => identifier.startsWith("experimental.graph."))
-  const names = ["changes", "diff", "entity", "find", "history", "neighbors", "schema", "status"]
+  const names = ["changes", "diff", "entity", "find", "history", "intelStatus", "lenses", "neighbors", "overlay", "schema", "slice", "status"]
   expect(byPath.map(({ identifier }) => identifier).sort()).toEqual(names.map((name) => `experimental.graph.${name}`))
   // both directions: path prefix <=> identifier prefix
   expect(byIdentifier.map(({ path }) => path).sort()).toEqual(byPath.map(({ path }) => path).sort())

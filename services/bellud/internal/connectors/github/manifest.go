@@ -83,6 +83,7 @@ func Manifest(clientID string) manifest.Manifest {
 			get("/repos/{o}/{r}/actions/workflows", "/repos/{o}/{r}/actions/workflows"),
 			get("/repos/{o}/{r}/code-scanning/alerts", "/repos/{o}/{r}/code-scanning/alerts"),
 			get("/repos/{o}/{r}/dependabot/alerts", "/repos/{o}/{r}/dependabot/alerts"),
+			get("/repos/{o}/{r}/dependency-graph/sbom", "/repos/{o}/{r}/dependency-graph/sbom"),
 			get("/repos/{o}/{r}/secret-scanning/alerts", "/repos/{o}/{r}/secret-scanning/alerts", "secret"),
 			// Issues are only counted; the Client reads the Link header.
 			get("/repos/{o}/{r}/issues", "/repos/{o}/{r}/issues"),
@@ -94,7 +95,7 @@ func Manifest(clientID string) manifest.Manifest {
 				Host: GitHubHost, Path: "/login/oauth/access_token", MaxBytes: 16 << 10, IssuesCredential: true},
 		},
 		Egress:   []string{DefaultAPIHost, GitHubHost, hostPlaceholder},
-		Entities: []string{"github_org", "github_repo", "github_workflow", "github_pull_request", "github_alert"},
+		Entities: []string{"github_org", "github_repo", "github_workflow", "github_pull_request", "github_alert", "package"},
 	}
 }
 

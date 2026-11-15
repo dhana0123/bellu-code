@@ -35,6 +35,7 @@ var MCPTools = []string{
 	"describe_schema", "describe_type", "find_entities", "get_entity",
 	"annotate_entity", "get_neighbors", "find_path", "impact_of",
 	"entity_history", "recent_changes", "graph_diff", "telemetry_keys",
+	"slice", "attack_paths", "blast_radius", "reachable_vulns",
 }
 
 // AuditRecord is one audited operator write.
@@ -172,6 +173,9 @@ func (e *engine) MCPHandler() http.Handler {
 	if err != nil {
 		e.log.Error("mcp server unavailable", "err", err)
 		return UnavailableHandler(err.Error())
+	}
+	if e.cfg.MCPExtras != nil {
+		e.cfg.MCPExtras(srv.MCP())
 	}
 	inner := srv.Handler()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
