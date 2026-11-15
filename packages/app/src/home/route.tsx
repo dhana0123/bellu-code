@@ -11,7 +11,6 @@ import { SettingsConnectors } from "@/settings/connectors/connectors-page"
 import { ConnectionList } from "@/settings/connectors/connection-list"
 import { ConnectDialog } from "@/settings/connectors/connect-dialog"
 import { useConnectorsAvailable } from "@/settings/connectors/enabled"
-import { useSecurityGraphAvailable } from "@/security-graph/available"
 import { createHomeController } from "./model"
 import { createHomeProjectsController } from "./projects/controller"
 import { HomeUtilityNav } from "./projects/view"
@@ -40,9 +39,7 @@ export function Home() {
     { equals: (a, b) => (a ? ServerConnection.key(a) : undefined) === (b ? ServerConnection.key(b) : undefined) },
   )
   const connectors = useConnectorsAvailable(connection)
-  const graph = useSecurityGraphAvailable(connection)
-  const securityPage = () =>
-    view.page === "connectors" && connectors() ? "connectors" : view.page === "graph" && graph() ? "graph" : undefined
+  const securityPage = () => (view.page === "connectors" && connectors() ? "connectors" : view.page === "graph" ? "graph" : undefined)
   createEffect(on(() => projects.selection.value(), () => setView("page", "sessions"), { defer: true }))
 
   return (
@@ -78,22 +75,22 @@ export function Home() {
               connectorsAvailable={connectors()}
               securityPage={securityPage()}
               onOpenConnectors={() => setView("page", "connectors")}
-              graphAvailable={graph()}
+              graphAvailable
               onOpenGraph={() => setView("page", "graph")}
             />
           </Show>
           <Show
-            when={securityPage() && connection()}
-            fallback={<HomeSessions sessions={sessions} search={search} scroll={scroll} />}
-          >
-            {(server) => (
+            when={securityPage() === "graph"}
+            fallback={
               <Show
-                when={securityPage() === "graph"}
-                fallback={<HomeConnectors server={server()} onBack={() => setView("page", "sessions")} />}
+                when={securityPage() === "connectors" && connection()}
+                fallback={<HomeSessions sessions={sessions} search={search} scroll={scroll} />}
               >
-                <HomeSecurityGraph server={server()} onBack={() => setView("page", "sessions")} />
+                {(server) => <HomeConnectors server={server()} onBack={() => setView("page", "sessions")} />}
               </Show>
-            )}
+            }
+          >
+            <HomeSecurityGraph onBack={() => setView("page", "sessions")} />
           </Show>
         </div>
       </ScrollView>
@@ -131,30 +128,28 @@ function HomeConnectors(props: { server: ServerConnection.Any; onBack: () => voi
 
 // The Security Graph loads on demand so its renderer and layout code stay out of the main chunk.
 const SecurityGraphPage = lazy(() =>
-  import("@/security-graph/ui/panels").then((module) => ({ default: module.SecurityGraphPage })),
+  import("@/security-graph/page").then((module) => ({ default: module.SecurityGraphPage })),
 )
-function HomeSecurityGraph(props: { server: ServerConnection.Any; onBack: () => void }) {
+function HomeSecurityGraph(props: { onBack: () => void }) {
   const language = useLanguage()
   return (
-    <ServerProvider conn={props.server}>
-      <div data-slot="home-security-graph" class="flex h-[max(560px,100cqh)] min-w-0 flex-col">
-        <Suspense
-          fallback={
-            <div class="flex flex-1 items-center justify-center gap-2 text-text-weak" role="status">
-              <Loader class="size-4" />
-              <span>{language.t("security.graph.loading")}</span>
-            </div>
+    <div data-slot="home-security-graph" class="flex h-[max(560px,100cqh)] min-w-0 flex-col">
+      <Suspense
+        fallback={
+          <div class="flex flex-1 items-center justify-center gap-2 text-text-weak" role="status">
+            <Loader class="size-4" />
+            <span>{language.t("security.graph.loading")}</span>
+          </div>
+        }
+      >
+        <SecurityGraphPage
+          headerAction={
+            <Button size="small" variant="ghost" onClick={() => props.onBack()}>
+              {language.t("home.security.backToSessions")}
+            </Button>
           }
-        >
-          <SecurityGraphPage
-            headerAction={
-              <Button size="small" variant="ghost" onClick={() => props.onBack()}>
-                {language.t("home.security.backToSessions")}
-              </Button>
-            }
-          />
-        </Suspense>
-      </div>
-    </ServerProvider>
+        />
+      </Suspense>
+    </div>
   )
 }

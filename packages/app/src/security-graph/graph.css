@@ -1,0 +1,218 @@
+[data-component="security-graph-page"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  padding: 12px 12px 12px 0;
+}
+[data-slot="security-graph-header"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+[data-slot="security-graph-title"] {
+  margin: 0;
+  font-size: 16px;
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--v2-text-text-base);
+}
+
+/* Every color comes from the app theme tokens, so the canvas follows the light and dark themes. The renderer reads
+   --sg-edge and --sg-raised too, for the parts WebGL draws. */
+[data-component="security-graph"] {
+  --sg-surface: var(--v2-background-bg-base);
+  --sg-raised: var(--v2-background-bg-layer-01);
+  --sg-line: var(--v2-border-border-base);
+  --sg-dot: var(--v2-border-border-muted);
+  --sg-text: var(--v2-text-text-base);
+  --sg-muted: var(--v2-text-text-muted);
+  --sg-edge: var(--v2-text-text-muted);
+  --sg-risk: var(--v2-state-fg-danger);
+  --sg-risk-bg: var(--v2-state-bg-danger);
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--v2-border-border-muted);
+  background-color: var(--sg-surface);
+  background-image: radial-gradient(circle, var(--sg-dot) 0.9px, transparent 1.3px);
+  background-size: 28px 28px;
+  color: var(--sg-text);
+  letter-spacing: 0.01em;
+}
+[data-component="security-graph"] [data-slot="stage"] {
+  position: absolute;
+  inset: 0;
+}
+[data-component="security-graph"] [data-slot="overlay"] {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+[data-component="security-graph"] [data-slot="status"] {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--sg-muted);
+}
+
+[data-slot="boundary"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--sg-line);
+  border-radius: 50%;
+  will-change: transform;
+}
+[data-slot="boundary-caption"] {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: 0 8px;
+  background: var(--sg-surface);
+  font-size: 12px;
+  line-height: var(--line-height-compact);
+  color: var(--sg-muted);
+  white-space: nowrap;
+}
+
+[data-slot="edge-label"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0 5px;
+  background: var(--sg-surface);
+  font-size: 12px;
+  line-height: var(--line-height-compact);
+  color: color-mix(in srgb, var(--sg-edge) 80%, transparent);
+  white-space: nowrap;
+  will-change: transform;
+}
+
+[data-slot="node"] {
+  --d: 52px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+[data-slot="node"] > * {
+  position: absolute;
+}
+[data-slot="node"][data-detail="0"] > :not([data-slot="ring"]),
+[data-slot="node"][data-detail="1"] > :not([data-slot="icon"]):not([data-slot="ring"]) {
+  display: none;
+}
+[data-slot="icon"] {
+  left: calc(var(--d) * -0.27);
+  top: calc(var(--d) * -0.27);
+  width: calc(var(--d) * 0.54);
+  height: calc(var(--d) * 0.54);
+  color: #fff;
+}
+[data-slot="icon"] svg,
+[data-slot="ring"] svg,
+[data-slot="language"] svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+[data-slot="ring"] {
+  left: calc(var(--d) * -0.5);
+  top: calc(var(--d) * -0.5);
+  box-sizing: border-box;
+  width: var(--d);
+  height: var(--d);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sg-raised);
+  color: var(--sg-text);
+  box-shadow:
+    0 0 0 1px var(--sg-line),
+    0 2px 10px rgb(0 0 0 / 0.12);
+}
+[data-slot="ring"] svg {
+  width: 50%;
+  height: 50%;
+}
+[data-slot="language"] {
+  left: -7px;
+  top: calc(var(--d) * -0.5 - 19px);
+  width: 14px;
+  height: 14px;
+  color: var(--sg-text);
+}
+[data-slot="badge"] {
+  left: calc(var(--d) * 0.354 - 9px);
+  top: calc(var(--d) * -0.354 - 9px);
+  box-sizing: border-box;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--sg-line);
+  border-radius: 9px;
+  background: var(--sg-surface);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--sg-muted);
+}
+[data-slot="chips"] {
+  left: calc(var(--d) * 0.36);
+  top: calc(var(--d) * -0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+[data-slot="chip"] {
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: var(--line-height-compact);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+[data-slot="chip"][data-tone="risk"] {
+  background: var(--sg-risk-bg);
+  color: var(--sg-risk);
+}
+[data-slot="chip"][data-tone="neutral"] {
+  background: var(--sg-raised);
+  color: var(--sg-muted);
+  box-shadow: inset 0 0 0 1px var(--sg-line);
+}
+[data-slot="label"] {
+  left: 0;
+  top: calc(var(--d) * 0.5 + 6px);
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+}
+[data-slot="type"] {
+  font-size: 14px;
+  line-height: var(--line-height-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--sg-text);
+}
+[data-slot="name"] {
+  font-size: 12px;
+  line-height: var(--line-height-compact);
+  color: var(--sg-muted);
+}

@@ -19,7 +19,6 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "bench:security-graph": "bun run src/security-graph/bench/bench.ts",
     "test": "bun run test:unit && bun run test:browser",
     "test:unit": "bun test --conditions=solid --only-failures --isolate --preload ../ui/test/solid-jsx.ts --preload ./happydom.ts ./src",
     "test:browser": "bun test --conditions=browser --isolate --preload ../ui/test/solid-jsx.ts --preload ./happydom.ts ./test-browser",
