@@ -1,0 +1,94 @@
+{
+  "entities": [
+    {
+      "id": "container:e2b384de3662d2b151089e1331846813",
+      "kind": "container",
+      "identity": {
+        "id": "c-1"
+      },
+      "attributes": {
+        "name": "web",
+        "running": true
+      }
+    },
+    {
+      "id": "dependency:169a0ac38890c6b371fef2b1ec851877",
+      "kind": "dependency",
+      "identity": {
+        "name": "left-pad",
+        "range": "^1.0.0",
+        "repo": "/srv/app"
+      },
+      "attributes": {
+        "ecosystem": "npm"
+      }
+    },
+    {
+      "id": "host:60f3128f30e7ff22d837b85e23907b31",
+      "kind": "host",
+      "identity": {
+        "hostname": "legacy-host"
+      },
+      "attributes": {
+        "cpus": 8,
+        "kernel": "6.1",
+        "os": "linux"
+      }
+    },
+    {
+      "id": "image:f8782a9b441ce9c661b2039387032965",
+      "kind": "image",
+      "identity": {
+        "id": "img-1"
+      },
+      "attributes": {
+        "tag": "web:1"
+      }
+    },
+    {
+      "id": "process:30f8fe5f78bfa169fe1d41bfce9d3e51",
+      "kind": "process",
+      "identity": {
+        "host": "legacy-host",
+        "pid": "42",
+        "start_time": "1700000000"
+      },
+      "attributes": {
+        "command": "web --serve"
+      }
+    },
+    {
+      "id": "repository:32895c90b2b35a71b855c1006d5f4b35",
+      "kind": "repository",
+      "identity": {
+        "path": "/srv/app"
+      },
+      "attributes": {
+        "branch": "main"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "type": "depends_on",
+      "from": "repository:32895c90b2b35a71b855c1006d5f4b35",
+      "to": "dependency:169a0ac38890c6b371fef2b1ec851877"
+    },
+    {
+      "type": "runs_on",
+      "from": "container:e2b384de3662d2b151089e1331846813",
+      "to": "host:60f3128f30e7ff22d837b85e23907b31"
+    },
+    {
+      "type": "runs_on",
+      "from": "process:30f8fe5f78bfa169fe1d41bfce9d3e51",
+      "to": "host:60f3128f30e7ff22d837b85e23907b31"
+    },
+    {
+      "type": "uses",
+      "from": "container:e2b384de3662d2b151089e1331846813",
+      "to": "image:f8782a9b441ce9c661b2039387032965"
+    }
+  ],
+  "relation_attributes": 0
+}
