@@ -64,6 +64,7 @@ func entityURI(id string) string {
 
 func edgeOf(e engine.EdgeView, at *time.Time) *Edge {
 	return &Edge{Type: e.Type, Direction: dirOut(e.Direction), Hops: e.Hops, Derived: e.Derived,
+		Evidence: nonEmpty(e.Evidence), Confidence: nonEmpty(e.Confidence), ObservedAt: nonEmpty(e.ObservedAt),
 		fromID: e.From, toID: e.To, at: at}
 }
 
@@ -331,4 +332,12 @@ func counts(m map[string]int) map[string]int {
 		return map[string]int{}
 	}
 	return m
+}
+
+// nonEmpty returns nil for the empty string so absent attributes read as null.
+func nonEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

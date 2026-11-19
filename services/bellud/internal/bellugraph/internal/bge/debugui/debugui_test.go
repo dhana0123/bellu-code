@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/engine"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/ident"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
 )
 
@@ -113,5 +114,39 @@ func TestFindAndErrors(t *testing.T) {
 	}
 	if w := get(h, http.MethodGet, base+"/debug?ref=x&as_of=yesterday"); w.Code != 400 {
 		t.Errorf("as_of %d", w.Code)
+	}
+}
+
+func TestNeighborAttributesShownAndEscaped(t *testing.T) {
+	h, c := setup(t)
+	id := func(n string) string {
+		f, err := c.Find(context.Background(), engine.FindQuery{Kind: "host", Attributes: map[string]string{"hostname": n}}, nil)
+		if err != nil || len(f.Items) != 1 {
+			t.Fatalf("find %s: %v %d", n, err, len(f.Items))
+		}
+		return f.Items[0].ID
+	}
+	a, b := id("a"), id("b")
+	cc, _ := ident.Hash("host", map[string]string{"hostname": "c"})
+	if _, err := c.Apply(context.Background(), batch.Batch{Collector: "test", Entities: []batch.Entity{
+		{Type: "host", Identity: map[string]string{"hostname": "a"}, Attributes: map[string]any{"os": "<script>alert(1)</script>"}},
+		{Type: "host", Identity: map[string]string{"hostname": "b"}},
+		{Type: "host", Identity: map[string]string{"hostname": "c"}},
+	}, Relations: []batch.Relation{
+		{Type: "depends_on", From: a, To: b, Attributes: map[string]any{
+			"evidence": "<img src=x onerror=1>", "confidence": "inferred", "observed_at": "2025-01-01T00:00:00Z"}},
+		{Type: "depends_on", From: a, To: cc},
+	}}, engine.ModeFull); err != nil {
+		t.Fatal(err)
+	}
+	body := get(h, http.MethodGet, base+"/debug?ref="+url.QueryEscape(a)).Body.String()
+	if !strings.Contains(body, "<td>&lt;img src=x onerror=1&gt;</td><td>inferred</td><td>2025-01-01T00:00:00Z</td>") {
+		t.Fatalf("attribute cells missing or unescaped:\n%s", body)
+	}
+	if strings.Contains(body, "<img") {
+		t.Fatal("evidence rendered unescaped")
+	}
+	if !strings.Contains(body, "<td></td><td></td><td></td></tr>") {
+		t.Fatal("relation without attributes should render empty cells")
 	}
 }

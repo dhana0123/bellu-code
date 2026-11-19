@@ -9,66 +9,110 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/errs"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schema"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schemaall"
 )
 
-var identityAttrs = map[string][]string{
-	"host":             {"hostname"},
-	"process":          {"host", "pid", "start_time"},
-	"listening_port":   {"host", "protocol", "address", "port"},
-	"container":        {"id"},
-	"image":            {"id"},
-	"network":          {"id"},
-	"volume":           {"name"},
-	"repository":       {"path"},
-	"dependency":       {"repo", "name", "range"},
-	"workflow":         {"repo", "path"},
-	"secret_ref":       {"repo", "path", "name"},
-	"iac_resource":     {"path", "address"},
-	"k8s_object":       {"source", "kind", "namespace", "name"},
-	"secret_finding":   {"path", "line", "rule"},
-	"collector_status": {"collector"},
-	"endpoint":         {"protocol", "address", "port"},
+// The registry is the merged result of every source declaration. It is
+// resolved on first use. After a failed merge every lookup behaves as if
+// nothing is registered and Check returns the failure.
+var (
+	regMu  sync.Mutex
+	regSet bool
+	reg    *schema.Registry
+	regErr error
+)
 
-	// Connector kinds are connection-scoped so Disconnect removes exactly one
-	// connection's entities.
-	"aws_account":         {"connection", "account_id"},
-	"aws_resource":        {"connection", "arn"},
-	"github_org":          {"connection", "login"},
-	"github_repo":         {"connection", "full_name"},
-	"github_workflow":     {"connection", "repo", "path"},
-	"github_pull_request": {"connection", "repo", "number"},
-	"github_alert":        {"connection", "repo", "alert_type", "number"},
-	"package":             {"connection", "scope", "purl"},
+func resolve() (*schema.Registry, error) {
+	regMu.Lock()
+	defer regMu.Unlock()
+	if !regSet {
+		reg, regErr = schemaall.Default()
+		regSet = true
+	}
+	return reg, regErr
+}
 
-	// vulnerability is global: one node per canonical id, shared by every
-	// package it affects, so it has no connection attribute.
-	"vulnerability": {"id"},
+// lookup returns the registry, or nil when the merge failed.
+func lookup() *schema.Registry {
+	r, err := resolve()
+	if err != nil {
+		return nil
+	}
+	return r
+}
+
+// Registry returns the merged registry, or the merge error.
+func Registry() (*schema.Registry, error) {
+	r, err := resolve()
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+// Check returns nil when the merge of every source declaration succeeded.
+// The error lists every failure.
+func Check() error {
+	_, err := resolve()
+	return err
+}
+
+// Use installs r as the registry. It is for tests. The first call wins: a
+// later call with a different registry, or any call after a lookup resolved
+// the default, returns schema.ErrImmutable.
+func Use(r *schema.Registry) error {
+	if r == nil {
+		return fmt.Errorf("%w: nil registry", errs.Validation)
+	}
+	regMu.Lock()
+	defer regMu.Unlock()
+	if regSet {
+		if reg == r && regErr == nil {
+			return nil
+		}
+		return schema.ErrImmutable
+	}
+	reg, regErr, regSet = r, nil, true
+	return nil
 }
 
 // Kinds lists the registered kinds, sorted.
 func Kinds() []string {
-	out := make([]string, 0, len(identityAttrs))
-	for k := range identityAttrs {
-		out = append(out, k)
+	r := lookup()
+	if r == nil {
+		return []string{}
 	}
-	sort.Strings(out)
+	ks := r.Kinds()
+	out := make([]string, len(ks))
+	for i, k := range ks {
+		out[i] = k.Name
+	}
 	return out
 }
 
 // IdentityAttributes returns the registered identity attributes of kind in
 // registered order.
 func IdentityAttributes(kind string) ([]string, bool) {
-	a, ok := identityAttrs[kind]
-	return append([]string(nil), a...), ok
+	r := lookup()
+	if r == nil {
+		return nil, false
+	}
+	k, ok := r.Kind(kind)
+	if !ok {
+		return nil, false
+	}
+	return append([]string(nil), k.Identity...), true
 }
 
 // Hash computes the Entity_ID of kind. Attributes that are not registered
 // identity attributes are ignored. It fails with errs.Validation for an
 // unknown kind or a missing/empty identity attribute.
 func Hash(kind string, attrs map[string]string) (string, error) {
-	keys, ok := identityAttrs[kind]
+	keys, ok := IdentityAttributes(kind)
 	if !ok {
 		return "", fmt.Errorf("%w: unknown entity kind %q", errs.Validation, kind)
 	}
@@ -113,39 +157,43 @@ func (d Direction) String() string {
 	return "reverse"
 }
 
-var relDirections = map[string]Direction{
-	"runs_on":     Reverse,
-	"on":          Reverse,
-	"owned_by":    Reverse,
-	"uses":        Reverse,
-	"attached_to": Reverse,
-	"mounts":      Reverse,
-	"depends_on":  Reverse,
-	"resolves_to": Reverse,
-	"found_in":    Forward,
-
-	"affected_by":    Reverse,
-	"same_as":        Reverse,
-	"likely_same_as": Reverse,
-}
-
 // RelationTypes lists the registered relation types, sorted.
 func RelationTypes() []string {
-	out := make([]string, 0, len(relDirections))
-	for k := range relDirections {
-		out = append(out, k)
+	r := lookup()
+	if r == nil {
+		return []string{}
 	}
-	sort.Strings(out)
+	rs := r.Relations()
+	out := make([]string, len(rs))
+	for i, d := range rs {
+		out[i] = d.Name
+	}
 	return out
 }
 
 // DirectionOf returns the Impact_Direction of a relation type. isDefault is
 // true when the type is unregistered and the reverse default applies.
 func DirectionOf(relType string) (d Direction, isDefault bool) {
-	if d, ok := relDirections[relType]; ok {
-		return d, false
+	if r := lookup(); r != nil {
+		if rel, ok := r.Relation(relType); ok {
+			if rel.Direction == schema.Forward {
+				return Forward, false
+			}
+			return Reverse, false
+		}
 	}
 	return Reverse, true
+}
+
+// DefaultConfidence returns the default confidence of a relation type. An
+// unregistered type reports "extracted" and registered=false.
+func DefaultConfidence(relType string) (conf string, registered bool) {
+	if r := lookup(); r != nil {
+		if rel, ok := r.Relation(relType); ok {
+			return string(rel.Confidence), true
+		}
+	}
+	return string(schema.Extracted), false
 }
 
 // Label returns the display label: a non-empty string `name` attribute, else
@@ -154,7 +202,7 @@ func Label(kind string, identity map[string]string, attrs map[string]any) string
 	if s, ok := attrs["name"].(string); ok && s != "" {
 		return s
 	}
-	keys := identityAttrs[kind]
+	keys, _ := IdentityAttributes(kind)
 	vals := make([]string, 0, len(keys))
 	for _, k := range keys {
 		vals = append(vals, identity[k])
@@ -162,18 +210,9 @@ func Label(kind string, identity map[string]string, attrs map[string]any) string
 	return strings.Join(vals, "/")
 }
 
-var secretFragments = []string{"secret", "token", "password", "passwd", "credential", "private", "apikey", "api_key", "hash"}
-
-// IsSecretName reports whether an attribute name looks secret-bearing.
-func IsSecretName(name string) bool {
-	l := strings.ToLower(name)
-	for _, f := range secretFragments {
-		if strings.Contains(l, f) {
-			return true
-		}
-	}
-	return false
-}
+// IsSecretName reports whether an attribute name looks secret-bearing. The
+// rule lives in schema.IsSecretName.
+func IsSecretName(name string) bool { return schema.IsSecretName(name) }
 
 // IsStateAttr reports whether changing the attribute makes an update a
 // state-changed update.

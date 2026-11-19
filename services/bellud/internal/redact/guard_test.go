@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
 )
@@ -81,5 +82,41 @@ func TestPrivateKeyHeader(t *testing.T) {
 	out := g.Scrub(b)
 	if g.Leaks(out) || !strings.Contains(out.Entities[0].Attributes["x"].(string), "[REDACTED:value_private_key_header]") {
 		t.Fatal("private key not scrubbed")
+	}
+}
+
+func TestRelationAttributesGuard(t *testing.T) {
+	g := New()
+	at := time.Unix(100, 0).UTC()
+	in := batch.Batch{Collector: "c", ObservedAt: at, Relations: []batch.Relation{{
+		Type: "has", From: "a", To: "b",
+		Attributes: map[string]any{"evidence": []any{"AKIAABCDEFGHIJKLMNOP"}, "confidence": 0.5},
+	}}}
+	if id, ok := g.FirstLeak(in); !ok || id != "value_aws_access_key" {
+		t.Fatalf("FirstLeak = %q %v", id, ok)
+	}
+	out := g.Scrub(in)
+	if g.Leaks(out) {
+		t.Fatal("leak after scrub")
+	}
+	a := out.Relations[0].Attributes
+	if a["evidence"].([]any)[0] != "[REDACTED:value_aws_access_key]" || a["confidence"] != 0.5 {
+		t.Fatalf("bad scrub: %v", a)
+	}
+	if !out.ObservedAt.Equal(at) {
+		t.Fatal("ObservedAt dropped")
+	}
+}
+
+func TestScrubKeepsRetain(t *testing.T) {
+	b := sample()
+	b.Retain = []batch.Retain{{Kind: "aws_resource", Attrs: map[string]string{"region": "eu-west-1"}}, {Kind: "aws_cidr"}}
+	got := New().Scrub(b).Retain
+	if !reflect.DeepEqual(got, b.Retain) {
+		t.Fatalf("Retain changed: %v", got)
+	}
+	got[0].Attrs["region"] = "x"
+	if b.Retain[0].Attrs["region"] != "eu-west-1" {
+		t.Fatal("Scrub aliased Retain attrs")
 	}
 }

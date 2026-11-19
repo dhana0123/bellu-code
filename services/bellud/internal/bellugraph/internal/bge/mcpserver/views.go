@@ -153,10 +153,15 @@ type EdgeOut struct {
 	Dir     string `json:"direction,omitempty"`
 	Hops    int    `json:"hops,omitempty"`
 	Derived bool   `json:"derived,omitempty" jsonschema:"true for relations computed at read time"`
+	// Edge attributes of the stored relation; absent when unset and on derived edges.
+	Evidence   string `json:"evidence,omitempty"`
+	Confidence string `json:"confidence,omitempty"`
+	ObservedAt string `json:"observed_at,omitempty"`
 }
 
 func projectEdge(e engine.EdgeView, v Verbosity) EdgeOut {
-	out := EdgeOut{Type: e.Type, From: e.From, To: e.To, Derived: e.Derived}
+	out := EdgeOut{Type: e.Type, From: e.From, To: e.To, Derived: e.Derived,
+		Evidence: e.Evidence, Confidence: e.Confidence, ObservedAt: e.ObservedAt}
 	if v != Brief {
 		out.Dir, out.Hops = e.Direction, e.Hops
 	}

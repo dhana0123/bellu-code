@@ -64,7 +64,7 @@ func indexKeys(ev codec.Event, entityID func(codec.Event) string) ([]kv, error) 
 			return nil, fmt.Errorf("%w: event %d (type %d) has no entity ID", errs.Validation, ev.Seq, ev.Type)
 		}
 		out = append(out, kv{idxKey(prefixEnt, id, ev.Seq), val})
-	case codec.RelationAdded, codec.RelationRemoved:
+	case codec.RelationAdded, codec.RelationRemoved, codec.RelationUpdated:
 		out = append(out, kv{idxKey(prefixRel, ev.From, ev.Seq), val}, kv{idxKey(prefixRel, ev.To, ev.Seq), val})
 	}
 	return out, nil

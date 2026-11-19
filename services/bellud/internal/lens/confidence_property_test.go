@@ -62,7 +62,7 @@ func TestPathConfidenceWeakestHopProperty(t *testing.T) {
 	})
 }
 
-func TestPlannedRelationsHaveNoAttributesProperty(t *testing.T) {
+func TestPlannedRelationsUseOnlyFixedAttributesProperty(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		n := rapid.IntRange(0, 12).Draw(t, "n")
 		ents := make([]correlate.KeyedEntity, n)
@@ -76,8 +76,10 @@ func TestPlannedRelationsHaveNoAttributesProperty(t *testing.T) {
 			}
 		}
 		for _, r := range correlate.PlanSameAs(ents) {
-			if len(r.Attributes) != 0 {
-				t.Fatalf("relation %s %s->%s has attributes %v", r.Type, r.From, r.To, r.Attributes)
+			for name := range r.Attributes {
+				if name != "evidence" && name != "confidence" && name != "observed_at" {
+					t.Fatalf("relation %s %s->%s has attribute %q outside the fixed set", r.Type, r.From, r.To, name)
+				}
 			}
 			if r.Type != correlate.RelSameAs && r.Type != correlate.RelLikelySameAs {
 				t.Fatalf("unexpected relation type %q", r.Type)

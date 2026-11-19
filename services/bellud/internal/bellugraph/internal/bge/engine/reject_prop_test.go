@@ -39,7 +39,7 @@ func TestPropRejectedBatchesChangeNothing(t *testing.T) {
 		mode := engineMode(rapid.SampledFrom([]model.Mode{model.Full, model.Partial}).Draw(t, "mode"))
 		keeper := batch.Entity{Type: "host", Identity: map[string]string{"hostname": "keeper"}}
 
-		defects := []string{"empty-collector", "unknown-kind", "missing-identity", "empty-identity", "duplicate", "no-rel-type", "rel-attrs", "foreign-endpoint"}
+		defects := []string{"empty-collector", "unknown-kind", "missing-identity", "empty-identity", "duplicate", "no-rel-type", "rel-unknown-attr", "foreign-endpoint"}
 		// An entity solely asserted by the collector can be retired by a Full batch.
 		var sole string
 		for _, col := range c.g.Collectors() {
@@ -91,7 +91,7 @@ func TestPropRejectedBatchesChangeNothing(t *testing.T) {
 			b.Entities = append(b.Entities, keeper)
 			id, _ := ident.Hash("host", keeper.Identity)
 			b.Relations = append(b.Relations, batch.Relation{From: id, To: id})
-		case "rel-attrs":
+		case "rel-unknown-attr":
 			b.Entities = append(b.Entities, keeper)
 			id, _ := ident.Hash("host", keeper.Identity)
 			b.Relations = append(b.Relations, batch.Relation{Type: "talks_to", From: id, To: id, Attributes: map[string]any{"w": 1}})

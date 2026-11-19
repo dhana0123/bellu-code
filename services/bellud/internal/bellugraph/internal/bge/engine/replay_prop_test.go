@@ -17,6 +17,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/ident"
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/internal/gen"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/internal/gen/model"
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/store"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
 )
@@ -247,5 +248,82 @@ func TestPropReplayEqualityConcurrent(t *testing.T) {
 		if !live.Equal(c2.g) {
 			t.Fatal("reopened Projection differs from the live one")
 		}
+	})
+}
+
+// rpCheckRelAttrs fails unless every live relation of g carries the edge
+// attributes the model holds for it, and the sets of relations are equal.
+func rpCheckRelAttrs(t *rapid.T, label string, g *graph.Graph, ms *model.State) {
+	t.Helper()
+	keys := g.AllRelations()
+	if len(keys) != len(ms.Rels) {
+		t.Fatalf("%s: %d relations, model %d", label, len(keys), len(ms.Rels))
+	}
+	for _, k := range keys {
+		r, ok := g.Relation(k)
+		mr := ms.Rels[model.RelKey{Type: k.Type, From: k.From, To: k.To}]
+		if !ok || mr == nil {
+			t.Fatalf("%s: relation %v missing (graph %v, model %v)", label, k, ok, mr != nil)
+		}
+		if !r.Attrs.Equal(mr.Attrs) {
+			t.Fatalf("%s: relation %v attrs %+v, model %+v", label, k, r.Attrs, mr.Attrs)
+		}
+	}
+}
+
+// Feature: aws-relationship-registry, Property 11: Replay, snapshot restore, and as-of reads preserve attributes
+// Validates: Requirements 7.6, 7.7, 7.8
+func TestPropRelationAttrsSurviveReplayAndRestore(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		f := buildSnapFixture(t)
+		c := f.c
+		live := c.g
+		last := live.LastSeq
+		rpCheckRelAttrs(t, "live", live, f.m.Current())
+
+		// Full replay from an empty Projection.
+		full := fullReplay(t, c, last)
+		if !live.Equal(full) {
+			t.Fatal("full replay differs from the live Projection")
+		}
+		rpCheckRelAttrs(t, "full replay", full, f.m.Current())
+
+		// Each Snapshot plus the rest of the log.
+		v := c.st.NewView()
+		hs, err := v.ListSnapshots()
+		if err != nil {
+			v.Close()
+			t.Fatal(err)
+		}
+		for _, h := range hs {
+			s, err := v.LoadSnapshot(h.Seq)
+			if err != nil {
+				v.Close()
+				t.Fatalf("LoadSnapshot(%d): %v", h.Seq, err)
+			}
+			g, err := graph.Import(fromStoreSnapshot(s))
+			if err == nil {
+				err = foldTail(v, g, last)
+			}
+			if err != nil {
+				v.Close()
+				t.Fatalf("snapshot %d + tail: %v", h.Seq, err)
+			}
+			if !live.Equal(g) {
+				v.Close()
+				t.Fatalf("snapshot %d + tail differs from the live Projection", h.Seq)
+			}
+			rpCheckRelAttrs(t, fmt.Sprintf("snapshot %d + tail", h.Seq), g, f.m.Current())
+		}
+		v.Close()
+
+		// Reopen, restoring from the newest Snapshot.
+		dir := c.dir
+		if err := c.Close(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		c2 := reopen(t, dir, (&stepClock{t: gen.Epoch}).now)
+		defer c2.Close(context.Background())
+		rpCheckRelAttrs(t, "reopened", c2.g, f.m.Current())
 	})
 }

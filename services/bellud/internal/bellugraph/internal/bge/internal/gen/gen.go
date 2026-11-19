@@ -84,6 +84,70 @@ func Attributes() *rapid.Generator[map[string]any] {
 	return rapid.MapOfN(rapid.SampledFrom(attrNames), SmallValue(), 0, 4)
 }
 
+// RelAttrs draws a valid relation attribute map: any subset of evidence
+// (empty and 512-byte values included), confidence and observed_at. The empty
+// map is common, since most relations carry no attributes. Evidence avoids
+// text that a redaction value rule matches.
+func RelAttrs() *rapid.Generator[map[string]any] {
+	return rapid.Custom(func(t *rapid.T) map[string]any {
+		m := map[string]any{}
+		if rapid.Bool().Draw(t, "hasEvidence") {
+			m["evidence"] = rapid.OneOf(
+				rapid.SampledFrom([]string{"", "dst=10.0.0.0/8", "日本語", strings.Repeat("e", 512)}),
+				rapid.StringMatching(`[a-z0-9 =/.,:-]{0,40}`),
+			).Draw(t, "evidence")
+		}
+		if rapid.Bool().Draw(t, "hasConfidence") {
+			m["confidence"] = rapid.SampledFrom([]string{"extracted", "inferred"}).Draw(t, "confidence")
+		}
+		if rapid.Bool().Draw(t, "hasObservedAt") {
+			m["observed_at"] = ValidTime().Draw(t, "observedAt").Format(time.RFC3339)
+		}
+		return m
+	})
+}
+
+// RelAttrsDefects names the single defect that BadRelAttrs injects.
+var RelAttrsDefects = []string{
+	"unknown_name", "evidence_not_string", "evidence_too_long", "confidence_value",
+	"confidence_not_string", "observed_at_format", "observed_at_not_string", "secret_value",
+}
+
+// BadRelAttrs draws a valid map (RelAttrs) and injects exactly one defect
+// into it. Defect is one of RelAttrsDefects. The result is always rejected by
+// the validation table.
+func BadRelAttrs() *rapid.Generator[BadAttrs] {
+	return rapid.Custom(func(t *rapid.T) BadAttrs {
+		m := RelAttrs().Draw(t, "attrs")
+		d := rapid.SampledFrom(RelAttrsDefects).Draw(t, "defect")
+		switch d {
+		case "unknown_name":
+			m[rapid.SampledFrom([]string{"weight", "Evidence", "", "data"}).Draw(t, "name")] = "x"
+		case "evidence_not_string":
+			m["evidence"] = rapid.SampledFrom([]any{1, true, []string{"a"}, nil, 1.5}).Draw(t, "v")
+		case "evidence_too_long":
+			m["evidence"] = strings.Repeat("e", 513)
+		case "confidence_value":
+			m["confidence"] = rapid.SampledFrom([]string{"", "Extracted", "high", "extracted "}).Draw(t, "v")
+		case "confidence_not_string":
+			m["confidence"] = rapid.SampledFrom([]any{1, true, nil}).Draw(t, "v")
+		case "observed_at_format":
+			m["observed_at"] = rapid.SampledFrom([]string{"", "yesterday", "2024-01-01", "2024-01-01 00:00:00", "2024-13-01T00:00:00Z"}).Draw(t, "v")
+		case "observed_at_not_string":
+			m["observed_at"] = rapid.SampledFrom([]any{1, true, nil, time.Time{}}).Draw(t, "v")
+		case "secret_value":
+			m["evidence"] = "key AKIAABCDEFGHIJKLMNOP end"
+		}
+		return BadAttrs{Attributes: m, Defect: d}
+	})
+}
+
+// BadAttrs is an attribute map with one injected defect.
+type BadAttrs struct {
+	Attributes map[string]any
+	Defect     string
+}
+
 // Universe is the small ID universe: N identities for each of Kinds.
 type Universe struct {
 	Kinds []string
@@ -186,12 +250,27 @@ func (o Options) Batch(collector string, observed time.Time) *rapid.Generator[ba
 		}
 		if len(pool) > 0 {
 			n := rapid.IntRange(0, o.MaxRelations).Draw(t, "nrel")
+			seen := map[model.RelKey]map[string]any{}
 			for i := 0; i < n; i++ {
-				b.Relations = append(b.Relations, batch.Relation{
+				r := batch.Relation{
 					Type: RelType().Draw(t, "rtype"),
 					From: rapid.SampledFrom(pool).Draw(t, "from"),
 					To:   rapid.SampledFrom(pool).Draw(t, "to"),
-				})
+				}
+				k := model.RelKey{Type: r.Type, From: r.From, To: r.To}
+				attrs, dup := seen[k]
+				if !dup {
+					// A repeated key must repeat its attributes; conflicting
+					// duplicates are rejected.
+					if rapid.IntRange(0, 2).Draw(t, "withAttrs") == 0 {
+						attrs = RelAttrs().Draw(t, "relAttrs")
+					}
+					seen[k] = attrs
+				}
+				if len(attrs) > 0 {
+					r.Attributes = attrs
+				}
+				b.Relations = append(b.Relations, r)
 			}
 		}
 		return b

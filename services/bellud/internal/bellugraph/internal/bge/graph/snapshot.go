@@ -74,7 +74,7 @@ func (g *Graph) Export() Snapshot {
 	sort.Slice(s.Ents, func(i, j int) bool { return s.Ents[i].ID < s.Ents[j].ID })
 	for k, r := range g.rels {
 		s.Rels = append(s.Rels, SnapRel{Key: k, Rec: codec.RelationRecord{
-			Asserted: sortedSet(r.Asserted), VTNS: toNS(r.VT), RTNS: toNS(r.RT), Seq: r.Seq,
+			Asserted: sortedSet(r.Asserted), VTNS: toNS(r.VT), RTNS: toNS(r.RT), Seq: r.Seq, Attrs: r.Attrs,
 		}})
 	}
 	sort.Slice(s.Rels, func(i, j int) bool { return RelKeyString(s.Rels[i].Key) < RelKeyString(s.Rels[j].Key) })
@@ -147,7 +147,7 @@ func Import(s Snapshot) (*Graph, error) {
 			}
 		}
 		r := &RelState{Key: k, Asserted: map[string]struct{}{},
-			VT: toTime(sr.Rec.VTNS), RT: toTime(sr.Rec.RTNS), Seq: sr.Rec.Seq}
+			VT: toTime(sr.Rec.VTNS), RT: toTime(sr.Rec.RTNS), Seq: sr.Rec.Seq, Attrs: sr.Rec.Attrs}
 		g.rels[k] = r
 		addEdge(g.out, k.From, k)
 		addEdge(g.in, k.To, k)

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	bgeengine "github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/engine"
+	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/ident"
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/metrics"
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/otlp"
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/store"
@@ -37,6 +38,11 @@ var umaskMu sync.Mutex
 // returns a failed engine whose routes answer 503 graph_unavailable, together
 // with the error; callers keep serving non-graph routes with that engine.
 func Open(ctx context.Context, cfg Config) (Engine, error) {
+	// A failed registry merge is a startup configuration error: report every
+	// failure and open nothing.
+	if err := ident.Check(); err != nil {
+		return nil, &ConfigError{Var: RegistryVar, Msg: err.Error()}
+	}
 	log := cfg.Logger
 	if log == nil {
 		log = slog.Default()

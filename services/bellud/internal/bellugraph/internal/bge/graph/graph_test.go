@@ -216,3 +216,37 @@ func TestImportRejectsCorrupt(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestRelationAttrsFold(t *testing.T) {
+	g, ids := build(t)
+	k := RelKey{"on", ids["p"], ids["h1"]}
+	a1 := codec.EdgeAttrs{Evidence: "sg-1", Confidence: "extracted", Has: 3}
+	a2 := codec.EdgeAttrs{Has: 0}
+	s := &seqr{n: g.LastSeq}
+
+	g.Fold(s.ev(codec.Event{Type: codec.RelationAdded, Collector: "c1", RelType: "on", From: k.From, To: k.To, EdgeAttrs: a1}))
+	if r, _ := g.Relation(k); !r.Attrs.Equal(a1) {
+		t.Fatalf("after add: %+v", r.Attrs)
+	}
+	if !g.Clone().Equal(g) {
+		t.Fatal("clone differs")
+	}
+	imp, err := Import(g.Export())
+	if err != nil || !imp.Equal(g) {
+		t.Fatalf("import: %v", err)
+	}
+	if r, _ := imp.Relation(k); !r.Attrs.Equal(a1) {
+		t.Fatalf("imported attrs: %+v", r.Attrs)
+	}
+
+	g.Fold(s.ev(codec.Event{Type: codec.RelationUpdated, Collector: "c1", RelType: "on", From: k.From, To: k.To, EdgeAttrs: a2}))
+	if r, _ := g.Relation(k); !r.Attrs.Zero() {
+		t.Fatalf("after update: %+v", r.Attrs)
+	}
+
+	missing := RelKey{"on", ids["h0"], ids["h1"]}
+	g.Fold(s.ev(codec.Event{Type: codec.RelationUpdated, RelType: "on", From: missing.From, To: missing.To, EdgeAttrs: a1}))
+	if _, ok := g.Relation(missing); ok {
+		t.Fatal("update created a relation")
+	}
+}

@@ -169,6 +169,8 @@ func eventTypeName(t codec.EventType) string {
 		return "entity_removed"
 	case codec.RelationAdded:
 		return "relation_added"
+	case codec.RelationUpdated:
+		return "relation_updated"
 	case codec.RelationRemoved:
 		return "relation_removed"
 	case codec.Annotated:

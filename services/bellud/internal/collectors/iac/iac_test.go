@@ -123,8 +123,10 @@ func TestCollect(t *testing.T) {
 	types := map[string]bool{}
 	for _, r := range b.Relations {
 		types[r.Type] = true
-		if r.Attributes != nil {
-			t.Error("relation has attributes")
+		for name := range r.Attributes {
+			if name != "evidence" && name != "confidence" && name != "observed_at" {
+				t.Errorf("relation attribute %q is outside the fixed set", name)
+			}
 		}
 	}
 	if !types["uses_service_account"] || !types["binds"] {

@@ -85,6 +85,16 @@ type SecurityGroup struct {
 	OpenToInternet bool
 }
 
+// SGRule is one security group rule projection. ID is the provider rule
+// identifier (sgr-...) and may be empty.
+type SGRule struct {
+	ID, GroupID, Direction, Protocol string
+	From, To                         int
+	HasPorts                         bool
+	CIDR, PeerGroupID, PrefixListID  string
+	Description                      string
+}
+
 // VPC is an EC2 VPC projection.
 type VPC struct {
 	ID       string

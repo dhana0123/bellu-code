@@ -202,7 +202,7 @@ func TestRemovalIsScopedToCollector(t *testing.T) {
 	}
 }
 
-func TestAttributedRelationRejectedAppendsNothing(t *testing.T) {
+func TestUnknownRelationAttributeRejectedAppendsNothing(t *testing.T) {
 	ctx := context.Background()
 	e := openTemp(t)
 	hid := mustID(t, "host", map[string]string{"hostname": "h1"})
@@ -221,9 +221,12 @@ func TestAttributedRelationRejectedAppendsNothing(t *testing.T) {
 	if ch, _ := e.Query().Changes(ctx, TimeRange{}, ChangeFilter{}); ch.Total != 0 {
 		t.Fatalf("events leaked: %+v", ch)
 	}
-	// the engine keeps accepting batches.
-	if _, err := e.Ingest().Apply(ctx, batch.Batch{Collector: "host", ObservedAt: t0, Entities: []batch.Entity{hostEnt("h1", nil)}}); err != nil {
-		t.Fatal(err)
+	// the engine keeps accepting batches, including relations with fixed attribute names.
+	if _, err := e.Ingest().Apply(ctx, batch.Batch{Collector: "host", ObservedAt: t0,
+		Entities:  []batch.Entity{hostEnt("h1", nil), procEnt("h1", "7", nil)},
+		Relations: []batch.Relation{{Type: "runs_on", From: pid, To: hid, Attributes: map[string]any{"evidence": "e", "confidence": "extracted", "observed_at": "2024-01-02T03:04:05Z"}}},
+	}); err != nil {
+		t.Fatalf("fixed attribute names rejected: %v", err)
 	}
 }
 

@@ -1,0 +1,24 @@
+# 2026/11/15 13:05:16.354052 [TestPropertyAWSCollectorOutputHygiene] [rapid] draw selection: []string{"us-east-1"}
+# 2026/11/15 13:05:16.354064 [TestPropertyAWSCollectorOutputHygiene] [rapid] draw buckets: 0
+# 2026/11/15 13:05:16.354066 [TestPropertyAWSCollectorOutputHygiene] [rapid] draw perType: 0
+# 2026/11/15 13:05:16.354068 [TestPropertyAWSCollectorOutputHygiene] [rapid] draw roles: 1
+# 2026/11/15 13:05:16.354070 [TestPropertyAWSCollectorOutputHygiene] [rapid] draw names: []string{""}
+# 2026/11/15 13:05:16.354083 [TestPropertyAWSCollectorOutputHygiene] unexpected attribute "canonical_key" (metadata only)
+# 
+v0.4.8#10541062279177714211
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x1
+0x0
+0x0
+0x0

@@ -22,8 +22,8 @@
 <h3>Annotations</h3>
 <table><tr><th>Name</th><th>Value</th></tr>{{range .Annots}}<tr><td>{{.K}}</td><td>{{.V}}</td></tr>{{end}}</table>
 <h3>Neighbors ({{.NTotal}})</h3>
-<table><tr><th>Type</th><th>Direction</th><th>Hops</th><th>From</th><th>To</th></tr>
-{{range .Neighbors}}<tr><td>{{.Type}}{{if .Derived}} (derived){{end}}</td><td>{{.Dir}}</td><td>{{.Hops}}</td><td><a href="{{.FromLink}}">{{.From}}</a></td><td><a href="{{.ToLink}}">{{.To}}</a></td></tr>{{end}}</table>
+<table><tr><th>Type</th><th>Direction</th><th>Hops</th><th>From</th><th>To</th><th>Evidence</th><th>Confidence</th><th>Observed at</th></tr>
+{{range .Neighbors}}<tr><td>{{.Type}}{{if .Derived}} (derived){{end}}</td><td>{{.Dir}}</td><td>{{.Hops}}</td><td><a href="{{.FromLink}}">{{.From}}</a></td><td><a href="{{.ToLink}}">{{.To}}</a></td><td>{{.Evidence}}</td><td>{{.Confidence}}</td><td>{{.ObservedAt}}</td></tr>{{end}}</table>
 <h3>History</h3>
 <table><tr><th>Seq</th><th>Change</th><th>Subject</th><th>Detail</th><th>Observed</th><th>Recorded</th></tr>
 {{range .History}}<tr><td>{{.Seq}}</td><td>{{.Kind}}</td><td>{{.Subject}}</td><td>{{.Detail}}</td><td>{{.Observed}}</td><td>{{.Recorded}}</td></tr>{{end}}</table>

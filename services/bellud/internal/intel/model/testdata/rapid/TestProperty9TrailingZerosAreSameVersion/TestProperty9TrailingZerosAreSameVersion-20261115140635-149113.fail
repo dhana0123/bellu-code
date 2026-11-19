@@ -1,0 +1,13 @@
+# 2026/11/15 14:06:35.332518 [TestProperty9TrailingZerosAreSameVersion] [rapid] draw base: model.refVersion{0}
+# 2026/11/15 14:06:35.332523 [TestProperty9TrailingZerosAreSameVersion] [rapid] draw zeros: 1
+# 2026/11/15 14:06:35.332526 [TestProperty9TrailingZerosAreSameVersion] "0" and "0.0" must satisfy an inclusive Introduced bound in both directions
+# 
+v0.4.8#7417073683326730006
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x1

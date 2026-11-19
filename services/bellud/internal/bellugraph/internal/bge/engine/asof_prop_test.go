@@ -166,3 +166,57 @@ func compareAsOf(t *rapid.T, g *graph.Graph, ms *model.State) {
 		t.Fatalf("relations %v, model %v", got, want)
 	}
 }
+
+// Feature: aws-relationship-registry, Property 11: Replay, snapshot restore, and as-of reads preserve attributes
+// Validates: Requirements 7.6, 7.7, 7.8
+func TestPropAsOfRelationAttrs(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		f := buildSnapFixture(t)
+		ctx := context.Background()
+		for i := 0; i < 3; i++ {
+			at := drawInstant(t, f.events, "at")
+			want := f.m.AsOf(at)
+			g, err := f.c.StateAt(ctx, at)
+			if err != nil {
+				t.Fatalf("StateAt(%v): %v", at, err)
+			}
+			rpCheckAsOfRelAttrs(t, g, want)
+
+			// A relation whose events all lie after the instant is absent.
+			first := map[model.RelKey]time.Time{}
+			for _, e := range f.events {
+				if e.Type != model.RelationAdded && e.Type != model.RelationUpdated {
+					continue
+				}
+				if p, ok := first[e.Rel]; !ok || e.Valid.Before(p) {
+					first[e.Rel] = e.Valid
+				}
+			}
+			for k, v := range first {
+				if !v.After(at) {
+					continue
+				}
+				if _, ok := g.Relation(graph.RelKey{Type: k.Type, From: k.From, To: k.To}); ok {
+					t.Fatalf("relation %v first seen at %v is present as of %v", k, v, at)
+				}
+			}
+		}
+	})
+}
+
+// rpCheckAsOfRelAttrs compares the relations of an as-of state, keys and edge
+// attributes, with the model's.
+func rpCheckAsOfRelAttrs(t *rapid.T, g *graph.Graph, ms *model.State) {
+	t.Helper()
+	keys := g.AllRelations()
+	if len(keys) != len(ms.Rels) {
+		t.Fatalf("as-of relations %d, model %d", len(keys), len(ms.Rels))
+	}
+	for _, k := range keys {
+		r, _ := g.Relation(k)
+		mr := ms.Rels[model.RelKey{Type: k.Type, From: k.From, To: k.To}]
+		if r == nil || mr == nil || !r.Attrs.Equal(mr.Attrs) {
+			t.Fatalf("as-of relation %v = %+v, model %+v", k, r, mr)
+		}
+	}
+}

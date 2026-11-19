@@ -16,6 +16,11 @@
 //     sorted by ID, then one ScopeDelta (omitted when empty).
 //   - An Annotated event updates the entity's Valid/Recorded/Seq, because the
 //     annotations are part of the reported entity state.
+//   - Relation attributes (evidence, confidence, observed_at) belong to the
+//     relation, not to a collector. A relation present with different
+//     attributes yields RelationUpdated (after the RelationAdded events and
+//     before the RelationRemoved events), whoever asserts it. RelationUpdated
+//     on a relation that is not live changes nothing.
 //   - The annotation key limit of 64 applies to the keys left after the call.
 package model
 
@@ -26,6 +31,7 @@ import (
 	"time"
 
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
+	"github.com/bellu/bellucode/services/bellud/internal/redact"
 
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/codec"
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/errs"
@@ -42,7 +48,7 @@ const (
 	Partial
 )
 
-// EventType mirrors the 7 event types of the design.
+// EventType mirrors the 8 event types of the design.
 type EventType uint8
 
 const (
@@ -53,10 +59,70 @@ const (
 	RelationRemoved
 	Annotated
 	ScopeDelta
+	RelationUpdated
 )
 
 // RelKey is the identity of a relation.
 type RelKey struct{ Type, From, To string }
+
+// EdgeAttrs are the optional relation attributes. Has bit 0 marks evidence,
+// bit 1 confidence and bit 2 observed_at as present; an empty present
+// evidence differs from an absent one.
+type EdgeAttrs = codec.EdgeAttrs
+
+// sameAttrs compares presence and the values of present fields.
+func sameAttrs(a, b EdgeAttrs) bool {
+	if a.Has != b.Has {
+		return false
+	}
+	if a.Has&1 != 0 && a.Evidence != b.Evidence {
+		return false
+	}
+	if a.Has&2 != 0 && a.Confidence != b.Confidence {
+		return false
+	}
+	return a.Has&4 == 0 || a.ObservedAt == b.ObservedAt
+}
+
+const maxEvidence = 512
+
+// relAttrs validates the attributes of r and converts them.
+func relAttrs(r batch.Relation) (EdgeAttrs, error) {
+	var a EdgeAttrs
+	bad := func(format string, args ...any) (EdgeAttrs, error) {
+		msg := fmt.Sprintf(format, args...)
+		return EdgeAttrs{}, fmt.Errorf("%w: relation %q from %q to %q: %s", errs.Validation, r.Type, r.From, r.To, msg)
+	}
+	for name, raw := range r.Attributes {
+		s, isStr := raw.(string)
+		switch name {
+		case "evidence":
+			if !isStr || len(s) > maxEvidence {
+				return bad("attribute evidence must be a string of at most %d bytes", maxEvidence)
+			}
+			a.Evidence, a.Has = s, a.Has|1
+		case "confidence":
+			if !isStr || (s != "extracted" && s != "inferred") {
+				return bad("attribute confidence must be extracted or inferred")
+			}
+			a.Confidence, a.Has = s, a.Has|2
+		case "observed_at":
+			if !isStr {
+				return bad("attribute observed_at must be an RFC 3339 string")
+			}
+			if _, err := time.Parse(time.RFC3339, s); err != nil {
+				return bad("attribute observed_at is not RFC 3339")
+			}
+			a.ObservedAt, a.Has = s, a.Has|4
+		default:
+			return bad("attribute %q is not allowed", name)
+		}
+		if id, leaked := redact.ValueLeak(s); leaked {
+			return bad("attribute %s matches redaction rule %s", name, id)
+		}
+	}
+	return a, nil
+}
 
 // Event is one model log entry. Only the fields of its Type are meaningful.
 type Event struct {
@@ -72,7 +138,8 @@ type Event struct {
 	Unset        []string
 	StateChanged bool // EntityUpdated: a state/status attribute is in Set or Unset
 
-	Rel RelKey // relation events
+	Rel   RelKey    // relation events
+	Attrs EdgeAttrs // RelationAdded, RelationUpdated
 
 	AnnSet map[string]string // Annotated (Unset holds removed keys)
 	Actor  string            // Annotated
@@ -104,6 +171,8 @@ func ChangeOf(ev Event) (Change, bool) {
 		c.Kind = "removed"
 	case RelationAdded:
 		c.Kind, c.Subject, c.Rel = "added", "relation", ev.Rel
+	case RelationUpdated:
+		c.Kind, c.Subject, c.Rel = "changed", "relation", ev.Rel
 	case RelationRemoved:
 		c.Kind, c.Subject, c.Rel = "removed", "relation", ev.Rel
 	default:
@@ -140,6 +209,7 @@ type Entity struct {
 // Rel is a live relation.
 type Rel struct {
 	Key      RelKey
+	Attrs    EdgeAttrs
 	Valid    time.Time
 	Recorded time.Time
 	Seq      uint64
@@ -223,8 +293,13 @@ func (s *State) Step(ev Event) {
 			}
 		}
 	case RelationAdded:
-		s.Rels[ev.Rel] = &Rel{Key: ev.Rel, Valid: ev.Valid, Recorded: ev.Recorded, Seq: ev.Seq}
+		s.Rels[ev.Rel] = &Rel{Key: ev.Rel, Attrs: ev.Attrs, Valid: ev.Valid, Recorded: ev.Recorded, Seq: ev.Seq}
 		s.scope(ev.Collector).Rels[ev.Rel] = struct{}{}
+	case RelationUpdated:
+		// Like entity events for unknown targets: no live relation, no change.
+		if r := s.Rels[ev.Rel]; r != nil {
+			r.Attrs, r.Valid, r.Recorded, r.Seq = ev.Attrs, ev.Valid, ev.Recorded, ev.Seq
+		}
 	case RelationRemoved:
 		delete(s.Rels, ev.Rel)
 		for _, sc := range s.Scopes {
@@ -482,19 +557,26 @@ func (m *Model) plan(b batch.Batch, mode Mode) ([]Event, error) {
 	}
 
 	var rels []RelKey
+	wantAttrs := map[RelKey]EdgeAttrs{}
 	inBatchRel := map[RelKey]bool{}
 	for _, r := range b.Relations {
 		if r.Type == "" {
 			return nil, fmt.Errorf("%w: relation without a type (%s -> %s)", errs.Validation, r.From, r.To)
 		}
-		if len(r.Attributes) > 0 {
-			return nil, fmt.Errorf("%w: relation %s %s -> %s carries attributes", errs.Validation, r.Type, r.From, r.To)
+		attrs, err := relAttrs(r)
+		if err != nil {
+			return nil, err
 		}
 		k := RelKey{r.Type, r.From, r.To}
-		if !inBatchRel[k] {
-			inBatchRel[k] = true
-			rels = append(rels, k)
+		if inBatchRel[k] {
+			if !sameAttrs(wantAttrs[k], attrs) {
+				return nil, fmt.Errorf("%w: relation %s %s -> %s appears twice with different attributes", errs.Validation, r.Type, r.From, r.To)
+			}
+			continue
 		}
+		inBatchRel[k] = true
+		wantAttrs[k] = attrs
+		rels = append(rels, k)
 	}
 
 	// Retractions (Full mode only).
@@ -508,6 +590,9 @@ func (m *Model) plan(b batch.Batch, mode Mode) ([]Event, error) {
 			if inBatch[id] {
 				continue
 			}
+			if e := cur.Entities[id]; e != nil && retains(b.Retain, e) {
+				continue
+			}
 			if len(othersAssert(cur, b.Collector, id)) == 0 && cur.IsLive(id) {
 				retire[id] = true // EntityRemoved retracts every assertion
 				continue
@@ -516,6 +601,12 @@ func (m *Model) plan(b batch.Batch, mode Mode) ([]Event, error) {
 		}
 		for k := range sc.Rels {
 			if inBatchRel[k] {
+				continue
+			}
+			if e := cur.Entities[k.From]; e != nil && retains(b.Retain, e) {
+				continue
+			}
+			if e := cur.Entities[k.To]; e != nil && retains(b.Retain, e) {
 				continue
 			}
 			if len(othersAssertRel(cur, b.Collector, k)) == 0 {
@@ -578,14 +669,22 @@ func (m *Model) plan(b batch.Batch, mode Mode) ([]Event, error) {
 		evs = append(evs, Event{Type: EntityUpdated, ID: o.id, Set: set, Unset: unset, StateChanged: state})
 	}
 	var addRels []RelKey
+	var updated []Event
 	for _, k := range rels {
-		if cur.Rels[k] == nil {
+		old := cur.Rels[k]
+		if old == nil {
 			// RelationAdded asserts for its collector.
-			evs = append(evs, Event{Type: RelationAdded, Rel: k})
-		} else if _, ok := sc.Rels[k]; !ok {
+			evs = append(evs, Event{Type: RelationAdded, Rel: k, Attrs: wantAttrs[k]})
+			continue
+		}
+		if _, ok := sc.Rels[k]; !ok {
 			addRels = append(addRels, k)
 		}
+		if !sameAttrs(old.Attrs, wantAttrs[k]) {
+			updated = append(updated, Event{Type: RelationUpdated, Rel: k, Attrs: wantAttrs[k]})
+		}
 	}
+	evs = append(evs, updated...)
 
 	// Relations touching retired entities go with them.
 	removeRel := map[RelKey]bool{}
@@ -624,6 +723,29 @@ func (m *Model) plan(b batch.Batch, mode Mode) ([]Event, error) {
 		evs = append(evs, Event{Type: ScopeDelta, AddEnts: addEnts, DelEnts: delEnts, AddRels: addRels, DelRels: delRels})
 	}
 	return evs, nil
+}
+
+// retains reports whether any rule matches e: same kind and every Attrs pair
+// equal to a string attribute (or identity value) of e.
+func retains(rules []batch.Retain, e *Entity) bool {
+	for _, r := range rules {
+		if r.Kind != e.Kind {
+			continue
+		}
+		ok := true
+		for k, want := range r.Attrs {
+			if a, has := e.Attrs[k]; has {
+				ok = ok && a.T == codec.TagString && a.S == want
+			} else {
+				id, has := e.Identity[k]
+				ok = ok && has && id == want
+			}
+		}
+		if ok {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *State) scope0(c string) Scope {
