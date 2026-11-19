@@ -1,0 +1,16 @@
+Graphify
+Copyright 2026 Safi Shamsi and the Graphify contributors.
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Portions of this software were contributed under the MIT License prior to the
+relicensing and remain available under those terms. The original MIT license
+text is retained in LICENSE-MIT.
+
+Bellu attribution
+This directory (third_party/bellu-graphify/) is a modified copy of Graphify
+0.9.112 (https://github.com/Graphify-Labs/graphify, upstream commit
+340268a70a83588d6b3c6de1fffb05326350ef1d), redistributed by the Bellu
+platform under the Apache License, Version 2.0. Bellu changes are listed in
+CHANGES.md. Graphify remains copyright Safi Shamsi and the Graphify
+contributors.
