@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -383,5 +384,80 @@ func TestHandlerPropagatesCallerContext(t *testing.T) {
 	}
 	if !res.IsError || len(seen) != 1 || seen[0] != "read" {
 		t.Fatalf("isError=%v seen=%v", res.IsError, seen)
+	}
+}
+
+func TestDescribeSchemaRegistryFields(t *testing.T) {
+	f := newFixture(t)
+	m, _, isErr := f.call(t, "describe_schema", nil)
+	if isErr {
+		t.Fatalf("describe_schema failed: %v", m)
+	}
+	reg, err := ident.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	kinds := m["kinds"].([]any)
+	names := make([]string, 0, len(kinds))
+	for _, k := range kinds {
+		km := k.(map[string]any)
+		names = append(names, km["kind"].(string))
+		d, _ := reg.Kind(km["kind"].(string))
+		if km["description"] != d.Description || km["types"] == nil {
+			t.Fatalf("kind = %v", km)
+		}
+	}
+	if !sort.StringsAreSorted(names) {
+		t.Errorf("kinds not sorted: %v", names)
+	}
+	for _, r := range m["relation_types"].([]any) {
+		rm := r.(map[string]any)
+		if rm["from"] == nil || rm["to"] == nil || rm["source"] == nil {
+			t.Fatalf("relation = %v", rm)
+		}
+	}
+	cats, ok := m["categories"].([]any)
+	if !ok || len(cats) != len(reg.Categories()) {
+		t.Fatalf("categories = %v", m["categories"])
+	}
+	for _, c := range cats {
+		if c.(map[string]any)["read_ops"] == nil {
+			t.Fatalf("category read_ops null: %v", c)
+		}
+	}
+}
+
+func TestGetNeighborsEdgeAttributes(t *testing.T) {
+	f := newFixture(t)
+	if _, err := f.core.Apply(context.Background(), batch.Batch{Collector: "t2", Relations: []batch.Relation{
+		{Type: "depends_on", From: f.ids["cont"], To: f.ids["ep"], Attributes: map[string]any{
+			"evidence": "found via <b>probe</b>", "confidence": "inferred", "observed_at": "2025-01-01T00:00:00Z"}},
+	}}, engine.ModeFull); err != nil {
+		t.Fatal(err)
+	}
+	edges := func(id string) map[string]map[string]any {
+		m, txt, isErr := f.call(t, "get_neighbors", map[string]any{"entity_id": id, "resolve": false})
+		if isErr {
+			t.Fatal(txt)
+		}
+		out := map[string]map[string]any{}
+		for _, e := range m["items"].([]any) {
+			em := e.(map[string]any)
+			out[em["type"].(string)] = em
+		}
+		return out
+	}
+	with := edges(f.ids["cont"])["depends_on"]
+	if with["evidence"] != "found via <b>probe</b>" || with["confidence"] != "inferred" || with["observed_at"] != "2025-01-01T00:00:00Z" {
+		t.Fatalf("attributes missing: %v", with)
+	}
+	without := edges(f.ids["lp"])["owned_by"]
+	if without == nil {
+		t.Fatal("owned_by edge missing")
+	}
+	for _, k := range []string{"evidence", "confidence", "observed_at"} {
+		if _, ok := without[k]; ok {
+			t.Errorf("%s present on relation without attributes: %v", k, without)
+		}
 	}
 }

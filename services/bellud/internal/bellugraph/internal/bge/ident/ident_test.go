@@ -35,7 +35,7 @@ func TestHashErrors(t *testing.T) {
 }
 
 func TestKinds(t *testing.T) {
-	if n := len(Kinds()); n != 25 {
+	if n := len(Kinds()); n != 28 {
 		t.Fatalf("kinds = %d", n)
 	}
 	a, _ := IdentityAttributes("endpoint")

@@ -44,23 +44,42 @@ type paging struct {
 
 type describeSchemaIn struct{}
 
+type typeInfo struct {
+	Name        string `json:"name"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+}
 type kindInfo struct {
-	Kind               string   `json:"kind"`
-	IdentityAttributes []string `json:"identity_attributes"`
-	Count              int      `json:"count" jsonschema:"live entities of this kind"`
+	Kind               string     `json:"kind"`
+	IdentityAttributes []string   `json:"identity_attributes"`
+	Count              int        `json:"count" jsonschema:"live entities of this kind"`
+	Description        string     `json:"description"`
+	Source             string     `json:"source"`
+	Discriminator      string     `json:"discriminator"`
+	Types              []typeInfo `json:"types"`
 }
-
 type relTypeInfo struct {
-	Type            string `json:"type"`
-	ImpactDirection string `json:"impact_direction" jsonschema:"forward (from to to) or reverse (to to from)"`
-	Default         bool   `json:"default,omitempty" jsonschema:"true for the undeclared-type default"`
+	Type            string   `json:"type"`
+	ImpactDirection string   `json:"impact_direction" jsonschema:"forward (from to to) or reverse (to to from)"`
+	Default         bool     `json:"default,omitempty" jsonschema:"true for the undeclared-type default"`
+	Confidence      string   `json:"confidence"`
+	Description     string   `json:"description"`
+	Source          string   `json:"source"`
+	Derived         bool     `json:"derived"`
+	From            []string `json:"from"`
+	To              []string `json:"to"`
 }
-
+type categoryInfo struct {
+	ID      string   `json:"id"`
+	Name    string   `json:"name"`
+	Status  string   `json:"status"`
+	ReadOps []string `json:"read_ops"`
+}
 type describeSchemaOut struct {
-	Kinds         []kindInfo    `json:"kinds"`
-	RelationTypes []relTypeInfo `json:"relation_types"`
+	Kinds         []kindInfo     `json:"kinds"`
+	RelationTypes []relTypeInfo  `json:"relation_types"`
+	Categories    []categoryInfo `json:"categories"`
 }
-
 type describeTypeIn struct {
 	Kind string `json:"kind" jsonschema:"entity kind, see describe_schema"`
 }
@@ -290,18 +309,46 @@ func tool(name, desc string, readOnly bool) *mcp.Tool {
 // ---- handlers ----
 
 func (s *Server) describeSchema(ctx context.Context, _ *mcp.CallToolRequest, _ describeSchemaIn) (*mcp.CallToolResult, describeSchemaOut, error) {
-	out := describeSchemaOut{Kinds: []kindInfo{}, RelationTypes: []relTypeInfo{}}
-	for _, k := range ident.Kinds() {
+	reg, err := ident.Registry()
+	if err != nil {
+		return nil, describeSchemaOut{}, errors.New("schema could not be read")
+	}
+	out := describeSchemaOut{Kinds: []kindInfo{}, RelationTypes: []relTypeInfo{}, Categories: []categoryInfo{}}
+	kinds := ident.Kinds()
+	sort.Strings(kinds)
+	for _, k := range kinds {
 		attrs, _ := ident.IdentityAttributes(k)
 		p, err := s.cfg.Core.Find(ctx, engine.FindQuery{Kind: k, Paging: engine.Paging{PageSize: 1}}, nil)
 		if err != nil {
-			return nil, out, err
+			return nil, describeSchemaOut{}, err
 		}
-		out.Kinds = append(out.Kinds, kindInfo{Kind: k, IdentityAttributes: attrs, Count: p.Total})
+		info := kindInfo{Kind: k, IdentityAttributes: attrs, Count: p.Total, Types: []typeInfo{}}
+		if d, ok := reg.Kind(k); ok {
+			info.Description, info.Discriminator = d.Description, d.Discriminator
+			for _, t := range d.Types {
+				info.Types = append(info.Types, typeInfo{Name: t.Name, Category: t.Category, Description: t.Description})
+			}
+		}
+		src, _ := reg.SourceOfKind(k)
+		info.Source = string(src)
+		out.Kinds = append(out.Kinds, info)
 	}
-	for _, t := range ident.RelationTypes() {
+	rels := ident.RelationTypes()
+	sort.Strings(rels)
+	for _, t := range rels {
 		d, def := ident.DirectionOf(t)
-		out.RelationTypes = append(out.RelationTypes, relTypeInfo{Type: t, ImpactDirection: d.String(), Default: def})
+		info := relTypeInfo{Type: t, ImpactDirection: d.String(), Default: def, From: []string{}, To: []string{}}
+		if r, ok := reg.Relation(t); ok {
+			info.Confidence, info.Description, info.Derived = string(r.Confidence), r.Description, r.Derived
+			info.From = append(info.From, r.From...)
+			info.To = append(info.To, r.To...)
+		}
+		src, _ := reg.SourceOfRelation(t)
+		info.Source = string(src)
+		out.RelationTypes = append(out.RelationTypes, info)
+	}
+	for _, c := range reg.Categories() {
+		out.Categories = append(out.Categories, categoryInfo{ID: c.ID, Name: c.Name, Status: string(c.Status), ReadOps: append([]string{}, c.ReadOps...)})
 	}
 	return nil, out, nil
 }

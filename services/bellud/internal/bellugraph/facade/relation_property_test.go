@@ -91,10 +91,14 @@ func TestRelationConstraintProperty(t *testing.T) {
 		for i := 0; i < n; i++ {
 			r := batch.Relation{Type: "runs_on", From: procIDs[i], To: hostIDs[i]}
 			if rapid.Bool().Draw(t, fmt.Sprintf("attributed_%d", i)) {
+				// Names outside the fixed set are rejected.
 				r.Attributes = map[string]any{rapid.StringMatching(`[a-z]{1,6}`).Draw(t, "key"): rapid.Int().Draw(t, "val")}
 				if bad < 0 {
 					bad = i
 				}
+			} else if rapid.Bool().Draw(t, fmt.Sprintf("fixed_%d", i)) {
+				// Fixed names with valid values are accepted.
+				r.Attributes = map[string]any{"confidence": rapid.SampledFrom([]string{"extracted", "inferred"}).Draw(t, "conf"), "evidence": "e"}
 			}
 			b.Relations = append(b.Relations, r)
 		}
@@ -102,7 +106,7 @@ func TestRelationConstraintProperty(t *testing.T) {
 		rec, err := e.Ingest().Apply(ctx, b)
 		if bad >= 0 {
 			if !errors.Is(err, ErrValidation) {
-				t.Fatalf("attributed relation accepted or wrong error: %v", err)
+				t.Fatalf("relation with attribute outside the fixed set accepted or wrong error: %v", err)
 			}
 			if !strings.Contains(err.Error(), fmt.Sprintf("relation %d", bad)) {
 				t.Fatalf("error does not name relation %d: %v", bad, err)

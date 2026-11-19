@@ -29,6 +29,8 @@ type Edge struct {
 	Direction Direction
 	Hops      int
 	Derived   bool
+	// Evidence, Confidence and ObservedAt are nil when the relation has no value.
+	Evidence, Confidence, ObservedAt *string
 
 	fromID, toID string
 	at           *time.Time

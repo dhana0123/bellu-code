@@ -63,6 +63,7 @@ type findView struct {
 
 type nbRow struct {
 	Type, Dir, From, To, FromLink, ToLink string
+	Evidence, Confidence, ObservedAt      string
 	Hops                                  int
 	Derived                               bool
 }
@@ -223,6 +224,7 @@ func (h *Handler) entityPage(ctx context.Context, vm *pageVM, at *time.Time, hp 
 	for _, n := range np.Items {
 		e.Neighbors = append(e.Neighbors, nbRow{
 			Type: n.Type, Dir: n.Direction, Hops: n.Hops, Derived: n.Derived,
+			Evidence: n.Evidence, Confidence: n.Confidence, ObservedAt: n.ObservedAt,
 			From: n.From, To: n.To, FromLink: h.link(h.core.LocalID(n.From)), ToLink: h.link(h.core.LocalID(n.To)),
 		})
 	}

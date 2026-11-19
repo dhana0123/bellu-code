@@ -1,0 +1,25 @@
+# 2026/11/15 14:06:35.329830 [TestProperty9RangeContainsBoundaries] [rapid] draw lo: model.refVersion{0}
+# 2026/11/15 14:06:35.329837 [TestProperty9RangeContainsBoundaries] [rapid] draw hi: model.refVersion{0, 0}
+# 2026/11/15 14:06:35.329840 [TestProperty9RangeContainsBoundaries] [rapid] draw v: model.refVersion{0}
+# 2026/11/15 14:06:35.329843 [TestProperty9RangeContainsBoundaries] {Introduced:0 Fixed:0.0}.Contains("0") = true, want false
+# 
+v0.4.8#14791114656448990811
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0xccccccccccccd
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0

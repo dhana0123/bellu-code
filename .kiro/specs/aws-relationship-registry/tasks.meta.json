@@ -1,0 +1,865 @@
+{
+  "pbtResults": {
+    "3.3 Write property test for registry immutability": {
+      "status": "passed",
+      "lastRunTimestamp": 1794848069650
+    },
+    "3.2 Write property tests for merge order independence and each conflict class": {
+      "status": "passed",
+      "lastRunTimestamp": 1794848165403
+    },
+    "5.3 Write property test for unknown trailing field sets": {
+      "status": "passed",
+      "lastRunTimestamp": 1794848779225
+    }
+  },
+  "executionHistory": {
+    "1.1 Generate golden vectors and add the golden test": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847243110
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847521259
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847749860
+      }
+    ],
+    "1.2 Generate Legacy_Data fixtures and the replay tests": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847247113
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847523169
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847751678
+      }
+    ],
+    "1.3 Freeze the legacy relation encoders for byte comparison": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847250587
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847525455
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847753679
+      }
+    ],
+    "2. Checkpoint - Phase 0": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847254023
+      }
+    ],
+    "3.1 Implement the `schema` package": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847257193
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847768520
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847994232
+      }
+    ],
+    "3.2 Write property tests for merge order independence and each conflict class": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847260879
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848000828
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848181113
+      }
+    ],
+    "3.3 Write property test for registry immutability": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847264309
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848002193
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848182823
+      }
+    ],
+    "3.4 Create the leaf declaration packages and `schemaall`": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847267458
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848003824
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848184403
+      }
+    ],
+    "3.5 Delegate `ident` to the registry and gate `facade.Open`": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847270497
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848191127
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848464032
+      }
+    ],
+    "3.6 Write property tests for lookups and direction/confidence validity": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847273729
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848474418
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848692558
+      }
+    ],
+    "3.7 Write property test for Entity_ID stability": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847277388
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848472894
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848691084
+      }
+    ],
+    "3.8 Extend `describe_schema`": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847280888
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848475597
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848694146
+      }
+    ],
+    "3.9 Write property test for `describe_schema`": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847284238
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848706828
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849033330
+      }
+    ],
+    "3.10 Extend the architecture tests": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847287789
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848192855
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848462663
+      }
+    ],
+    "4. Checkpoint - Phase 1": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847291325
+      }
+    ],
+    "5.1 Encode edge attributes in the codec": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847294754
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848476819
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848695879
+      }
+    ],
+    "5.2 Write property tests for zero-attribute bytes and codec round trip": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847298149
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848704453
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849031755
+      }
+    ],
+    "5.3 Write property test for unknown trailing field sets": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847301208
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848708274
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849034999
+      }
+    ],
+    "5.4 Validate and classify relation attributes in `plan`": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847304424
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794848710719
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849037330
+      }
+    ],
+    "5.5 Scrub and guard relation attributes": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847307574
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849048958
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849286347
+      }
+    ],
+    "5.6 Fold edge attributes into the projection and the change feed": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847311049
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849050637
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849287468
+      }
+    ],
+    "5.7 Mirror attributes in the reference model and generators": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847314348
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849293953
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849539158
+      }
+    ],
+    "5.8 Write property test for Edge_Attribute validation": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847317814
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849549740
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849819817
+      }
+    ],
+    "5.9 Write property test for re-assertion and flaps": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847321003
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849547609
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849820979
+      }
+    ],
+    "5.10 Write property tests for replay, snapshot restore, and as-of reads": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847324054
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849548702
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849822592
+      }
+    ],
+    "5.11 Expose attributes in views and GraphQL": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847327350
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849295239
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849537772
+      }
+    ],
+    "5.12 Expose attributes in MCP, SSE, and the debug UI": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847330799
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849551067
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849823977
+      }
+    ],
+    "5.13 Update the tests that assert relations take no attributes": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847333819
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849552862
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849825253
+      }
+    ],
+    "5.14 Write tests for the attribute surfaces and flaps": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847337089
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849835258
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794850121418
+      }
+    ],
+    "6. Checkpoint - Phase 2": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847340418
+      }
+    ],
+    "7.1 Add `Retain` to the batch and the planner": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847343608
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849836368
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794850123763
+      }
+    ],
+    "7.2 Add truncations to Run_Status": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847347083
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849837552
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794850122709
+      }
+    ],
+    "7.3 Write property test for plan retention": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847350464
+      }
+    ],
+    "7.4 Declare the full AWS kinds, types, and categories": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847354046
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849838732
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794850124727
+      }
+    ],
+    "7.5 Declare the 59 AWS relation types and the required-name list": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847357479
+      }
+    ],
+    "7.6 Write the design-table and declaration tests": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847360989
+      }
+    ],
+    "7.7 Write the required-name rejection test and new-kind golden vectors": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847364244
+      }
+    ],
+    "7.8 Generate and check the roadmap table": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847368128
+      }
+    ],
+    "7.9 Implement Rule_Node identity and caps": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847371533
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849839861
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794850125899
+      }
+    ],
+    "7.10 Write property test for Rule_Node identity": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847374604
+      }
+    ],
+    "7.11 Implement the exposure function": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847378309
+      },
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794850135569
+      }
+    ],
+    "7.12 Write property test for the exposure truth table": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847382274
+      }
+    ],
+    "7.13 Write property tests for NACL evaluation and exposure evidence": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847385708
+      }
+    ],
+    "8. Checkpoint - Phase 3": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847388853
+      }
+    ],
+    "9.1 Extend the Client interface and decide the Listing shape": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847392335
+      }
+    ],
+    "9.2 Implement the SDK adapter": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847396121
+      }
+    ],
+    "9.3 Add the read operations to the manifest": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847400265
+      }
+    ],
+    "9.4 Write the manifest, template, and read-only tests": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847404313
+      }
+    ],
+    "9.5 Restructure the collector into steps": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847408469
+      }
+    ],
+    "9.6 Collect routing, gateways, and connectivity resources": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847412629
+      }
+    ],
+    "9.7 Collect security groups as Rule_Nodes": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847422694
+      }
+    ],
+    "9.8 Collect load balancers": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847426330
+      }
+    ],
+    "9.9 Wire exposure and the remaining relation changes": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847430370
+      }
+    ],
+    "9.10 Write the collector test with a fake Client": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847436730
+      }
+    ],
+    "9.11 Write property tests for collector output": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847440794
+      }
+    ],
+    "10. Checkpoint - Phase 4": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847444699
+      }
+    ],
+    "11.1 Read confidence from the registry and carry evidence": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847448278
+      }
+    ],
+    "11.2 Write property tests for confidence and evidence": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847451684
+      }
+    ],
+    "11.3 Add needs and `missing_data`": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847456054
+      }
+    ],
+    "11.4 Write property test for `missing_data`": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847459955
+      }
+    ],
+    "11.5 Collapse rule nodes and update the lens definitions": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847463625
+      }
+    ],
+    "11.6 Order the budget so rule nodes drop first": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847467774
+      }
+    ],
+    "11.7 Write property tests for collapse and budget": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847471869
+      }
+    ],
+    "11.8 Implement network reach and the exposure questions": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847475398
+      }
+    ],
+    "11.9 Write property tests for impact direction and network reach": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847479280
+      }
+    ],
+    "11.10 Update the MCP tools": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847483174
+      }
+    ],
+    "11.11 Update the HTTP slice route": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847486939
+      }
+    ],
+    "11.12 Update protocol and schema, then regenerate": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847490630
+      }
+    ],
+    "12. Checkpoint - Phase 5": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847494302
+      }
+    ],
+    "13.1 Write the README sections": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847497768
+      }
+    ],
+    "13.2 Update \"Add a new Collector\" and the experimental-routes note": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847501659
+      }
+    ],
+    "13.3 Add the amendment notes to the unified-security-graph spec": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847504773
+      }
+    ],
+    "13.4 Write a test for the README sections": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847508028
+      }
+    ],
+    "14. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794847511254
+      }
+    ],
+    "3. Phase 1: Per-source registry": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794849039862
+      }
+    ],
+    "5. Phase 2: Edge attributes": [
+      {
+        "executionId": "77efb163-ab1b-446b-9d78-409ab6748caa",
+        "chatSessionId": "sess_a4e0ee89-985b-4a47-9c3b-92276a83134c",
+        "timestamp": 1794850127243
+      }
+    ]
+  }
+}

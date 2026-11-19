@@ -168,6 +168,9 @@ type Edge struct {
 	Hops      int
 	// Derived is true for resolves_to edges computed rather than stored.
 	Derived bool
+	// Evidence, Confidence and ObservedAt are the relation's edge attributes;
+	// empty when absent.
+	Evidence, Confidence, ObservedAt string
 }
 
 // TimeRange bounds observed_at, inclusive on both ends. A zero bound is open.

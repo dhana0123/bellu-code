@@ -221,3 +221,49 @@ func TestArchProviderClientsOnlyFromBroker(t *testing.T) {
 		})
 	}
 }
+
+const (
+	modulePath    = "github.com/bellu/bellucode/services/bellud"
+	schemaImport  = modulePath + "/internal/graph/schema"
+	bellugraphPkg = modulePath + "/internal/bellugraph"
+)
+
+// (d) Schema layering (Requirements 11.3, 15.2).
+//   - Leaf ...schema packages import only the standard library and schema.
+//   - aws and github providers do not import bellugraph or ident.
+//   - lens does not import bge/ident.
+func TestArchSchemaLayering(t *testing.T) {
+	isStd := func(path string) bool { return !strings.Contains(strings.SplitN(path, "/", 2)[0], ".") }
+	isIdent := func(path string) bool { return path == "ident" || strings.HasSuffix(path, "/ident") }
+	isBellugraph := func(path string) bool {
+		return path == bellugraphPkg || strings.HasPrefix(path, bellugraphPkg+"/")
+	}
+
+	var leaves int
+	for _, pf := range parseModule(t) {
+		dir := filepath.ToSlash(filepath.Dir(pf.rel))
+		base := filepath.Base(dir)
+		isSchemaRoot := dir == "internal/graph/schema"
+		isLeaf := strings.HasSuffix(base, "schema") && base != "schemaall"
+		if isLeaf {
+			leaves++
+		}
+		for path := range pf.imports() {
+			switch {
+			case isLeaf && isSchemaRoot && !isStd(path):
+				t.Errorf("%s imports %q; the schema package may import only the standard library", pf.rel, path)
+			case isLeaf && !isSchemaRoot && !isStd(path) && path != schemaImport:
+				t.Errorf("%s imports %q; leaf schema packages may import only the standard library and schema", pf.rel, path)
+			}
+			if isProviderFile(pf.rel) && (isBellugraph(path) || isIdent(path)) {
+				t.Errorf("%s imports %q; aws and github must not import bellugraph or ident", pf.rel, path)
+			}
+			if strings.HasPrefix(pf.rel, "internal/lens/") && strings.HasSuffix(path, "/bge/ident") {
+				t.Errorf("%s imports %q; lens must not import bge/ident", pf.rel, path)
+			}
+		}
+	}
+	if leaves == 0 {
+		t.Fatal("no leaf schema packages found; the rule would pass vacuously")
+	}
+}

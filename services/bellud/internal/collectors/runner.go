@@ -32,11 +32,15 @@ type Timeouter interface{ Timeout() time.Duration }
 // RateLimitWait is one wait a collector performed for a source's rate limit.
 type RateLimitWait = store.RateLimitWait
 
+// Truncation is one cap a collector reached: Omitted items of Scope were left out.
+type Truncation = store.Truncation
+
 // RunStatus is what a collector reports about its last run beyond the batch.
 type RunStatus struct {
 	RateLimitWaits []RateLimitWait // waits performed until the source's reset time
 	AuthError      string          // set when credentials were rejected; the run ended
 	DeniedScopes   []string        // access-denied scopes; the run continued
+	Truncations    []Truncation    // caps reached; the run continued
 }
 
 // StatusReporter is an optional Collector interface. RunStatus is read after
@@ -85,6 +89,13 @@ func (r *StatusRecorder) Deny(scope string) {
 	r.st.DeniedScopes = append(r.st.DeniedScopes, scope)
 }
 
+// Truncate records that a cap was reached in scope and omitted items were left out.
+func (r *StatusRecorder) Truncate(scope string, omitted int) {
+	r.mu.Lock()
+	r.st.Truncations = append(r.st.Truncations, Truncation{Scope: scope, Omitted: omitted})
+	r.mu.Unlock()
+}
+
 // Status returns a copy of the recorded status.
 func (r *StatusRecorder) Status() RunStatus {
 	r.mu.Lock()
@@ -93,6 +104,7 @@ func (r *StatusRecorder) Status() RunStatus {
 		RateLimitWaits: append([]RateLimitWait(nil), r.st.RateLimitWaits...),
 		AuthError:      r.st.AuthError,
 		DeniedScopes:   append([]string(nil), r.st.DeniedScopes...),
+		Truncations:    append([]Truncation(nil), r.st.Truncations...),
 	}
 }
 

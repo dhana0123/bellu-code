@@ -423,3 +423,95 @@ func TestPropertySecretValuesNeverEmitted(t *testing.T) {
 		scan("entity resource", string(b))
 	})
 }
+
+// Feature: aws-relationship-registry, Property 27: describe_schema is complete, sorted, and stable
+// **Validates: Requirements 5.1, 5.2, 5.4**
+func TestPropertyDescribeSchemaCompleteSortedStable(t *testing.T) {
+	reg, err := ident.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rapid.Check(t, func(rt *rapid.T) {
+		e := newPropEnv(rt)
+		defer e.done()
+		// Vary the stored data; the schema must not depend on it.
+		var ents []batch.Entity
+		for _, n := range rapid.SliceOfNDistinct(rapid.IntRange(0, 6), 0, 5, func(i int) int { return i }).Draw(rt, "hosts") {
+			ents = append(ents, batch.Entity{Type: "host", Identity: map[string]string{"hostname": fmt.Sprintf("h%d", n)}})
+		}
+		if len(ents) > 0 {
+			if _, err := e.core.Apply(context.Background(), batch.Batch{Collector: "t", ObservedAt: propT0, Entities: ents}, engine.ModeFull); err != nil {
+				rt.Fatal(err)
+			}
+		}
+		var a, b describeSchemaOut
+		rawA := e.call(rt, "describe_schema", nil, &a)
+		rawB := e.call(rt, "describe_schema", nil, &b)
+
+		// Stable: two calls on an unchanged registry are identical.
+		if rawA != rawB {
+			rt.Fatalf("describe_schema differs between calls:\n%s\n%s", rawA, rawB)
+		}
+
+		// Complete: one entry per registered kind with the required fields.
+		wantKinds := reg.Kinds()
+		if len(a.Kinds) != len(wantKinds) {
+			rt.Fatalf("kinds: got %d, registry has %d", len(a.Kinds), len(wantKinds))
+		}
+		got := map[string]kindInfo{}
+		for _, k := range a.Kinds {
+			if _, dup := got[k.Kind]; dup {
+				rt.Fatalf("duplicate kind %q", k.Kind)
+			}
+			got[k.Kind] = k
+		}
+		for _, w := range wantKinds {
+			k, ok := got[w.Name]
+			if !ok {
+				rt.Fatalf("kind %q missing", w.Name)
+			}
+			if k.Description != w.Description || k.Discriminator != w.Discriminator || k.Source == "" ||
+				len(k.IdentityAttributes) != len(w.Identity) || k.Types == nil || len(k.Types) != len(w.Types) {
+				rt.Fatalf("kind %q has missing or wrong fields: %+v", w.Name, k)
+			}
+		}
+		wantRels := reg.Relations()
+		if len(a.RelationTypes) != len(wantRels) {
+			rt.Fatalf("relation types: got %d, registry has %d", len(a.RelationTypes), len(wantRels))
+		}
+		gotRel := map[string]relTypeInfo{}
+		for _, r := range a.RelationTypes {
+			if _, dup := gotRel[r.Type]; dup {
+				rt.Fatalf("duplicate relation type %q", r.Type)
+			}
+			gotRel[r.Type] = r
+		}
+		for _, w := range wantRels {
+			r, ok := gotRel[w.Name]
+			if !ok {
+				rt.Fatalf("relation %q missing", w.Name)
+			}
+			if r.Confidence == "" || r.Description != w.Description || r.Source == "" || r.Derived != w.Derived ||
+				r.ImpactDirection == "" || r.From == nil || r.To == nil ||
+				len(r.From) != len(w.From) || len(r.To) != len(w.To) {
+				rt.Fatalf("relation %q has missing or wrong fields: %+v", w.Name, r)
+			}
+		}
+
+		// Sorted: ascending code-point order of the name.
+		kn := make([]string, len(a.Kinds))
+		for i, k := range a.Kinds {
+			kn[i] = k.Kind
+		}
+		rn := make([]string, len(a.RelationTypes))
+		for i, r := range a.RelationTypes {
+			rn[i] = r.Type
+		}
+		if !sort.StringsAreSorted(kn) {
+			rt.Fatalf("kinds not sorted: %v", kn)
+		}
+		if !sort.StringsAreSorted(rn) {
+			rt.Fatalf("relation types not sorted: %v", rn)
+		}
+	})
+}

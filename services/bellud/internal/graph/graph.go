@@ -14,6 +14,9 @@ import (
 // Release builds default the graph to off; dev builds default it to on.
 var release = ""
 
+// RegistryVar is the ConfigError.Var of a failed schema registry merge.
+const RegistryVar = facade.RegistryVar
+
 // IsRelease reports whether this is a release build.
 func IsRelease() bool { return release == "true" || release == "1" }
 

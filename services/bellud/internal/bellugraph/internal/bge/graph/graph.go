@@ -53,6 +53,9 @@ type RelState struct {
 	Asserted map[string]struct{}
 	VT, RT   time.Time
 	Seq      uint64
+	// Attrs are the relation's edge attributes, replaced by each
+	// RelationAdded and RelationUpdated event.
+	Attrs codec.EdgeAttrs
 }
 
 // Scope is what one collector currently asserts. Empty scopes do not exist.
@@ -376,6 +379,8 @@ func (g *Graph) Fold(ev codec.Event) {
 		}
 	case codec.RelationAdded:
 		g.foldRelAdded(ev)
+	case codec.RelationUpdated:
+		g.foldRelUpdated(ev)
 	case codec.RelationRemoved:
 		g.removeRel(RelKey{ev.RelType, ev.From, ev.To})
 	case codec.Annotated:
@@ -426,6 +431,18 @@ func (g *Graph) foldRelAdded(ev codec.Event) {
 		addEdge(g.in, k.To, k)
 	}
 	g.assertRel(r, ev.Collector)
+	r.Attrs = ev.EdgeAttrs
+	r.VT, r.RT, r.Seq = toTime(ev.ValidNS), toTime(ev.RecordedNS), ev.Seq
+}
+
+// foldRelUpdated replaces the attributes of a live relation. An update for a
+// relation that is not live changes nothing.
+func (g *Graph) foldRelUpdated(ev codec.Event) {
+	r := g.rels[RelKey{ev.RelType, ev.From, ev.To}]
+	if r == nil {
+		return
+	}
+	r.Attrs = ev.EdgeAttrs
 	r.VT, r.RT, r.Seq = toTime(ev.ValidNS), toTime(ev.RecordedNS), ev.Seq
 }
 

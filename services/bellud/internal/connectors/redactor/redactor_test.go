@@ -91,3 +91,28 @@ func TestGuard(t *testing.T) {
 		t.Fatal("base leak must propagate")
 	}
 }
+
+func TestGuardRelationAttributes(t *testing.T) {
+	r := New()
+	r.Register([]byte("registered-value-123"))
+	g := r.Guard(redact.New())
+	tok := "Bearer abcdefghijklmnopqrstuvwxyz"
+	b := batch.Batch{Collector: "c", Relations: []batch.Relation{{
+		Type: "has", From: "a", To: "b",
+		Attributes: map[string]any{"evidence": tok, "nested": []any{"x registered-value-123"}},
+	}}}
+	if id, ok := g.FirstLeak(b); !ok || id == "" {
+		t.Fatal("expected leak in relation attributes")
+	}
+	out := g.Scrub(b)
+	if got := out.Relations[0].Attributes["evidence"]; got != "[REDACTED:value_bearer_token]" {
+		t.Fatalf("relation value not scrubbed: %v", got)
+	}
+	if !g.Leaks(out) {
+		t.Fatal("registered value in relation attributes must still leak")
+	}
+	b.Relations[0].Attributes = map[string]any{"evidence": "ok"}
+	if g.Leaks(b) {
+		t.Fatal("unexpected leak")
+	}
+}

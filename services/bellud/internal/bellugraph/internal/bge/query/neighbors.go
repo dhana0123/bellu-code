@@ -24,6 +24,9 @@ type Edge struct {
 	Direction string
 	Hops      int
 	Derived   bool
+	// Evidence, Confidence and ObservedAt come from the stored relation;
+	// empty when absent and on derived edges.
+	Evidence, Confidence, ObservedAt string
 }
 
 // DerivedFn returns the derived edges incident to id (from or to equal to
@@ -70,12 +73,12 @@ func Neighbors(g Reader, start graph.EntityID, dir, relType string, depth int, d
 		for _, x := range frontier {
 			if wantOut {
 				for _, r := range g.RelationsFrom(x) {
-					visit(x, Edge{Type: r.Type, From: r.From, To: r.To}, DirOut)
+					visit(x, storedEdge(g, r), DirOut)
 				}
 			}
 			if wantIn {
 				for _, r := range g.RelationsTo(x) {
-					visit(x, Edge{Type: r.Type, From: r.From, To: r.To}, DirIn)
+					visit(x, storedEdge(g, r), DirIn)
 				}
 			}
 			if derived != nil {
@@ -106,4 +109,13 @@ func Neighbors(g Reader, start graph.EntityID, dir, relType string, depth int, d
 		return a.To < b.To
 	})
 	return out
+}
+
+// storedEdge builds the Edge for a stored relation with its edge attributes.
+func storedEdge(g Reader, r graph.RelKey) Edge {
+	e := Edge{Type: r.Type, From: r.From, To: r.To}
+	if st, ok := g.Relation(r); ok {
+		e.Evidence, e.Confidence, e.ObservedAt = st.Attrs.Evidence, st.Attrs.Confidence, st.Attrs.ObservedAt
+	}
+	return e
 }

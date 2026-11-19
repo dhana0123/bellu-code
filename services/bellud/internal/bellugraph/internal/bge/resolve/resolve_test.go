@@ -170,3 +170,5 @@ func (f f2) LiveIDs() []string {
 	sort.Strings(o)
 	return o
 }
+
+func (f2) Relation(graph.RelKey) (*graph.RelState, bool) { return nil, false }

@@ -59,8 +59,8 @@ func fakeDockerSock(t *testing.T) string {
 }
 
 // Every collector's real output, run against its own fixture, must be accepted
-// by the engine's Apply (valid relation types, endpoints resolvable, no
-// relation attributes) and be recorded with collector_status "ok".
+// by the engine's Apply (valid relation types, endpoints resolvable, only
+// the fixed relation attributes) and be recorded with collector_status "ok".
 func TestEveryCollectorOutputIsApplied(t *testing.T) {
 	iacRoot := t.TempDir()
 	os.WriteFile(filepath.Join(iacRoot, "main.tf"), []byte("resource \"aws_s3_bucket\" \"logs\" {\n  acl = \"public-read\"\n}\n"), 0o644)
@@ -97,8 +97,10 @@ func TestEveryCollectorOutputIsApplied(t *testing.T) {
 			t.Fatalf("%s: fixture produced no entities", c.Name())
 		}
 		for _, r := range b.Relations {
-			if len(r.Attributes) != 0 {
-				t.Fatalf("%s: relation %s has attributes", c.Name(), r.Type)
+			for name := range r.Attributes {
+				if name != "evidence" && name != "confidence" && name != "observed_at" {
+					t.Fatalf("%s: relation %s has attribute %q outside the fixed set", c.Name(), r.Type, name)
+				}
 			}
 		}
 		if _, err := eng.Ingest().Apply(ctx, b); err != nil {

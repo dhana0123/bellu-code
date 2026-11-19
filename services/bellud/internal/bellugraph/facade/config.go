@@ -55,7 +55,14 @@ type ConfigError struct {
 	Msg   string
 }
 
+// RegistryVar is the ConfigError.Var of a failed schema registry merge. Msg
+// then holds every failure.
+const RegistryVar = "graph schema registry"
+
 func (e *ConfigError) Error() string {
+	if e.Var == RegistryVar {
+		return e.Var + ": " + e.Msg
+	}
 	return fmt.Sprintf("%s: invalid value %q: %s", e.Var, e.Value, e.Msg)
 }
 
