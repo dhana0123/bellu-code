@@ -1,5 +1,7 @@
 # Design Document: Unified Security Graph
 
+> Note: Requirement 2.7 (relations carry no attributes) is amended by `.kiro/specs/aws-relationship-registry`. Relations may carry `evidence`, `confidence`, and `observed_at`; every other relation attribute is still rejected.
+
 ## Overview
 
 Sources feed connectors, connectors feed collectors, collectors feed one graph engine (Bellud), and lenses present the engine to the UI and to AI agents over MCP. Every stage reads from the customer's systems and never writes to them.
@@ -406,7 +408,7 @@ Registered through `facade.Config.MCPExtras func(*mcp.Server)`, called by `MCPHa
 | `blast_radius` | `entity`, `depth?` (default 3, max 6), `limit?` | `{entity, items:[{id,kind,label,hops,confidence}], truncated}` |
 | `reachable_vulns` | `limit?` | `{items:[{vulnerability, package, score, severity, kev, epss, path:[ids], confidence}], truncated}` ordered by score |
 
-Every edge and every path carries `confidence`. Each answer is cut to the limit by `Budget`, with `truncated` set. The idea of extracted versus inferred edges, weakest-hop confidence, and bounded subgraph answers comes from Graphify (Apache-2.0, Python). No Graphify code is copied, and the README says so.
+Every edge and every path carries `confidence`. Each answer is cut to the limit by `Budget`, with `truncated` set. The idea of extracted versus inferred edges, weakest-hop confidence, and bounded subgraph answers comes from Graphify (Apache-2.0, Python). A modified copy of Graphify, licensed under Apache-2.0, is included in `third_party/bellu-graphify/`, and the README says so.
 
 ### Overlay (`internal/overlay`)
 

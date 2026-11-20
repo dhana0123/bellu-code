@@ -394,7 +394,7 @@ func httpStatus(err error) error {
 	return err
 }
 
-func (s statusClient) Instances(ctx context.Context, r string) ([]Instance, error) {
+func (s statusClient) Instances(ctx context.Context, r string) (Listing[Instance], error) {
 	v, err := s.Client.Instances(ctx, r)
 	return v, httpStatus(err)
 }
@@ -404,12 +404,12 @@ func (s statusClient) Buckets(ctx context.Context) ([]Bucket, error) {
 	return v, httpStatus(err)
 }
 
-func (s statusClient) SecurityGroups(ctx context.Context, r string) ([]SecurityGroup, error) {
+func (s statusClient) SecurityGroups(ctx context.Context, r string) (Listing[SecurityGroup], error) {
 	v, err := s.Client.SecurityGroups(ctx, r)
 	return v, httpStatus(err)
 }
 
-func (s statusClient) VPCs(ctx context.Context, r string) ([]VPC, error) {
+func (s statusClient) VPCs(ctx context.Context, r string) (Listing[VPC], error) {
 	v, err := s.Client.VPCs(ctx, r)
 	return v, httpStatus(err)
 }
@@ -431,5 +431,69 @@ func (s statusClient) DBInstances(ctx context.Context, r string) ([]DBInstance, 
 
 func (s statusClient) Identity(ctx context.Context) (Identity, error) {
 	v, err := s.Client.Identity(ctx)
+	return v, httpStatus(err)
+}
+func (s statusClient) Subnets(ctx context.Context, r string) (Listing[Subnet], error) {
+	v, err := s.Client.Subnets(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) ENIs(ctx context.Context, r string) (Listing[ENI], error) {
+	v, err := s.Client.ENIs(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) RouteTables(ctx context.Context, r string) (Listing[RouteTable], error) {
+	v, err := s.Client.RouteTables(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) InternetGateways(ctx context.Context, r string) (Listing[InternetGateway], error) {
+	v, err := s.Client.InternetGateways(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) NATGateways(ctx context.Context, r string) (Listing[NATGateway], error) {
+	v, err := s.Client.NATGateways(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) SGRules(ctx context.Context, r string) (Listing[SGRule], error) {
+	v, err := s.Client.SGRules(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) NetworkACLs(ctx context.Context, r string) (Listing[NetworkACL], error) {
+	v, err := s.Client.NetworkACLs(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) VPCEndpoints(ctx context.Context, r string) (Listing[VPCEndpoint], error) {
+	v, err := s.Client.VPCEndpoints(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) PeeringConnections(ctx context.Context, r string) (Listing[PeeringConnection], error) {
+	v, err := s.Client.PeeringConnections(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) ElasticIPs(ctx context.Context, r string) (Listing[ElasticIP], error) {
+	v, err := s.Client.ElasticIPs(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) TransitGateways(ctx context.Context, r string) (Listing[TransitGateway], error) {
+	v, err := s.Client.TransitGateways(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) TGWAttachments(ctx context.Context, r string) (Listing[TGWAttachment], error) {
+	v, err := s.Client.TGWAttachments(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) LoadBalancers(ctx context.Context, r string) (Listing[LoadBalancer], error) {
+	v, err := s.Client.LoadBalancers(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) TargetGroups(ctx context.Context, r string) (Listing[TargetGroup], error) {
+	v, err := s.Client.TargetGroups(ctx, r)
+	return v, httpStatus(err)
+}
+func (s statusClient) Listeners(ctx context.Context, r, arn string) ([]Listener, error) {
+	v, err := s.Client.Listeners(ctx, r, arn)
+	return v, httpStatus(err)
+}
+func (s statusClient) TargetHealth(ctx context.Context, r, arn string) ([]TargetHealth, error) {
+	v, err := s.Client.TargetHealth(ctx, r, arn)
 	return v, httpStatus(err)
 }

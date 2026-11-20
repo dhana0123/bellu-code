@@ -1,5 +1,7 @@
 # Requirements Document
 
+> Note: Requirement 2.7 (relations carry no attributes) is amended by `.kiro/specs/aws-relationship-registry`. Relations may carry `evidence`, `confidence`, and `observed_at`; every other relation attribute is still rejected.
+
 ## Introduction
 
 The Unified Security Graph connects sources to one read-only graph and presents it through lenses. The pipeline is: sources → connectors → collectors → one graph engine (Bellud) → lenses (graph types) → UI and AI context over MCP. Every stage is read-only with respect to the customer's systems.

@@ -1,7 +1,6 @@
 package aws
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -10,10 +9,10 @@ import (
 
 	"github.com/bellu/bellucode/services/bellud/internal/canonical"
 	"github.com/bellu/bellucode/services/bellud/internal/collectors"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/aws/awsschema"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/broker"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/store"
-	"github.com/bellu/bellucode/services/bellud/internal/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/identity"
 )
@@ -23,10 +22,17 @@ import (
 // (no object contents, environment variable values or secrets).
 
 const (
-	kindAccount  = "aws_account"
-	kindResource = "aws_resource"
+	kindAccount  = awsschema.KindAccount
+	kindResource = awsschema.KindResource
+	kindSGRule   = awsschema.KindSGRule
+	kindCIDR     = awsschema.KindCIDR
 
 	defaultInterval = 5 * time.Minute
+
+	// Caps on security group rule nodes. They are fields of the collector so
+	// tests can lower them.
+	defaultMaxRulesPerSG       = 200
+	defaultMaxRuleNodesPerConn = 20000
 )
 
 type collector struct {
@@ -36,6 +42,9 @@ type collector struct {
 	interval time.Duration
 	regions  []string // selected, deduplicated, sorted
 	status   collectors.StatusRecorder
+
+	maxRulesPerSG       int
+	maxRuleNodesPerConn int
 }
 
 var _ collectors.StatusReporter = (*collector)(nil)
@@ -61,7 +70,8 @@ func NewCollector(c Client, conn store.Connection, sel store.Selection) collecto
 	if conn.IntervalSec > 0 {
 		iv = time.Duration(conn.IntervalSec) * time.Second
 	}
-	return &collector{client: c, connID: conn.ID, alias: conn.Alias, interval: iv, regions: rs}
+	return &collector{client: c, connID: conn.ID, alias: conn.Alias, interval: iv, regions: rs,
+		maxRulesPerSG: defaultMaxRulesPerSG, maxRuleNodesPerConn: defaultMaxRuleNodesPerConn}
 }
 
 func (c *collector) Name() string            { return "connector:aws:" + c.connID }
@@ -86,7 +96,32 @@ type builder struct {
 	account string
 	acctID  string
 	b       batch.Batch
-	seen    map[string]string // arn -> entity id
+	seen    map[string]string // arn (or a pseudo key for rule and cidr nodes) -> entity id
+	attrs   map[string]map[string]any
+	pending []pendingRel
+}
+
+// pendingRel is a relation whose endpoints are resolved after every step ran,
+// so a relation never names an entity that was not collected.
+type pendingRel struct {
+	typ, from, to string // from and to are keys of builder.seen
+	attrs         map[string]any
+}
+
+// rel queues a relation between two collected entities.
+func (b *builder) rel(typ, from, to string, attrs map[string]any) {
+	b.pending = append(b.pending, pendingRel{typ, from, to, attrs})
+}
+
+// resolve appends every queued relation whose two endpoints were collected.
+func (b *builder) resolve() {
+	for _, p := range b.pending {
+		f, ok1 := b.seen[p.from]
+		t, ok2 := b.seen[p.to]
+		if ok1 && ok2 {
+			b.b.Relations = append(b.b.Relations, batch.Relation{Type: p.typ, From: f, To: t, Attributes: p.attrs})
+		}
+	}
 }
 
 func (b *builder) add(arn, service, rtype, region string, attrs map[string]any) (string, bool) {
@@ -114,26 +149,8 @@ func (b *builder) add(arn, service, rtype, region string, attrs map[string]any) 
 	b.b.Entities = append(b.b.Entities, batch.Entity{Type: kindResource, Identity: idn, Attributes: a})
 	b.b.Relations = append(b.b.Relations, batch.Relation{Type: "owned_by", From: string(id), To: b.account})
 	b.seen[arn] = string(id)
+	b.attrs[arn] = a
 	return string(id), true
-}
-
-// exposed reports whether the instance has a public address and at least one
-// attached security group open to the internet. Groups not attached to the
-// instance are ignored.
-func exposed(i Instance, groups []SecurityGroup) bool {
-	if i.PublicIP == "" {
-		return false
-	}
-	attached := make(map[string]bool, len(i.SecurityGroupIDs))
-	for _, id := range i.SecurityGroupIDs {
-		attached[id] = true
-	}
-	for _, g := range groups {
-		if g.OpenToInternet && attached[g.ID] {
-			return true
-		}
-	}
-	return false
 }
 
 func ts(t time.Time) string {
@@ -141,194 +158,6 @@ func ts(t time.Time) string {
 		return ""
 	}
 	return t.UTC().Format(time.RFC3339)
-}
-
-// Collect gathers the full current observation. A failing resource type is
-// skipped and reported through collectors.PartialError.
-func (c *collector) Collect(ctx context.Context) (graph.Batch, error) {
-	c.status.Reset()
-	if len(c.regions) == 0 {
-		return graph.Batch{}, errors.New("aws: no region selected")
-	}
-	ident, err := c.client.Identity(broker.WithWaitObserver(ctx, c.waitObserver("global")))
-	if err != nil {
-		if isRejected(err) {
-			return graph.Batch{}, c.rejected(err)
-		}
-		return graph.Batch{}, err
-	}
-	if ident.Account == "" {
-		return graph.Batch{}, errors.New("aws: empty account id")
-	}
-	source := c.Name()
-	acctIdn := map[string]string{"connection": c.connID, "account_id": ident.Account}
-	acctID, err := identity.Hash(kindAccount, acctIdn)
-	if err != nil {
-		return graph.Batch{}, err
-	}
-	b := &builder{c: c, source: source, account: string(acctID), acctID: ident.Account, seen: map[string]string{}}
-	b.b.Collector = source
-	b.b.Entities = append(b.b.Entities, batch.Entity{Type: kindAccount, Identity: acctIdn, Attributes: map[string]any{
-		"connection": c.connID, "account_id": ident.Account, "source": source,
-		"alias": c.alias, "regions": strings.Join(c.regions, ","),
-	}})
-
-	failed := map[string]bool{}
-	attempted := 0
-	// rejectedErr is the first credential rejection; it ends the run.
-	var rejectedErr error
-	// note records a failed type, a denied scope, or a credential rejection.
-	note := func(typ, scope string, err error) {
-		failed[typ] = true
-		switch {
-		case isRejected(err):
-			if rejectedErr == nil {
-				rejectedErr = err
-			}
-		case errors.Is(err, ErrAccessDenied):
-			c.status.Deny(typ + "@" + scope)
-		}
-	}
-	// each runs fn once per selected region and records the type on any error.
-	each := func(typ string, fn func(ctx context.Context, region string) error) {
-		attempted++
-		for _, r := range c.regions {
-			if rejectedErr != nil {
-				return
-			}
-			if ctx.Err() != nil {
-				failed[typ] = true
-				return
-			}
-			if err := fn(broker.WithWaitObserver(ctx, c.waitObserver(r)), r); err != nil {
-				note(typ, r, err)
-			}
-		}
-	}
-	once := func(typ string, fn func(ctx context.Context) error) {
-		attempted++
-		if rejectedErr != nil {
-			return
-		}
-		if ctx.Err() != nil {
-			failed[typ] = true
-			return
-		}
-		if err := fn(broker.WithWaitObserver(ctx, c.waitObserver("global"))); err != nil {
-			note(typ, "global", err)
-		}
-	}
-	selected := map[string]bool{}
-	for _, r := range c.regions {
-		selected[r] = true
-	}
-	acct := ident.Account
-
-	// VPCs and security groups first so instances can relate to them.
-	vpcARN := map[string]string{} // region/vpc-id -> entity id
-	each("vpc", func(ctx context.Context, r string) error {
-		vs, err := c.client.VPCs(ctx, r)
-		for _, v := range vs {
-			arn := fmt.Sprintf("arn:%s:ec2:%s:%s:vpc/%s", partition(r), r, acct, v.ID)
-			if id, ok := b.add(arn, "ec2", "ec2:vpc", r, map[string]any{
-				"name": v.Name, "state": v.State, "tag_count": v.TagCount}); ok {
-				vpcARN[r+"/"+v.ID] = id
-			}
-		}
-		return err
-	})
-	sgs := map[string]string{}
-	var regionGroups = map[string][]SecurityGroup{}
-	each("security-groups", func(ctx context.Context, r string) error {
-		gs, err := c.client.SecurityGroups(ctx, r)
-		for _, g := range gs {
-			arn := fmt.Sprintf("arn:%s:ec2:%s:%s:security-group/%s", partition(r), r, acct, g.ID)
-			regionGroups[r] = append(regionGroups[r], g)
-			attrs := map[string]any{"name": g.Name, "tag_count": g.TagCount}
-			if g.OpenToInternet {
-				attrs["internet_exposed"] = "true"
-			}
-			if id, ok := b.add(arn, "ec2", "ec2:security-group", r, attrs); ok {
-				sgs[r+"/"+g.ID] = id
-			}
-		}
-		return err
-	})
-	each("ec2", func(ctx context.Context, r string) error {
-		is, err := c.client.Instances(ctx, r)
-		for _, i := range is {
-			arn := fmt.Sprintf("arn:%s:ec2:%s:%s:instance/%s", partition(r), r, acct, i.ID)
-			iattrs := map[string]any{
-				"name": i.Name, "state": i.State, "instance_type": i.Type,
-				"created_at": ts(i.LaunchTime), "tag_count": i.TagCount}
-			if exposed(i, regionGroups[r]) {
-				iattrs["internet_exposed"] = "true"
-			}
-			id, ok := b.add(arn, "ec2", "ec2:instance", r, iattrs)
-			if !ok {
-				continue
-			}
-			if v, ok := vpcARN[r+"/"+i.VPCID]; ok {
-				b.b.Relations = append(b.b.Relations, batch.Relation{Type: "runs_on", From: id, To: v})
-			}
-			for _, g := range i.SecurityGroupIDs {
-				if sg, ok := sgs[r+"/"+g]; ok {
-					b.b.Relations = append(b.b.Relations, batch.Relation{Type: "attached_to", From: id, To: sg})
-				}
-			}
-		}
-		return err
-	})
-	once("s3", func(ctx context.Context) error {
-		bs, err := c.client.Buckets(ctx)
-		for _, k := range bs {
-			if !selected[k.Region] {
-				continue
-			}
-			b.add("arn:"+partition(k.Region)+":s3:::"+k.Name, "s3", "s3:bucket", k.Region,
-				map[string]any{"name": k.Name, "created_at": ts(k.CreatedAt)})
-		}
-		return err
-	})
-	once("iam", func(ctx context.Context) error {
-		rs, err := c.client.Roles(ctx)
-		for _, r := range rs {
-			b.add(r.ARN, "iam", "iam:role", "", map[string]any{"name": r.Name, "created_at": ts(r.CreatedAt)})
-		}
-		return err
-	})
-	each("lambda", func(ctx context.Context, r string) error {
-		fs, err := c.client.Functions(ctx, r)
-		for _, f := range fs {
-			b.add(f.ARN, "lambda", "lambda:function", r, map[string]any{"name": f.Name, "runtime": f.Runtime})
-		}
-		return err
-	})
-	each("rds", func(ctx context.Context, r string) error {
-		ds, err := c.client.DBInstances(ctx, r)
-		for _, d := range ds {
-			b.add(d.ARN, "rds", "rds:instance", r, map[string]any{
-				"name": d.ID, "engine": d.Engine, "state": d.Status, "created_at": ts(d.CreatedAt)})
-		}
-		return err
-	})
-
-	if rejectedErr != nil {
-		return graph.Batch{}, c.rejected(rejectedErr)
-	}
-	if len(failed) == attempted {
-		// Nothing usable: an empty full observation would delete every entity.
-		return graph.Batch{}, errors.New("aws: every resource type failed")
-	}
-	if len(failed) > 0 {
-		types := make([]string, 0, len(failed))
-		for t := range failed {
-			types = append(types, t)
-		}
-		sort.Strings(types)
-		return b.b, collectors.PartialError{Types: types}
-	}
-	return b.b, nil
 }
 
 func (c *collector) waitObserver(scope string) func(broker.RateWait) {

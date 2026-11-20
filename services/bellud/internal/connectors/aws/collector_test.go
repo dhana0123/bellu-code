@@ -18,6 +18,7 @@ import (
 )
 
 type fakeClient struct {
+	noNetwork
 	mu    sync.Mutex
 	calls []string // "<op>:<region>"
 	fail  map[string]bool
@@ -40,17 +41,17 @@ func (f *fakeClient) SimulateWrites(context.Context, string, []string) ([]Allowe
 	return nil, nil
 }
 func (f *fakeClient) Regions(context.Context) ([]string, error) { return nil, nil }
-func (f *fakeClient) Instances(_ context.Context, r string) ([]Instance, error) {
-	return []Instance{{ID: "i-1", Region: r, VPCID: "vpc-1", SecurityGroupIDs: []string{"sg-1"}, State: "running"}}, f.rec("ec2", r)
+func (f *fakeClient) Instances(_ context.Context, r string) (Listing[Instance], error) {
+	return Listing[Instance]{Items: []Instance{{ID: "i-1", Region: r, VPCID: "vpc-1", SecurityGroupIDs: []string{"sg-1"}, State: "running"}}}, f.rec("ec2", r)
 }
 func (f *fakeClient) Buckets(context.Context) ([]Bucket, error) {
 	return []Bucket{{Name: "in", Region: "eu-west-1"}, {Name: "out", Region: "ap-south-1"}}, f.rec("s3", "")
 }
-func (f *fakeClient) SecurityGroups(_ context.Context, r string) ([]SecurityGroup, error) {
-	return []SecurityGroup{{ID: "sg-1", Region: r, VPCID: "vpc-1"}}, f.rec("security-groups", r)
+func (f *fakeClient) SecurityGroups(_ context.Context, r string) (Listing[SecurityGroup], error) {
+	return Listing[SecurityGroup]{Items: []SecurityGroup{{ID: "sg-1", Region: r, VPCID: "vpc-1"}}}, f.rec("security-groups", r)
 }
-func (f *fakeClient) VPCs(_ context.Context, r string) ([]VPC, error) {
-	return []VPC{{ID: "vpc-1", Region: r}}, f.rec("vpc", r)
+func (f *fakeClient) VPCs(_ context.Context, r string) (Listing[VPC], error) {
+	return Listing[VPC]{Items: []VPC{{ID: "vpc-1", Region: r}}}, f.rec("vpc", r)
 }
 func (f *fakeClient) Roles(context.Context) ([]Role, error) {
 	return []Role{{ARN: "arn:aws:iam::123456789012:role/r", Name: "r"}}, f.rec("iam", "")
@@ -60,6 +61,13 @@ func (f *fakeClient) Functions(_ context.Context, r string) ([]Function, error) 
 }
 func (f *fakeClient) DBInstances(_ context.Context, r string) ([]DBInstance, error) {
 	return []DBInstance{{ARN: "arn:aws:rds:" + r + ":123456789012:db:d", ID: "d", Region: r}}, f.rec("rds", r)
+}
+
+// newFake returns a fakeClient whose network calls are recorded and can fail.
+func newFake(fail map[string]bool) *fakeClient {
+	f := &fakeClient{fail: fail}
+	f.noNetwork.rec = f.rec
+	return f
 }
 
 func newTestCollector(c Client) collectors.Collector {
@@ -96,7 +104,7 @@ func TestCollectorIdentityAndOutput(t *testing.T) {
 	for _, r := range b.Relations {
 		rel[r.Type]++
 	}
-	if rel["owned_by"] != 7 || rel["runs_on"] != 1 || rel["attached_to"] != 1 {
+	if rel["owned_by"] != 7 || rel["runs_on"] != 1 || rel["attached_to"] != 0 || rel["aws_in_vpc"] != 1 {
 		t.Fatalf("%v", rel)
 	}
 }
@@ -149,8 +157,11 @@ func TestCollectorNoRegionAndAllFailed(t *testing.T) {
 	if _, err := c.Collect(context.Background()); err == nil {
 		t.Fatal("expected error without regions")
 	}
-	all := map[string]bool{"ec2": true, "s3": true, "iam": true, "lambda": true, "rds": true, "vpc": true, "security-groups": true}
-	b, err := newTestCollector(&fakeClient{fail: all}).Collect(context.Background())
+	all := map[string]bool{}
+	for _, s := range collectSteps {
+		all[s.name] = true
+	}
+	b, err := newTestCollector(newFake(all)).Collect(context.Background())
 	var pe collectors.PartialError
 	if err == nil || errors.As(err, &pe) || len(b.Entities) != 0 {
 		t.Fatalf("%v", err)

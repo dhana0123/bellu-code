@@ -17,6 +17,24 @@ func loadGolden(t *testing.T) golden {
 	if err := json.Unmarshal(b, &g); err != nil {
 		t.Fatal(err)
 	}
+	// The extension holds names added after the pre-feature baseline. It can
+	// never override a baseline entry.
+	if eb, err := os.ReadFile(goldenExtPath); err == nil {
+		var e golden
+		if err := json.Unmarshal(eb, &e); err != nil {
+			t.Fatal(err)
+		}
+		for k, v := range e.Kinds {
+			if _, ok := g.Kinds[k]; !ok {
+				g.Kinds[k] = v
+			}
+		}
+		for k, v := range e.Relations {
+			if _, ok := g.Relations[k]; !ok {
+				g.Relations[k] = v
+			}
+		}
+	}
 	return g
 }
 
@@ -38,16 +56,11 @@ func TestGoldenHashes(t *testing.T) {
 func TestGoldenIdentityLists(t *testing.T) {
 	g := loadGolden(t)
 	kinds := Kinds()
-	// Kinds added by the aws relationship registry get golden vectors in task 7.7.
-	unpinned := map[string]bool{"aws_sg_rule": true, "aws_cidr": true, "aws_policy_statement": true}
-	if len(kinds) != len(g.Kinds)+len(unpinned) {
-		t.Errorf("registry has %d kinds, golden has %d plus %d unpinned", len(kinds), len(g.Kinds), len(unpinned))
+	if len(kinds) != len(g.Kinds) {
+		t.Errorf("registry has %d kinds, golden has %d", len(kinds), len(g.Kinds))
 	}
 	for _, k := range kinds {
 		want, ok := g.Kinds[k]
-		if !ok && unpinned[k] {
-			continue
-		}
 		if !ok {
 			t.Errorf("kind %s is not in golden", k)
 			continue

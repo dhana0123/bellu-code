@@ -1,6 +1,7 @@
 package lens
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -87,6 +88,78 @@ func TestBudgetedAnswersAreBoundedAndTagged(t *testing.T) {
 		}
 		if !reflect.DeepEqual(out, Budget(s, maxNodes, maxEdges)) {
 			t.Fatal("Budget is not deterministic")
+		}
+	})
+}
+
+// Feature: aws-relationship-registry, Property 23: Budget drops rule nodes first and keeps roots and paths
+//
+// **Validates: Requirements 8.10, 13.11, 16.11**
+func TestPropertyBudgetDropsRuleNodesFirst(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		n := rapid.IntRange(1, 20).Draw(t, "n")
+		var nodes []Node
+		var ids []string
+		for i := range n {
+			id := fmt.Sprintf("n%02d", i)
+			ids = append(ids, id)
+			nodes = append(nodes, Node{ID: id, Hops: rapid.IntRange(0, 4).Draw(t, "hops"),
+				Kind: rapid.SampledFrom([]string{kindSGRule, "aws_resource", "aws_cidr"}).Draw(t, "kind")})
+		}
+		pick := rapid.SampledFrom(ids)
+		root := pick.Draw(t, "root")
+		var paths []Path
+		for range rapid.IntRange(0, 2).Draw(t, "paths") {
+			paths = append(paths, Path{Nodes: rapid.SliceOfNDistinct(pick, 1, 3, func(s string) string { return s }).Draw(t, "path"), Confidence: ConfExtracted})
+		}
+		var edges []SliceEdge
+		for range rapid.IntRange(0, 30).Draw(t, "edges") {
+			edges = append(edges, SliceEdge{From: pick.Draw(t, "from"), To: pick.Draw(t, "to"), Type: "depends_on", Confidence: ConfExtracted})
+		}
+		s := Slice{Root: root, Nodes: nodes, Edges: edges, Paths: paths}
+		maxN := rapid.IntRange(0, n).Draw(t, "maxNodes")
+		out := Budget(s, maxN, 100)
+		kept := map[string]bool{}
+		for _, nd := range out.Nodes {
+			kept[nd.ID] = true
+		}
+		protected := map[string]bool{root: true}
+		for _, p := range paths {
+			for _, id := range p.Nodes {
+				protected[id] = true
+			}
+		}
+		keptRule, droppedOther, droppedProtected, keptUnprotected := false, false, false, false
+		for _, nd := range nodes {
+			switch {
+			case protected[nd.ID] && !kept[nd.ID]:
+				droppedProtected = true
+			case !protected[nd.ID] && kept[nd.ID]:
+				keptUnprotected = true
+			}
+			if protected[nd.ID] {
+				continue
+			}
+			if nd.Kind == kindSGRule && kept[nd.ID] {
+				keptRule = true
+			}
+			if nd.Kind != kindSGRule && !kept[nd.ID] {
+				droppedOther = true
+			}
+		}
+		if keptRule && droppedOther {
+			t.Fatal("a non-rule node was dropped while an unprotected rule node was kept")
+		}
+		if droppedProtected && keptUnprotected {
+			t.Fatal("a root or path node was dropped while another node was kept")
+		}
+		for _, e := range out.Edges {
+			if !kept[e.From] || !kept[e.To] {
+				t.Fatalf("dangling edge %+v", e)
+			}
+		}
+		if !reflect.DeepEqual(Budget(s, maxN, 100), out) {
+			t.Fatal("budget is not deterministic")
 		}
 	})
 }

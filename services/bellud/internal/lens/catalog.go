@@ -20,9 +20,10 @@ const (
 
 // Limits on lens parameters and traversal.
 const (
-	DefaultDepth    = 3
-	MaxDepth        = 6
-	AttackMaxDepth  = 8
+	DefaultDepth = 3
+	MaxDepth     = 6
+	// MaxPathDepth bounds attack paths and network reach (Req 13.4).
+	MaxPathDepth    = 6
 	MaxExposed      = 50
 	DefaultMaxNodes = 500
 	DefaultMaxEdges = 1000
@@ -47,41 +48,68 @@ type Def struct {
 	Group       string   `json:"-"`
 	Select      string   `json:"-"`
 	Params      []Param  `json:"params"`
+	// Needs lists the collection categories an answer depends on.
+	Needs []string `json:"-"`
+	// CollapseRules replaces rule nodes with group-to-peer edges by default;
+	// the collapse_rules parameter overrides it.
+	CollapseRules bool `json:"-"`
 }
+
+// Category ids used by Needs.
+const (
+	needNetwork  = "network"
+	needIdentity = "identity"
+	needData     = "data"
+)
+
+// Sentinel entries of Slice.MissingData.
+const MissingNoExposedEntity = "no_internet_exposed_entity"
+
+var collapseParam = Param{Name: "collapse_rules", Required: false}
 
 var catalog = []Def{
 	{
 		ID: "code-to-cloud", Name: "Code to cloud", Layout: LayoutForce, Default: true,
 		Description: "Repositories, packages, vulnerabilities, images and cloud resources, grouped by connection.",
 		Kinds: []string{"github_org", "github_repo", "github_workflow", "github_alert", "package",
-			"vulnerability", "aws_account", "aws_resource", "image"},
-		Group: "connection", Select: SelectKinds, Params: []Param{},
+			"vulnerability", "aws_account", "aws_resource", "aws_sg_rule", "aws_cidr", "image"},
+		Group: "connection", Select: SelectKinds, Params: []Param{collapseParam},
+		Needs: []string{needNetwork},
 	},
 	{
 		ID: "cloud", Name: "Cloud", Layout: LayoutForce,
 		Description: "AWS accounts and resources, grouped by region.",
-		Kinds:       []string{"aws_account", "aws_resource"},
-		Group:       "region", Select: SelectKinds, Params: []Param{},
+		Kinds:       []string{"aws_account", "aws_resource", "aws_sg_rule", "aws_cidr"},
+		Group:       "region", Select: SelectKinds, Params: []Param{collapseParam},
+		Needs: []string{needNetwork}, CollapseRules: true,
 	},
 	{
 		ID: "blast-radius", Name: "Blast radius", Layout: LayoutRadial,
 		Description: "Everything impacted by a failure of one entity.",
 		Select:      SelectImpact,
-		Params:      []Param{{Name: "entity", Required: true}, {Name: "depth", Required: false}},
+		Params:      []Param{{Name: "entity", Required: true}, {Name: "depth", Required: false}, collapseParam},
+		// identity and data stay needed while aws_can_access is not produced.
+		Needs: []string{needNetwork, needIdentity, needData},
 	},
 	{
 		ID: "attack-path", Name: "Attack path", Layout: LayoutChain,
-		Description: "Connections from internet-exposed entities to a target. Paths show connectivity, not a directed exploit route.",
+		Description: "Connections from internet-exposed entities to a target entity or to every entity of a target type. Paths show connectivity, not a directed exploit route.",
 		Select:      SelectAttackPaths,
-		Params:      []Param{{Name: "target", Required: true}},
+		// One of target and target_type is required.
+		Params: []Param{{Name: "target", Required: false}, {Name: "target_type", Required: false}, collapseParam},
+		Needs:  []string{needNetwork},
 	},
 	{
 		ID: "vulnerability-reachability", Name: "Vulnerability reachability", Layout: LayoutForce,
 		Description: "Vulnerabilities whose impact reaches an internet-exposed entity.",
 		Select:      SelectReachableVul,
-		Params:      []Param{},
+		Params:      []Param{collapseParam},
+		Needs:       []string{needNetwork},
 	},
 }
+
+// ExposedNeeds are the needs of the exposed_resources question.
+var ExposedNeeds = []string{needNetwork}
 
 // Catalog returns a copy of the lens definitions.
 func Catalog() []Def {

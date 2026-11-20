@@ -3,7 +3,12 @@
 // or net/http.
 package lens
 
-import "time"
+import (
+	"time"
+	"unicode/utf8"
+
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schemaall"
+)
 
 // Confidence values carried by edges and paths.
 const (
@@ -21,6 +26,9 @@ type Slice struct {
 	Edges       []SliceEdge `json:"edges"`
 	Groups      []Group     `json:"groups"`
 	Paths       []Path      `json:"paths,omitempty"`
+	// MissingData lists the registered-only categories the answer depends on,
+	// plus sentinel entries. Never nil.
+	MissingData []string `json:"missing_data"`
 
 	// Root is the lens root entity id. Budget keeps it first. Not serialized.
 	Root string `json:"-"`
@@ -31,6 +39,9 @@ type Counts struct {
 	Nodes        int `json:"nodes"`
 	Edges        int `json:"edges"`
 	OmittedNodes int `json:"omitted_nodes"`
+	// OmittedRules counts rule nodes that collapsed to nothing because their
+	// peer was not in the slice.
+	OmittedRules int `json:"omitted_rules"`
 }
 
 // Node is one entity in a slice.
@@ -60,7 +71,12 @@ type SliceEdge struct {
 	To         string `json:"to"`
 	Type       string `json:"type"`
 	Confidence string `json:"confidence"`
+	Evidence   string `json:"evidence,omitempty"`
+	ObservedAt string `json:"observed_at,omitempty"`
 }
+
+// MaxEvidence bounds SliceEdge.Evidence in bytes.
+const MaxEvidence = 512
 
 // Group collects node ids under one label.
 type Group struct {
@@ -75,13 +91,37 @@ type Path struct {
 	Confidence string   `json:"confidence"`
 }
 
-// Confidence returns the confidence of a relation type. The type is the only
-// carrier: likely_same_as is inferred, every other type is extracted.
+// Confidence returns the registered default confidence of a relation type.
+// An unregistered type, or a registry that failed to merge, is extracted.
 func Confidence(relType string) string {
-	if relType == "likely_same_as" {
+	r, err := schemaall.Default()
+	if err != nil {
+		return ConfExtracted
+	}
+	if d, ok := r.Relation(relType); ok && string(d.Confidence) == ConfInferred {
 		return ConfInferred
 	}
 	return ConfExtracted
+}
+
+// EdgeConfidence returns the stored confidence of one relation when it is
+// extracted or inferred, and the type default otherwise.
+func EdgeConfidence(relType, attr string) string {
+	if attr == ConfExtracted || attr == ConfInferred {
+		return attr
+	}
+	return Confidence(relType)
+}
+
+// truncUTF8 cuts s to at most n bytes, backing up to a character boundary.
+func truncUTF8(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n]
 }
 
 // PathConfidence returns inferred when any hop is not extracted, else

@@ -88,7 +88,7 @@ Existing Entity_IDs do not change. This feature adds two kinds.
 
 ### Relation types
 
-Confidence is carried by the relation type alone. Relations have no confidence attribute and the engine storage model is unchanged.
+Every relation type, its direction, and its default confidence are declared in the per-source registry (see "Per-source registry"). `describe_schema` lists them all. A relation may also carry its own `confidence` edge attribute (see "Edge_Attributes"); a valid stored value wins over the default. The correlator types are:
 
 | Type | Direction | Meaning | Confidence |
 | --- | --- | --- | --- |
@@ -104,6 +104,55 @@ An extracted relation comes from an exact Canonical_Key match or a provider-repo
 
 The redaction guard and `ident.IsSecretName` reject attribute names that contain these fragments: `secret`, `token`, `password`, `credential`, `private`, `apikey`, `hash`. An attribute must also not be named `data`. Use names such as `canonical_key`, `internet_exposed`, `purl`, `cvss`, `epss`, `kev`, `severity`, `summary`, `fixed_in`.
 
+## Per-source registry
+
+Every entity kind, resource type, relation type, and collection category is declared by exactly one source in a leaf `...schema` package that imports only the standard library and `internal/graph/schema`:
+
+| Source | Package |
+| --- | --- |
+| `core` | `internal/graph/schema/coreschema` |
+| `github` | `internal/connectors/github/githubschema` |
+| `aws` | `internal/connectors/aws/awsschema` |
+| `correlator` | `internal/correlate/corrschema` |
+
+`internal/graph/schemaall` lists the declarations (`Sources()`) and merges them once (`Default()`). The merge checks every rule (name pattern and length, identity lists, descriptions, confidences, duplicate names, direction and identity conflicts between sources, source prefixes, endpoint and category references, and the required AWS names) and reports every failure, sorted, with the source, name, and reason. The result is the same for any order of declarations. The merged registry is immutable: `Register` always returns `ErrImmutable`. `facade.Open` checks the registry before any store opens and fails with a configuration error that lists every failure. `ident` reads kinds, identity lists, and directions from the registry, so Entity_IDs and directions of existing kinds are unchanged (golden vectors in `bge/ident/testdata`). The MCP tool `describe_schema` returns the registry: kinds with description, source, discriminator, and types; relations with direction, confidence, description, source, `derived`, and endpoints; and categories with status and read operations.
+
+### Naming convention
+
+- Names match `[a-z][a-z0-9_]*` and are at most 64 characters.
+- A source with a prefix starts every kind and relation name with it: `aws_` for AWS (`aws_sg_rule`, `aws_routes_to`). Core has no prefix.
+- A relation name is `<prefix>_<verb phrase>` and reads "from <verb phrase> to", for example `aws_member_of_sg` (ENI member of security group).
+- Generic relations keep one meaning in every source and may be declared by several sources with the same direction and confidence: `owned_by`, `runs_on`, `on`, `uses`, `attached_to`, `depends_on`, `mounts`, `resolves_to`, `found_in`, `affected_by`, `same_as`, `likely_same_as`.
+- AWS resources share the kind `aws_resource` and are told apart by the `resource_type` discriminator (`ec2:subnet`, `elbv2:load-balancer`).
+
+### Direction_Rule
+
+An edge reads "from <type> to". Its direction says which way impact flows.
+
+- `Forward`: compromise or failure of `from` gives an attacker or fault a capability over `to` (routing, forwarding, credentials, permission to act, protection removed). Example: `aws_routes_to` (route table routes to internet gateway).
+- `Reverse`: `from` depends on, is contained in, or is owned by `to`, so failure of `to` impacts `from`. Example: `aws_in_subnet` (ENI in subnet).
+- When both criteria match, the edge is `Forward` and its description says "both matched". Example: `aws_rule_of` (rule defines the group's filtering).
+
+Every relation declaration justifies its direction in its description (at most 200 characters).
+
+### Edge_Attributes
+
+A relation may carry three optional attributes. Every other relation attribute is rejected.
+
+| Name | Value |
+| --- | --- |
+| `evidence` | String, at most 512 bytes. Lens slices cut it at 512 bytes on a character boundary. |
+| `confidence` | `extracted` or `inferred`. |
+| `observed_at` | RFC 3339 time. Collectors set it only from a provider timestamp, never from the run time. |
+
+An invalid name or value, a secret-like value, or two assertions of the same `(type, from, to)` with different attributes in one batch rejects the whole batch and leaves the graph unchanged. Re-asserting a relation replaces its attributes (a `RelationUpdated` event). Re-asserting it with the same attributes writes nothing, and an attribute-only change is never counted as a flap. A relation without attributes is stored byte for byte as before. After the first attribute write, downgrading to a build that does not know the attribute trailer is unsupported: the old build refuses to open the log.
+
+This feature supersedes `unified-security-graph` Requirement 2.7 (relations carry no attributes) for `evidence`, `confidence`, and `observed_at` only. Requirement 2.7 still applies to every other relation attribute.
+
+### Reified_Node rule
+
+Reify a fact as its own node when it is multi-valued or carries attributes that an edge cannot hold, for example one security group with many rules, each with a direction, protocol, ports, and peer. A security group rule is an `aws_sg_rule` node (identity `connection`, `sg`, `rule_id`) with `aws_rule_of` to its group and `aws_rule_peer` to its peer: a shared `aws_cidr` node per distinct CIDR, or the peer group when it was collected. `rule_id` is the provider id, or a hash of the rule's own fields, so it is stable across runs. Caps: 200 rules per group and 20,000 rule nodes per connection; a cut sets `rules_truncated`. The `cloud` lens collapses rule nodes by default into `aws_allows_ingress_from` or `aws_allows_egress_to` edges between group and peer, with the rule's direction, protocol, and ports as evidence (`collapse_rules=false` keeps the nodes). The budget drops rule nodes before any other node.
+
 ## Lens catalog
 
 A lens is a definition in Go that selects entities, relations, groups, and confidence for one purpose. Every lens returns a Lens_Slice (nodes, edges, groups, confidence tags) to both the HTTP API and MCP.
@@ -111,12 +160,14 @@ A lens is a definition in Go that selects entities, relations, groups, and confi
 | ID | Layout | Selection |
 | --- | --- | --- |
 | `code-to-cloud` (default) | force | GitHub, package, vulnerability, AWS, and image entities with the relations among them. Grouped by `connection`. |
-| `cloud` | force | `aws_account` and `aws_resource`, grouped by `region`. |
-| `blast-radius` | radial | Requires `entity`. Built from the engine `Impact` result (depth default 3, maximum 6). |
-| `attack-path` | chain | Requires `target`. Built from `Path` results from each `internet_exposed` entity (at most 50) to the target. It shows connectivity, not a directed exploit route. |
+| `cloud` | force | `aws_account`, `aws_resource`, `aws_sg_rule`, and `aws_cidr`, grouped by `region`. Rule nodes are collapsed by default. |
+| `blast-radius` | radial | Requires `entity`. Built from the engine `Impact` result (depth default 3, maximum 6). For an AWS compute entity it adds network reach (ENI, security group, ingress rule peers, members, subnet context); those nodes carry `via: network`. |
+| `attack-path` | chain | Requires `target` or `target_type` (for example `rds:instance`). Built from `Path` results (at most 6 hops) from each `internet_exposed=true` entity (at most 50) to the target or to every entity of the type. It shows connectivity, not a directed exploit route. With no exposed entity, `missing_data` contains `no_internet_exposed_entity`. |
 | `vulnerability-reachability` | force | Vulnerabilities whose impacted set contains an internet-exposed entity, the packages they affect, and the chain to the exposed entity. |
 
 When a lens excludes an entity, it also excludes every relation attached to that entity.
+
+Every slice and MCP answer has `missing_data`: the registered-only collection categories (see "Roadmap") that the answer depends on, plus sentinel entries. It is never absent, and it depends only on the lens, tool, and parameters. Edges carry `evidence` and `observed_at` when the relation has them, and `counts.omitted_rules` counts collapsed rules whose peer was not in the slice.
 
 Budgets: 500 nodes and 1,000 edges over HTTP, 100 nodes (maximum 200) over MCP. When anything is dropped, `truncated` is true and `counts.omitted_nodes` says how many nodes were dropped.
 
@@ -136,11 +187,13 @@ Routes:
 | Route | Purpose |
 | --- | --- |
 | `GET /api/experimental/graph/lenses` | List lens id, name, description, layout, and params. |
-| `GET /api/experimental/graph/slice` | Return a Lens_Slice. Query: `lens` (default `code-to-cloud`), `entity`, `target`, `depth`, `limit`. An unknown lens returns 404 that names the id. |
+| `GET /api/experimental/graph/slice` | Return a Lens_Slice. Query: `lens` (default `code-to-cloud`), `entity`, `target`, `target_type`, `collapse_rules` (`true` or `false`), `depth`, `limit`. An unknown lens returns 404 that names the id; an invalid parameter returns 400 that names the field. |
 | `GET /api/experimental/graph/intel/status` | Return state, version, record count, last synced time, and last error. |
 | `GET /api/experimental/graph/overlay` | Server-sent overlay events. `?replay=demo` plays a scripted replay. |
 
-MCP tools (read-only hint set, answers bounded and every edge and path tagged `extracted` or `inferred`): `slice`, `attack_paths`, `blast_radius`, `reachable_vulns`.
+Routes under `/api/experimental/graph/` may change or be removed in any release without compatibility guarantees or deprecation notice.
+
+MCP tools (read-only hint set, answers bounded, every edge and path tagged `extracted` or `inferred`, and `missing_data` in every answer): `slice`, `attack_paths` (`target` or `target_type`), `blast_radius`, `reachable_vulns`, and `exposed_resources` (entities with an attached security group that has an ingress rule open to `0.0.0.0/0` or `::/0`).
 
 ## Intel flow
 
@@ -208,13 +261,33 @@ In every case the previous corpus stays active and Bellud records the error as `
 
 The store writes each import to a new generation and flips the active generation in one batch, so a failed import never changes what readers see.
 
+## Roadmap
+
+Collection categories and their status. Generated from the registry; do not edit by hand.
+
+<!-- roadmap:start -->
+| Category | Status | Read operations a collector needs |
+| --- | --- | --- |
+| `compute` | registered-only | `autoscaling:DescribeAutoScalingGroups`, `ec2:DescribeImages`, `ec2:DescribeLaunchTemplates`, `ecs:DescribeServices`, `ecs:DescribeTasks`, `ecs:ListClusters`, `ecs:ListTasks`, `eks:DescribeCluster`, `eks:ListClusters`, `eks:ListNodegroups`, `iam:ListInstanceProfiles`, `lambda:ListLayers` |
+| `controls` | registered-only | `cloudtrail:DescribeTrails`, `config:DescribeConfigRules`, `config:DescribeConfigurationRecorders`, `guardduty:GetFindings`, `guardduty:ListDetectors`, `guardduty:ListFindings`, `inspector2:ListFindings`, `securityhub:GetFindings`, `wafv2:ListWebACLs` |
+| `data` | registered-only | `dynamodb:DescribeTable`, `dynamodb:ListTables`, `ec2:DescribeSnapshots`, `ec2:DescribeVolumes`, `elasticfilesystem:DescribeFileSystems`, `kms:DescribeKey`, `kms:ListAliases`, `kms:ListKeys`, `rds:DescribeDBClusters`, `s3:GetBucketEncryption`, `s3:GetBucketPolicy`, `secretsmanager:ListSecrets`, `ssm:DescribeParameters` |
+| `dns` | registered-only | `route53:ListHostedZones`, `route53:ListResourceRecordSets` |
+| `identity` | registered-only | `iam:GetAccountAuthorizationDetails`, `iam:GetPolicyVersion`, `iam:GetRole`, `iam:ListGroups`, `iam:ListPolicies`, `iam:ListUsers` |
+| `network` | implemented | none |
+| `ownership` | registered-only | `organizations:DescribeOrganization`, `organizations:ListAccountsForParent`, `organizations:ListOrganizationalUnitsForParent`, `organizations:ListPolicies`, `organizations:ListRoots`, `organizations:ListTargetsForPolicy` |
+<!-- roadmap:end -->
+
 ## Add a new Collector
 
 A Collector reads one Connection and emits a Batch of entities and relations. Scheduling, timeouts, redaction, and retirement come from the existing runner.
 
 1. Implement the connector under `internal/connectors/<name>`. Declare read operations only in its manifest. The broker enforces the read-only allowlist.
 2. Implement a `collectors.Collector`. The supervisor runs one per Connection, named `connector:<id>:<connection>`. Emit the full snapshot of the Connection on each run.
-3. Register any new entity kind and relation type in `internal/bellugraph/internal/bge/ident/ident.go` (identity attributes, and a direction in `relDirections`). Do not add keys that change the hash of existing kinds. Add a golden-vector test if you touch identity.
+3. Register any new entity kind and relation type in the registry, in this order:
+   1. Declare the kinds, resource types, and relation types in the source's leaf `...schema` package (for example `internal/connectors/aws/awsschema`). Do not change the identity list of an existing kind.
+   2. Add the declaration to `schemaall.Sources()`.
+   3. Run `go test ./internal/graph/schema/... ./internal/bellugraph/...` from `services/bellud` and confirm the registry check and golden-vector tests pass.
+   4. Justify each relation direction with the Direction_Rule in the declaration description and in the source's design table.
 4. Connection-scoped kinds include `connection` in their identity attributes, so disconnecting removes them without touching other connections.
 5. Set `canonical_key` through `canonical.Key` whenever the provider has an ARN, purl, CVE or GHSA id, image digest, or git URL, so the entity can join across connections.
 6. Use attribute names that avoid the fragments listed under "Attribute names to avoid".
@@ -228,7 +301,7 @@ A finished run replaces the entities of its Connection with the new Batch.
 
 ## Credits
 
-The ideas of extracted versus inferred edges, weakest-hop confidence, and bounded subgraph answers come from Graphify (Apache-2.0, Python). No Graphify code is copied into this repository.
+The ideas of extracted versus inferred edges, weakest-hop confidence, and bounded subgraph answers come from Graphify (Apache-2.0, Python). This repository includes a modified copy of Graphify, licensed under Apache-2.0, in `third_party/bellu-graphify/`. See its `LICENSE`, `NOTICE`, `PROVENANCE.md`, and `CHANGES.md`.
 
 ## Regenerating protocol, client, and routes
 
@@ -240,3 +313,6 @@ The route table (`routes.yaml`) is rewritten first so the new paths are `owner: 
 2. `go test ./internal/server/routes -run TestGenerate -update -count=1` (from `services/bellud`).
 3. `bun run generate` (from `packages/client`).
 4. If the contract tests report drift, run `bun services/bellud/script/gen-gocontract.ts`.
+5. Run `bun typecheck` in `packages/schema`, `packages/protocol`, `packages/client`, and `packages/app`, and `bun test test/experimental-identifiers.test.ts` in `packages/protocol`.
+
+Schema and protocol changes go first: edit `packages/schema/src/graph.ts` and `packages/protocol/src/groups/experimental-graph.ts`, keeping new fields optional so older clients stay valid.

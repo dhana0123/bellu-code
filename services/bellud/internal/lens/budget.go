@@ -14,7 +14,13 @@ func Budget(s Slice, maxNodes, maxEdges int) Slice {
 		maxEdges = 0
 	}
 	nodes := append([]Node(nil), s.Nodes...)
-	sort.SliceStable(nodes, func(i, j int) bool { return nodeLess(s.Root, nodes[i], nodes[j]) })
+	onPath := map[string]bool{s.Root: s.Root != ""}
+	for _, p := range s.Paths {
+		for _, id := range p.Nodes {
+			onPath[id] = true
+		}
+	}
+	sort.SliceStable(nodes, func(i, j int) bool { return nodeLess(s.Root, onPath, nodes[i], nodes[j]) })
 	omitted := 0
 	if len(nodes) > maxNodes {
 		omitted = len(nodes) - maxNodes
@@ -60,11 +66,18 @@ func Budget(s Slice, maxNodes, maxEdges int) Slice {
 	out := s
 	out.Nodes, out.Edges, out.Groups, out.Paths = nodes, edges, groups, paths
 	out.Truncated = truncated
-	out.Counts = Counts{Nodes: len(nodes), Edges: len(edges), OmittedNodes: s.Counts.OmittedNodes + omitted}
+	out.Counts = Counts{Nodes: len(nodes), Edges: len(edges), OmittedNodes: s.Counts.OmittedNodes + omitted, OmittedRules: s.Counts.OmittedRules}
 	return out
 }
 
-func nodeLess(root string, a, b Node) bool {
+// nodeLess orders nodes by class first: the root and path nodes, then every
+// node that is not a rule node, then rule nodes. Within a class the root
+// comes first, then higher risk score, lower hop count, and Entity_ID. The
+// budget drops from the end, so rule nodes go first and path nodes last.
+func nodeLess(root string, onPath map[string]bool, a, b Node) bool {
+	if ac, bc := nodeClass(onPath, a), nodeClass(onPath, b); ac != bc {
+		return ac < bc
+	}
 	if ar, br := a.ID == root, b.ID == root; ar != br {
 		return ar
 	}
@@ -82,4 +95,14 @@ func score(n Node) float64 {
 		return 0
 	}
 	return n.Risk.Score
+}
+
+func nodeClass(onPath map[string]bool, n Node) int {
+	switch {
+	case onPath[n.ID]:
+		return 0
+	case n.Kind != kindSGRule:
+		return 1
+	}
+	return 2
 }

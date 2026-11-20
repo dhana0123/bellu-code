@@ -3,12 +3,14 @@ package lens
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/facade"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schemaall"
 	"github.com/bellu/bellucode/services/bellud/internal/risk"
 )
 
@@ -28,7 +30,12 @@ func (e ErrInvalidParam) Error() string {
 type Params struct {
 	Entity string
 	Target string
-	Depth  int
+	// TargetType selects every entity of one resource_type as attack-path
+	// target, for example rds:instance. Target or TargetType is required.
+	TargetType string
+	Depth      int
+	// CollapseRules overrides the lens default when set.
+	CollapseRules *bool
 	// MaxNodes and MaxEdges bound the result; zero selects the HTTP defaults.
 	MaxNodes int
 	MaxEdges int
@@ -52,7 +59,7 @@ func (e *Engine) Slice(ctx context.Context, id string, p Params) (Slice, error) 
 	if !ok {
 		return Slice{}, ErrUnknownLens{ID: id}
 	}
-	b := &builder{src: e.src, def: def, nodes: map[string]*facade.Entity{}, hops: map[string]int{}, edges: map[SliceEdge]struct{}{}}
+	b := newBuilder(e.src, def)
 	var err error
 	switch def.Select {
 	case SelectKinds:
@@ -67,7 +74,40 @@ func (e *Engine) Slice(ctx context.Context, id string, p Params) (Slice, error) 
 	if err != nil {
 		return Slice{}, err
 	}
+	return e.complete(ctx, b, def, p), nil
+}
+
+// Exposed answers exposed_resources: entities with an attached security
+// group that has an ingress rule open to the internet.
+func (e *Engine) Exposed(ctx context.Context, p Params) (Slice, error) {
+	def := Def{ID: "exposed-resources", Needs: ExposedNeeds}
+	b := newBuilder(e.src, def)
+	if err := b.selectExposedResources(ctx); err != nil {
+		return Slice{}, err
+	}
+	return e.complete(ctx, b, def, p), nil
+}
+
+func newBuilder(src Source, def Def) *builder {
+	return &builder{src: src, def: def, nodes: map[string]*facade.Entity{}, hops: map[string]int{},
+		edges: map[SliceEdge]struct{}{}, netOnly: map[string]bool{}}
+}
+
+// complete finishes the slice, collapses rule nodes, records missing data,
+// and applies the budget.
+func (e *Engine) complete(ctx context.Context, b *builder, def Def, p Params) Slice {
 	s := b.finish(ctx, e.now().UTC())
+	collapse := def.CollapseRules
+	if p.CollapseRules != nil {
+		collapse = *p.CollapseRules
+	}
+	if collapse {
+		s = Collapse(s)
+	}
+	s.MissingData = MissingData(def, p)
+	if b.noExposed {
+		s.MissingData = append(s.MissingData, MissingNoExposedEntity)
+	}
 	maxN, maxE := p.MaxNodes, p.MaxEdges
 	if maxN <= 0 {
 		maxN = DefaultMaxNodes
@@ -75,7 +115,25 @@ func (e *Engine) Slice(ctx context.Context, id string, p Params) (Slice, error) 
 	if maxE <= 0 {
 		maxE = DefaultMaxEdges
 	}
-	return Budget(s, maxN, maxE), nil
+	return Budget(s, maxN, maxE)
+}
+
+// MissingData returns the registered-only categories that an answer of def
+// with parameters p depends on. It depends only on def and p. Never nil.
+func MissingData(def Def, p Params) []string {
+	needs := append([]string(nil), def.Needs...)
+	r, err := schemaall.Default()
+	if def.Select == SelectAttackPaths && p.TargetType != "" && err == nil {
+		if c, ok := r.CategoryOfType(p.TargetType); ok {
+			needs = append(needs, c)
+		}
+	}
+	if err != nil {
+		// No registry: every need counts as registered-only (Req 12.7).
+		sort.Strings(needs)
+		return append([]string{}, slices.Compact(needs)...)
+	}
+	return r.RegisteredOnly(needs)
 }
 
 type builder struct {
@@ -88,6 +146,10 @@ type builder struct {
 	paths     []Path
 	reachable map[string]bool
 	truncated bool
+	// netOnly marks nodes reached only through network reach.
+	netOnly map[string]bool
+	// noExposed is set when attack-path found no internet-exposed entity.
+	noExposed bool
 }
 
 func (b *builder) add(id string, hops int) {
@@ -100,7 +162,10 @@ func (b *builder) add(id string, hops int) {
 }
 
 func (b *builder) addEdge(e facade.Edge) {
-	b.edges[SliceEdge{From: string(e.From), To: string(e.To), Type: e.Type, Confidence: Confidence(e.Type)}] = struct{}{}
+	b.edges[SliceEdge{
+		From: string(e.From), To: string(e.To), Type: e.Type, Confidence: EdgeConfidence(e.Type, e.Confidence),
+		Evidence: truncUTF8(e.Evidence, MaxEvidence), ObservedAt: e.ObservedAt,
+	}] = struct{}{}
 }
 
 // findAll pages through Find up to collectCap entities.
@@ -198,42 +263,147 @@ func (b *builder) selectImpact(ctx context.Context, p Params) error {
 			b.paths = append(b.paths, b.pathOf(b.root, it.Via))
 		}
 	}
+	return b.addNetworkReach(ctx, depth)
+}
+
+// computeTypes are the AWS resource types whose blast radius includes
+// network reach.
+var computeTypes = map[string]bool{
+	"ec2:instance": true, "lambda:function": true, "ecs:task": true,
+	"elbv2:load-balancer": true, "ec2:nat-gateway": true, "ec2:vpc-endpoint": true,
+}
+
+// addNetworkReach merges NetworkReach from an AWS compute root. Items that
+// the impact walk did not reach are marked via network.
+func (b *builder) addNetworkReach(ctx context.Context, depth int) error {
+	root, err := b.src.Entity(ctx, facade.EntityID(b.root))
+	if err != nil {
+		return err
+	}
+	if rt, _ := root.Attributes["resource_type"].(string); root.Type != "aws_resource" || !computeTypes[rt] {
+		return nil
+	}
+	g := &sourceNet{ctx: ctx, src: b.src, attrs: map[string]map[string]any{}}
+	reached := NetworkReach(g, b.root, depth)
+	if g.err != nil {
+		return g.err
+	}
+	in := map[string]bool{b.root: true}
+	for _, r := range reached {
+		in[r.ID] = true
+		if _, ok := b.nodes[r.ID]; !ok {
+			b.netOnly[r.ID] = true
+		}
+		b.add(r.ID, r.Hops)
+	}
+	for _, e := range g.edges {
+		if in[string(e.From)] && in[string(e.To)] {
+			b.addEdge(e)
+		}
+	}
 	return nil
 }
 
 func (b *builder) selectAttackPaths(ctx context.Context, p Params) error {
-	if strings.TrimSpace(p.Target) == "" {
-		return ErrInvalidParam{Field: "target"}
-	}
-	target, err := b.src.Resolve(ctx, p.Target)
+	targets, err := b.attackTargets(ctx, p)
 	if err != nil {
 		return err
 	}
-	b.root = string(target)
-	b.add(b.root, 0)
 	exposed, err := b.exposed(ctx, MaxExposed)
 	if err != nil {
 		return err
 	}
-	for _, src := range exposed {
-		if src.ID == target {
-			continue
+	b.noExposed = len(exposed) == 0
+	for _, target := range targets {
+		b.add(string(target), 0)
+		for _, src := range exposed {
+			if src.ID == target || len(b.paths) >= maxPaths {
+				continue
+			}
+			r, err := b.src.Path(ctx, string(src.ID), string(target), facade.PathOpts{MaxDepth: MaxPathDepth})
+			if err != nil {
+				return err
+			}
+			if !r.Connected || len(r.Path) == 0 {
+				continue
+			}
+			path := b.pathOf(string(src.ID), r.Path)
+			for i, id := range path.Nodes {
+				b.add(id, i)
+			}
+			for _, e := range r.Path {
+				b.addEdge(e)
+			}
+			b.paths = append(b.paths, path)
 		}
-		r, err := b.src.Path(ctx, string(src.ID), string(target), facade.PathOpts{MaxDepth: AttackMaxDepth})
+	}
+	return nil
+}
+
+// maxPaths bounds the paths of one slice.
+const maxPaths = 200
+
+// attackTargets resolves target, or lists every entity whose resource_type
+// is target_type. With a single target it becomes the slice root.
+func (b *builder) attackTargets(ctx context.Context, p Params) ([]facade.EntityID, error) {
+	switch {
+	case strings.TrimSpace(p.Target) != "":
+		t, err := b.src.Resolve(ctx, p.Target)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		if !r.Connected || len(r.Path) == 0 {
-			continue
+		b.root = string(t)
+		return []facade.EntityID{t}, nil
+	case strings.TrimSpace(p.TargetType) != "":
+		items, err := b.findAll(ctx, facade.FindQuery{Attributes: map[string]string{"resource_type": p.TargetType}}, MaxExposed)
+		if err != nil {
+			return nil, err
 		}
-		path := b.pathOf(string(src.ID), r.Path)
-		for i, id := range path.Nodes {
-			b.add(id, i)
+		out := make([]facade.EntityID, 0, len(items))
+		for i := range items {
+			en := items[i]
+			b.nodes[string(en.ID)] = &en
+			out = append(out, en.ID)
 		}
-		for _, e := range r.Path {
+		return out, nil
+	}
+	return nil, ErrInvalidParam{Field: "target"}
+}
+
+// selectExposedResources walks rule -> group -> ENI -> owner from every
+// ingress rule open to the internet.
+func (b *builder) selectExposedResources(ctx context.Context) error {
+	rules, err := b.findAll(ctx, facade.FindQuery{Type: "aws_sg_rule",
+		Attributes: map[string]string{"direction": "ingress", "internet_open": "true"}}, collectCap)
+	if err != nil {
+		return err
+	}
+	g := &sourceNet{ctx: ctx, src: b.src, attrs: map[string]map[string]any{}}
+	for i := range rules {
+		rule := string(rules[i].ID)
+		for _, sg := range g.Out(rule, "aws_rule_of") {
+			for _, eni := range g.In(sg, "aws_member_of_sg") {
+				for _, owner := range g.In(eni, "aws_has_eni") {
+					b.add(owner, 0)
+					b.add(eni, 1)
+					b.add(sg, 2)
+					b.add(rule, 3)
+					if len(b.paths) < maxPaths {
+						b.paths = append(b.paths, Path{Nodes: []string{owner, eni, sg, rule}, Confidence: ConfExtracted})
+					}
+				}
+			}
+		}
+	}
+	if g.err != nil {
+		return g.err
+	}
+	for _, e := range g.edges {
+		_, a := b.nodes[string(e.From)]
+		_, c := b.nodes[string(e.To)]
+		if a && c {
 			b.addEdge(e)
 		}
-		b.paths = append(b.paths, path)
 	}
 	return nil
 }
@@ -305,7 +475,7 @@ func (b *builder) pathOf(start string, edges []facade.Edge) Path {
 			next = string(e.From)
 		}
 		nodes = append(nodes, next)
-		conf = append(conf, Confidence(e.Type))
+		conf = append(conf, EdgeConfidence(e.Type, e.Confidence))
 		cur = next
 	}
 	return Path{Nodes: nodes, Confidence: PathConfidence(conf)}
@@ -344,6 +514,9 @@ func (b *builder) finish(ctx context.Context, now time.Time) Slice {
 		if n.Label == "" {
 			n.Label = id
 		}
+		if b.netOnly[id] {
+			n.Attrs["via"] = "network"
+		}
 		if gv := b.groupValue(raw); gv != "" {
 			gid := b.def.Group + ":" + gv
 			n.Group = &gid
@@ -364,16 +537,7 @@ func (b *builder) finish(ctx context.Context, now time.Time) Slice {
 	for e := range b.edges {
 		edges = append(edges, e)
 	}
-	sort.Slice(edges, func(i, j int) bool {
-		a, c := edges[i], edges[j]
-		if a.From != c.From {
-			return a.From < c.From
-		}
-		if a.To != c.To {
-			return a.To < c.To
-		}
-		return a.Type < c.Type
-	})
+	sortEdges(edges)
 	edges = Prune(nodes, edges)
 	groups := make([]Group, 0, len(groupOrder))
 	sort.Strings(groupOrder)
@@ -460,4 +624,21 @@ func num(v any) float64 {
 		return f
 	}
 	return 0
+}
+
+// sortEdges orders edges by From, To, Type, and Evidence.
+func sortEdges(edges []SliceEdge) {
+	sort.Slice(edges, func(i, j int) bool {
+		a, c := edges[i], edges[j]
+		if a.From != c.From {
+			return a.From < c.From
+		}
+		if a.To != c.To {
+			return a.To < c.To
+		}
+		if a.Type != c.Type {
+			return a.Type < c.Type
+		}
+		return a.Evidence < c.Evidence
+	})
 }

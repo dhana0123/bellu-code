@@ -29,6 +29,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/collectors/secrets"
 	"github.com/bellu/bellucode/services/bellud/internal/config"
 	"github.com/bellu/bellucode/services/bellud/internal/correlate"
+	"github.com/bellu/bellucode/services/bellud/internal/cveupdate"
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
 	intelbundle "github.com/bellu/bellucode/services/bellud/internal/intel/bundle"
 	intelstore "github.com/bellu/bellucode/services/bellud/internal/intel/store"
@@ -52,8 +53,16 @@ const (
 )
 
 func main() {
+	if len(os.Args) >= 2 && os.Args[1] == "cve" {
+		if err := runCVE(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) < 2 || os.Args[1] != "serve" {
 		fmt.Fprintln(os.Stderr, "usage: bellud serve [--hostname HOST] [--port PORT] [--repo DIR]")
+		fmt.Fprintln(os.Stderr, "       bellud cve update|status|import ...")
 		os.Exit(2)
 	}
 	if err := serve(os.Args[2:]); err != nil {
@@ -131,6 +140,10 @@ func serve(args []string) error {
 		stopGraph(engine, runner, intel, logger)
 	}
 
+	if err := cfg.ValidateBind(); err != nil {
+		closeAll()
+		return err
+	}
 	// Bind first so a bind failure never starts the child.
 	ln, err := net.Listen("tcp", cfg.Addr())
 	if err != nil {
@@ -474,3 +487,20 @@ func findBun() (string, error) {
 }
 
 func isDir(p string) bool { st, err := os.Stat(p); return err == nil && st.IsDir() }
+
+// runCVE runs `bellud cve update|status|import`.
+func runCVE(args []string) error {
+	cfg, err := config.LoadCVEEnv()
+	if err != nil {
+		return err
+	}
+	dir, err := config.DataDir()
+	if err != nil {
+		return err
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return cveupdate.RunCLI(ctx, args, cveupdate.CLIEnv{
+		DataDir: dir, Config: cfg, Version: "dev", Stdout: os.Stdout, Stderr: os.Stderr,
+	})
+}

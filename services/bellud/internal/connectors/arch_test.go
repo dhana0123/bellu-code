@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/aws"
 )
 
 const (
@@ -265,5 +267,21 @@ func TestArchSchemaLayering(t *testing.T) {
 	}
 	if leaves == 0 {
 		t.Fatal("no leaf schema packages found; the rule would pass vacuously")
+	}
+}
+
+// (e) The aws connector manifest lists read operations only (Requirement 15.1).
+func TestArchAWSManifestHasNoWriteVerbs(t *testing.T) {
+	writeVerbs := []string{"Create", "Update", "Delete", "Put", "Tag", "Modify", "Attach", "Associate", "Run"}
+	for _, op := range aws.Manifest().Operations {
+		if op.Name == "sts:AssumeRole" {
+			continue // the auth operation, class auth, used by the lifecycle only
+		}
+		verb := op.Name[strings.IndexByte(op.Name, ':')+1:]
+		for _, w := range writeVerbs {
+			if strings.HasPrefix(verb, w) {
+				t.Errorf("aws manifest operation %s uses the write verb %s", op.Name, w)
+			}
+		}
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schemaall"
 	intelsync "github.com/bellu/bellucode/services/bellud/internal/intel/sync"
 	"github.com/bellu/bellucode/services/bellud/internal/lens"
 	"github.com/bellu/bellucode/services/bellud/internal/overlay"
@@ -58,6 +59,32 @@ func intParam(w http.ResponseWriter, r *http.Request, name string, def int) (int
 	return n, true
 }
 
+// boolParam parses an optional true or false query parameter. Absent is nil.
+func boolParam(w http.ResponseWriter, r *http.Request, name string) (*bool, bool) {
+	switch r.URL.Query().Get(name) {
+	case "":
+		return nil, true
+	case "true":
+		v := true
+		return &v, true
+	case "false":
+		v := false
+		return &v, true
+	}
+	invalid(w, name, name+" must be true or false")
+	return nil, false
+}
+
+// registeredType reports whether t is a declared resource type.
+func registeredType(t string) bool {
+	r, err := schemaall.Default()
+	if err != nil {
+		return false
+	}
+	_, ok := r.CategoryOfType(t)
+	return ok
+}
+
 // slice answers one Lens_Slice. depth is clamped to lens.MaxDepth and limit
 // to the HTTP node budget; the edge budget is fixed.
 func (h *handler) slice(w http.ResponseWriter, r *http.Request) {
@@ -74,14 +101,25 @@ func (h *handler) slice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q := r.URL.Query()
+	collapse, ok := boolParam(w, r, "collapse_rules")
+	if !ok {
+		return
+	}
+	targetType := q.Get("target_type")
+	if targetType != "" && !registeredType(targetType) {
+		invalid(w, "target_type", fmt.Sprintf("target_type %q is not a registered resource type", targetType))
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), sliceTimeout)
 	defer cancel()
 	s, err := h.lens.Slice(ctx, q.Get("lens"), lens.Params{
-		Entity:   q.Get("entity"),
-		Target:   q.Get("target"),
-		Depth:    min(depth, lens.MaxDepth),
-		MaxNodes: min(limit, lens.DefaultMaxNodes),
-		MaxEdges: lens.DefaultMaxEdges,
+		Entity:        q.Get("entity"),
+		Target:        q.Get("target"),
+		TargetType:    targetType,
+		CollapseRules: collapse,
+		Depth:         min(depth, lens.MaxDepth),
+		MaxNodes:      min(limit, lens.DefaultMaxNodes),
+		MaxEdges:      lens.DefaultMaxEdges,
 	})
 	var unknown lens.ErrUnknownLens
 	var bad lens.ErrInvalidParam

@@ -1,0 +1,13 @@
+# 2026/11/19 15:50:08.816659 [TestWorkspaceIsolationByDirectoryProperty] [rapid] draw idA: "0"
+# 2026/11/19 15:50:08.816665 [TestWorkspaceIsolationByDirectoryProperty] [rapid] draw idB: "1"
+# 2026/11/19 15:50:08.817015 [TestWorkspaceIsolationByDirectoryProperty] sqlite: migration numbers must be contiguous from 0001; found 0002 at position 3
+# 
+v0.4.8#14728854022810512072
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x1
+0x0

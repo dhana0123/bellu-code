@@ -65,6 +65,15 @@ func (c Config) Warnings() []string {
 	return nil
 }
 
+// ValidateBind returns an error unless the hostname is a loopback address or
+// "localhost". bellud binds only to loopback (Requirement 20.3).
+func (c Config) ValidateBind() error {
+	if !isLoopback(c.Hostname) {
+		return fmt.Errorf("hostname %q is not a loopback address; bellud binds only to loopback or a Unix socket", c.Hostname)
+	}
+	return nil
+}
+
 func isLoopback(host string) bool {
 	if host == "localhost" {
 		return true

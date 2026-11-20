@@ -12,6 +12,7 @@ import (
 	awssdk "github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go-v2/service/elasticloadbalancingv2"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
@@ -39,6 +40,20 @@ var (
 // maxPages bounds every paginated listing.
 const maxPages = 100
 
+// maxItems caps one listing. A listing that stops here sets Listing.Truncated.
+const maxItems = 10000
+
+// Listing is a capped API listing. Truncated is true when the listing stopped
+// at maxItems although the API had more.
+//
+// Decision (task 9.1): Instances, SecurityGroups and VPCs return Listing
+// directly. Only three fakes construct them, so a sibling method per listing
+// would cost more than updating those fakes once.
+type Listing[T any] struct {
+	Items     []T
+	Truncated bool
+}
+
 // Identity is the result of sts:GetCallerIdentity.
 type Identity struct {
 	Account string
@@ -63,6 +78,7 @@ type Instance struct {
 	SubnetID         string
 	SecurityGroupIDs []string
 	PublicIP         string
+	ENIIDs           []string
 	LaunchTime       time.Time
 	TagCount         int
 }
@@ -81,8 +97,6 @@ type SecurityGroup struct {
 	Name     string
 	VPCID    string
 	TagCount int
-	// OpenToInternet is true when an ingress rule allows 0.0.0.0/0 or ::/0.
-	OpenToInternet bool
 }
 
 // SGRule is one security group rule projection. ID is the provider rule
@@ -135,13 +149,31 @@ type Client interface {
 	// SimulateWrites returns the subset of actions the principal is allowed.
 	SimulateWrites(ctx context.Context, principalARN string, actions []string) ([]AllowedAction, error)
 	Regions(ctx context.Context) ([]string, error)
-	Instances(ctx context.Context, region string) ([]Instance, error)
+	Instances(ctx context.Context, region string) (Listing[Instance], error)
 	Buckets(ctx context.Context) ([]Bucket, error)
-	SecurityGroups(ctx context.Context, region string) ([]SecurityGroup, error)
-	VPCs(ctx context.Context, region string) ([]VPC, error)
+	SecurityGroups(ctx context.Context, region string) (Listing[SecurityGroup], error)
+	VPCs(ctx context.Context, region string) (Listing[VPC], error)
 	Roles(ctx context.Context) ([]Role, error)
 	Functions(ctx context.Context, region string) ([]Function, error)
 	DBInstances(ctx context.Context, region string) ([]DBInstance, error)
+
+	Subnets(ctx context.Context, region string) (Listing[Subnet], error)
+	ENIs(ctx context.Context, region string) (Listing[ENI], error)
+	RouteTables(ctx context.Context, region string) (Listing[RouteTable], error)
+	InternetGateways(ctx context.Context, region string) (Listing[InternetGateway], error)
+	NATGateways(ctx context.Context, region string) (Listing[NATGateway], error)
+	SGRules(ctx context.Context, region string) (Listing[SGRule], error)
+	NetworkACLs(ctx context.Context, region string) (Listing[NetworkACL], error)
+	VPCEndpoints(ctx context.Context, region string) (Listing[VPCEndpoint], error)
+	PeeringConnections(ctx context.Context, region string) (Listing[PeeringConnection], error)
+	ElasticIPs(ctx context.Context, region string) (Listing[ElasticIP], error)
+	TransitGateways(ctx context.Context, region string) (Listing[TransitGateway], error)
+	TGWAttachments(ctx context.Context, region string) (Listing[TGWAttachment], error)
+	LoadBalancers(ctx context.Context, region string) (Listing[LoadBalancer], error)
+	TargetGroups(ctx context.Context, region string) (Listing[TargetGroup], error)
+	// Listeners and TargetHealth are per parent. The API caps them per parent.
+	Listeners(ctx context.Context, region, lbARN string) ([]Listener, error)
+	TargetHealth(ctx context.Context, region, tgARN string) ([]TargetHealth, error)
 }
 
 // Config configures NewClient.
@@ -163,6 +195,7 @@ type client struct {
 	ec2 map[string]*ec2.Client
 	lam map[string]*lambda.Client
 	rds map[string]*rds.Client
+	elb map[string]*elasticloadbalancingv2.Client
 }
 
 // NewClient returns a Client. It fails when HTTPClient or Credentials is nil
@@ -173,7 +206,8 @@ func NewClient(cfg Config) (Client, error) {
 		return nil, errors.New("aws: client requires an http client, credentials and a region")
 	}
 	return &client{cfg: cfg, home: cfg.HomeRegion,
-		ec2: map[string]*ec2.Client{}, lam: map[string]*lambda.Client{}, rds: map[string]*rds.Client{}}, nil
+		ec2: map[string]*ec2.Client{}, lam: map[string]*lambda.Client{}, rds: map[string]*rds.Client{},
+		elb: map[string]*elasticloadbalancingv2.Client{}}, nil
 }
 
 func (c *client) base(region string) awssdk.Config {
@@ -220,6 +254,17 @@ func (c *client) rdsAt(r string) *rds.Client {
 	return v
 }
 
+func (c *client) elbv2At(r string) *elasticloadbalancingv2.Client {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if v, ok := c.elb[r]; ok {
+		return v
+	}
+	v := elasticloadbalancingv2.NewFromConfig(c.base(r))
+	c.elb[r] = v
+	return v
+}
+
 // mapErr converts SDK errors to typed, message-free errors. Errors that are
 // not AWS API errors (broker blocks, credential, network errors) pass through
 // so callers can inspect them with errors.As.
@@ -256,6 +301,28 @@ func pager(ctx context.Context, more func() bool, next func(context.Context) err
 		}
 	}
 	return nil
+}
+
+// listAll drives a paginator and caps the result at maxItems. On an error it
+// returns the items read so far with the mapped error.
+func listAll[T any](ctx context.Context, more func() bool, next func(context.Context) ([]T, error)) (Listing[T], error) {
+	var out Listing[T]
+	for i := 0; more(); i++ {
+		if i >= maxPages {
+			return out, errors.New("aws: too many result pages")
+		}
+		items, err := next(ctx)
+		if err != nil {
+			return out, mapErr(err)
+		}
+		out.Items = append(out.Items, items...)
+		if len(out.Items) >= maxItems {
+			out.Truncated = len(out.Items) > maxItems || more()
+			out.Items = out.Items[:min(len(out.Items), maxItems)]
+			break
+		}
+	}
+	return out, nil
 }
 
 func (c *client) Identity(ctx context.Context) (Identity, error) {
@@ -309,14 +376,14 @@ func ec2Name(tags []ec2types.Tag) string {
 	return ""
 }
 
-func (c *client) Instances(ctx context.Context, region string) ([]Instance, error) {
-	var res []Instance
+func (c *client) Instances(ctx context.Context, region string) (Listing[Instance], error) {
 	p := ec2.NewDescribeInstancesPaginator(c.ec2At(region), &ec2.DescribeInstancesInput{})
-	err := pager(ctx, p.HasMorePages, func(ctx context.Context) error {
+	return listAll(ctx, p.HasMorePages, func(ctx context.Context) ([]Instance, error) {
 		page, err := p.NextPage(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		var res []Instance
 		for _, r := range page.Reservations {
 			for _, i := range r.Instances {
 				in := Instance{
@@ -334,12 +401,14 @@ func (c *client) Instances(ctx context.Context, region string) ([]Instance, erro
 				for _, g := range i.SecurityGroups {
 					in.SecurityGroupIDs = append(in.SecurityGroupIDs, awssdk.ToString(g.GroupId))
 				}
+				for _, n := range i.NetworkInterfaces {
+					in.ENIIDs = append(in.ENIIDs, awssdk.ToString(n.NetworkInterfaceId))
+				}
 				res = append(res, in)
 			}
 		}
-		return nil
+		return res, nil
 	})
-	return res, err
 }
 
 func (c *client) Buckets(ctx context.Context) ([]Bucket, error) {
@@ -362,43 +431,40 @@ func (c *client) Buckets(ctx context.Context) ([]Bucket, error) {
 	return res, err
 }
 
-func (c *client) SecurityGroups(ctx context.Context, region string) ([]SecurityGroup, error) {
-	var res []SecurityGroup
+func (c *client) SecurityGroups(ctx context.Context, region string) (Listing[SecurityGroup], error) {
 	p := ec2.NewDescribeSecurityGroupsPaginator(c.ec2At(region), &ec2.DescribeSecurityGroupsInput{})
-	err := pager(ctx, p.HasMorePages, func(ctx context.Context) error {
+	return listAll(ctx, p.HasMorePages, func(ctx context.Context) ([]SecurityGroup, error) {
 		page, err := p.NextPage(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		var res []SecurityGroup
 		for _, g := range page.SecurityGroups {
 			res = append(res, SecurityGroup{
 				ID: awssdk.ToString(g.GroupId), Region: region, Name: awssdk.ToString(g.GroupName),
 				VPCID: awssdk.ToString(g.VpcId), TagCount: len(g.Tags),
-				OpenToInternet: openIngress(g.IpPermissions),
 			})
 		}
-		return nil
+		return res, nil
 	})
-	return res, err
 }
 
-func (c *client) VPCs(ctx context.Context, region string) ([]VPC, error) {
-	var res []VPC
+func (c *client) VPCs(ctx context.Context, region string) (Listing[VPC], error) {
 	p := ec2.NewDescribeVpcsPaginator(c.ec2At(region), &ec2.DescribeVpcsInput{})
-	err := pager(ctx, p.HasMorePages, func(ctx context.Context) error {
+	return listAll(ctx, p.HasMorePages, func(ctx context.Context) ([]VPC, error) {
 		page, err := p.NextPage(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		var res []VPC
 		for _, v := range page.Vpcs {
 			res = append(res, VPC{
 				ID: awssdk.ToString(v.VpcId), Region: region, Name: ec2Name(v.Tags),
 				State: string(v.State), TagCount: len(v.Tags),
 			})
 		}
-		return nil
+		return res, nil
 	})
-	return res, err
 }
 
 func (c *client) Roles(ctx context.Context) ([]Role, error) {
@@ -495,19 +561,98 @@ func IsRootARN(arn string) bool {
 	return true
 }
 
-// openIngress reports whether any ingress rule allows all IPv4 or IPv6 sources.
-func openIngress(ps []ec2types.IpPermission) bool {
-	for _, p := range ps {
-		for _, r := range p.IpRanges {
-			if awssdk.ToString(r.CidrIp) == "0.0.0.0/0" {
-				return true
-			}
-		}
-		for _, r := range p.Ipv6Ranges {
-			if awssdk.ToString(r.CidrIpv6) == "::/0" {
-				return true
-			}
-		}
-	}
-	return false
+// Network projections. They hold identifiers and structure only: no tag
+// values, user data, or environment values.
+
+// Subnet is an EC2 subnet projection.
+type Subnet struct {
+	ID, Region, VPCID, AZ, CIDR, Name string
+	TagCount                          int
 }
+
+// ENI is an elastic network interface projection.
+type ENI struct {
+	ID, Region, SubnetID, VPCID, Description, InterfaceType, InstanceID string
+	SecurityGroupIDs                                                    []string
+	PublicIP, PrivateIP, AssociationID, AllocationID                    string
+	RequesterManaged                                                    bool
+}
+
+// Route is one route of a route table. TargetKind is igw, nat, tgw, pcx,
+// vpce, eni, or local.
+type Route struct{ Destination, TargetKind, TargetID, State string }
+
+// RouteAssoc associates a route table with a subnet or marks it as main.
+type RouteAssoc struct {
+	SubnetID string
+	Main     bool
+}
+
+// RouteTable is a route table projection.
+type RouteTable struct {
+	ID, Region, VPCID string
+	Routes            []Route
+	Associations      []RouteAssoc
+	TagCount          int
+}
+
+// InternetGateway is an internet gateway projection.
+type InternetGateway struct {
+	ID, Region string
+	VPCIDs     []string
+}
+
+// NATGateway is a NAT gateway projection.
+type NATGateway struct {
+	ID, Region, SubnetID, VPCID, State string
+	ENIIDs, AllocationIDs              []string
+}
+
+// NetworkACL is a network ACL projection. Entries are the inbound entries.
+type NetworkACL struct {
+	ID, Region, VPCID string
+	Entries           []NACLEntry
+	SubnetIDs         []string
+}
+
+// VPCEndpoint is a VPC endpoint projection.
+type VPCEndpoint struct {
+	ID, Region, VPCID, Type, ServiceName string
+	SubnetIDs, SecurityGroupIDs, ENIIDs  []string
+}
+
+// PeeringConnection is a VPC peering connection projection.
+type PeeringConnection struct{ ID, Region, Status, RequesterVPC, AccepterVPC string }
+
+// ElasticIP is an Elastic IP projection.
+type ElasticIP struct {
+	AllocationID, Region, PublicIP, AssociationID, ENIID, InstanceID, NATGatewayID string
+}
+
+// TransitGateway is a transit gateway projection.
+type TransitGateway struct{ ID, Region, ARN, State string }
+
+// TGWAttachment is a transit gateway attachment projection.
+type TGWAttachment struct{ ID, Region, TransitGatewayID, ResourceType, ResourceID, State string }
+
+// LoadBalancer is an ELBv2 load balancer projection.
+type LoadBalancer struct {
+	ARN, Name, Region, Scheme, Type, VPCID string
+	SubnetIDs, SecurityGroupIDs            []string
+}
+
+// TargetGroup is an ELBv2 target group projection.
+type TargetGroup struct {
+	ARN, Name, Region, VPCID, TargetType string
+	LoadBalancerARNs                     []string
+}
+
+// Listener is an ELBv2 listener projection.
+type Listener struct {
+	ARN, LoadBalancerARN, Protocol string
+	Port                           int
+	TargetGroupARNs                []string
+}
+
+// TargetHealth is one registered target of a target group.
+type TargetHealth struct{ TargetGroupARN, TargetID, State string }

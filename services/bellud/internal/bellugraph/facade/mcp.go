@@ -35,7 +35,7 @@ var MCPTools = []string{
 	"describe_schema", "describe_type", "find_entities", "get_entity",
 	"annotate_entity", "get_neighbors", "find_path", "impact_of",
 	"entity_history", "recent_changes", "graph_diff", "telemetry_keys",
-	"slice", "attack_paths", "blast_radius", "reachable_vulns",
+	"slice", "attack_paths", "blast_radius", "reachable_vulns", "exposed_resources",
 }
 
 // AuditRecord is one audited operator write.

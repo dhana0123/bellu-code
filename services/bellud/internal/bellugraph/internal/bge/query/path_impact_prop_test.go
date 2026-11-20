@@ -26,6 +26,11 @@ type propGraph struct {
 var propAttrKeys = []string{"os", "zone", "role", "password", "api_token", "Secret_Key", "arch"}
 
 func drawPropGraph(t *rapid.T) *propGraph {
+	return drawPropGraphOf(t, []string{"uses", "found_in", "t0", "t1"})
+}
+
+// drawPropGraphOf draws a graph whose relations use the given types.
+func drawPropGraphOf(t *rapid.T, types []string) *propGraph {
 	n := rapid.IntRange(1, 9).Draw(t, "entities")
 	pg := &propGraph{g: graph.New(), attrs: map[string]map[string]string{}, rels: map[propRel]struct{}{}}
 	seq := uint64(0)
@@ -50,7 +55,6 @@ func drawPropGraph(t *rapid.T) *propGraph {
 		pg.ids = append(pg.ids, id)
 		pg.attrs[id] = cmp
 	}
-	types := []string{"uses", "found_in", "t0", "t1"}
 	m := rapid.IntRange(0, 16).Draw(t, "relations")
 	for i := 0; i < m; i++ {
 		r := propRel{
@@ -262,6 +266,47 @@ func TestPropImpactDirections(t *testing.T) {
 			}
 			if cur != im.ID {
 				t.Fatalf("via ends at %s, want %s", cur, im.ID)
+			}
+		}
+	})
+}
+
+// Feature: aws-relationship-registry, Property 25: Impact follows registered directions only
+//
+// Validates: Requirements 13.1
+func TestPropImpactRegisteredDirections(t *testing.T) {
+	types := []string{"aws_in_vpc", "aws_routes_to", "aws_rule_of", "aws_member_of_sg", "aws_allows_ingress_from", "runs_on"}
+	rapid.Check(t, func(t *rapid.T) {
+		pg := drawPropGraphOf(t, types)
+		start := rapid.SampledFrom(pg.ids).Draw(t, "start")
+		depth := rapid.IntRange(1, 6).Draw(t, "depth")
+		dirOf := func(ty string) ident.Direction {
+			d, _ := ident.DirectionOf(ty)
+			return d
+		}
+		flow := map[string]map[string]bool{}
+		for _, id := range pg.ids {
+			flow[id] = map[string]bool{}
+		}
+		for r := range pg.rels {
+			if dirOf(r.typ) == ident.Forward {
+				flow[r.from][r.to] = true
+			} else {
+				flow[r.to][r.from] = true
+			}
+		}
+		dist := bfsDist(flow, start)
+		got := Impact(pg.g, start, depth, dirOf, nil)
+		reached := map[string]bool{}
+		for _, im := range got {
+			reached[im.ID] = true
+			if d, ok := dist[im.ID]; !ok || d != im.Hops {
+				t.Fatalf("%s reached in %d hops, registered directions give %d (%v)", im.ID, im.Hops, d, ok)
+			}
+		}
+		for id, d := range dist {
+			if id != start && d <= depth && !reached[id] {
+				t.Fatalf("%s is %d hops downstream but not reached", id, d)
 			}
 		}
 	})
