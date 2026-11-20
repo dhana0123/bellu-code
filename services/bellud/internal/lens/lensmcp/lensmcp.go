@@ -1,7 +1,8 @@
 // Package lensmcp registers the lens-backed MCP tools: slice, attack_paths,
-// blast_radius, and reachable_vulns. Every tool is read-only, answers with at
-// most Limit nodes (default 100, maximum 200), and tags each edge and path
-// with an "extracted" or "inferred" confidence.
+// blast_radius, reachable_vulns, and exposed_resources. Every tool is
+// read-only, answers with at most Limit nodes (default 100, maximum 200), tags
+// each edge and path with an "extracted" or "inferred" confidence, and lists
+// the registered-only data categories the answer depends on in missing_data.
 package lensmcp
 
 import (
@@ -25,14 +26,16 @@ const (
 	ToolAttackPaths    = "attack_paths"
 	ToolBlastRadius    = "blast_radius"
 	ToolReachableVulns = "reachable_vulns"
+	ToolExposed        = "exposed_resources"
 )
 
 // Names lists the tools Register adds.
-var Names = []string{ToolSlice, ToolAttackPaths, ToolBlastRadius, ToolReachableVulns}
+var Names = []string{ToolSlice, ToolAttackPaths, ToolBlastRadius, ToolReachableVulns, ToolExposed}
 
 // Slicer is the part of lens.Service the tools need.
 type Slicer interface {
 	Slice(ctx context.Context, id string, p lens.Params) (lens.Slice, error)
+	Exposed(ctx context.Context, p lens.Params) (lens.Slice, error)
 }
 
 // Extras returns a function for facade.Config.MCPExtras that registers the
@@ -41,7 +44,7 @@ func Extras(svc Slicer) func(*mcp.Server) {
 	return func(s *mcp.Server) { Register(s, svc) }
 }
 
-// Register adds the four tools to s.
+// Register adds the tools to s.
 func Register(s *mcp.Server, svc Slicer) {
 	ro := func() *mcp.ToolAnnotations { return &mcp.ToolAnnotations{ReadOnlyHint: true} }
 	mcp.AddTool(s, &mcp.Tool{
@@ -49,15 +52,16 @@ func Register(s *mcp.Server, svc Slicer) {
 		Description: "Return a bounded Lens_Slice (nodes, edges, groups, paths). Every edge and path carries confidence: extracted or inferred.",
 		Annotations: ro(),
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in sliceIn) (*mcp.CallToolResult, lens.Slice, error) {
-		out, err := run(ctx, svc, in.Lens, lens.Params{Entity: in.Entity, Target: in.Target, Depth: in.Depth}, in.Limit)
+		out, err := run(ctx, svc, in.Lens, lens.Params{Entity: in.Entity, Target: in.Target, TargetType: in.TargetType,
+			Depth: in.Depth, CollapseRules: in.CollapseRules}, in.Limit)
 		return nil, out, err
 	})
 	mcp.AddTool(s, &mcp.Tool{
 		Name:        ToolAttackPaths,
-		Description: "List paths from internet-exposed entities to a target entity. Each edge and path carries confidence: extracted or inferred.",
+		Description: "List paths from internet-exposed entities to a target entity, or to every entity of target_type (for example rds:instance). Each edge and path carries confidence: extracted or inferred.",
 		Annotations: ro(),
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in attackIn) (*mcp.CallToolResult, attackOut, error) {
-		sl, err := run(ctx, svc, "attack-path", lens.Params{Target: in.Target}, in.Limit)
+		sl, err := run(ctx, svc, "attack-path", lens.Params{Target: in.Target, TargetType: in.TargetType, CollapseRules: in.CollapseRules}, in.Limit)
 		if err != nil {
 			return nil, attackOut{}, err
 		}
@@ -68,7 +72,7 @@ func Register(s *mcp.Server, svc Slicer) {
 		Description: "List entities affected by a change to an entity, up to depth hops (default 3, maximum 6). Each item carries confidence: extracted or inferred.",
 		Annotations: ro(),
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in blastIn) (*mcp.CallToolResult, blastOut, error) {
-		sl, err := run(ctx, svc, "blast-radius", lens.Params{Entity: in.Entity, Depth: in.Depth}, in.Limit)
+		sl, err := run(ctx, svc, "blast-radius", lens.Params{Entity: in.Entity, Depth: in.Depth, CollapseRules: in.CollapseRules}, in.Limit)
 		if err != nil {
 			return nil, blastOut{}, err
 		}
@@ -85,6 +89,18 @@ func Register(s *mcp.Server, svc Slicer) {
 		}
 		return nil, reachable(sl, clamp(in.Limit)), nil
 	})
+	mcp.AddTool(s, &mcp.Tool{
+		Name:        ToolExposed,
+		Description: "List entities with an attached security group that has an ingress rule open to the internet (0.0.0.0/0 or ::/0), with the group and rule. Each path carries confidence: extracted or inferred.",
+		Annotations: ro(),
+	}, func(ctx context.Context, _ *mcp.CallToolRequest, in limitIn) (*mcp.CallToolResult, exposedOut, error) {
+		n := clamp(in.Limit)
+		sl, err := svc.Exposed(ctx, lens.Params{MaxNodes: n, MaxEdges: 2 * n})
+		if err != nil {
+			return nil, exposedOut{}, err
+		}
+		return nil, exposed(lens.Budget(sl, n, 2*n), n), nil
+	})
 }
 
 type limitIn struct {
@@ -92,22 +108,27 @@ type limitIn struct {
 }
 
 type sliceIn struct {
-	Lens   string `json:"lens,omitempty" jsonschema:"lens id, default code-to-cloud"`
-	Entity string `json:"entity,omitempty" jsonschema:"root entity for the blast-radius lens"`
-	Target string `json:"target,omitempty" jsonschema:"target entity for the attack-path lens"`
-	Depth  int    `json:"depth,omitempty" jsonschema:"hops to traverse"`
-	Limit  int    `json:"limit,omitempty" jsonschema:"maximum nodes in the answer, default 100, maximum 200"`
+	Lens          string `json:"lens,omitempty" jsonschema:"lens id, default code-to-cloud"`
+	Entity        string `json:"entity,omitempty" jsonschema:"root entity for the blast-radius lens"`
+	Target        string `json:"target,omitempty" jsonschema:"target entity for the attack-path lens"`
+	TargetType    string `json:"target_type,omitempty" jsonschema:"target resource type for the attack-path lens, for example rds:instance"`
+	Depth         int    `json:"depth,omitempty" jsonschema:"hops to traverse"`
+	CollapseRules *bool  `json:"collapse_rules,omitempty" jsonschema:"replace security group rule nodes with group-to-peer edges; default true for the cloud lens only"`
+	Limit         int    `json:"limit,omitempty" jsonschema:"maximum nodes in the answer, default 100, maximum 200"`
 }
 
 type attackIn struct {
-	Target string `json:"target" jsonschema:"entity the paths lead to"`
-	Limit  int    `json:"limit,omitempty" jsonschema:"maximum nodes in the answer, default 100, maximum 200"`
+	Target        string `json:"target,omitempty" jsonschema:"entity the paths lead to; target or target_type is required"`
+	TargetType    string `json:"target_type,omitempty" jsonschema:"resource type the paths lead to, for example rds:instance"`
+	CollapseRules *bool  `json:"collapse_rules,omitempty" jsonschema:"replace security group rule nodes with group-to-peer edges"`
+	Limit         int    `json:"limit,omitempty" jsonschema:"maximum nodes in the answer, default 100, maximum 200"`
 }
 
 type blastIn struct {
-	Entity string `json:"entity" jsonschema:"entity whose change is assessed"`
-	Depth  int    `json:"depth,omitempty" jsonschema:"hops to traverse, default 3, maximum 6"`
-	Limit  int    `json:"limit,omitempty" jsonschema:"maximum nodes in the answer, default 100, maximum 200"`
+	Entity        string `json:"entity" jsonschema:"entity whose change is assessed"`
+	Depth         int    `json:"depth,omitempty" jsonschema:"hops to traverse, default 3, maximum 6"`
+	CollapseRules *bool  `json:"collapse_rules,omitempty" jsonschema:"replace security group rule nodes with group-to-peer edges"`
+	Limit         int    `json:"limit,omitempty" jsonschema:"maximum nodes in the answer, default 100, maximum 200"`
 }
 
 type nodeRef struct {
@@ -123,8 +144,9 @@ type attackPath struct {
 }
 
 type attackOut struct {
-	Paths     []attackPath `json:"paths"`
-	Truncated bool         `json:"truncated"`
+	Paths       []attackPath `json:"paths"`
+	Truncated   bool         `json:"truncated"`
+	MissingData []string     `json:"missing_data"`
 }
 
 type blastItem struct {
@@ -133,12 +155,16 @@ type blastItem struct {
 	Label      string `json:"label"`
 	Hops       int    `json:"hops"`
 	Confidence string `json:"confidence"`
+	// Via is "network" for an item reached only through network reach.
+	Via string `json:"via,omitempty"`
 }
 
 type blastOut struct {
-	Entity    string      `json:"entity"`
-	Items     []blastItem `json:"items"`
-	Truncated bool        `json:"truncated"`
+	Entity      string           `json:"entity"`
+	Items       []blastItem      `json:"items"`
+	Edges       []lens.SliceEdge `json:"edges"`
+	Truncated   bool             `json:"truncated"`
+	MissingData []string         `json:"missing_data"`
 }
 
 type vulnItem struct {
@@ -153,8 +179,22 @@ type vulnItem struct {
 }
 
 type vulnOut struct {
-	Items     []vulnItem `json:"items"`
-	Truncated bool       `json:"truncated"`
+	Items       []vulnItem `json:"items"`
+	Truncated   bool       `json:"truncated"`
+	MissingData []string   `json:"missing_data"`
+}
+
+type exposedItem struct {
+	nodeRef
+	Path       []nodeRef        `json:"path"`
+	Edges      []lens.SliceEdge `json:"edges"`
+	Confidence string           `json:"confidence"`
+}
+
+type exposedOut struct {
+	Items       []exposedItem `json:"items"`
+	Truncated   bool          `json:"truncated"`
+	MissingData []string      `json:"missing_data"`
 }
 
 func clamp(limit int) int {
@@ -184,7 +224,7 @@ func attackPaths(s lens.Slice, limit int) attackOut {
 	for _, n := range s.Nodes {
 		refs[n.ID] = nodeRef{ID: n.ID, Kind: n.Kind, Label: n.Label}
 	}
-	out := attackOut{Paths: []attackPath{}, Truncated: s.Truncated}
+	out := attackOut{Paths: []attackPath{}, Truncated: s.Truncated, MissingData: missing(s)}
 	for _, p := range s.Paths {
 		if len(out.Paths) >= limit {
 			out.Truncated = true
@@ -220,7 +260,10 @@ func blastRadius(entity string, s lens.Slice) blastOut {
 			byEnd[p.Nodes[len(p.Nodes)-1]] = p.Confidence
 		}
 	}
-	out := blastOut{Entity: entity, Items: []blastItem{}, Truncated: s.Truncated}
+	out := blastOut{Entity: entity, Items: []blastItem{}, Edges: s.Edges, Truncated: s.Truncated, MissingData: missing(s)}
+	if out.Edges == nil {
+		out.Edges = []lens.SliceEdge{}
+	}
 	for _, n := range s.Nodes {
 		if n.ID == s.Root {
 			continue
@@ -234,7 +277,7 @@ func blastRadius(entity string, s lens.Slice) blastOut {
 				}
 			}
 		}
-		out.Items = append(out.Items, blastItem{ID: n.ID, Kind: n.Kind, Label: n.Label, Hops: n.Hops, Confidence: conf})
+		out.Items = append(out.Items, blastItem{ID: n.ID, Kind: n.Kind, Label: n.Label, Hops: n.Hops, Confidence: conf, Via: n.Attrs["via"]})
 	}
 	return out
 }
@@ -244,7 +287,7 @@ func reachable(s lens.Slice, limit int) vulnOut {
 	for _, n := range s.Nodes {
 		nodes[n.ID] = n
 	}
-	out := vulnOut{Items: []vulnItem{}, Truncated: s.Truncated}
+	out := vulnOut{Items: []vulnItem{}, Truncated: s.Truncated, MissingData: missing(s)}
 	for _, p := range s.Paths {
 		if len(p.Nodes) == 0 {
 			continue
@@ -275,4 +318,37 @@ func reachable(s lens.Slice, limit int) vulnOut {
 		out.Items, out.Truncated = out.Items[:limit], true
 	}
 	return out
+}
+
+func exposed(s lens.Slice, limit int) exposedOut {
+	refs := map[string]nodeRef{}
+	for _, n := range s.Nodes {
+		refs[n.ID] = nodeRef{ID: n.ID, Kind: n.Kind, Label: n.Label}
+	}
+	out := exposedOut{Items: []exposedItem{}, Truncated: s.Truncated, MissingData: missing(s)}
+	for _, p := range s.Paths {
+		if len(out.Items) >= limit {
+			out.Truncated = true
+			break
+		}
+		it := exposedItem{nodeRef: refs[p.Nodes[0]], Path: []nodeRef{}, Edges: []lens.SliceEdge{}, Confidence: p.Confidence}
+		for i, id := range p.Nodes {
+			it.Path = append(it.Path, refs[id])
+			if i > 0 {
+				if e, ok := edgeBetween(s.Edges, p.Nodes[i-1], id); ok {
+					it.Edges = append(it.Edges, e)
+				}
+			}
+		}
+		out.Items = append(out.Items, it)
+	}
+	return out
+}
+
+// missing returns the slice's missing_data, never nil.
+func missing(s lens.Slice) []string {
+	if s.MissingData == nil {
+		return []string{}
+	}
+	return s.MissingData
 }

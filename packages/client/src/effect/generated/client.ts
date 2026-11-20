@@ -1879,6 +1879,8 @@ const EndpointExperimentalGraphSlice = (raw: RawClient["server.graph"]) => (inpu
         lens: input["lens"],
         entity: input["entity"],
         target: input["target"],
+        target_type: input["target_type"],
+        collapse_rules: input["collapse_rules"],
         depth: input["depth"],
         limit: input["limit"],
       },

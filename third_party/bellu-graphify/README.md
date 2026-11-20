@@ -43,4 +43,22 @@ Nothing is fetched from the network at build, test, install or run time. Depende
 pip install --no-index --find-links wheelhouse --require-hashes -r requirements.lock
 ```
 
-The lockfile, wheelhouse and installer are added in a later task (spec task 1.4). Until then this section describes the intended command only.
+`requirements.lock` pins every direct and transitive dependency (core dependencies plus the `leiden` extra) with an exact version and the SHA256 of each vendored wheel. `wheelhouse/` holds the wheels for CPython 3.13 and 3.14 on Linux (x86_64, aarch64, glibc), macOS (x86_64, arm64) and Windows (x86_64, arm64). `wheelhouse/MISSING.txt` lists any package and target pair without a wheel (currently none).
+
+Install (offline, standard library only):
+
+```
+python scripts/bellu_install_offline.py --data-dir <workspace data dir>
+```
+
+This creates the private environment `<workspace data dir>/venv`, runs the `pip install` command above against the lockfile with `PIP_NO_INDEX=1`, and adds a `.pth` file so `graphify` and `bellu_graphify` import from this tree. A pip dry run in a throwaway environment runs first. If the wheelhouse has no complete set of wheels for the current interpreter and platform, the installer exits 1, prints the one-time step below, creates no environment, and makes no network request. Use `--force` to replace an existing environment.
+
+### One-time online step (never run implicitly)
+
+Needed only when the installer reports a missing wheel (for example another platform, musllinux, or Python 3.11/3.12). On a machine with network access, from this directory:
+
+```
+uv run --with packaging python scripts/bellu_refresh_wheelhouse.py
+```
+
+Add the platform to `PLATFORMS` in that script first if it is absent. The script reads the pins from `uv.lock`, downloads each wheel from the URL in `uv.lock`, verifies it against the `uv.lock` hash, then rewrites `requirements.lock` and `wheelhouse/`. Commit the result, then rerun the installer. Python 3.11 and 3.12 resolve the much larger `graspologic` set and are not vendored.

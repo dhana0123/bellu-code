@@ -25,6 +25,7 @@ const (
 	hostS3Bucket = "*.s3.{region}.amazonaws.com"
 	hostLambda   = "lambda.{region}.amazonaws.com"
 	hostRDS      = "rds.{region}.amazonaws.com"
+	hostELB      = "elasticloadbalancing.{region}.amazonaws.com"
 )
 
 // Manifest returns the built-in AWS Connector_Manifest.
@@ -43,6 +44,22 @@ func Manifest() manifest.Manifest {
 		read("iam:SimulatePrincipalPolicy", hostIAM),
 		read("lambda:ListFunctions", hostLambda),
 		read("rds:DescribeDBInstances", hostRDS),
+		read("ec2:DescribeSubnets", hostEC2),
+		read("ec2:DescribeNetworkInterfaces", hostEC2),
+		read("ec2:DescribeRouteTables", hostEC2),
+		read("ec2:DescribeInternetGateways", hostEC2),
+		read("ec2:DescribeNatGateways", hostEC2),
+		read("ec2:DescribeSecurityGroupRules", hostEC2),
+		read("ec2:DescribeNetworkAcls", hostEC2),
+		read("ec2:DescribeVpcEndpoints", hostEC2),
+		read("ec2:DescribeVpcPeeringConnections", hostEC2),
+		read("ec2:DescribeAddresses", hostEC2),
+		read("ec2:DescribeTransitGateways", hostEC2),
+		read("ec2:DescribeTransitGatewayAttachments", hostEC2),
+		read("elasticloadbalancing:DescribeLoadBalancers", hostELB),
+		read("elasticloadbalancing:DescribeTargetGroups", hostELB),
+		read("elasticloadbalancing:DescribeListeners", hostELB),
+		read("elasticloadbalancing:DescribeTargetHealth", hostELB),
 		read("sts:GetCallerIdentity", hostSTS),
 		// manifest.IsWrite treats sts:AssumeRole as a write, so it is listed
 		// as a POST query. Class auth keeps it to lifecycle callers.
@@ -63,8 +80,8 @@ func Manifest() manifest.Manifest {
 		},
 		Permissions: perms,
 		Operations:  ops,
-		Egress:      []string{hostSTS, hostIAM, hostEC2, hostS3, hostS3Bucket, hostLambda, hostRDS},
-		Entities:    []string{kindAccount, kindResource},
+		Egress:      []string{hostSTS, hostIAM, hostEC2, hostS3, hostS3Bucket, hostLambda, hostRDS, hostELB},
+		Entities:    []string{kindAccount, kindResource, kindSGRule, kindCIDR},
 	}
 }
 

@@ -3,73 +3,77 @@ package aws
 import (
 	"testing"
 
-	awssdk "github.com/aws/aws-sdk-go-v2/aws"
-	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"pgregory.net/rapid"
 )
 
-// Feature: unified-security-graph, Property 5: Internet exposure follows security group rules and public address
+func genTri() *rapid.Generator[Tri] { return rapid.SampledFrom([]Tri{No, Yes, Unknown}) }
+
+// Feature: aws-relationship-registry, Property 15: Exposure follows the truth table
 //
-// **Validates: Requirements 3.3**
-func TestPropertyInternetExposure(t *testing.T) {
-	v4 := rapid.SampledFrom([]string{"0.0.0.0/0", "10.0.0.0/8", "192.168.1.0/24", "0.0.0.0/1", "203.0.113.7/32"})
-	v6 := rapid.SampledFrom([]string{"::/0", "fe80::/10", "2001:db8::/32", "::/1"})
-
-	type genGroup struct {
-		sg   SecurityGroup
-		open bool // oracle: some rule allows 0.0.0.0/0 or ::/0
-	}
-
+// **Validates: Requirements 3.3, 9.3, 9.4, 9.6, 9.12, 9.13, 16.8**
+func TestPropertyExposureTruthTable(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		nGroups := rapid.IntRange(0, 6).Draw(t, "groups")
-		var groups []SecurityGroup
-		var gens []genGroup
-		for i := 0; i < nGroups; i++ {
-			nPerms := rapid.IntRange(0, 3).Draw(t, "perms")
-			var perms []ec2types.IpPermission
-			open := false
-			for j := 0; j < nPerms; j++ {
-				var p ec2types.IpPermission
-				for _, c := range rapid.SliceOfN(v4, 0, 3).Draw(t, "v4") {
-					p.IpRanges = append(p.IpRanges, ec2types.IpRange{CidrIp: awssdk.String(c)})
-					open = open || c == "0.0.0.0/0"
-				}
-				for _, c := range rapid.SliceOfN(v6, 0, 3).Draw(t, "v6") {
-					p.Ipv6Ranges = append(p.Ipv6Ranges, ec2types.Ipv6Range{CidrIpv6: awssdk.String(c)})
-					open = open || c == "::/0"
-				}
-				perms = append(perms, p)
-			}
-			g := SecurityGroup{ID: "sg-" + string(rune('a'+i)), OpenToInternet: openIngress(perms)}
-			if g.OpenToInternet != open {
-				t.Fatalf("openIngress=%v, want %v for %+v", g.OpenToInternet, open, perms)
-			}
-			groups = append(groups, g)
-			gens = append(gens, genGroup{g, open})
+		in := ExposureInput{
+			Address: genTri().Draw(t, "a"), Ingress: genTri().Draw(t, "b"),
+			Route: genTri().Draw(t, "c"), NACL: genTri().Draw(t, "d"),
+			RouteDerived: rapid.Bool().Draw(t, "derived"),
 		}
-
-		// Attach a random subset of the known groups plus possibly unknown ids.
-		var attached []string
-		want := false
-		hasIP := rapid.Bool().Draw(t, "hasPublicIP")
-		for _, g := range gens {
-			if rapid.Bool().Draw(t, "attach") {
-				attached = append(attached, g.sg.ID)
-				want = want || g.open
-			}
+		if rapid.Bool().Draw(t, "failed") {
+			in.FailedCalls = []string{"ec2:DescribeRouteTables"}
 		}
-		if rapid.Bool().Draw(t, "unknownAttached") {
-			attached = append(attached, "sg-unknown")
+		got := Evaluate(in)
+		all := in.Address == Yes && in.Ingress == Yes && in.Route == Yes && in.NACL == Yes
+		if (got.State == "true") != all {
+			t.Fatalf("state %s for %+v, all four hold=%v", got.State, in, all)
 		}
-		inst := Instance{ID: "i-1", SecurityGroupIDs: attached}
-		if hasIP {
-			inst.PublicIP = "203.0.113.10"
+		anyNo := in.Address == No || in.Ingress == No
+		unknownFirst := !anyNo && (in.Address == Unknown || in.Ingress == Unknown)
+		var want string
+		switch {
+		case anyNo, !unknownFirst && in.Route == No:
+			want = "false"
+		case all:
+			want = "true"
+		default:
+			want = "partial"
 		}
-		want = want && hasIP
-
-		if got := exposed(inst, groups); got != want {
-			t.Fatalf("exposed=%v, want %v (publicIP=%q attached=%v groups=%+v)",
-				got, want, inst.PublicIP, attached, groups)
+		if got.State != want {
+			t.Fatalf("state %s, want %s for %+v", got.State, want, in)
+		}
+		if (got.State == "partial") != (got.Reason != "") {
+			t.Fatalf("reason %q does not match state %s", got.Reason, got.State)
+		}
+		if got.Confidence != "extracted" && got.Confidence != "inferred" {
+			t.Fatalf("confidence %q", got.Confidence)
 		}
 	})
+}
+
+func TestExposureBoundaries(t *testing.T) {
+	yes := ExposureInput{Address: Yes, Ingress: Yes, Route: Yes, NACL: Yes}
+	cases := []struct {
+		name   string
+		mod    func(*ExposureInput)
+		state  string
+		reason string
+		conf   string
+	}{
+		{"all hold", func(*ExposureInput) {}, "true", "", "extracted"},
+		{"derived route", func(i *ExposureInput) { i.RouteDerived = true }, "true", "", "inferred"},
+		{"no address", func(i *ExposureInput) { i.Address = No; i.Route = Unknown }, "false", "", "extracted"},
+		{"unknown ingress", func(i *ExposureInput) { i.Ingress = Unknown }, "partial", "call-failed", "inferred"},
+		{"no route", func(i *ExposureInput) { i.Route = No }, "false", "", "extracted"},
+		{"unknown route", func(i *ExposureInput) { i.Route = Unknown }, "partial", "route-unknown", "inferred"},
+		{"route call failed", func(i *ExposureInput) { i.Route = Unknown; i.FailedCalls = []string{"x"} }, "partial", "call-failed", "inferred"},
+		{"nacl unknown", func(i *ExposureInput) { i.NACL = Unknown }, "partial", "nacl-unknown", "inferred"},
+		{"nacl denies", func(i *ExposureInput) { i.NACL = No }, "partial", "nacl-denies", "extracted"},
+	}
+	for _, c := range cases {
+		in := yes
+		c.mod(&in)
+		got := Evaluate(in)
+		if got.State != c.state || got.Reason != c.reason || got.Confidence != c.conf {
+			t.Errorf("%s: got %+v, want state=%s reason=%q conf=%s", c.name, got, c.state, c.reason, c.conf)
+		}
+	}
 }

@@ -51,3 +51,14 @@ func (s *Service) Slice(ctx context.Context, id string, p Params) (Slice, error)
 	}
 	return eng.Slice(ctx, id, p)
 }
+
+// Exposed answers exposed_resources.
+func (s *Service) Exposed(ctx context.Context, p Params) (Slice, error) {
+	s.mu.RLock()
+	eng := s.eng
+	s.mu.RUnlock()
+	if eng == nil {
+		return Slice{}, ErrUnavailable
+	}
+	return eng.Exposed(ctx, p)
+}

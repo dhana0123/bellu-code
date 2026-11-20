@@ -13,8 +13,10 @@ var kindAttrs = map[string][]string{
 	"package":         {"name", "purl", "canonical_key", "internet_exposed"},
 	"vulnerability":   {"name", "canonical_key", "summary", "severity", "fixed_in"},
 	"aws_account":     {"name", "canonical_key"},
-	"aws_resource":    {"name", "region", "state", "internet_exposed", "canonical_key"},
+	"aws_resource":    {"name", "region", "state", "internet_exposed", "canonical_key", "resource_type", "rules_truncated"},
 	"image":           {"name", "canonical_key", "internet_exposed"},
+	"aws_sg_rule":     {"name", "region", "direction", "protocol", "from_port", "to_port", "cidr", "peer_sg", "prefix_list", "internet_open"},
+	"aws_cidr":        {"name", "cidr", "internet_open"},
 }
 
 // FilterAttrs returns a new map holding only the allowlisted attributes of

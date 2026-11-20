@@ -159,6 +159,8 @@ export const LensEdge = Schema.Struct({
   to: EntityID,
   type: Schema.String,
   confidence: Confidence,
+  evidence: optional(Schema.String),
+  observed_at: optional(Schema.String),
 }).annotate({ identifier: "Graph.LensEdge" })
 export interface LensEdge extends Schema.Schema.Type<typeof LensEdge> {}
 
@@ -183,11 +185,13 @@ export const LensSlice = Schema.Struct({
     nodes: Schema.Int,
     edges: Schema.Int,
     omitted_nodes: Schema.Int,
+    omitted_rules: optional(Schema.Int),
   }),
   nodes: Schema.Array(LensNode),
   edges: Schema.Array(LensEdge),
   groups: Schema.Array(LensGroup),
   paths: optional(Schema.Array(LensPath)),
+  missing_data: optional(Schema.Array(Schema.String)),
 }).annotate({ identifier: "Graph.LensSlice" })
 export interface LensSlice extends Schema.Schema.Type<typeof LensSlice> {}
 

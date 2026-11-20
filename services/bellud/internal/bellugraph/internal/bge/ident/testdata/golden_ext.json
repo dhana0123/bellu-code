@@ -1,0 +1,161 @@
+{
+  "kinds": {
+    "aws_cidr": {
+      "identity": [
+        "connection",
+        "cidr"
+      ],
+      "attrs": {
+        "cidr": "golden-cidr",
+        "connection": "golden-connection"
+      },
+      "hash": "aws_cidr:1e8514a600e687b2efae7d79f2c34935"
+    },
+    "aws_policy_statement": {
+      "identity": [
+        "connection",
+        "policy",
+        "statement_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "policy": "golden-policy",
+        "statement_id": "golden-statement_id"
+      },
+      "hash": "aws_policy_statement:2a134fb43b9d6247ca7b5869e3393ce2"
+    },
+    "aws_sg_rule": {
+      "identity": [
+        "connection",
+        "sg",
+        "rule_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "rule_id": "golden-rule_id",
+        "sg": "golden-sg"
+      },
+      "hash": "aws_sg_rule:272f90b25af1a973397b6060d37d984d"
+    },
+    "code_community": {
+      "identity": [
+        "connection",
+        "repo",
+        "community_id",
+        "revision"
+      ],
+      "attrs": {
+        "community_id": "golden-community_id",
+        "connection": "golden-connection",
+        "repo": "golden-repo",
+        "revision": "golden-revision"
+      },
+      "hash": "code_community:2f45fd838490a1895e10907ab15b1cdc"
+    },
+    "code_file": {
+      "identity": [
+        "connection",
+        "repo",
+        "path"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "path": "golden-path",
+        "repo": "golden-repo"
+      },
+      "hash": "code_file:afdbdf8aaffd6747af3a4c2d44ffec74"
+    },
+    "code_symbol": {
+      "identity": [
+        "connection",
+        "repo",
+        "bid"
+      ],
+      "attrs": {
+        "bid": "golden-bid",
+        "connection": "golden-connection",
+        "repo": "golden-repo"
+      },
+      "hash": "code_symbol:f4940a6a8e5ca720a11c5efa69736f0d"
+    },
+    "finding": {
+      "identity": [
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id"
+      },
+      "hash": "finding:9aac6f0de8d3977e48c9120986aab020"
+    }
+  },
+  "relations": {
+    "aws_alias_of": "reverse",
+    "aws_allows_egress_to": "forward",
+    "aws_allows_ingress_from": "reverse",
+    "aws_assigned_to": "forward",
+    "aws_associated_subnet": "forward",
+    "aws_attached_igw": "forward",
+    "aws_attached_policy": "reverse",
+    "aws_attached_volume": "reverse",
+    "aws_can_access": "forward",
+    "aws_can_assume": "forward",
+    "aws_can_pass_role": "forward",
+    "aws_child_of": "reverse",
+    "aws_cluster_role": "forward",
+    "aws_dns_points_to": "reverse",
+    "aws_encrypted_by": "reverse",
+    "aws_exec_role": "forward",
+    "aws_exposed_via": "reverse",
+    "aws_finding_affects": "reverse",
+    "aws_has_boundary": "reverse",
+    "aws_has_eni": "reverse",
+    "aws_has_instance_profile": "forward",
+    "aws_in_asg": "reverse",
+    "aws_in_cluster": "reverse",
+    "aws_in_nodegroup": "reverse",
+    "aws_in_subnet": "reverse",
+    "aws_in_vpc": "reverse",
+    "aws_lambda_role": "forward",
+    "aws_launched_from": "reverse",
+    "aws_lb_forwards_to": "forward",
+    "aws_lb_listener_of": "reverse",
+    "aws_logs_to": "reverse",
+    "aws_member_of": "reverse",
+    "aws_member_of_group": "reverse",
+    "aws_member_of_sg": "reverse",
+    "aws_monitors": "reverse",
+    "aws_mounts_fs": "forward",
+    "aws_nat_in_subnet": "reverse",
+    "aws_peers_with": "forward",
+    "aws_profile_has_role": "forward",
+    "aws_protects": "forward",
+    "aws_reads_from": "forward",
+    "aws_record_in_zone": "reverse",
+    "aws_route_of": "reverse",
+    "aws_routes_to": "forward",
+    "aws_rule_of": "forward",
+    "aws_rule_peer": "reverse",
+    "aws_scp_attached": "reverse",
+    "aws_service_of": "reverse",
+    "aws_snapshot_of": "reverse",
+    "aws_statement_of": "reverse",
+    "aws_stores_in": "reverse",
+    "aws_targets": "forward",
+    "aws_task_role": "forward",
+    "aws_tgw_attached": "forward",
+    "aws_trusts": "reverse",
+    "aws_uses_image": "reverse",
+    "aws_uses_layer": "reverse",
+    "aws_uses_subnet": "reverse",
+    "aws_writes_to": "forward",
+    "built_into": "reverse",
+    "calls": "reverse",
+    "declares_dependency": "reverse",
+    "defined_in": "reverse",
+    "deployed_as": "reverse",
+    "imports": "reverse",
+    "in_community": "reverse",
+    "reachable_from": "forward",
+    "supersedes": "forward"
+  }
+}

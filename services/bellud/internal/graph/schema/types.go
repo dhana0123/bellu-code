@@ -51,6 +51,7 @@ const (
 	SourceGitHub     Source = "github"
 	SourceAWS        Source = "aws"
 	SourceCorrelator Source = "correlator"
+	SourceCode       Source = "code"
 )
 
 // KindDeclaration declares an entity kind.

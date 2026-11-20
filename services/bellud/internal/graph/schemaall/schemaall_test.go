@@ -17,7 +17,7 @@ func TestDefaultMergesAndKeepsIdentityOrder(t *testing.T) {
 	if !ok || !slices.Equal(k.Identity, []string{"connection", "repo", "alert_type", "number"}) {
 		t.Fatalf("github_alert = %+v, %v", k, ok)
 	}
-	if len(r.Kinds()) != 28 || len(r.Relations()) != 12 {
+	if len(r.Kinds()) != 32 || len(r.Relations()) != 80 {
 		t.Fatalf("got %d kinds, %d relations", len(r.Kinds()), len(r.Relations()))
 	}
 }

@@ -1,0 +1,100 @@
+[
+  {
+    "name": "budget-keeps-root-and-risk",
+    "maxNodes": 3,
+    "maxEdges": 2,
+    "root": "c",
+    "slice": {
+      "lens": "vuln",
+      "generated_at": "2026-01-01T00:00:00Z",
+      "truncated": false,
+      "counts": {
+        "nodes": 4,
+        "edges": 3,
+        "omitted_nodes": 0,
+        "omitted_rules": 0
+      },
+      "nodes": [
+        {
+          "id": "a",
+          "kind": "host",
+          "label": "a",
+          "group": null,
+          "hops": 1,
+          "attrs": {
+            "os": "linux"
+          },
+          "risk": null
+        },
+        {
+          "id": "b",
+          "kind": "vulnerability",
+          "label": "CVE-1",
+          "group": null,
+          "hops": 2,
+          "attrs": {},
+          "risk": {
+            "score": 80,
+            "severity": "high",
+            "cvss": 8,
+            "epss": 0.5,
+            "kev": true,
+            "reachable": null
+          }
+        },
+        {
+          "id": "c",
+          "kind": "package",
+          "label": "pkg",
+          "group": null,
+          "hops": 0,
+          "attrs": {
+            "purl": "pkg:npm/x@1"
+          },
+          "risk": null
+        },
+        {
+          "id": "d",
+          "kind": "host",
+          "label": "d",
+          "group": null,
+          "hops": 3,
+          "attrs": {},
+          "risk": null
+        }
+      ],
+      "edges": [
+        {
+          "from": "c",
+          "to": "b",
+          "type": "affected_by",
+          "confidence": "extracted"
+        },
+        {
+          "from": "a",
+          "to": "c",
+          "type": "likely_same_as",
+          "confidence": "inferred"
+        },
+        {
+          "from": "d",
+          "to": "a",
+          "type": "same_as",
+          "confidence": "extracted"
+        }
+      ],
+      "groups": [
+        {
+          "id": "g",
+          "label": "G",
+          "members": [
+            "a",
+            "d"
+          ]
+        }
+      ],
+      "missing_data": []
+    },
+    "want": "{\"lens\":\"vuln\",\"generated_at\":\"2026-01-01T00:00:00Z\",\"truncated\":true,\"counts\":{\"nodes\":3,\"edges\":2,\"omitted_nodes\":1,\"omitted_rules\":0},\"nodes\":[{\"id\":\"c\",\"kind\":\"package\",\"label\":\"pkg\",\"group\":null,\"hops\":0,\"attrs\":{\"purl\":\"pkg:npm/x@1\"},\"risk\":null},{\"id\":\"b\",\"kind\":\"vulnerability\",\"label\":\"CVE-1\",\"group\":null,\"hops\":2,\"attrs\":{},\"risk\":{\"score\":80,\"severity\":\"high\",\"cvss\":8,\"epss\":0.5,\"kev\":true,\"reachable\":null}},{\"id\":\"a\",\"kind\":\"host\",\"label\":\"a\",\"group\":null,\"hops\":1,\"attrs\":{\"os\":\"linux\"},\"risk\":null}],\"edges\":[{\"from\":\"c\",\"to\":\"b\",\"type\":\"affected_by\",\"confidence\":\"extracted\"},{\"from\":\"a\",\"to\":\"c\",\"type\":\"likely_same_as\",\"confidence\":\"inferred\"}],\"groups\":[{\"id\":\"g\",\"label\":\"G\",\"members\":[\"a\"]}],\"missing_data\":[]}"
+  }
+]

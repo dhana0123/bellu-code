@@ -2,11 +2,13 @@ package lens
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"pgregory.net/rapid"
 
 	"github.com/bellu/bellucode/services/bellud/internal/correlate"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schemaall"
 )
 
 // Feature: unified-security-graph, Property 4: Confidence is determined by
@@ -14,23 +16,63 @@ import (
 //
 // **Validates: Requirements 2.7, 2.8**
 
-// registeredRelations mirrors the relation registry (bge/ident, which is
-// internal to bellugraph and not importable here).
-var registeredRelations = []string{
-	"contains", "owns", "runs", "uses", "attached_to", "mounts", "depends_on",
-	"resolves_to", "found_in", "affected_by", "same_as", "likely_same_as",
-}
+// registeredRelations lists the relation types of the merged registry plus
+// unregistered names.
+var registeredRelations = func() []string {
+	r, err := schemaall.Default()
+	if err != nil {
+		panic(err)
+	}
+	out := []string{"contains", "owns", "runs"} // not registered
+	for _, d := range r.Relations() {
+		out = append(out, d.Name)
+	}
+	return out
+}()
 
 func TestConfidenceByRelationTypeProperty(t *testing.T) {
+	r, _ := schemaall.Default()
 	rapid.Check(t, func(t *rapid.T) {
 		rel := rapid.SampledFrom(registeredRelations).Draw(t, "rel")
-		got := Confidence(rel)
 		want := ConfExtracted
-		if rel == "likely_same_as" {
-			want = ConfInferred
+		if d, ok := r.Relation(rel); ok {
+			want = string(d.Confidence)
 		}
-		if got != want {
+		if got := Confidence(rel); got != want {
 			t.Fatalf("Confidence(%q) = %q, want %q", rel, got, want)
+		}
+	})
+	if Confidence("likely_same_as") != ConfInferred {
+		t.Fatal("likely_same_as must be inferred")
+	}
+}
+
+// Feature: aws-relationship-registry, Property 20: Edge and path confidence
+//
+// **Validates: Requirements 6.8, 13.6, 14.1, 14.2, 14.3, 14.4, 14.9**
+func TestPropertyEdgeConfidence(t *testing.T) {
+	rapid.Check(t, func(t *rapid.T) {
+		rel := rapid.SampledFrom(registeredRelations).Draw(t, "rel")
+		stored := rapid.SampledFrom([]string{"", ConfExtracted, ConfInferred, "maybe", "EXTRACTED"}).Draw(t, "stored")
+		want := Confidence(rel)
+		if stored == ConfExtracted || stored == ConfInferred {
+			want = stored
+		}
+		if got := EdgeConfidence(rel, stored); got != want {
+			t.Fatalf("EdgeConfidence(%q, %q) = %q, want %q", rel, stored, got, want)
+		}
+		hops := rapid.SliceOfN(rapid.SampledFrom(registeredRelations), 1, 6).Draw(t, "hops")
+		edges := make([]SliceEdge, len(hops))
+		inferred := false
+		for i, h := range hops {
+			edges[i] = SliceEdge{Type: h, Confidence: EdgeConfidence(h, "")}
+			inferred = inferred || edges[i].Confidence == ConfInferred
+		}
+		if (PathConfidenceOfEdges(edges) == ConfInferred) != inferred {
+			t.Fatalf("path %v confidence %s", hops, PathConfidenceOfEdges(edges))
+		}
+		if slices.Contains(hops, "likely_same_as") && PathConfidenceOfEdges(edges) != ConfInferred {
+			t.Fatal("a path with likely_same_as must be inferred")
 		}
 	})
 }

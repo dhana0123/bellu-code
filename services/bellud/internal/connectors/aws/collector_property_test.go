@@ -18,6 +18,7 @@ import (
 
 // propClient is a fixture-driven Client that records every call.
 type propClient struct {
+	noNetwork
 	mu      sync.Mutex
 	regions []string // regions the fixture knows (selected or not)
 	perType int      // resources per type per region
@@ -47,16 +48,16 @@ func (p *propClient) SimulateWrites(context.Context, string, []string) ([]Allowe
 	return nil, nil
 }
 func (p *propClient) Regions(context.Context) ([]string, error) { return p.regions, nil }
-func (p *propClient) Instances(_ context.Context, r string) ([]Instance, error) {
+func (p *propClient) Instances(_ context.Context, r string) (Listing[Instance], error) {
 	if err := p.rec("ec2", r); err != nil {
-		return nil, err
+		return Listing[Instance]{}, err
 	}
 	var out []Instance
 	for i := 0; i < p.perType; i++ {
 		out = append(out, Instance{ID: fmt.Sprintf("i-%d", i), Region: r, Name: p.name(i), State: "running",
 			Type: "t3.micro", VPCID: "vpc-0", SecurityGroupIDs: []string{"sg-0"}, LaunchTime: time.Unix(1700000000, 0), TagCount: i})
 	}
-	return out, nil
+	return Listing[Instance]{Items: out}, nil
 }
 func (p *propClient) Buckets(context.Context) ([]Bucket, error) {
 	if err := p.rec("s3", ""); err != nil {
@@ -64,25 +65,25 @@ func (p *propClient) Buckets(context.Context) ([]Bucket, error) {
 	}
 	return p.buckets, nil
 }
-func (p *propClient) SecurityGroups(_ context.Context, r string) ([]SecurityGroup, error) {
+func (p *propClient) SecurityGroups(_ context.Context, r string) (Listing[SecurityGroup], error) {
 	if err := p.rec("security-groups", r); err != nil {
-		return nil, err
+		return Listing[SecurityGroup]{}, err
 	}
 	var out []SecurityGroup
 	for i := 0; i < p.perType; i++ {
 		out = append(out, SecurityGroup{ID: fmt.Sprintf("sg-%d", i), Region: r, Name: p.name(i), VPCID: "vpc-0"})
 	}
-	return out, nil
+	return Listing[SecurityGroup]{Items: out}, nil
 }
-func (p *propClient) VPCs(_ context.Context, r string) ([]VPC, error) {
+func (p *propClient) VPCs(_ context.Context, r string) (Listing[VPC], error) {
 	if err := p.rec("vpc", r); err != nil {
-		return nil, err
+		return Listing[VPC]{}, err
 	}
 	var out []VPC
 	for i := 0; i < p.perType; i++ {
 		out = append(out, VPC{ID: fmt.Sprintf("vpc-%d", i), Region: r, Name: p.name(i), State: "available"})
 	}
-	return out, nil
+	return Listing[VPC]{Items: out}, nil
 }
 func (p *propClient) Roles(context.Context) ([]Role, error) {
 	if err := p.rec("iam", ""); err != nil {
@@ -117,7 +118,18 @@ func (p *propClient) DBInstances(_ context.Context, r string) ([]DBInstance, err
 
 var (
 	regionPool = []string{"us-east-1", "us-west-2", "eu-west-1", "eu-central-1", "ap-south-1", "ap-northeast-1", "cn-north-1", "us-gov-west-1"}
-	typeNames  = []string{"vpc", "security-groups", "ec2", "s3", "iam", "lambda", "rds"}
+	// typeNames lists every collector step that calls the API on its own.
+	// Per-parent steps (listener, target-health) call nothing without parents
+	// and fail only through their dependency.
+	typeNames = func() []string {
+		var out []string
+		for _, s := range collectSteps {
+			if len(s.deps) == 0 {
+				out = append(out, s.name)
+			}
+		}
+		return out
+	}()
 	// resource_type attribute produced by each collected type.
 	typeResource = map[string]string{"vpc": "ec2:vpc", "security-groups": "ec2:security-group", "ec2": "ec2:instance",
 		"s3": "s3:bucket", "iam": "iam:role", "lambda": "lambda:function", "rds": "rds:instance"}
@@ -152,7 +164,7 @@ func genClient(t *rapid.T, selected []string) *propClient {
 		bs = append(bs, Bucket{Name: fmt.Sprintf("b%d-%s", i, rapid.StringMatching(`[a-z0-9]{0,8}`).Draw(t, "bname")),
 			Region: rapid.SampledFrom(regionPool).Draw(t, "bregion")})
 	}
-	return &propClient{
+	p := &propClient{
 		regions: regionPool,
 		perType: rapid.IntRange(0, 3).Draw(t, "perType"),
 		buckets: bs,
@@ -161,6 +173,8 @@ func genClient(t *rapid.T, selected []string) *propClient {
 		names: rapid.SliceOfN(rapid.String(), 1, 4).Draw(t, "names"),
 		fail:  map[string]bool{},
 	}
+	p.noNetwork.rec = p.rec
+	return p
 }
 
 func newPropCollector(c Client, regions []string) collectors.Collector {
@@ -182,7 +196,7 @@ func TestPropertyAWSCollectorOutputHygiene(t *testing.T) {
 			t.Fatalf("collector %q", b.Collector)
 		}
 		for _, e := range b.Entities {
-			if e.Type != "aws_account" && e.Type != "aws_resource" {
+			if e.Type != "aws_account" && e.Type != "aws_resource" && e.Type != "aws_sg_rule" && e.Type != "aws_cidr" {
 				t.Fatalf("unregistered kind %q", e.Type)
 			}
 			if e.Attributes["source"] != "connector:aws:conn-1" {
@@ -206,7 +220,7 @@ func TestPropertyAWSCollectorOutputHygiene(t *testing.T) {
 			}
 		}
 		for _, r := range b.Relations {
-			if r.Type != "owned_by" && r.Type != "runs_on" && r.Type != "attached_to" {
+			if r.Type == "attached_to" || (r.Type != "owned_by" && r.Type != "runs_on" && !strings.HasPrefix(r.Type, "aws_")) {
 				t.Fatalf("unexpected relation %q", r.Type)
 			}
 		}
@@ -285,7 +299,22 @@ func TestPropertyAWSCollectorPartialFailureIsolation(t *testing.T) {
 			if !errors.As(err, &pe) {
 				t.Fatalf("want PartialError, got %v", err)
 			}
-			want := append([]string(nil), failing...)
+			// A step whose dependency failed cannot observe and is reported too.
+			fs := map[string]bool{}
+			for _, f := range failing {
+				fs[f] = true
+			}
+			for _, s := range collectSteps {
+				for _, d := range s.deps {
+					if fs[d] {
+						fs[s.name] = true
+					}
+				}
+			}
+			var want []string
+			for f := range fs {
+				want = append(want, f)
+			}
 			sort.Strings(want)
 			if strings.Join(pe.Types, ",") != strings.Join(want, ",") {
 				t.Fatalf("reported %v want %v", pe.Types, want)

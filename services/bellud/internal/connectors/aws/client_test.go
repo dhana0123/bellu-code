@@ -153,7 +153,8 @@ func TestClientProjectsTypedResults(t *testing.T) {
 	if err != nil || len(allowed) != 1 || allowed[0].Action != "s3:PutObject" {
 		t.Fatalf("simulate %+v err %v", allowed, err)
 	}
-	ins, err := c.Instances(ctx, "us-east-1")
+	l, err := c.Instances(ctx, "us-east-1")
+	ins := l.Items
 	if err != nil || len(ins) != 1 || ins[0].ID != "i-0abc" || ins[0].Name != "web" || ins[0].State != "running" ||
 		ins[0].VPCID != "vpc-1" || len(ins[0].SecurityGroupIDs) != 1 || ins[0].TagCount != 1 {
 		t.Fatalf("instances %+v err %v", ins, err)

@@ -92,3 +92,11 @@ func TestLoadEnv(t *testing.T) {
 		t.Fatalf("got %+v err=%v", c, err)
 	}
 }
+
+func TestValidateBindLoopbackOnly(t *testing.T) {
+	for h, ok := range map[string]bool{"127.0.0.1": true, "::1": true, "localhost": true, "0.0.0.0": false, "192.168.1.5": false} {
+		if err := (Config{Hostname: h}).ValidateBind(); (err == nil) != ok {
+			t.Errorf("%s: err=%v", h, err)
+		}
+	}
+}

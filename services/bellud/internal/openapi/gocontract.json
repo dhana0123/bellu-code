@@ -610,6 +610,284 @@
         "summary": "List entity neighbors"
       }
     },
+    "/api/experimental/graph/intel/status": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.intelStatus",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.IntelStatus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.IntelStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "Report vulnerability intelligence sync state. Experimental: may change without compatibility guarantees.",
+        "summary": "Get intel status"
+      }
+    },
+    "/api/experimental/graph/lenses": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.lenses",
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Graph.Lens"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "List the lenses available for graph slices. Experimental: may change without compatibility guarantees.",
+        "summary": "List graph lenses"
+      }
+    },
+    "/api/experimental/graph/overlay": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.overlay",
+        "parameters": [
+          {
+            "name": "replay",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Script id to replay for this connection (for example demo)."
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "event": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Graph.OverlayEventEncoded"
+                    }
+                  },
+                  "required": [
+                    "event",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                },
+                "x-effect-stream": {
+                  "encoding": "sse",
+                  "causeSchema": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "_tag": {
+                              "type": "string",
+                              "enum": [
+                                "Fail"
+                              ]
+                            },
+                            "error": {
+                              "not": {}
+                            }
+                          },
+                          "required": [
+                            "_tag",
+                            "error"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "_tag": {
+                              "type": "string",
+                              "enum": [
+                                "Die"
+                              ]
+                            },
+                            "defect": {}
+                          },
+                          "required": [
+                            "_tag",
+                            "defect"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "_tag": {
+                              "type": "string",
+                              "enum": [
+                                "Interrupt"
+                              ]
+                            },
+                            "fiberId": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "_tag",
+                            "fiberId"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  },
+                  "errorSchema": {
+                    "not": {}
+                  },
+                  "failureEvent": "effect/http-api/stream/failure"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "Subscribe to transient agent overlay events as server-sent events. Experimental: may change without compatibility guarantees.",
+        "summary": "Stream agent overlay events"
+      }
+    },
     "/api/experimental/graph/schema": {
       "get": {
         "tags": [
@@ -662,6 +940,152 @@
         },
         "description": "Summarize entity and relation types in the graph. Experimental: may change without compatibility guarantees.",
         "summary": "Get graph schema"
+      }
+    },
+    "/api/experimental/graph/slice": {
+      "get": {
+        "tags": [
+          "experimental"
+        ],
+        "operationId": "experimental.graph.slice",
+        "parameters": [
+          {
+            "name": "lens",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "description": "Lens id from the lens catalog."
+            },
+            "required": true
+          },
+          {
+            "name": "entity",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Root entity id for the lens."
+            },
+            "required": false
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Target entity id for path lenses."
+            },
+            "required": false
+          },
+          {
+            "name": "target_type",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Target resource type for the attack-path lens, for example rds:instance."
+            },
+            "required": false
+          },
+          {
+            "name": "collapse_rules",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "true",
+                    "false"
+                  ]
+                }
+              ],
+              "description": "Replace security group rule nodes with group-to-peer edges; overrides the lens default."
+            },
+            "required": false
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Traversal depth; clamped by the server."
+            },
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Maximum number of nodes; clamped by the server."
+            },
+            "required": false
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Graph.LensSlice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Graph.LensSlice"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "InvalidRequestError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidRequestErrorEncoded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UnauthorizedError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedErrorEncoded"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ServiceUnavailableError",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceUnavailableErrorEncoded"
+                }
+              }
+            }
+          }
+        },
+        "description": "Build a bounded graph slice for one lens. Experimental: may change without compatibility guarantees.",
+        "summary": "Get lens slice"
       }
     },
     "/api/experimental/graph/status": {
@@ -819,6 +1243,13 @@
           "restarting",
           "degraded",
           "stopped"
+        ]
+      },
+      "Graph.Confidence": {
+        "type": "string",
+        "enum": [
+          "extracted",
+          "inferred"
         ]
       },
       "Graph.Diff": {
@@ -1011,6 +1442,446 @@
           "limit"
         ],
         "additionalProperties": false
+      },
+      "Graph.IntelState": {
+        "type": "string",
+        "enum": [
+          "not_configured",
+          "disabled",
+          "idle",
+          "syncing",
+          "ok",
+          "error"
+        ]
+      },
+      "Graph.IntelStatus": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/Graph.IntelState"
+          },
+          "version": {
+            "type": "string"
+          },
+          "records": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "last_synced_at": {
+            "type": "string"
+          },
+          "last_error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "version",
+          "records",
+          "last_synced_at",
+          "last_error"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.Lens": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "layout": {
+            "type": "string",
+            "enum": [
+              "force",
+              "radial",
+              "chain"
+            ]
+          },
+          "default": {
+            "type": "boolean"
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.LensParam"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "layout",
+          "default",
+          "params"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.LensEdge": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/Graph.Confidence"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "observed_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "type",
+          "confidence"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.LensGroup": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "members"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.LensNode": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hops": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "attrs": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "risk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Graph.LensRisk"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "group",
+          "hops",
+          "attrs",
+          "risk"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.LensParam": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "required"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.LensPath": {
+        "type": "object",
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/Graph.Confidence"
+          }
+        },
+        "required": [
+          "nodes",
+          "confidence"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.LensRisk": {
+        "type": "object",
+        "properties": {
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "Infinity",
+                  "-Infinity",
+                  "NaN"
+                ]
+              }
+            ]
+          },
+          "severity": {
+            "type": "string"
+          },
+          "cvss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "Infinity",
+                  "-Infinity",
+                  "NaN"
+                ]
+              }
+            ]
+          },
+          "epss": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  "Infinity",
+                  "-Infinity",
+                  "NaN"
+                ]
+              }
+            ]
+          },
+          "kev": {
+            "type": "boolean"
+          },
+          "reachable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "score",
+          "severity",
+          "cvss",
+          "epss",
+          "kev",
+          "reachable"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.LensSlice": {
+        "type": "object",
+        "properties": {
+          "lens": {
+            "type": "string"
+          },
+          "generated_at": {
+            "type": "string",
+            "minLength": 1
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "counts": {
+            "type": "object",
+            "properties": {
+              "nodes": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "edges": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "omitted_nodes": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "omitted_rules": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "nodes",
+              "edges",
+              "omitted_nodes"
+            ],
+            "additionalProperties": false
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.LensNode"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.LensEdge"
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.LensGroup"
+            }
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Graph.LensPath"
+            }
+          },
+          "missing_data": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "lens",
+          "generated_at",
+          "truncated",
+          "counts",
+          "nodes",
+          "edges",
+          "groups"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.OverlayAction": {
+        "type": "string",
+        "enum": [
+          "focus_node",
+          "walk_path",
+          "proposed_change"
+        ]
+      },
+      "Graph.OverlayEvent": {
+        "type": "object",
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "entity": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action": {
+            "$ref": "#/components/schemas/Graph.OverlayAction"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "entity",
+          "action",
+          "explanation"
+        ],
+        "additionalProperties": false
+      },
+      "Graph.OverlayEventEncoded": {
+        "type": "string",
+        "contentMediaType": "application/json",
+        "contentSchema": {
+          "$ref": "#/components/schemas/Graph.OverlayEvent"
+        }
       },
       "Graph.SchemaSummary": {
         "type": "object",

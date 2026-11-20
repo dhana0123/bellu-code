@@ -121,6 +121,12 @@ export const ExperimentalGraphGroup = HttpApiGroup.make("server.graph")
         lens: Schema.String.annotate({ description: "Lens id from the lens catalog." }),
         entity: Schema.optional(Schema.String).annotate({ description: "Root entity id for the lens." }),
         target: Schema.optional(Schema.String).annotate({ description: "Target entity id for path lenses." }),
+        target_type: Schema.optional(Schema.String).annotate({
+          description: "Target resource type for the attack-path lens, for example rds:instance.",
+        }),
+        collapse_rules: Schema.optional(Schema.Literals(["true", "false"])).annotate({
+          description: "Replace security group rule nodes with group-to-peer edges; overrides the lens default.",
+        }),
         depth: Schema.optional(
           Schema.NumberFromString.pipe(Schema.decodeTo(Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)))),
         ).annotate({ description: "Traversal depth; clamped by the server." }),

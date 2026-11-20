@@ -1167,7 +1167,14 @@ export type GraphLensNode = {
   risk: GraphLensRisk | null
 }
 
-export type GraphLensEdge = { from: string; to: string; type: string; confidence: GraphConfidence }
+export type GraphLensEdge = {
+  from: string
+  to: string
+  type: string
+  confidence: GraphConfidence
+  evidence?: string
+  observed_at?: string
+}
 
 export type GraphLensPath = { nodes: Array<string>; confidence: GraphConfidence }
 
@@ -2524,11 +2531,12 @@ export type GraphLensSlice = {
   lens: string
   generated_at: string
   truncated: boolean
-  counts: { nodes: number; edges: number; omitted_nodes: number }
+  counts: { nodes: number; edges: number; omitted_nodes: number; omitted_rules?: number }
   nodes: Array<GraphLensNode>
   edges: Array<GraphLensEdge>
   groups: Array<GraphLensGroup>
   paths?: Array<GraphLensPath>
+  missing_data?: Array<string>
 }
 
 export type ConnectorsManifest = {
@@ -5133,6 +5141,8 @@ export type ExperimentalGraphSliceInput = {
   readonly lens: string
   readonly entity?: string | undefined
   readonly target?: string | undefined
+  readonly target_type?: string | undefined
+  readonly collapse_rules?: "true" | "false" | undefined
   readonly depth?: number | undefined
   readonly limit?: number | undefined
 }

@@ -2712,6 +2712,8 @@ export type ExperimentalGraphSliceInput = {
   readonly lens: string
   readonly entity?: string | undefined
   readonly target?: string | undefined
+  readonly target_type?: string | undefined
+  readonly collapse_rules?: "true" | "false" | undefined
   readonly depth?: number | undefined
   readonly limit?: number | undefined
 }
@@ -2719,7 +2721,12 @@ export type ExperimentalGraphSliceOutput = {
   readonly lens: string
   readonly generated_at: string
   readonly truncated: boolean
-  readonly counts: { readonly nodes: number; readonly edges: number; readonly omitted_nodes: number }
+  readonly counts: {
+    readonly nodes: number
+    readonly edges: number
+    readonly omitted_nodes: number
+    readonly omitted_rules?: number | undefined
+  }
   readonly nodes: ReadonlyArray<{
     readonly id: string
     readonly kind: string
@@ -2741,6 +2748,8 @@ export type ExperimentalGraphSliceOutput = {
     readonly to: string
     readonly type: string
     readonly confidence: "extracted" | "inferred"
+    readonly evidence?: string | undefined
+    readonly observed_at?: string | undefined
   }>
   readonly groups: ReadonlyArray<{
     readonly id: string
@@ -2750,6 +2759,7 @@ export type ExperimentalGraphSliceOutput = {
   readonly paths?:
     | ReadonlyArray<{ readonly nodes: ReadonlyArray<string>; readonly confidence: "extracted" | "inferred" }>
     | undefined
+  readonly missing_data?: ReadonlyArray<string> | undefined
 }
 export type ExperimentalGraphSliceOperation<E = never> = (
   input: ExperimentalGraphSliceInput,
