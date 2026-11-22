@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { PROMPT_SEEK } from "@bellucode/core/plugin/seek-prompt"
+import { PROMPT_SEEK, PROMPT_SEEK_USAGE } from "@bellucode/core/plugin/seek-prompt"
 
 const TOOL = "bellu-graph_seek_retrieve"
 
@@ -72,5 +72,36 @@ describe("PROMPT_SEEK contract", () => {
     expect(PROMPT_SEEK).toMatch(/exactly one tool/i)
     const names = new Set(PROMPT_SEEK.match(/\b[a-z0-9]+(?:-[a-z0-9]+)*_[a-z0-9_]+\b/g)?.filter((n) => n.includes("-")))
     expect([...names]).toEqual([TOOL])
+  })
+})
+
+describe("PROMPT_SEEK_USAGE contract", () => {
+  test("names seek and the foreground subagent call before editing (R13.2)", () => {
+    expect(PROMPT_SEEK_USAGE).toContain('subagent(agent="seek")')
+    expect(PROMPT_SEEK_USAGE).toMatch(/foreground/i)
+    expect(PROMPT_SEEK_USAGE).toMatch(/before (you )?edit/i)
+    for (const request of ["fix", "change", "refactor", "add a feature"]) expect(PROMPT_SEEK_USAGE).toContain(request)
+  })
+
+  test("asks for the full task, the language and the relevant code (R13.3)", () => {
+    expect(PROMPT_SEEK_USAGE).toMatch(/full task/i)
+    expect(PROMPT_SEEK_USAGE).toMatch(/language/i)
+    expect(PROMPT_SEEK_USAGE).toMatch(/relevant code/i)
+  })
+
+  test("uses the Security_Context as advice and calls seek once per task (R13.4)", () => {
+    expect(PROMPT_SEEK_USAGE).toContain("Security_Context")
+    expect(PROMPT_SEEK_USAGE).toMatch(/advice/i)
+    expect(PROMPT_SEEK_USAGE).toMatch(/do not call seek again for the same task/i)
+  })
+
+  test("continues normally when no augmentation applies (R13.5)", () => {
+    expect(PROMPT_SEEK_USAGE).toMatch(/no augmentation applies/i)
+    expect(PROMPT_SEEK_USAGE).toMatch(/continue (the task )?normally/i)
+  })
+
+  test("lists every skip case (R13.6)", () => {
+    for (const item of ["typo", "comment", "docs-only", "renames", "tests-only", "pure questions"])
+      expect(PROMPT_SEEK_USAGE).toContain(item)
   })
 })

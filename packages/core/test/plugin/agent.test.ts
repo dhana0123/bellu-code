@@ -1,4 +1,3 @@
-import path from "path"
 import { describe, expect } from "bun:test"
 import { Effect, Layer } from "effect"
 import { SystemPart } from "@bellucode/ai/effect"
@@ -8,7 +7,6 @@ import { Config } from "@bellucode/core/config"
 import { Database } from "@bellucode/core/database/database"
 import { Bus } from "@bellucode/core/bus"
 import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
-import { Flag } from "@bellucode/core/flag"
 import { Job } from "@bellucode/core/job"
 import { Location } from "@bellucode/core/location"
 import { LocationServiceMap } from "@bellucode/core/location-service-map"
@@ -16,6 +14,7 @@ import { Model } from "@bellucode/core/model"
 import { Permission } from "@bellucode/core/permission"
 import { Plugin } from "@bellucode/core/plugin"
 import { AgentPlugin } from "@bellucode/core/plugin/agent"
+import { PROMPT_SEEK, PROMPT_SEEK_USAGE } from "@bellucode/core/plugin/seek-prompt"
 import { PluginHooks } from "@bellucode/core/plugin/hooks"
 import { PluginSupervisor } from "@bellucode/core/plugin/supervisor"
 import { Provider } from "@bellucode/core/provider"
@@ -78,6 +77,7 @@ const plugins = makeLocationNode({
       yield* AgentPlugin.Plugin.effect(
         host({
           agent: agentHost(agents),
+          session: { hook: (name, callback) => hooks.register("session", name, callback) },
           tool: {
             transform: tools.transform,
             reload: tools.reload,
@@ -92,7 +92,6 @@ const plugins = makeLocationNode({
     Agent.node,
     App.node,
     Config.node,
-    Flag.node,
     Job.node,
     Model.node,
     Permission.node,
@@ -104,28 +103,20 @@ const plugins = makeLocationNode({
 })
 
 const nodes = LayerNode.group([Database.node, Bus.node, Job.node, Session.node, LocationServiceMap.node])
-const replacements = (flags?: string) =>
+const replacements = () =>
   [
     SessionExecution.node.replace(idleExecution),
     Global.node.replace(tempGlobalLayer),
     offlineModels,
-    // Flags are off on the default test channel, so a project's `experimental.seek_planner: true` turns the flag on.
     App.node.replace(App.configured({ channel: "unknown" })),
     PluginSupervisor.node.replace(plugins),
-    ...(flags === undefined
-      ? []
-      : [Flag.node.replace(Layer.provide(Flag.layer, Layer.succeed(Flag.Overrides, flags)) as never)]),
   ] satisfies LayerNode.Replacements
 
-// `-seek_planner` in BELLUCODE_FLAGS is read by the Flag service when the location builds.
 const it = testEffect(AppNodeBuilder.build(nodes, replacements()))
-const envOff = testEffect(AppNodeBuilder.build(nodes, replacements("-seek_planner")))
 
-const open = (experimental?: { readonly seek_planner: boolean }) =>
+const open = () =>
   Effect.gen(function* () {
     const dir = yield* tmpdirScoped()
-    if (experimental)
-      yield* Effect.promise(() => Bun.write(path.join(dir.path, "bellucode.json"), JSON.stringify({ experimental })))
     const sessions = yield* Session.Service
     const parent = yield* sessions.create({
       location: Location.Ref.make({ directory: AbsolutePath.make(dir.path) }),
@@ -140,7 +131,6 @@ const open = (experimental?: { readonly seek_planner: boolean }) =>
       parent,
       at,
       registry,
-      flag: at(Flag.enabled("seek_planner")),
       agents: at(Agent.Service.use((agents) => agents.list())),
       main: at(Agent.Service.use((agents) => agents.get(Agent.defaultID))),
       // CodeMode's own `execute` tool is always present and unrelated to the feature.
@@ -176,6 +166,20 @@ const open = (experimental?: { readonly seek_planner: boolean }) =>
           }),
         ).pipe(Effect.map((event) => event.tools[SubagentTool.name]?.description ?? "")),
       ),
+      system: (agent: Agent.ID) =>
+        at(
+          PluginHooks.Service.use((hooks) =>
+            hooks.trigger("session", "context", {
+              sessionID: parent.id,
+              agent,
+              model: parentModel,
+              system: [SystemPart.make("model-family prompt")],
+              messages: [],
+              options: {},
+              tools: {},
+            }),
+          ).pipe(Effect.map((event) => event.system.map((part) => part.text))),
+        ),
       subagent: (agent: string, background = false) =>
         executeTool(registry, {
           sessionID: parent.id,
@@ -191,33 +195,10 @@ const open = (experimental?: { readonly seek_planner: boolean }) =>
     }
   })
 
-// The state every flag-off route must produce: the registry and agents as they were before the feature.
-const withoutFeature = {
-  agents: ["build", "compaction", "explore", "general", "summary", "title"],
-  subagents: ["explore", "general"],
-  tools: ["subagent"],
-}
-
-const expectAbsent = (session: Effect.Success<ReturnType<typeof open>>) =>
-  Effect.gen(function* () {
-    expect(yield* session.flag).toBe(false)
-    expect((yield* session.agents).map((agent) => String(agent.id)).toSorted()).toEqual(withoutFeature.agents)
-    expect(yield* session.subagents).toEqual(withoutFeature.subagents)
-    expect(yield* session.tools).toEqual(withoutFeature.tools)
-    expect(yield* session.description).not.toContain("seek")
-    expect(yield* session.subagent("seek")).toEqual({
-      status: "error",
-      error: { type: "tool.execution", message: "Unknown agent: seek" },
-    })
-    expect(yield* session.children).toHaveLength(0)
-    expect((yield* session.main)?.permissions.some((rule) => rule.action.includes("seek"))).toBe(false)
-  })
-
 describe("seek agent", () => {
-  it.live("is registered as a restricted subagent when the flag is on", () =>
+  it.live("is registered as a restricted subagent", () =>
     Effect.gen(function* () {
-      const session = yield* open({ seek_planner: true })
-      expect(yield* session.flag).toBe(true)
+      const session = yield* open()
       const seek = (yield* session.agents).find((agent) => agent.id === Agent.ID.make("seek"))
       if (!seek) throw new Error("expected the seek agent")
       expect(seek.mode).toBe("subagent")
@@ -237,9 +218,9 @@ describe("seek agent", () => {
     }),
   )
 
-  it.live("is listed in the subagent tool description and in the registry when the flag is on", () =>
+  it.live("is listed in the subagent tool description and in the registry", () =>
     Effect.gen(function* () {
-      const session = yield* open({ seek_planner: true })
+      const session = yield* open()
       expect(yield* session.subagents).toEqual(["explore", "general", "seek"])
       expect(yield* session.tools).toEqual([seekTool, "subagent"])
       expect(yield* session.description).toMatch(/^- seek: .+$/m)
@@ -248,7 +229,7 @@ describe("seek agent", () => {
 
   it.live("runs a seek child session on the parent's provider and model", () =>
     Effect.gen(function* () {
-      const session = yield* open({ seek_planner: true })
+      const session = yield* open()
       const started = yield* session.subagent("seek", true)
       expect(started.status).toBe("completed")
       const children = yield* session.children
@@ -259,27 +240,24 @@ describe("seek agent", () => {
       })
     }),
   )
+})
 
-  it.live("is absent when experimental.seek_planner is false", () =>
+describe("seek usage rule", () => {
+  it.live("appends the rule to the Build agent and keeps the existing system parts", () =>
     Effect.gen(function* () {
-      yield* expectAbsent(yield* open({ seek_planner: false }))
+      const session = yield* open()
+      expect(yield* session.system(Agent.defaultID)).toEqual(["model-family prompt", PROMPT_SEEK_USAGE])
     }),
   )
 
-  envOff.live("is absent when BELLUCODE_FLAGS contains -seek_planner", () =>
+  it.live("leaves other agents without the rule and keeps the seek prompt of the seek agent", () =>
     Effect.gen(function* () {
-      yield* expectAbsent(yield* open({ seek_planner: true }))
-    }),
-  )
-
-  it.live("leaves the main agent, subagents and tools as they are without the feature when the flag is off", () =>
-    Effect.gen(function* () {
-      const on = yield* open({ seek_planner: true })
-      const off = yield* open({ seek_planner: false })
-      expect((yield* off.main)?.permissions).toEqual((yield* on.main)?.permissions)
-      expect((yield* off.subagents).filter((id) => id !== "seek")).toEqual(yield* off.subagents)
-      expect((yield* on.subagents).filter((id) => id !== "seek")).toEqual(yield* off.subagents)
-      expect((yield* on.tools).filter((name) => name !== seekTool)).toEqual(yield* off.tools)
+      const session = yield* open()
+      expect(yield* session.system(Agent.ID.make("seek"))).toEqual(["model-family prompt"])
+      expect(yield* session.system(Agent.ID.make("explore"))).toEqual(["model-family prompt"])
+      const seek = yield* session.agents.pipe(Effect.map((list) => list.find((agent) => agent.id === "seek")))
+      expect(seek?.system).toBe(PROMPT_SEEK)
+      expect((yield* session.main)?.system).toBeUndefined()
     }),
   )
 })

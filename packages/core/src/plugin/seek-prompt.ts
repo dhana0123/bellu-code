@@ -35,3 +35,12 @@ For each kept candidate give: CVE id; CWE id and name; 1 to 3 sentences (max 500
 State the predicted cwe_ids of the last plan under "predicted" and the distinct CWE ids of kept candidates under "retained".
 Stay within 4000 characters (6000 if you called the tool with top_k above 4). If it is too long, remove whole candidates, lowest score first, and say how many you omitted.
 `
+
+export const PROMPT_SEEK_USAGE = `## Security retrieval with seek
+Before you edit anything for a request to fix, change, refactor or add a feature, call subagent(agent="seek") in the foreground and wait for its answer.
+- The seek agent starts with no context. Put the full task, the programming language and the relevant code in its prompt.
+- Use the Security_Context it returns as advice while you write the change.
+- Do not call seek again for the same task.
+- If seek says no augmentation applies, continue normally.
+- Skip seek for typo fixes, comment changes, docs-only changes, renames, tests-only changes and pure questions.
+`
