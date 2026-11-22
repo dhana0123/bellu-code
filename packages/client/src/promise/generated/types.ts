@@ -2885,6 +2885,7 @@ export type ConfigEntry =
           codemode_vm?: boolean
           bellu_graph?: boolean
           connectors?: boolean
+          seek_planner?: boolean
           part_rows?: boolean
           image_generate?: boolean | { model?: string | { providerID: string; model: string; variant?: string } }
           subagent_depth?: number

@@ -1,0 +1,1 @@
+{"weakness":{"cweID":"CWE-710","name":"Fixture weakness 710","abstraction":"Base","status":"Draft"},"sources":["cwe"],"provenance":[],"graph":{"version":"dev","buildState":"ready","buildMode":"sample","stale":false,"sources":{"cwe":{"lastSuccess":"2025-01-09T03:00:00Z"},"nvd":{"lastSuccess":null},"exploitdb":{"lastSuccess":null}}}}

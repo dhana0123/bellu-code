@@ -20,5 +20,7 @@ export const registry = {
     "Enable the experimental Bellu Graph code-security integration: the bellu-graph MCP server entry, the security agent and the security-context skill.",
   connectors:
     "Enable the experimental Settings → Connectors page and the bellud connector service that connects AWS and GitHub read-only and feeds their metadata into the Bellu Graph.",
+  seek_planner:
+    "Enable the experimental seek subagent: a CWE planner and evidence selector that builds a Security_Context from the bellu-graph seek_retrieve tool.",
 } as const satisfies Record<string, string>
 export type Key = keyof typeof registry
