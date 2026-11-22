@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -17,6 +18,8 @@ import (
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/bellu/bellucode/services/bellud/internal/agentcfg"
 	apigraph "github.com/bellu/bellucode/services/bellud/internal/api/graph"
@@ -41,6 +44,8 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/overlay"
 	"github.com/bellu/bellucode/services/bellud/internal/proxy"
 	"github.com/bellu/bellucode/services/bellud/internal/sdnotify"
+	"github.com/bellu/bellucode/services/bellud/internal/seek"
+	"github.com/bellu/bellucode/services/bellud/internal/seek/bskg"
 	"github.com/bellu/bellucode/services/bellud/internal/server"
 	"github.com/bellu/bellucode/services/bellud/internal/server/routes"
 	"github.com/bellu/bellucode/services/bellud/internal/tschild"
@@ -269,6 +274,38 @@ func serve(args []string) error {
 	return nil
 }
 
+// mcpExtras composes the extra bellu-graph MCP tools: the lens tools always,
+// and seek_retrieve only when both seek settings are valid. Warnings and errors
+// name the variable, never its value.
+func mcpExtras(logger *log.Logger, lens func(*mcp.Server)) func(*mcp.Server) {
+	sc, err := config.LoadSeek(os.LookupEnv)
+	if err != nil {
+		logger.Println("warning: seek config:", err)
+		return lens
+	}
+	for _, w := range sc.Warnings {
+		logger.Println("warning: seek:", w)
+	}
+	bc, ok, err := bskg.Load(os.LookupEnv)
+	if err != nil {
+		logger.Println("warning: seek config:", err)
+	}
+	if !ok || len(sc.Warnings) > 0 {
+		return lens
+	}
+	client, err := bskg.New(bc)
+	if err != nil {
+		logger.Println("warning: seek client:", err)
+		return lens
+	}
+	ret := seek.NewRetriever(client, seek.Config{MinRelevance: sc.MinRelevance}, slog.Default())
+	seekExtras := seek.Extras(ret)
+	return func(s *mcp.Server) {
+		lens(s)
+		seekExtras(s)
+	}
+}
+
 // openGraph opens the graph engine and, when it is enabled and ready, starts the
 // collector runner. A failed open leaves the engine disabled; serving continues.
 func openGraph(logger *log.Logger, set mcptoken.Set, lensSvc *lens.Service, roots []string) (graph.Engine, *collectors.Runner, *intelStack) {
@@ -279,7 +316,7 @@ func openGraph(logger *log.Logger, set mcptoken.Set, lensSvc *lens.Service, root
 	}
 	gcfg.MCPToken = set.Write.String()
 	gcfg.Grants = grantsOf(set)
-	gcfg.MCPExtras = lensmcp.Extras(lensSvc)
+	gcfg.MCPExtras = mcpExtras(logger, lensmcp.Extras(lensSvc))
 	eng, err := graph.Open(context.Background(), gcfg)
 	if err != nil {
 		logger.Println("warning: graph unavailable:", err)

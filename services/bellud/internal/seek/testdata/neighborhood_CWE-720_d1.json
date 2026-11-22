@@ -1,0 +1,1 @@
+{"nodes":[{"id":"Weakness:CWE-720","type":"Weakness","key":"CWE-720","label":"CWE-720","properties":{}}],"edges":[],"truncated":false,"graph":{"version":"dev","buildState":"ready","buildMode":"sample","stale":false,"sources":{"cwe":{"lastSuccess":"2025-01-09T03:00:00Z"},"nvd":{"lastSuccess":null},"exploitdb":{"lastSuccess":null}}}}

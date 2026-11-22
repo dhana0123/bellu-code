@@ -1,0 +1,1 @@
+{"items":[{"cveID":"CVE-2020-0004","publishedDate":"2020-05-06","v3baseScore":null}],"limit":50,"graph":{"version":"dev","buildState":"ready","buildMode":"sample","stale":false,"sources":{"cwe":{"lastSuccess":"2025-01-09T03:00:00Z"},"nvd":{"lastSuccess":null},"exploitdb":{"lastSuccess":null}}}}
