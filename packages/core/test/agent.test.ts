@@ -3,6 +3,8 @@ import { describe, expect } from "bun:test"
 import { Effect, Exit, Fiber, Layer, Scope, Stream } from "effect"
 import { Agent } from "@bellucode/core/agent"
 import { Bus } from "@bellucode/core/bus"
+import { Config } from "@bellucode/core/config"
+import { Flag } from "@bellucode/core/flag"
 import { AppNodeBuilder } from "@bellucode/core/effect/app-node-builder"
 import { LayerNode } from "@bellucode/util/effect/layer-node"
 import { Location } from "@bellucode/core/location"
@@ -12,7 +14,7 @@ import { AbsolutePath } from "@bellucode/core/schema"
 import { Global } from "@bellucode/util/global"
 import { location } from "./fixture/location"
 import { testEffect } from "./lib/effect"
-import { agentHost, host } from "./plugin/host"
+import { agentHost, host, inertTools } from "./plugin/host"
 
 const testLocation = location({ directory: AbsolutePath.make("/project") })
 const locationLayer = Layer.succeed(Location.Service, Location.Service.of(testLocation))
@@ -20,7 +22,7 @@ const global = Global.make({ data: "/data", config: "/config", tmp: "/tmp/belluc
 const globalLayer = Layer.succeed(Global.Service, Global.Service.of(global))
 
 const it = testEffect(
-  AppNodeBuilder.build(LayerNode.group([Agent.node, Bus.node, Location.node]), [
+  AppNodeBuilder.build(LayerNode.group([Agent.node, Bus.node, Config.node, Flag.node, Location.node]), [
     Global.node.replace(globalLayer),
     Location.node.replace(locationLayer),
   ]) as unknown as Layer.Layer<unknown, never>,
@@ -173,6 +175,7 @@ describe("Agent", () => {
       yield* AgentPlugin.Plugin.effect(
         host({
           agent: agentHost(agent),
+          tool: inertTools,
         }),
       )
 
@@ -223,6 +226,7 @@ describe("Agent", () => {
       yield* AgentPlugin.Plugin.effect(
         host({
           agent: agentHost(agent),
+          tool: inertTools,
         }),
       )
 
