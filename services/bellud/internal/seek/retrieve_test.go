@@ -488,7 +488,7 @@ func TestRetrieveEmptyAndInvalidPlansMakeNoRequests(t *testing.T) {
 		t.Fatalf("empty = %+v", empty)
 	}
 
-	nine := make([]seek.Unit, 9)
+	nine := make([]seek.Unit, seek.MaxWeaknesses+1)
 	for i := range nine {
 		nine[i] = rtUnit(fmt.Sprintf("CWE-%d", 79+i), rtXSS)
 	}
@@ -497,11 +497,11 @@ func TestRetrieveEmptyAndInvalidPlansMakeNoRequests(t *testing.T) {
 		topK int
 		path string
 	}{
-		"top_k zero":      {rtPlan(rtUnit("CWE-79", rtXSS)), 0, "top_k"},
-		"top_k eleven":    {rtPlan(rtUnit("CWE-79", rtXSS)), 11, "top_k"},
-		"bad cwe id":      {rtPlan(rtUnit("CWE-79/../../v1/status", rtXSS)), 4, "weaknesses[0].cwe_id"},
-		"long root cause": {rtPlan(seek.Unit{CWEID: "CWE-79", RootCause: long, Snippet: "x"}), 4, "weaknesses[0].root_cause"},
-		"nine units":      {rtPlan(nine...), 4, "weaknesses"},
+		"top_k zero":            {rtPlan(rtUnit("CWE-79", rtXSS)), 0, "top_k"},
+		"top_k eleven":          {rtPlan(rtUnit("CWE-79", rtXSS)), 11, "top_k"},
+		"bad cwe id":            {rtPlan(rtUnit("CWE-79/../../v1/status", rtXSS)), 4, "weaknesses[0].cwe_id"},
+		"long root cause":       {rtPlan(seek.Unit{CWEID: "CWE-79", RootCause: long, Snippet: "x"}), 4, "weaknesses[0].root_cause"},
+		"over the weakness cap": {rtPlan(nine...), 4, "weaknesses"},
 	}
 	for name, tc := range invalid {
 		t.Run(name, func(t *testing.T) {

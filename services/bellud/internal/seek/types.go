@@ -9,7 +9,8 @@ import (
 
 // Plan and request limits. String lengths are counted in Unicode code points.
 const (
-	MaxWeaknesses = 8
+	// MaxWeaknesses is a safety cap on submitted items, counted before per-unit rejection.
+	MaxWeaknesses = 20
 	MaxLanguage   = 64
 	MaxReasoning  = 4000
 	MaxRootCause  = 1000

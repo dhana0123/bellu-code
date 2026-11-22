@@ -2,6 +2,7 @@ package seek
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -153,7 +154,7 @@ func TestParsePlanLengthBoundaries(t *testing.T) {
 		{"weaknesses count", func(n int) any {
 			us := make([]map[string]any, n)
 			for i := range us {
-				us[i] = unit("CWE-" + string(rune('1'+i)))
+				us[i] = unit(fmt.Sprintf("CWE-%d", i+1))
 			}
 			return plan(us...)
 		}, MaxWeaknesses, MaxWeaknesses + 1, "weaknesses"},
@@ -258,6 +259,23 @@ func TestParsePlanRejectsBadCWEIDsPerUnit(t *testing.T) {
 		if d.Index != i+1 || d.Reason == "" {
 			t.Fatalf("rejected[%d] = %+v", i, d)
 		}
+	}
+}
+
+// The cap counts submitted items before per-unit rejection.
+func TestParsePlanCapCountsSubmittedItems(t *testing.T) {
+	us := make([]map[string]any, MaxWeaknesses+1)
+	for i := range us {
+		us[i] = unit(fmt.Sprintf("CWE-%d", i+1))
+	}
+	us[3]["cwe_id"] = "not-a-cwe"
+	us[7]["cwe_id"] = "CWE-"
+	p, _, issues := ParsePlan(raw(t, plan(us...)))
+	if !hasPath(issues, "weaknesses") {
+		t.Fatalf("want issue at weaknesses, got %v", paths(issues))
+	}
+	if len(p.Weaknesses) != 0 {
+		t.Fatalf("no plan expected, got %+v", p)
 	}
 }
 

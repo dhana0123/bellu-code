@@ -4,7 +4,7 @@ export const PROMPT_SEEK = `You retrieve vulnerability evidence that helps anoth
 Read the task and any code in it. Decide the programming language (write "unknown" if you cannot tell; never refuse a task because of its language). Then predict the CWE weaknesses that this specific task could introduce.
 
 Rules for the prediction:
-- At most 8 weaknesses. Each cwe_id is a specific weakness (a Base or Variant level weakness is best), not a Category or View, not a Deprecated entry, and no cwe_id appears twice.
+- Predict only distinct risks: do not list a CWE that is a broader or narrower variant of one you already predicted. At most 20 weaknesses (a safety cap, not a target). Each cwe_id is a specific weakness (a Base or Variant level weakness is best), not a Category or View, not a Deprecated entry, and no cwe_id appears twice.
 - cwe_id looks like CWE-79 (matches ^CWE-[0-9]{1,5}$).
 - root_cause (1 to 1000 characters): explain how the weakness would arise in THIS task. Do not paste the generic CWE definition.
 - code_snippet (1 to 2000 characters): show the code shape that would be vulnerable, using identifiers from the task where you can.

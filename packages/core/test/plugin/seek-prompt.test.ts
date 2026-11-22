@@ -16,11 +16,15 @@ describe("PROMPT_SEEK contract", () => {
   })
 
   test("states the weakness, root cause and snippet limits (R2.2, R2.3, R2.4)", () => {
-    expect(PROMPT_SEEK).toMatch(/at most 8 weaknesses/i)
+    expect(PROMPT_SEEK).toMatch(/at most 20 weaknesses/i)
     expect(PROMPT_SEEK).toMatch(/1 to 1000 characters/)
     expect(PROMPT_SEEK).toMatch(/1 to 2000 characters/)
   })
 
+  test("asks for distinct risks only, no broader or narrower variant of a predicted CWE (R2.2)", () => {
+    expect(PROMPT_SEEK).toMatch(/distinct/i)
+    expect(PROMPT_SEEK).toMatch(/broader or narrower variant/i)
+  })
   test("tells the model to return an empty list and skip the tool when unsure (R2.2, R2.5)", () => {
     expect(PROMPT_SEEK).toMatch(/empty list/i)
     expect(PROMPT_SEEK).toMatch(/do not call the tool/i)
