@@ -37,6 +37,9 @@ func ParsePlan(raw []byte) (plan Plan, rejected []Dropped, issues []Issue) {
 		issues = append(issues, Issue{"weaknesses", "must be an array"})
 	}
 
+	if len(items) > MaxWeaknesses {
+		issues = append(issues, Issue{"weaknesses", fmt.Sprintf("has %d items, at most %d allowed", len(items), MaxWeaknesses)})
+	}
 	p.Weaknesses = []Unit{}
 	seen := map[string]bool{}
 	for i, item := range items {
@@ -64,12 +67,6 @@ func ParsePlan(raw []byte) (plan Plan, rejected []Dropped, issues []Issue) {
 			seen[u.CWEID] = true
 			p.Weaknesses = append(p.Weaknesses, u)
 		}
-	}
-
-	// The limit applies to the units that survive per-unit rejection, so a plan
-	// padded with rejected entries is not itself invalid.
-	if len(p.Weaknesses) > MaxWeaknesses {
-		issues = append(issues, Issue{"weaknesses", fmt.Sprintf("has %d usable items, at most %d allowed", len(p.Weaknesses), MaxWeaknesses)})
 	}
 
 	if len(issues) > 0 {

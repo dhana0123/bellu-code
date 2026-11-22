@@ -12,7 +12,7 @@ import (
 // **Validates: Requirements 3.4, 3.5**
 func TestPropertyUnitFilteringKeepsValidUnitsInOrder(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		kinds := rapid.SliceOfN(rapid.SampledFrom([]string{"valid", "malformed", "duplicate"}), 0, 20).Draw(t, "kinds")
+		kinds := rapid.SliceOfN(rapid.SampledFrom([]string{"valid", "malformed", "duplicate"}), 0, MaxWeaknesses).Draw(t, "kinds")
 		malformed := rapid.OneOf(
 			rapid.StringMatching(`[A-Za-z0-9 _-]{0,10}`),
 			rapid.StringMatching(`CWE-[0-9]{6,8}`),
@@ -38,11 +38,6 @@ func TestPropertyUnitFilteringKeepsValidUnitsInOrder(t *testing.T) {
 				id = malformed.Draw(t, "malformed")
 				wantDrop[i] = true
 			default: // valid first occurrence (also a duplicate slot with nothing to repeat)
-				if len(firsts) >= MaxWeaknesses {
-					id = malformed.Draw(t, "malformed")
-					wantDrop[i] = true
-					break
-				}
 				id = rapid.StringMatching(`CWE-[0-9]{1,5}`).
 					Filter(func(s string) bool { return !used[s] }).Draw(t, "valid")
 				used[id] = true
