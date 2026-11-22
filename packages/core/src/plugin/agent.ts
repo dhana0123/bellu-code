@@ -3,6 +3,12 @@ export * as AgentPlugin from "./agent.js"
 import { define } from "@bellucode/plugin/effect/plugin"
 import { Effect } from "effect"
 import { Agent } from "../agent.js"
+import { Config } from "../config.js"
+import { ConfigEntryObserver } from "../config/plugin/entry-observer.js"
+import { Flag } from "../flag.js"
+import { PROMPT_SEEK } from "./seek-prompt.js"
+
+const SEEK_TOOL = "bellu-graph_seek_retrieve"
 
 const PROMPT_EXPLORE = `You are a file search specialist. You excel at thoroughly navigating and exploring codebases.
 
@@ -52,6 +58,18 @@ Rules:
 export const Plugin = define({
   id: "bellucode.agent",
   effect: Effect.fn(function* (ctx) {
+    const config = yield* Config.Service
+    const flags = yield* Flag.Service
+    // Flag state is resolved from the loaded config entries, so a config reload re-runs both transforms.
+    const loaded = yield* ConfigEntryObserver.observe(
+      config,
+      ctx.event,
+      Effect.andThen(ctx.agent.reload(), ctx.tool.reload()),
+    )
+    yield* ctx.tool.transform((editor) => {
+      if (flags.resolve(loaded.entries).seek_planner.enabled) return
+      editor.remove(SEEK_TOOL)
+    })
     yield* ctx.agent.transform((editor) => {
       editor.update(Agent.defaultID, (item) => {
         item.name = Agent.Name.make("Build")
@@ -113,6 +131,21 @@ export const Plugin = define({
         item.hidden = true
         item.system = PROMPT_SUMMARY
         item.permissions.push({ action: "*", resource: "*", effect: "deny" })
+      })
+
+      if (!flags.resolve(loaded.entries).seek_planner.enabled) return
+      editor.update(Agent.ID.make("seek"), (item) => {
+        item.name = Agent.Name.make("Seek")
+        item.description =
+          "Retrieves known CVEs and fix commits for the weaknesses a task is likely to introduce. Use it before writing or reviewing security-sensitive code."
+        item.system = PROMPT_SEEK
+        item.mode = "subagent"
+        item.steps = 4
+        item.permissions.push(
+          { action: "*", resource: "*", effect: "deny" },
+          { action: SEEK_TOOL, resource: "*", effect: "allow" },
+          { action: "subagent", resource: "*", effect: "deny" },
+        )
       })
     })
   }),

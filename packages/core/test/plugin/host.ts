@@ -205,6 +205,14 @@ export function host(overrides: Overrides = {}): Plugin.Context {
   }
 }
 
+/** Accepts tool transforms without a registry, for plugins that only remove or add tools as a side effect. */
+export const inertTools: Plugin.Context["tool"] = {
+  transform: () => Effect.succeed({ dispose: Effect.void }),
+  reload: () => Effect.void,
+  list: () => Effect.die("unused tool.list"),
+  hook: () => Effect.die("unused tool.hook"),
+}
+
 export function agentHost(agent: Agent.Interface): Plugin.Context["agent"] {
   return {
     get: (input) =>
