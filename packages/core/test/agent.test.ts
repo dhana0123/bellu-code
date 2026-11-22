@@ -176,6 +176,7 @@ describe("Agent", () => {
         host({
           agent: agentHost(agent),
           tool: inertTools,
+          session: { hook: () => Effect.succeed({ dispose: Effect.void }) },
         }),
       )
 
@@ -185,6 +186,7 @@ describe("Agent", () => {
         "compaction",
         "explore",
         "general",
+        "seek",
         "summary",
         "title",
       ])
@@ -227,6 +229,7 @@ describe("Agent", () => {
         host({
           agent: agentHost(agent),
           tool: inertTools,
+          session: { hook: () => Effect.succeed({ dispose: Effect.void }) },
         }),
       )
 

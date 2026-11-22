@@ -11,7 +11,7 @@ import { Watcher } from "@bellucode/core/filesystem/watcher"
 import { Job } from "@bellucode/core/job"
 import { LocationServiceMap } from "@bellucode/core/location-service-map"
 import { Model } from "@bellucode/core/model"
-import { PROMPT_SEEK } from "@bellucode/core/plugin/seek-prompt"
+import { PROMPT_SEEK, PROMPT_SEEK_USAGE } from "@bellucode/core/plugin/seek-prompt"
 import { Plugin } from "@bellucode/core/plugin"
 import { Provider } from "@bellucode/core/provider"
 import { AbsolutePath } from "@bellucode/core/schema"
@@ -53,6 +53,7 @@ export type SeekResult = {
 export type Step =
   | { readonly agent: "main"; readonly say: "subagent"; readonly input: { readonly prompt: string } }
   | { readonly agent: "seek"; readonly say: "retrieve"; readonly input: Record<string, unknown> }
+  | { readonly agent: "main"; readonly say: "write"; readonly input: { readonly path: string; readonly content: string } }
   | { readonly agent: "seek" | "main"; readonly say: "text"; readonly text: string }
 
 export const mainID = "main"
@@ -78,7 +79,6 @@ export const seekHarness = (input: {
       Bun.write(
         `${dir.path}/bellucode.json`,
         JSON.stringify({
-          experimental: { seek_planner: true },
           permissions: [{ action: "*", resource: "*", effect: "allow" }],
           mcp: { servers: { "bellu-graph": { type: "remote", url: mcp.url, codemode: false } } },
         }),
@@ -97,7 +97,7 @@ export const seekHarness = (input: {
       if (!step) return TestLLM.text(`No scripted step for ${agent} request ${played[agent]}`, `unscripted-${agent}`)
       const id = `${agent}-${played[agent]}`
       if (step.say === "text") return TestLLM.text(step.text, id)
-      const name = step.say === "subagent" ? subagentName : seekToolName
+      const name = step.say === "subagent" ? subagentName : step.say === "write" ? "write" : seekToolName
       const args =
         step.say === "subagent"
           ? { agent: "seek", description: "seek planning", prompt: step.input.prompt }
@@ -463,6 +463,64 @@ describe("seek e2e harness", () => {
 
       // The main agent continued in the same session: no new session and no error in the final state.
       expect(yield* seek.children).toHaveLength(1)
+    }),
+  )
+  it.live("sends the usage rule to the main agent, which calls seek before its first edit", () =>
+    Effect.gen(function* () {
+      const plan = { units: [{ cwe_id: "CWE-89", rationale: "string-built SQL" }] }
+      const seek = yield* seekHarness({
+        steps: [
+          { agent: "main", say: "subagent", input: { prompt: "Fix the login feature query. TypeScript." } },
+          { agent: "seek", say: "retrieve", input: plan },
+          { agent: "seek", say: "text", text: "Security_Context: CVE-2024-0001 (SQL Injection)" },
+          { agent: "main", say: "write", input: { path: "login.ts", content: "export const login = 1\n" } },
+          { agent: "main", say: "text", text: "Fixed" },
+        ],
+        results: [ok],
+      })
+      yield* seek.run("Fix this feature: the login query is broken")
+
+      // The seek call is recorded before the first edit tool call.
+      const order = seek.toolCalls.filter((call) => call.agent === "main").map((call) => call.name)
+      expect(order).toEqual([subagentName, "write"])
+      expect(seek.toolCalls[0]).toMatchObject({ name: subagentName, input: { agent: "seek" } })
+      // The edit tool really ran in the session directory.
+      const requests = (yield* seek.llm.requests()).filter((request) => request.tools.length > 0)
+      const written = requests
+        .filter((request) => !isSeek(request))
+        .at(-1)
+        ?.messages.flatMap((message) => (message.role === "tool" ? message.content : []))
+        .flatMap((part) => (part.type === "tool-result" && part.name === "write" ? [part.result] : []))
+      expect(written).toHaveLength(1)
+      expect(JSON.stringify(written?.[0])).toContain("login.ts")
+      // Every main request carries the usage rule as a system part; no seek child request does.
+      const main = requests.filter((request) => !isSeek(request))
+      expect(main).toHaveLength(3)
+      main.forEach((request) => expect(request.system.some((part) => part.text === PROMPT_SEEK_USAGE)).toBe(true))
+      requests
+        .filter(isSeek)
+        .forEach((request) => expect(request.system.some((part) => part.text.includes(PROMPT_SEEK_USAGE))).toBe(false))
+    }),
+  )
+  it.live("makes no seek call for a docs-only prompt and sends the rule's skip list", () =>
+    Effect.gen(function* () {
+      const seek = yield* seekHarness({
+        steps: [
+          { agent: "main", say: "write", input: { path: "README.md", content: "# Docs\n" } },
+          { agent: "main", say: "text", text: "Updated the docs" },
+        ],
+        results: [],
+      })
+      yield* seek.run("Update the README docs only")
+
+      expect(seek.toolCalls.map((call) => call.name)).toEqual(["write"])
+      expect(seek.mcp.calls).toEqual([])
+      expect(yield* seek.children).toHaveLength(0)
+      const requests = (yield* seek.llm.requests()).filter((request) => request.tools.length > 0)
+      expect(requests.filter(isSeek)).toHaveLength(0)
+      const rule = requests[0]?.system.find((part) => part.text === PROMPT_SEEK_USAGE)?.text
+      expect(rule).toContain("docs-only changes")
+      expect(rule).toContain("typo fixes")
     }),
   )
 })

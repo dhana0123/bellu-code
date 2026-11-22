@@ -1,12 +1,10 @@
 export * as AgentPlugin from "./agent.js"
 
+import { SystemPart } from "@bellucode/ai/effect"
 import { define } from "@bellucode/plugin/effect/plugin"
 import { Effect } from "effect"
 import { Agent } from "../agent.js"
-import { Config } from "../config.js"
-import { ConfigEntryObserver } from "../config/plugin/entry-observer.js"
-import { Flag } from "../flag.js"
-import { PROMPT_SEEK } from "./seek-prompt.js"
+import { PROMPT_SEEK, PROMPT_SEEK_USAGE } from "./seek-prompt.js"
 
 const SEEK_TOOL = "bellu-graph_seek_retrieve"
 
@@ -58,18 +56,6 @@ Rules:
 export const Plugin = define({
   id: "bellucode.agent",
   effect: Effect.fn(function* (ctx) {
-    const config = yield* Config.Service
-    const flags = yield* Flag.Service
-    // Flag state is resolved from the loaded config entries, so a config reload re-runs both transforms.
-    const loaded = yield* ConfigEntryObserver.observe(
-      config,
-      ctx.event,
-      Effect.andThen(ctx.agent.reload(), ctx.tool.reload()),
-    )
-    yield* ctx.tool.transform((editor) => {
-      if (flags.resolve(loaded.entries).seek_planner.enabled) return
-      editor.remove(SEEK_TOOL)
-    })
     yield* ctx.agent.transform((editor) => {
       editor.update(Agent.defaultID, (item) => {
         item.name = Agent.Name.make("Build")
@@ -133,7 +119,6 @@ export const Plugin = define({
         item.permissions.push({ action: "*", resource: "*", effect: "deny" })
       })
 
-      if (!flags.resolve(loaded.entries).seek_planner.enabled) return
       editor.update(Agent.ID.make("seek"), (item) => {
         item.name = Agent.Name.make("Seek")
         item.description =
@@ -148,5 +133,13 @@ export const Plugin = define({
         )
       })
     })
+
+    // Not `item.system`: an agent `system` replaces the model-family prompt, and OptimizePlugin then skips the agent. A
+    // context hook adds a separate part after the existing ones, so those prompts stay.
+    yield* ctx.session.hook("context", (event) =>
+      Effect.sync(() => {
+        if (event.agent === Agent.defaultID) event.system.push(SystemPart.make(PROMPT_SEEK_USAGE))
+      }),
+    )
   }),
 })

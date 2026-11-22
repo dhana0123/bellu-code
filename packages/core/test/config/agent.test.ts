@@ -177,7 +177,7 @@ permissions:
     Effect.gen(function* () {
       const agents = yield* Agent.Service
       const global = yield* Global.Service
-      yield* AgentPlugin.Plugin.effect(host({ agent: agentHost(agents), tool: inertTools })).pipe(
+      yield* AgentPlugin.Plugin.effect(host({ agent: agentHost(agents), tool: inertTools, session: { hook: () => Effect.succeed({ dispose: Effect.void }) } })).pipe(
         Effect.provide(Flag.testLayer()),
       )
 
