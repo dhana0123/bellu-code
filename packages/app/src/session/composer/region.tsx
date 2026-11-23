@@ -1,3 +1,4 @@
+import { SecurityMenuItem } from "@/security/composer-menu"
 import type { SessionUserActions } from "@bellucode/session-ui/message"
 import type { ShellOutputInput } from "@bellucode/client/promise"
 import { getFilename, sameDirectory } from "@bellucode/util/path"
@@ -617,6 +618,7 @@ export function ActiveSessionComposerRegion(props: {
                   borderUnderlay
                   readOnly={props.model.queue.undoing()}
                   suggestionBoundary={props.suggestionBoundary}
+                  securityMenu={() => <SecurityMenuItem />}
                 />
               </VoiceComposer>
             </div>

@@ -15,6 +15,7 @@ import type { ClosedSideTab } from "@/runtime/plugin/closed-tabs"
 import { SessionStateKey } from "@/runtime/server/scope"
 import { createSessionKeyReader, ensureSessionKey, pruneSessionKeys } from "./helpers"
 import { requireServerKey } from "@/shell/routes/session"
+import { isSecurityPage, type SecurityPage } from "@/security/nav-items"
 import {
   closeSessionTab,
   moveSessionTab,
@@ -74,6 +75,7 @@ export type LayoutRoute =
   | { type: "settings" }
   | { type: "connect" }
   | { type: "components" }
+  | { type: "security"; page: SecurityPage }
   | { type: "draft"; draftID: string }
   | { type: "session"; sessionId: string; server: ServerConnection.Key }
 
@@ -87,6 +89,8 @@ export const currentRoute = (pathname: string, search: string): LayoutRoute => {
   if (parts[0] === "connect") return { type: "connect" }
 
   if (parts[0] === "components") return { type: "components" }
+
+  if (parts[0] === "security") return isSecurityPage(parts[1]) ? { type: "security", page: parts[1] } : { type: "home" }
 
   if (parts[0] === "new-session") {
     const draftID = new URLSearchParams(search).get("draftId")

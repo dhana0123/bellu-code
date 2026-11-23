@@ -20,6 +20,7 @@ import {
   composerPopoverActiveID,
   createComposerInteractionState,
   isComposerPopoverOpen,
+  selectComposerCommandTab,
   selectComposerMode,
   transitionComposer,
   type ComposerInteractionCommand,
@@ -94,6 +95,8 @@ export function createComposerEditor(input: {
   store: ComposerStateStoreInput
   history?: ComposerHistory
   commands: Accessor<ComposerSuggestion[]>
+  /** Skills the `/` popover lists beside the commands, labelled `/name`. */
+  skills?: Accessor<ComposerSuggestion[]>
   context: Accessor<ComposerSuggestion[]>
   searchContextFiles: (query: string, signal?: AbortSignal) => ComposerSuggestion[] | Promise<ComposerSuggestion[]>
   /** Reads reactively, so newly found sessions refresh the list without waiting on file search. */
@@ -338,8 +341,18 @@ export function createComposerEditor(input: {
     key: (item) => item.id,
     filterKeys: ["trigger", "title"],
   })
+  const skillList = useFilteredList<ComposerSuggestion>({
+    items: () => input.skills?.() ?? [],
+    key: (item) => item.id,
+    filterKeys: ["label", "description"],
+  })
 
-  const list = () => (state.popover.type === "context" ? contextList : commandList)
+  const list = () =>
+    state.popover.type === "context"
+      ? contextList
+      : selectComposerCommandTab(state) === "skills"
+        ? skillList
+        : commandList
 
   const history = createMemo<ComposerSuggestion[]>(() =>
     (input.history?.entries(mode()) ?? []).map((entry, index) => ({
@@ -423,7 +436,13 @@ export function createComposerEditor(input: {
     }
 
     if (command.type === "popover.filter") {
-      ;(command.popover === "command" ? commandList : contextList).onInput(command.query)
+      if (command.popover === "command") {
+        commandList.onInput(command.query)
+        skillList.onInput(command.query)
+        return
+      }
+
+      contextList.onInput(command.query)
 
       return
     }
@@ -638,6 +657,7 @@ export function createComposerEditor(input: {
     mode,
     view: input.view,
     suggestions,
+    commandTab: () => selectComposerCommandTab(state),
     dispatch,
     onKeyDown,
     value() {
@@ -741,6 +761,9 @@ export function createComposerEditor(input: {
     },
     openCommands() {
       dispatch({ type: "commands.open" })
+    },
+    openSkills() {
+      dispatch({ type: "skills.open" })
     },
     openContext() {
       dispatch({ type: "context.open" })

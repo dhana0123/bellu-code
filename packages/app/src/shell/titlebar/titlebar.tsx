@@ -1,6 +1,7 @@
 import { createEffect, createMemo, createSignal, Match, on, onCleanup, Show, Switch, untrack } from "solid-js"
 import { Portal } from "solid-js/web"
 import { useLocation } from "@solidjs/router"
+import { SecurityFlyout, SecuritySidebarNav } from "@/security/sidebar-nav"
 import { uuid } from "@bellucode/util/uuid"
 import { useDialog } from "@bellucode/ui/context/dialog"
 import { IconButton } from "@bellucode/ui/icon-button"
@@ -276,6 +277,7 @@ export function Titlebar(props: { verticalTabs?: { mount?: HTMLElement } }) {
                 case "settings":
                 case "connect":
                 case "components":
+                case "security":
                 case "home": {
                   const selection = layout.home.selection()
 
@@ -575,6 +577,7 @@ export function Titlebar(props: { verticalTabs?: { mount?: HTMLElement } }) {
                   <div class="flex shrink-0 items-center gap-0.5">
                     {homeButton()}
                     {searchButton()}
+                    <SecurityFlyout />
                   </div>
                 </Show>
 
@@ -781,6 +784,7 @@ export function Titlebar(props: { verticalTabs?: { mount?: HTMLElement } }) {
                             <div class="flex w-full shrink-0 flex-col gap-[3px]">
                               <Show when={!homeInSidebarHeader()}>{homeButton(true)}</Show>
                               {searchButton(true)}
+                              <SecuritySidebarNav />
                               <RecentlyClosedTabsMenu
                                 vertical
                                 onNewTab={openNewTab}

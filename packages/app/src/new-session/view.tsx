@@ -1,3 +1,4 @@
+import { SecurityMenuItem } from "@/security/composer-menu"
 import { useDialog } from "@bellucode/ui/context/dialog"
 import { Tooltip } from "@bellucode/ui/tooltip"
 import { Icon } from "@bellucode/ui/icon"
@@ -114,7 +115,7 @@ export function NewSessionView(props: {
             <div class="mt-8 flex flex-col gap-3">
               <div data-slot="new-session-composer" class="flex flex-col gap-1">
                 <div class="relative z-10">
-                  <Composer model={props.composer} />
+                  <Composer model={props.composer} securityMenu={() => <SecurityMenuItem />} />
                 </div>
                 <Show when={props.project.selected()}>
                   {(project) => (

@@ -3,6 +3,9 @@ import { isAttachment } from "../prompt-parts"
 
 export type ComposerMode = "normal" | "shell"
 
+/** Which list a command popover shows. Absent means commands. */
+export type ComposerCommandTab = "commands" | "skills"
+
 /** The draft history replaced, put back when the user browses past the newest entry or cancels a preview. */
 export type ComposerSavedDraft = {
   readonly entry: ComposerHistoryEntry
@@ -14,8 +17,20 @@ export type ComposerPopoverState =
   // Plain arrows recall history entries into the draft, with no list open.
   | { readonly type: "browsing"; readonly index: number; readonly saved: ComposerSavedDraft }
   | { readonly type: "context"; readonly query: string; readonly activeID?: string; readonly chosen?: boolean }
-  | { readonly type: "command-inline"; readonly query: string; readonly activeID?: string; readonly chosen?: boolean }
-  | { readonly type: "command-menu"; readonly query: string; readonly activeID?: string; readonly chosen?: boolean }
+  | {
+      readonly type: "command-inline"
+      readonly query: string
+      readonly tab?: ComposerCommandTab
+      readonly activeID?: string
+      readonly chosen?: boolean
+    }
+  | {
+      readonly type: "command-menu"
+      readonly query: string
+      readonly tab?: ComposerCommandTab
+      readonly activeID?: string
+      readonly chosen?: boolean
+    }
   | {
       readonly type: "history"
       readonly query: string
@@ -41,6 +56,8 @@ export type ComposerInteractionEvent =
   /** The draft changed outside typing (an attachment or a comment); recalled history becomes the draft. */
   | { readonly type: "draft.edited" }
   | { readonly type: "commands.open" }
+  /** Opens the searchable menu on the skills, as the add menu's Skills item does. */
+  | { readonly type: "skills.open" }
   | { readonly type: "context.open" }
   | { readonly type: "history.open"; readonly id: string; readonly saved: ComposerSavedDraft; readonly height?: number }
   | {
@@ -141,6 +158,8 @@ export function transitionComposer(
     return state.popover.type === "browsing" ? changed({ ...state, popover: CLOSED }) : unchanged(state)
 
   if (event.type === "commands.open") return openCommands(state, persisted)
+
+  if (event.type === "skills.open") return openSkills(state)
 
   if (event.type === "context.open") return openContext(state)
 
@@ -273,6 +292,17 @@ function openCommands(state: ComposerInteractionState, persisted: ComposerPersis
   ])
 }
 
+function openSkills(state: ComposerInteractionState): ComposerEditorTransition {
+  // A second press closes the skills.
+  if (state.popover.type === "command-menu" && state.popover.tab === "skills")
+    return changed({ ...state, popover: CLOSED, focus: "editor" }, [{ type: "focus.editor" }])
+
+  return changed({ ...state, popover: { type: "command-menu", query: "", tab: "skills" }, focus: "command-search" }, [
+    { type: "popover.filter", popover: "command", query: "" },
+    { type: "focus.command-search" },
+  ])
+}
+
 function openContext(state: ComposerInteractionState): ComposerEditorTransition {
   // A second press closes the context list, taking back the @ it typed when nothing follows it yet.
   if (state.popover.type === "context") {
@@ -384,6 +414,12 @@ function resultsChanged(state: ComposerInteractionState, ids: readonly string[])
     { ...state, popover: { ...state.popover, activeID, chosen: kept && state.popover.chosen } },
     state.popover.type === "history" && activeID ? [{ type: "history.preview", id: activeID }] : NO_COMMANDS,
   )
+}
+
+export function selectComposerCommandTab(state: ComposerInteractionState): ComposerCommandTab {
+  return (state.popover.type === "command-inline" || state.popover.type === "command-menu") && state.popover.tab
+    ? state.popover.tab
+    : "commands"
 }
 
 function activeChanged(state: ComposerInteractionState, id: string): ComposerEditorTransition {

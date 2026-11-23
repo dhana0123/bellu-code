@@ -49,6 +49,7 @@ export function useConnectorsAvailable(server: Accessor<ServerConnection.Any | u
   }))
   const available = () => connectorsAvailable({ flag: flag.data, probe: probe.data })
   /** True once both reads finished, so a caller does not treat a pending probe as "disabled". */
-  const settled = () => !context() || flag.data === false || (!flag.isPending && !probe.isPending)
+  // Checks the pending flags before `data`, which suspends while its query loads.
+  const settled = () => !context() || (!flag.isPending && (flag.data === false || !probe.isPending))
   return Object.assign(available, { settled })
 }
