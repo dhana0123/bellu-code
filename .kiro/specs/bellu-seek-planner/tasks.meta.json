@@ -1,0 +1,957 @@
+{
+  "pbtResults": {
+    "2.4 Write property test for unit filtering": {
+      "status": "passed",
+      "lastRunTimestamp": 1795345193652
+    },
+    "4.7 Write property test for allocation": {
+      "status": "passed",
+      "lastRunTimestamp": 1795345419009
+    },
+    "6.5 Write property test for determinism": {
+      "status": "passed",
+      "lastRunTimestamp": 1795345762291
+    },
+    "6.4 Write property tests for expansion and dedupe": {
+      "status": "passed",
+      "lastRunTimestamp": 1795345785839
+    },
+    "6.6 Write property test for failure isolation": {
+      "status": "passed",
+      "lastRunTimestamp": 1795345923245
+    },
+    "6.7 Write property test for key non-disclosure": {
+      "status": "passed",
+      "lastRunTimestamp": 1795345969529
+    }
+  },
+  "executionHistory": {
+    "1.1 Add the `seek_planner` feature flag": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344015113
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344159509
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344260483
+      }
+    ],
+    "1.2 Create shared types in `services/bellud/internal/seek`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344018781
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344160933
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344262006
+      }
+    ],
+    "2.1 Write example tests for plan validation in `internal/seek/plan_test.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344023864
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344272194
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344384606
+      }
+    ],
+    "2.2 Implement `plan.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344027032
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344719710
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344806780
+      }
+    ],
+    "2.3 Write property test for plan round trip": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344032794
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345108830
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345323970
+      }
+    ],
+    "2.4 Write property test for unit filtering": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344036163
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345110125
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345325306
+      }
+    ],
+    "3.1 Write example tests for scoping in `internal/seek/scope_test.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344040350
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344274505
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344385764
+      }
+    ],
+    "3.2 Implement `scope.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344043208
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344717165
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344808168
+      }
+    ],
+    "3.3 Write property test for scope bounds": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344046749
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345111331
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345326655
+      }
+    ],
+    "4.1 Write example tests for ranking in `internal/seek/rank_test.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344050069
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344276694
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344386964
+      }
+    ],
+    "4.2 Write example tests for allocation in `internal/seek/alloc_test.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344052911
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344278444
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344388211
+      }
+    ],
+    "4.3 Implement `rank.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344055731
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344718421
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344809622
+      }
+    ],
+    "4.4 Implement `alloc.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344058328
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344721020
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344810879
+      }
+    ],
+    "4.5 Write property test for score bounds and monotonicity": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344061024
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345342933
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345432067
+      }
+    ],
+    "4.6 Write property test for ordering and cutoff": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344063977
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345344309
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345433401
+      }
+    ],
+    "4.7 Write property test for allocation": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344067151
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345345739
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345434650
+      }
+    ],
+    "5.1 Create the fake BSKG test server in `internal/seek/seektest`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344069922
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344279701
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344389591
+      }
+    ],
+    "5.2 Write tests for the BSKG client in `internal/seek/bskg/client_test.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344074483
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344819839
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345095372
+      }
+    ],
+    "5.3 Implement `internal/seek/bskg/client.go` and `config.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344077312
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345106242
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345321338
+      }
+    ],
+    "5.4 Write tests for env loading in `internal/config/seek_test.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344080281
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344401104
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344706045
+      }
+    ],
+    "5.5 Implement `internal/config/seek.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344083971
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344722399
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344812240
+      }
+    ],
+    "6.1 Write example tests for the retriever in `internal/seek/retrieve_test.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344087333
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344821130
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345093759
+      }
+    ],
+    "6.2 Implement `internal/seek/retrieve.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344090517
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345441320
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345663710
+      }
+    ],
+    "6.3 Write property tests for validation and request shape": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344093203
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345674079
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345840348
+      }
+    ],
+    "6.4 Write property tests for expansion and dedupe": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344096143
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345677615
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345841729
+      }
+    ],
+    "6.5 Write property test for determinism": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344098896
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345679555
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345843427
+      }
+    ],
+    "6.6 Write property test for failure isolation": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344101603
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345852281
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345991010
+      }
+    ],
+    "6.7 Write property test for key non-disclosure": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344104473
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345853873
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345992491
+      }
+    ],
+    "7. Checkpoint - retrieval core": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344107684
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346112930
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346168675
+      }
+    ],
+    "8.1 Write tests for the MCP tool in `internal/seek/mcp_test.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344111009
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344822519
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345098038
+      }
+    ],
+    "8.2 Implement `internal/seek/mcp.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344114279
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345675916
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345838869
+      }
+    ],
+    "8.3 Wire `seek_retrieve` in `services/bellud/cmd/bellud/main.go`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344116631
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346000949
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346095939
+      }
+    ],
+    "8.4 Write property test for configuration validity": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344119293
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346002625
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346097511
+      }
+    ],
+    "9. Checkpoint - bellud complete": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344122454
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346175350
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346243064
+      }
+    ],
+    "10.1 Extend `packages/core/test/plugin/agent.test.ts`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344125544
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344402705
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344707388
+      }
+    ],
+    "10.2 Write prompt contract tests in `packages/core/test/plugin/seek-prompt.test.ts`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344129705
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344404165
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344708638
+      }
+    ],
+    "10.3 Add `packages/core/src/plugin/seek-prompt.ts`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344133122
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344823859
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345096782
+      }
+    ],
+    "10.4 Register the `seek` agent in `packages/core/src/plugin/agent.ts`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344136313
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345107640
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345322751
+      }
+    ],
+    "11. Checkpoint - core complete": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344139382
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346250513
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346296376
+      }
+    ],
+    "12.1 Build the e2e harness in `packages/core/test/plugin/seek.e2e.test.ts`": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344141901
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345442656
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345665261
+      }
+    ],
+    "12.2 Add the re-plan scenario": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344145335
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345681165
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345844814
+      }
+    ],
+    "12.3 Add the `cve_unavailable` scenario": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344147842
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346004160
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346098850
+      }
+    ],
+    "13. Final checkpoint - everything green": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795344150596
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346303886
+      },
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346932519
+      }
+    ],
+    "5. BSKG client, fake server and configuration": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345328152
+      }
+    ],
+    "10. Core: seek agent, prompt and gating": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345329820
+      }
+    ],
+    "3. Scoping": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795345331071
+      }
+    ],
+    "12. End-to-end tests with a stubbed LLM": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346101795
+      }
+    ],
+    "1. Foundations": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346949768
+      }
+    ],
+    "2. Plan validation": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346951019
+      }
+    ],
+    "4. Ranking and Top_K allocation": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346952289
+      }
+    ],
+    "6. Retriever": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346953449
+      }
+    ],
+    "8. MCP tool and wiring": [
+      {
+        "executionId": "e11905ab-0868-4987-9bb4-723708c96fa7",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795346954768
+      }
+    ],
+    "14.1 Update tests for the new cap": [
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795347793506
+      },
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795347808020
+      },
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795347919810
+      }
+    ],
+    "14.2 Implement the new cap": [
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795347796947
+      },
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795347929380
+      },
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795348003165
+      }
+    ],
+    "14.3 Checkpoint - cap change green": [
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795347799965
+      },
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795348013895
+      },
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795348067634
+      }
+    ],
+    "14. Raise the weakness cap to 20 and count submitted items": [
+      {
+        "executionId": "a4ee18a4-2092-47a6-8c8f-c4137faacabf",
+        "chatSessionId": "sess_75373e3a-7def-40c7-9944-413cea50796c",
+        "timestamp": 1795348070880
+      }
+    ],
+    "15.1 Add `PROMPT_SEEK_USAGE` in `packages/core/src/plugin/seek-prompt.ts`": [
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365544540
+      },
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365582589
+      },
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365681782
+      }
+    ],
+    "15.2 Append the rule to the Build agent in `packages/core/src/plugin/agent.ts`": [
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365554445
+      },
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365687882
+      },
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365818850
+      }
+    ],
+    "15.3 Extend `packages/core/test/plugin/seek.e2e.test.ts`": [
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365561016
+      },
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365825454
+      },
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795366417385
+      }
+    ],
+    "15.4 Checkpoint - verify and commit": [
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795365569377
+      },
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795366424135
+      },
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795367240941
+      }
+    ],
+    "15. Main agent usage rule": [
+      {
+        "executionId": "e542d180-947f-4f93-9cfe-d2072ad2199b",
+        "chatSessionId": "sess_9448441a-caa9-4411-b0f3-da44c7f9395e",
+        "timestamp": 1795367245006
+      }
+    ]
+  }
+}

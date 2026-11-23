@@ -30,7 +30,6 @@ import {
 } from "@/runtime/server/health-machine"
 import { ProjectMenuItems } from "./menu"
 import { CollapsedSidebarToggleSpace } from "@/shell/sidebar-toggle"
-import { showToast } from "@/shell/notifications/toast"
 import "./view.css"
 
 const HOME_PROJECT_NAV_LABEL = "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
@@ -81,14 +80,6 @@ export type HomeProjectsViewProps = {
   onHideProject: (server: ServerConnection.Any, project: LocalProject) => void
   onOpenSettings: () => void
   onOpenHelp: () => void
-  /** Connectors shows in the Security menu while the server offers it. */
-  connectorsAvailable?: boolean
-  /** The Security page Home shows in place of the session list, if any. */
-  securityPage?: "connectors" | "graph"
-  onOpenConnectors?: () => void
-  /** The Security Graph shows in the Security menu while its flag is on. */
-  graphAvailable?: boolean
-  onOpenGraph?: () => void
 }
 
 export function HomeProjectsView(props: HomeProjectsViewProps) {
@@ -328,17 +319,6 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
               </For>
             </div>
           </Show>
-          <Show when={!props.dropdown}>
-            <HomeSecurityNav
-              class="mt-6 hidden lg:flex"
-              language={props.language}
-              connectors={props.connectorsAvailable}
-              page={props.securityPage}
-              onOpenConnectors={props.onOpenConnectors}
-              graph={props.graphAvailable}
-              onOpenGraph={props.onOpenGraph}
-            />
-          </Show>
         </div>
       </div>
       <HomeUtilityNav
@@ -348,82 +328,6 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
         language={props.language}
       />
     </aside>
-  )
-}
-
-// The security area. Its pages are not built yet, so each item announces that for now.
-const SECURITY_ITEMS = [
-  { icon: "security-dashboard", label: "home.security.dashboards" },
-  { icon: "security-findings", label: "home.security.findings" },
-  { icon: "security-issues", label: "home.security.issues" },
-  { icon: "security-threat", label: "home.security.threatScore" },
-  { icon: "security-graph", label: "home.security.graph" },
-  { icon: "security-sbom", label: "home.security.sbom" },
-  { icon: "security-scanners", label: "home.security.scanners" },
-  { icon: "security-agents", label: "home.security.agents" },
-  { icon: "security-simulations", label: "home.security.simulations" },
-] as const
-
-function HomeSecurityNav(props: {
-  class?: string
-  language: ReturnType<typeof useLanguage>
-  connectors?: boolean
-  page?: "connectors" | "graph"
-  onOpenConnectors?: () => void
-  graph?: boolean
-  onOpenGraph?: () => void
-}) {
-  const [state, setState] = createStore({ open: true })
-  const soon = (label: (typeof SECURITY_ITEMS)[number]["label"]) =>
-    showToast({
-      title: props.language.t("home.security.soon.title", { name: props.language.t(label) }),
-      description: props.language.t("home.security.soon.description"),
-    })
-
-  return (
-    <nav
-      class={`${props.class ?? ""} min-w-0 flex-col gap-1 lg:pr-3`}
-      aria-label={props.language.t("home.security")}
-    >
-      <button
-        type="button"
-        class="flex h-7 w-full cursor-default items-center gap-1 rounded-md px-1.5 text-left text-v2-text-text-muted [font-weight:530] hover:text-v2-text-text-base focus-visible:outline-none focus-visible:[box-shadow:inset_0_0_0_0.5px_var(--v2-border-border-muted)]"
-        aria-expanded={state.open}
-        onClick={() => setState("open", (open) => !open)}
-      >
-        <span class="min-w-0 flex-1">{props.language.t("home.security")}</span>
-        <Icon
-          name="chevron-down"
-          size="small"
-          class="text-v2-icon-icon-muted transition-transform duration-[120ms]"
-          style={{ transform: state.open ? undefined : "rotate(-90deg)" }}
-        />
-      </button>
-      <Show when={state.open && props.connectors}>
-        <HomeProjectNavButton
-          type="button"
-          data-selected={props.page === "connectors" ? "" : undefined}
-          aria-current={props.page === "connectors" ? "page" : undefined}
-          onClick={() => props.onOpenConnectors?.()}
-        >
-          <Icon name="plug" size="small" />
-          <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t("settings.connectors.title")}</span>
-        </HomeProjectNavButton>
-      </Show>
-      <For each={state.open ? SECURITY_ITEMS : []}>
-        {(item) => (
-          <HomeProjectNavButton
-            type="button"
-            data-selected={item.icon === "security-graph" && props.graph && props.page === "graph" ? "" : undefined}
-            aria-current={item.icon === "security-graph" && props.graph && props.page === "graph" ? "page" : undefined}
-            onClick={() => (item.icon === "security-graph" && props.graph ? props.onOpenGraph?.() : soon(item.label))}
-          >
-            <Icon name={item.icon} size="small" />
-            <span class={HOME_PROJECT_NAV_LABEL}>{props.language.t(item.label)}</span>
-          </HomeProjectNavButton>
-        )}
-      </For>
-    </nav>
   )
 }
 

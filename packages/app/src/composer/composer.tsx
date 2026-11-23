@@ -1,4 +1,4 @@
-import { Show, createEffect, createMemo, createSignal, onCleanup, untrack } from "solid-js"
+import { Show, createEffect, createMemo, createSignal, onCleanup, untrack, type JSX } from "solid-js"
 import { makeEventListener } from "@solid-primitives/event-listener"
 import { createMediaQuery } from "@solid-primitives/media"
 import { Button } from "@bellucode/ui/button"
@@ -27,6 +27,7 @@ export function Composer(props: {
   borderUnderlay?: boolean
   readOnly?: boolean
   suggestionBoundary?: () => HTMLElement | undefined
+  securityMenu?: () => JSX.Element
 }) {
   const dialog = useDialog()
   const command = useCommand()
@@ -69,6 +70,7 @@ export function Composer(props: {
         alternateKeybind={[formatKeybind("mod", language.t), "↵"]}
         exitShellKeybind={[formatKeybind("esc", language.t)]}
         suggestionBoundary={props.suggestionBoundary}
+        securityMenu={props.securityMenu}
         modelControl={
           <ComposerModelControl
             loading={props.model.model.loading}

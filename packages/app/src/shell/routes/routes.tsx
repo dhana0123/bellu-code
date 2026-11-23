@@ -1,6 +1,8 @@
 import { Route, useParams } from "@solidjs/router"
 import { createMemo, lazy, Show, Suspense, type ParentProps } from "solid-js"
 import { Home } from "@/home/route"
+import { SecurityRoute } from "@/security/route"
+import { SecurityNavProvider } from "@/security/nav-context"
 import { ServerProvider } from "@/runtime/server/current"
 import { useGlobal } from "@/runtime/server/runtime"
 import { ServerConnection, useServers } from "@/runtime/server/registry"
@@ -54,6 +56,7 @@ export function AppRoutes() {
     <Route component={AppLayout}>
       <Route path="/" component={Home} />
       <Route path="/settings" component={SettingsScreen} />
+      <Route path="/security/:page" component={SecurityRoute} />
       <Route
         path="/server/:serverKey/session/:id"
         component={() => (
@@ -124,7 +127,9 @@ function AppLayout(props: ParentProps) {
       <LayoutProvider>
         <SettingsSurfaceProvider>
           <PluginAttachment>
-            <Shell>{props.children}</Shell>
+            <SecurityNavProvider>
+              <Shell>{props.children}</Shell>
+            </SecurityNavProvider>
           </PluginAttachment>
         </SettingsSurfaceProvider>
       </LayoutProvider>
