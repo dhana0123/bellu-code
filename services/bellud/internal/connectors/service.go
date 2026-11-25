@@ -78,6 +78,11 @@ type Options struct {
 	Transport http.RoundTripper
 	Logger    collectors.Logger
 	Now       func() time.Time
+	// GapSink persists the gaps of each collector run (collector_gap writer).
+	GapSink collectors.GapSink
+	// GapsFor reads the persisted gaps of a connection's collector for the
+	// status route. Nil falls back to the gaps of the last sync.
+	GapsFor func(ctx context.Context, collector string) ([]store.Gap, error)
 }
 
 // Service owns every connector component. It is safe for concurrent use.
@@ -108,6 +113,7 @@ type Service struct {
 	cfPrv     *cloudflare.Provider
 	k8sPrv    *kubernetes.Provider
 	device    *deviceflow.Service
+	gapsFor   func(ctx context.Context, collector string) ([]store.Gap, error)
 
 	pwMu    sync.Mutex
 	pending []byte // passphrase handed over by Unlock, consumed by the key source prompt
@@ -161,7 +167,7 @@ func New(ctx context.Context, opt Options) (*Service, error) {
 	if opt.Logger == nil {
 		opt.Logger = nopLogger{}
 	}
-	s := &Service{enabled: true, dir: opt.Dir, getenv: opt.Getenv, now: opt.Now, params: map[string]*cachedParams{}}
+	s := &Service{enabled: true, dir: opt.Dir, getenv: opt.Getenv, now: opt.Now, params: map[string]*cachedParams{}, gapsFor: opt.GapsFor}
 	if err := os.MkdirAll(opt.Dir, 0o700); err != nil {
 		return nil, fmt.Errorf("connectors: create data directory: %w", err)
 	}
@@ -238,8 +244,11 @@ func New(ctx context.Context, opt Options) (*Service, error) {
 			kubernetes.ConnectorID: kubernetes.IsSelfSubjectRulesReviewBody,
 		},
 	})
-	s.runner = collectors.New(opt.Engine, nil,
-		collectors.WithLogger(opt.Logger), collectors.WithGuard(s.red.Guard(redact.New())))
+	runnerOpts := []collectors.Option{collectors.WithLogger(opt.Logger), collectors.WithGuard(s.red.Guard(redact.New()))}
+	if opt.GapSink != nil {
+		runnerOpts = append(runnerOpts, collectors.WithGapSink(opt.GapSink))
+	}
+	s.runner = collectors.New(opt.Engine, nil, runnerOpts...)
 	s.sup = lifecycle.NewCollectorSupervisor(lifecycle.SupervisorConfig{
 		Store: s.store, Runner: s.runner, Now: opt.Now, Redactor: s.red,
 	})
@@ -270,12 +279,17 @@ func New(ctx context.Context, opt Options) (*Service, error) {
 		ClientID: gitlab.EffectiveClientID(opt.Getenv), Vault: s.vault, Redactor: s.red, HostFor: s.githubHost,
 	})
 	s.azurePrv = azure.NewProvider(azure.ProviderConfig{
-		ClientID: azure.EffectiveClientID(opt.Getenv), Vault: s.vault, Redactor: s.red,
+		ClientID: azure.EffectiveClientID(opt.Getenv), Vault: s.vault, Redactor: s.red, Broker: s.broker,
 	})
-	s.gcpPrv = gcp.NewProvider(gcp.ProviderConfig{Opener: s.vault})
+	s.gcpPrv = gcp.NewProvider(gcp.ProviderConfig{Opener: s.vault, Broker: s.broker})
 	s.bitbktPrv = bitbucket.NewProvider()
 	s.cfPrv = cloudflare.NewProvider()
-	s.k8sPrv = kubernetes.NewProvider(kubernetes.ProviderConfig{ServerFor: s.kubernetesServer})
+	s.k8sPrv = kubernetes.NewProvider(kubernetes.ProviderConfig{
+		ServerFor: s.kubernetesServer,
+		HTTPClientFor: func(ref broker.ConnectionRef) *http.Client {
+			return s.broker.HTTPClient(ref, policy.CallerCollector)
+		},
+	})
 	s.mgr.RegisterProvider(gitlab.ConnectorID, s.gitlabPrv)
 	s.mgr.RegisterProvider(azure.ConnectorID, s.azurePrv)
 	s.mgr.RegisterProvider(gcp.ConnectorID, s.gcpPrv)
@@ -480,16 +494,58 @@ type Status struct {
 	Locked     bool     `json:"locked"`
 	CanRotate  bool     `json:"-"`
 	Warnings   []string `json:"warnings"`
+	// Connections reports, per connection, whether the connector collects data
+	// and the gaps its last run left.
+	Connections []ConnectionStatus `json:"connections"`
+}
+
+// Collection values of ConnectionStatus.
+const (
+	CollectionAvailable    = "available"
+	CollectionNotAvailable = "not_available"
+)
+
+// ConnectionStatus is the collection state of one connection.
+type ConnectionStatus struct {
+	ID          string      `json:"id"`
+	ConnectorID string      `json:"connectorId"`
+	Collection  string      `json:"collection"`
+	Gaps        []store.Gap `json:"gaps"`
+}
+
+// connectOnly lists the connectors that connect but keep no collector.
+var connectOnly = map[string]bool{gitlab.ConnectorID: true, bitbucket.ConnectorID: true, cloudflare.ConnectorID: true}
+
+func (s *Service) connectionStatuses() []ConnectionStatus {
+	out := []ConnectionStatus{}
+	for _, c := range s.Connections() {
+		cs := ConnectionStatus{ID: c.ID, ConnectorID: c.ConnectorID, Collection: CollectionAvailable, Gaps: []store.Gap{}}
+		if connectOnly[c.ConnectorID] {
+			cs.Collection = CollectionNotAvailable
+			out = append(out, cs)
+			continue
+		}
+		if c.LastSync != nil {
+			cs.Gaps = append(cs.Gaps, c.LastSync.Gaps...)
+		}
+		if s.gapsFor != nil {
+			if g, err := s.gapsFor(context.Background(), "connector:"+c.ConnectorID+":"+c.ID); err == nil {
+				cs.Gaps = append([]store.Gap{}, g...)
+			}
+		}
+		out = append(out, cs)
+	}
+	return out
 }
 
 // Status reports the key source, persistence and warnings. Offline is a
 // client-side observation and is always false here.
 func (s *Service) Status() Status {
 	if !s.Enabled() {
-		return Status{Warnings: []string{}}
+		return Status{Warnings: []string{}, Connections: []ConnectionStatus{}}
 	}
 	v := s.vault.Status()
-	st := Status{Enabled: true, KeySource: v.KeySource, Persistent: v.Persistent, CanRotate: v.CanRotate, Locked: v.Locked, Warnings: []string{}}
+	st := Status{Enabled: true, KeySource: v.KeySource, Persistent: v.Persistent, CanRotate: v.CanRotate, Locked: v.Locked, Warnings: []string{}, Connections: s.connectionStatuses()}
 	if v.Notice != "" {
 		st.Warnings = append(st.Warnings, v.Notice)
 	}

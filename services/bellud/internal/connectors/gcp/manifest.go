@@ -19,6 +19,11 @@ const MethodServiceAccount = "service_account"
 const (
 	ResourceManagerHost = "cloudresourcemanager.googleapis.com"
 	TokenHost           = "oauth2.googleapis.com"
+	ComputeHost         = "compute.googleapis.com"
+	ContainerHost       = "container.googleapis.com"
+	StorageHost         = "storage.googleapis.com"
+	SQLAdminHost        = "sqladmin.googleapis.com"
+	IAMHost             = "iam.googleapis.com"
 )
 
 // Operation names and paths.
@@ -54,10 +59,27 @@ func Manifest() manifest.Manifest {
 			// operation to a permission probe.
 			{Name: opTestIAM, Class: manifest.ClassRead, Method: "POST", Query: true,
 				Host: ResourceManagerHost, Path: "/v1/projects/{p}", MaxBytes: 64 << 10},
+			// Collector listings: GET only.
+			{Name: "GET /compute/v1/projects/{p}/global/networks", Class: manifest.ClassRead, Method: "GET",
+				Host: ComputeHost, Path: "/compute/v1/projects/{p}/global/networks"},
+			{Name: "GET /compute/v1/projects/{p}/global/firewalls", Class: manifest.ClassRead, Method: "GET",
+				Host: ComputeHost, Path: "/compute/v1/projects/{p}/global/firewalls"},
+			{Name: "GET /compute/v1/projects/{p}/aggregated/subnetworks", Class: manifest.ClassRead, Method: "GET",
+				Host: ComputeHost, Path: "/compute/v1/projects/{p}/aggregated/subnetworks"},
+			{Name: "GET /compute/v1/projects/{p}/aggregated/instances", Class: manifest.ClassRead, Method: "GET",
+				Host: ComputeHost, Path: "/compute/v1/projects/{p}/aggregated/instances"},
+			{Name: "GET /v1/projects/{p}/locations/-/clusters", Class: manifest.ClassRead, Method: "GET",
+				Host: ContainerHost, Path: "/v1/projects/{p}/locations/-/clusters"},
+			{Name: "GET /storage/v1/b", Class: manifest.ClassRead, Method: "GET",
+				Host: StorageHost, Path: "/storage/v1/b"},
+			{Name: "GET /v1/projects/{p}/instances", Class: manifest.ClassRead, Method: "GET",
+				Host: SQLAdminHost, Path: "/v1/projects/{p}/instances"},
+			{Name: "GET /v1/projects/{p}/serviceAccounts", Class: manifest.ClassRead, Method: "GET",
+				Host: IAMHost, Path: "/v1/projects/{p}/serviceAccounts"},
 			{Name: broker.GCPTokenOperation, Class: manifest.ClassAuth, Method: "POST", Query: true,
 				Host: TokenHost, Path: "/token", MaxBytes: 16 << 10, IssuesCredential: true},
 		},
-		Egress:   []string{ResourceManagerHost, TokenHost},
+		Egress:   []string{ResourceManagerHost, TokenHost, ComputeHost, ContainerHost, StorageHost, SQLAdminHost, IAMHost},
 		Entities: []string{"gcp_project"},
 	}
 }

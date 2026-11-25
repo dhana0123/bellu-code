@@ -530,6 +530,7 @@ func applyRunStatus(l *store.LastSync, rs RunStatus) {
 	l.AuthError = rs.AuthError
 	l.DeniedScopes = rs.DeniedScopes
 	l.Truncations = rs.Truncations
+	l.Gaps = rs.Gaps
 }
 
 func (s *CollectorSupervisor) setSync(id string, fn func(*store.LastSync)) {

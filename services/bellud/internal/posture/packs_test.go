@@ -54,6 +54,13 @@ func TestBundledPacksRules(t *testing.T) {
 		{"github_repo", map[string]any{"default_branch": "main", "default_branch_protected": false}, "repo_hygiene/repo_branch_protection"},
 		{"github_alert", map[string]any{"alert_type": "dependabot", "state": "open"}, "repo_hygiene/open_dependabot_alert"},
 		{"github_alert", map[string]any{"alert_type": "secret_scanning", "state": "open"}, "repo_hygiene/open_secret_scanning_alert"},
+		{"gcp_resource", map[string]any{"gcp_type": "storage.googleapis.com/Bucket", "public_access": "enabled"}, "cis_gcp/gcs_public_access"},
+		{"gcp_resource", map[string]any{"gcp_type": "compute.googleapis.com/Firewall", "direction": "ingress", "internet_open": "true"}, "cis_gcp/firewall_ssh_open"},
+		{"gcp_iam_binding", map[string]any{"role": "roles/owner"}, "cis_gcp/iam_owner_binding"},
+		{"azure_resource", map[string]any{"azure_type": "azure:storage-account", "https_only": "disabled"}, "cis_azure/storage_https_only"},
+		{"azure_resource", map[string]any{"azure_type": "azure:nsg", "direction": "ingress", "internet_open": "true", "from_port": 3380, "to_port": 3400}, "cis_azure/nsg_rdp_open"},
+		{"k8s_pod", map[string]any{"privileged": "true"}, "cis_k8s/privileged_pod"},
+		{"k8s_binding", map[string]any{"role_ref": "cluster-admin"}, "cis_k8s/cluster_admin_binding"},
 	}
 	for _, b := range bad {
 		if !fired(t, e, b.typ, b.attrs)[b.rule] {
@@ -69,6 +76,10 @@ func TestBundledPacksRules(t *testing.T) {
 		{"aws_resource", map[string]any{"public_access": "enabled", "data_classes": []any{"public_docs"}}, ""},
 		{"github_repo", map[string]any{"visibility": "private", "default_branch_protected": true}, ""},
 		{"github_alert", map[string]any{"alert_type": "dependabot", "state": "fixed"}, ""},
+		{"gcp_resource", map[string]any{"gcp_type": "storage.googleapis.com/Bucket", "public_access": "disabled"}, ""},
+		{"azure_resource", map[string]any{"azure_type": "azure:nsg", "direction": "ingress", "internet_open": "true", "from_port": 443, "to_port": 443}, ""},
+		{"k8s_pod", map[string]any{"privileged": "false", "host_network": "false", "run_as_root": "false"}, ""},
+		{"k8s_binding", map[string]any{"role_ref": "view"}, ""},
 	}
 	for _, g := range good {
 		if f := fired(t, e, g.typ, g.attrs); len(f) != 0 {
@@ -82,6 +93,8 @@ func TestBundledPacksRules(t *testing.T) {
 		{"aws_resource", map[string]any{"public_access": "unknown", "encryption_at_rest": "unknown", "data_classes": []any{"pii"}}, ""},
 		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "unknown", "from_port": 22, "to_port": 22}, ""},
 		{"github_repo", map[string]any{}, ""},
+		{"k8s_pod", map[string]any{"privileged": "unknown"}, ""},
+		{"gcp_resource", map[string]any{"gcp_type": "sqladmin.googleapis.com/Instance", "public_access": "unknown"}, ""},
 	}
 	for _, u := range unknown {
 		if f := fired(t, e, u.typ, u.attrs); len(f) != 0 {

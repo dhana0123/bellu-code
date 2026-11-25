@@ -37,6 +37,39 @@
       },
       "hash": "aws_sg_rule:272f90b25af1a973397b6060d37d984d"
     },
+    "azure_resource": {
+      "identity": [
+        "connection",
+        "resource_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "resource_id": "golden-resource_id"
+      },
+      "hash": "azure_resource:ec622e6f46984c61fda3e84547cd57f6"
+    },
+    "azure_role_assignment": {
+      "identity": [
+        "connection",
+        "assignment_id"
+      ],
+      "attrs": {
+        "assignment_id": "golden-assignment_id",
+        "connection": "golden-connection"
+      },
+      "hash": "azure_role_assignment:d7d8ef6017c313eedc40f42668442564"
+    },
+    "azure_subscription": {
+      "identity": [
+        "connection",
+        "subscription_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "subscription_id": "golden-subscription_id"
+      },
+      "hash": "azure_subscription:84e1d49047ebf98309b6148dab5d657e"
+    },
     "code_community": {
       "identity": [
         "connection",
@@ -86,6 +119,210 @@
         "id": "golden-id"
       },
       "hash": "finding:9aac6f0de8d3977e48c9120986aab020"
+    },
+    "gcp_iam_binding": {
+      "identity": [
+        "connection",
+        "scope",
+        "role",
+        "member"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "member": "golden-member",
+        "role": "golden-role",
+        "scope": "golden-scope"
+      },
+      "hash": "gcp_iam_binding:f528d8c6465acc1e66df749238e8fc0c"
+    },
+    "gcp_project": {
+      "identity": [
+        "connection",
+        "project_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "project_id": "golden-project_id"
+      },
+      "hash": "gcp_project:1893ec4fb3edc67dafb63a700e04b87a"
+    },
+    "gcp_resource": {
+      "identity": [
+        "connection",
+        "resource_name"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "resource_name": "golden-resource_name"
+      },
+      "hash": "gcp_resource:b3f01d29b01905fbf0d6436994aa5b38"
+    },
+    "k8s_binding": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_binding:f0e0d48867529ec97c7f9f08539499bb"
+    },
+    "k8s_cluster": {
+      "identity": [
+        "connection",
+        "uid"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_cluster:d2c37cebcdca7438283c5ac58c4a4ed6"
+    },
+    "k8s_configmap_ref": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_configmap_ref:748f1b45ad7de7ee56e478e12d143511"
+    },
+    "k8s_ingress": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_ingress:86bed7b36dbfcd315e47f3f5fe3c3110"
+    },
+    "k8s_namespace": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_namespace:bf1266c940ee9eee39795a40e7a1e0c5"
+    },
+    "k8s_netpol": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_netpol:8c8b0e08ad01df49a86b8a872e9faf74"
+    },
+    "k8s_node": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_node:d388e5c4b1b21632a172b17446dfde2e"
+    },
+    "k8s_pod": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_pod:e271b01e9cebd5cf01741f896dfa2c98"
+    },
+    "k8s_role": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_role:d60674b2bbc5b60ae030ac69f8149721"
+    },
+    "k8s_secret_ref": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_secret_ref:093ca3b871011cce5a353dc356fbdc44"
+    },
+    "k8s_service": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_service:909b74641025f4da7c6425bb90b2c7fd"
+    },
+    "k8s_serviceaccount": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_serviceaccount:aca80c5bbf931f3899c15ced1ef3299a"
+    },
+    "k8s_workload": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_workload:e6dabe1fb2c6599f771d0ca357f6eb68"
     },
     "posture_pack": {
       "identity": [
@@ -169,16 +406,43 @@
     "aws_uses_layer": "reverse",
     "aws_uses_subnet": "reverse",
     "aws_writes_to": "forward",
+    "azure_assigned_to": "reverse",
+    "azure_assignment_scope": "forward",
+    "azure_deployed_on": "reverse",
+    "azure_has_identity": "reverse",
+    "azure_in_resource_group": "reverse",
+    "azure_in_subnet": "reverse",
+    "azure_in_subscription": "reverse",
+    "azure_in_vnet": "reverse",
+    "azure_load_balances": "forward",
+    "azure_nsg_applies_to": "forward",
+    "azure_stores_in": "forward",
     "built_into": "reverse",
     "calls": "reverse",
+    "can_assume": "forward",
     "contained_in": "reverse",
     "declares_dependency": "reverse",
     "defined_in": "reverse",
     "deployed_as": "reverse",
+    "gcp_binding_grants": "forward",
+    "gcp_binding_on": "reverse",
+    "gcp_encrypted_by": "reverse",
+    "gcp_firewall_applies_to": "forward",
+    "gcp_in_network": "reverse",
+    "gcp_in_project": "reverse",
+    "gcp_in_subnet": "reverse",
+    "gcp_runs_as": "forward",
     "imports": "reverse",
     "in_community": "reverse",
+    "k8s_bound_to": "forward",
+    "k8s_exposes": "forward",
+    "k8s_in_namespace": "reverse",
+    "k8s_runs_as_sa": "forward",
+    "k8s_uses_image": "reverse",
+    "observed_connection": "forward",
     "reachable_from": "forward",
     "rule_applies_to": "forward",
+    "same_issue_as": "forward",
     "supersedes": "forward"
   }
 }

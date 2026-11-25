@@ -1,0 +1,96 @@
+{
+  "id": "cis_azure",
+  "version": "1",
+  "rules": [
+    {
+      "id": "storage_public_access",
+      "title": "Storage account allows public access",
+      "description": "Blob public access is enabled.",
+      "severity": "high",
+      "category": "data_security",
+      "applies_to": [
+        "azure_resource"
+      ],
+      "remediation": "Disable blob public access on the storage account.",
+      "benchmarks": [
+        "CIS-Azure-2.0:3.7"
+      ],
+      "rego": "storage_public_access.rego"
+    },
+    {
+      "id": "storage_https_only",
+      "title": "Storage account allows unencrypted transport",
+      "description": "Secure transfer is not required.",
+      "severity": "medium",
+      "category": "data_security",
+      "applies_to": [
+        "azure_resource"
+      ],
+      "remediation": "Enable secure transfer required.",
+      "benchmarks": [
+        "CIS-Azure-2.0:3.1"
+      ],
+      "rego": "storage_https_only.rego"
+    },
+    {
+      "id": "sql_not_public",
+      "title": "SQL database is publicly accessible",
+      "description": "The SQL server allows public network access.",
+      "severity": "high",
+      "category": "data_security",
+      "applies_to": [
+        "azure_resource"
+      ],
+      "remediation": "Disable public network access and use private endpoints.",
+      "benchmarks": [
+        "CIS-Azure-2.0:4.1.2"
+      ],
+      "rego": "sql_not_public.rego"
+    },
+    {
+      "id": "keyvault_purge_protection",
+      "title": "Key Vault has no purge protection",
+      "description": "Purge protection is disabled.",
+      "severity": "medium",
+      "category": "data_security",
+      "applies_to": [
+        "azure_resource"
+      ],
+      "remediation": "Enable purge protection on the Key Vault.",
+      "benchmarks": [
+        "CIS-Azure-2.0:8.5"
+      ],
+      "rego": "keyvault_purge_protection.rego"
+    },
+    {
+      "id": "nsg_ssh_open",
+      "title": "NSG allows 0.0.0.0/0 to SSH (22)",
+      "description": "An inbound NSG rule open to the internet covers SSH (22).",
+      "severity": "high",
+      "category": "network_exposure",
+      "applies_to": [
+        "azure_resource"
+      ],
+      "remediation": "Restrict the source or use Azure Bastion.",
+      "benchmarks": [
+        "CIS-Azure-2.0:6.2"
+      ],
+      "rego": "nsg_ssh_open.rego"
+    },
+    {
+      "id": "nsg_rdp_open",
+      "title": "NSG allows 0.0.0.0/0 to RDP (3389)",
+      "description": "An inbound NSG rule open to the internet covers RDP (3389).",
+      "severity": "high",
+      "category": "network_exposure",
+      "applies_to": [
+        "azure_resource"
+      ],
+      "remediation": "Restrict the source or use Azure Bastion.",
+      "benchmarks": [
+        "CIS-Azure-2.0:6.1"
+      ],
+      "rego": "nsg_rdp_open.rego"
+    }
+  ]
+}

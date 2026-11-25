@@ -42,7 +42,7 @@ func TestConnectorsFlagOffRegistersNothing(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("BELLUCODE_FLAGS", "-connectors")
-	if w := openConnectors(nopLog{}, openTestEngine(t), newSet(t), nil); w != nil {
+	if w := openConnectors(nopLog{}, openTestEngine(t), newSet(t), nil, nil); w != nil {
 		t.Fatal("wiring must be nil with the flag off")
 	}
 	if _, err := os.Stat(filepath.Join(home, ".local", "share", "bellucode", "connectors")); !os.IsNotExist(err) {
@@ -59,7 +59,7 @@ func TestConnectorsFlagOffRegistersNothing(t *testing.T) {
 func TestConnectorsFlagOnSkippedWithoutGraph(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("BELLUCODE_FLAGS", "connectors")
-	if w := openConnectors(nopLog{}, nil, newSet(t), nil); w != nil {
+	if w := openConnectors(nopLog{}, nil, newSet(t), nil, nil); w != nil {
 		t.Fatal("no graph engine must skip connectors")
 	}
 }
@@ -69,7 +69,7 @@ func TestConnectorsRouteOwnershipAndAuth(t *testing.T) {
 	t.Setenv("BELLUCODE_FLAGS", "connectors")
 	set := newSet(t)
 	eng := openTestEngine(t)
-	w := openConnectors(nopLog{}, eng, set, nil)
+	w := openConnectors(nopLog{}, eng, set, nil, nil)
 	if w == nil {
 		t.Fatal("expected wiring")
 	}

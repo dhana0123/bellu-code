@@ -153,7 +153,7 @@ func serve(args []string) error {
 	}
 
 	// Connectors need the open graph engine; nil while the flag is off.
-	conn := openConnectors(logger, engine, set, allowedHostsOf(cfg.Hostname))
+	conn := openConnectors(logger, engine, set, allowedHostsOf(cfg.Hostname), fnd)
 	// Overview needs the ready engine; findings are optional for it.
 	ov := openOverview(logger, os.Getenv, engine, fnd)
 	pw := openPosture(logger, os.Getenv, os.LookupEnv, engine, fnd)

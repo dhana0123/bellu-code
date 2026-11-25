@@ -6,12 +6,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	apiconn "github.com/bellu/bellucode/services/bellud/internal/api/connectors"
+	"github.com/bellu/bellucode/services/bellud/internal/collectors"
 	"github.com/bellu/bellucode/services/bellud/internal/config"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/store"
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/mcptoken"
+	"github.com/bellu/bellucode/services/bellud/internal/store/sqlite"
 )
 
 // connectorWiring is the connector surface of the process. It is nil while the
@@ -26,7 +30,7 @@ type connectorWiring struct {
 
 // openConnectors builds and starts the connector service. A disabled flag, a
 // missing graph engine or any failure yields nil and serving continues.
-func openConnectors(logger interface{ Println(...any) }, eng graph.Engine, set mcptoken.Set, allowedHosts []string) *connectorWiring {
+func openConnectors(logger interface{ Println(...any) }, eng graph.Engine, set mcptoken.Set, allowedHosts []string, fnd *findingsWiring) *connectorWiring {
 	if !connectors.Enabled(os.Getenv) {
 		return nil
 	}
@@ -46,6 +50,8 @@ func openConnectors(logger interface{ Println(...any) }, eng graph.Engine, set m
 		// are stripped from the TS child environment.
 		KeyFile:    os.Getenv("BELLUCODE_MASTER_KEY_FILE"),
 		Passphrase: envPassphrase(os.Getenv),
+		GapSink:    fnd.gapSink(),
+		GapsFor:    fnd.gapsFor(),
 	})
 	if err != nil || !svc.Enabled() {
 		if err != nil {
@@ -149,4 +155,34 @@ func envPassphrase(getenv func(string) string) func(context.Context) ([]byte, er
 		return nil
 	}
 	return func(context.Context) ([]byte, error) { return []byte(pw), nil }
+}
+
+// gapSink writes the gaps of each collector run to collector_gap. Nil without
+// the findings database.
+func (w *findingsWiring) gapSink() collectors.GapSink {
+	if w == nil {
+		return nil
+	}
+	return func(ctx context.Context, collector string, gaps []collectors.Gap, runAt time.Time) error {
+		rows := make([]sqlite.CollectorGap, 0, len(gaps))
+		for _, g := range gaps {
+			rows = append(rows, sqlite.CollectorGap{Connector: collector, ResourceType: g.ResourceType, Scope: g.Scope, Reason: g.Reason, Detail: g.Detail})
+		}
+		return w.db.ReplaceCollectorGaps(ctx, collector, rows, runAt)
+	}
+}
+
+// gapsFor reads the stored gaps for the connector status route.
+func (w *findingsWiring) gapsFor() func(context.Context, string) ([]store.Gap, error) {
+	if w == nil {
+		return nil
+	}
+	return func(ctx context.Context, collector string) ([]store.Gap, error) {
+		rows, err := w.db.ListCollectorGaps(ctx, collector)
+		out := make([]store.Gap, 0, len(rows))
+		for _, g := range rows {
+			out = append(out, store.Gap{ResourceType: g.ResourceType, Scope: g.Scope, Reason: g.Reason, Detail: g.Detail})
+		}
+		return out, err
+	}
 }

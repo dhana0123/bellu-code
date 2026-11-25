@@ -18,6 +18,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/deviceflow"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/manifest"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/policy"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/redactor"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/store"
 )
@@ -38,6 +39,11 @@ type ProviderConfig struct {
 	Redactor *redactor.Redactor
 	// Now overrides time.Now.
 	Now func() time.Time
+	// Broker supplies the policy-checked HTTP client of the collector. Without
+	// it Provider.Collector returns nil.
+	Broker interface {
+		HTTPClient(ref broker.ConnectionRef, caller string) *http.Client
+	}
 }
 
 // Provider is the Azure lifecycle.Provider.
@@ -218,8 +224,14 @@ func (p *Provider) Refresh(ctx context.Context, c lifecycle.Call) (time.Time, er
 	}, c.Connection)
 }
 
-// Collector returns nil: Azure collects no data in this version.
-func (p *Provider) Collector(store.Connection, broker.ConnectionRef) collectors.Collector { return nil }
+// Collector builds the collector of an ACTIVE connection. It returns nil when
+// no broker is configured.
+func (p *Provider) Collector(conn store.Connection, ref broker.ConnectionRef) collectors.Collector {
+	if p.cfg.Broker == nil {
+		return nil
+	}
+	return NewCollector(p.cfg.Broker.HTTPClient(ref, policy.CallerCollector), conn)
+}
 
 // Describe routes the connection to Azure Resource Manager with bearer auth.
 func (p *Provider) Describe(store.Connection) lifecycle.Descriptor {

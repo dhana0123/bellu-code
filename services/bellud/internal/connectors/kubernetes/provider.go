@@ -50,6 +50,9 @@ type ProviderConfig struct {
 	ServerFor func(store.Connection) string
 	// AllowPrivateFor reports whether the connection may reach private ranges.
 	AllowPrivateFor func(store.Connection) bool
+	// HTTPClientFor returns the broker client the collector uses (caller
+	// policy.CallerCollector). When nil the provider builds no collector.
+	HTTPClientFor func(broker.ConnectionRef) *http.Client
 }
 
 // Provider is the Kubernetes lifecycle.Provider.
@@ -315,9 +318,20 @@ func (p *Provider) Refresh(_ context.Context, c lifecycle.Call) (time.Time, erro
 	return time.Time{}, nil
 }
 
-// Collector is nil: version 1 verifies and connects only.
-func (p *Provider) Collector(store.Connection, broker.ConnectionRef) collectors.Collector {
-	return nil
+// Collector builds the collector of an ACTIVE connection. It is nil when no
+// HTTPClientFor is configured or the connection has no API server.
+func (p *Provider) Collector(conn store.Connection, ref broker.ConnectionRef) collectors.Collector {
+	if p.cfg.HTTPClientFor == nil {
+		return nil
+	}
+	host := ref.APIHost
+	if host == "" {
+		host = p.apiHost(conn)
+	}
+	if host == "" {
+		return nil
+	}
+	return NewCollector(p.cfg.HTTPClientFor(ref), host, conn, conn.Selection)
 }
 
 // Describe routes the connection to its API server. Host is the host name for

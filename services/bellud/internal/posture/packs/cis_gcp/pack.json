@@ -1,0 +1,111 @@
+{
+  "id": "cis_gcp",
+  "version": "1",
+  "rules": [
+    {
+      "id": "gcs_public_access",
+      "title": "Cloud Storage bucket is publicly accessible",
+      "description": "The bucket grants access to allUsers or allAuthenticatedUsers.",
+      "severity": "high",
+      "category": "data_security",
+      "applies_to": [
+        "gcp_resource"
+      ],
+      "remediation": "Enable public access prevention on the bucket.",
+      "benchmarks": [
+        "CIS-GCP-3.0:5.1"
+      ],
+      "rego": "gcs_public_access.rego"
+    },
+    {
+      "id": "gcs_uniform_access",
+      "title": "Cloud Storage bucket lacks uniform bucket-level access",
+      "description": "Uniform bucket-level access is disabled.",
+      "severity": "medium",
+      "category": "data_security",
+      "applies_to": [
+        "gcp_resource"
+      ],
+      "remediation": "Enable uniform bucket-level access.",
+      "benchmarks": [
+        "CIS-GCP-3.0:5.2"
+      ],
+      "rego": "gcs_uniform_access.rego"
+    },
+    {
+      "id": "sql_not_public",
+      "title": "Cloud SQL instance is publicly accessible",
+      "description": "The instance has a public IP open to the internet.",
+      "severity": "high",
+      "category": "data_security",
+      "applies_to": [
+        "gcp_resource"
+      ],
+      "remediation": "Remove public IPs and authorized networks 0.0.0.0/0.",
+      "benchmarks": [
+        "CIS-GCP-3.0:6.5"
+      ],
+      "rego": "sql_not_public.rego"
+    },
+    {
+      "id": "sql_ssl_required",
+      "title": "Cloud SQL instance does not require SSL",
+      "description": "SSL/TLS is not required for connections.",
+      "severity": "medium",
+      "category": "data_security",
+      "applies_to": [
+        "gcp_resource"
+      ],
+      "remediation": "Require SSL for all connections.",
+      "benchmarks": [
+        "CIS-GCP-3.0:6.4"
+      ],
+      "rego": "sql_ssl_required.rego"
+    },
+    {
+      "id": "firewall_ssh_open",
+      "title": "Firewall allows 0.0.0.0/0 to SSH (22)",
+      "description": "An ingress firewall rule open to the internet covers SSH (22).",
+      "severity": "high",
+      "category": "network_exposure",
+      "applies_to": [
+        "gcp_resource"
+      ],
+      "remediation": "Restrict source ranges or use IAP TCP forwarding.",
+      "benchmarks": [
+        "CIS-GCP-3.0:3.6"
+      ],
+      "rego": "firewall_ssh_open.rego"
+    },
+    {
+      "id": "firewall_rdp_open",
+      "title": "Firewall allows 0.0.0.0/0 to RDP (3389)",
+      "description": "An ingress firewall rule open to the internet covers RDP (3389).",
+      "severity": "high",
+      "category": "network_exposure",
+      "applies_to": [
+        "gcp_resource"
+      ],
+      "remediation": "Restrict source ranges or use IAP TCP forwarding.",
+      "benchmarks": [
+        "CIS-GCP-3.0:3.7"
+      ],
+      "rego": "firewall_rdp_open.rego"
+    },
+    {
+      "id": "iam_owner_binding",
+      "title": "IAM binding grants roles/owner",
+      "description": "A principal holds the primitive Owner role.",
+      "severity": "high",
+      "category": "identity",
+      "applies_to": [
+        "gcp_iam_binding"
+      ],
+      "remediation": "Replace with least-privilege predefined roles.",
+      "benchmarks": [
+        "CIS-GCP-3.0:1.5"
+      ],
+      "rego": "iam_owner_binding.rego"
+    }
+  ]
+}

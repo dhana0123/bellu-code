@@ -16,11 +16,11 @@ const DiscriminatorType = "gcp_type"
 
 // Category ids.
 const (
-	CatOwnership = "ownership"
-	CatNetwork   = "network"
-	CatCompute   = "compute"
-	CatData      = "data"
-	CatIdentity  = "identity"
+	CatOwnership = "gcp_ownership"
+	CatNetwork   = "gcp_network"
+	CatCompute   = "gcp_compute"
+	CatData      = "gcp_data"
+	CatIdentity  = "gcp_identity"
 )
 
 // gcp_resource type names.

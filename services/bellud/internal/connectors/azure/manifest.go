@@ -83,6 +83,8 @@ func Manifest(clientID string) manifest.Manifest {
 		},
 		Operations: []manifest.Operation{
 			read("/subscriptions", "/subscriptions"),
+			read("/subscriptions/{s}/resourcegroups", "/subscriptions/{s}/resourcegroups"),
+			read("/subscriptions/{s}/resources", "/subscriptions/{s}/resources"),
 			read("/subscriptions/{s}/providers/Microsoft.Authorization/roleAssignments",
 				"/subscriptions/{s}/providers/Microsoft.Authorization/roleAssignments"),
 			read("/subscriptions/{s}/providers/Microsoft.Authorization/permissions",

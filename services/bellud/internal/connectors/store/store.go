@@ -99,6 +99,16 @@ type LastSync struct {
 	AuthError      string          `json:"authError,omitempty"`
 	DeniedScopes   []string        `json:"deniedScopes,omitempty"`
 	Truncations    []Truncation    `json:"truncations,omitempty"`
+	Gaps           []Gap           `json:"gaps,omitempty"`
+}
+
+// Gap records a resource type or scope a collector could not read. Reason is
+// missing_permission, rate_limited or failed_call. Detail must not hold secrets.
+type Gap struct {
+	ResourceType string `json:"resourceType"`
+	Scope        string `json:"scope"`
+	Reason       string `json:"reason"`
+	Detail       string `json:"detail,omitempty"`
 }
 
 // Truncation records that a collector stopped at a cap in Scope and left

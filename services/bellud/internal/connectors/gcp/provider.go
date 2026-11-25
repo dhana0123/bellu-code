@@ -14,6 +14,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/collectors"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/broker"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/policy"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/store"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/vault"
 )
@@ -35,6 +36,11 @@ type ProviderConfig struct {
 	// Opener reads the service-account key from the vault to take its
 	// client_email as account label. Nil falls back to a generic label.
 	Opener vault.Opener
+	// Broker supplies the policy-checked HTTP client of the collector. Without
+	// it Provider.Collector returns nil.
+	Broker interface {
+		HTTPClient(ref broker.ConnectionRef, caller string) *http.Client
+	}
 }
 
 // Provider is the Google Cloud lifecycle.Provider.
@@ -160,9 +166,13 @@ func (p *Provider) Refresh(_ context.Context, c lifecycle.Call) (time.Time, erro
 	return time.Time{}, nil
 }
 
-// Collector is nil: version 1 collects no data.
-func (p *Provider) Collector(store.Connection, broker.ConnectionRef) collectors.Collector {
-	return nil
+// Collector builds the collector of an ACTIVE connection. It returns nil when
+// no broker is configured.
+func (p *Provider) Collector(conn store.Connection, ref broker.ConnectionRef) collectors.Collector {
+	if p.cfg.Broker == nil {
+		return nil
+	}
+	return NewCollector(p.cfg.Broker.HTTPClient(ref, policy.CallerCollector), conn, conn.Selection)
 }
 
 // Describe routes the connection to Cloud Resource Manager with gcp-sa auth.

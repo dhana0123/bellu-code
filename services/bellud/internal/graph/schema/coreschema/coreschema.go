@@ -26,16 +26,19 @@ const (
 
 // Relation type names.
 const (
-	RelRunsOn      = "runs_on"
-	RelOn          = "on"
-	RelOwnedBy     = "owned_by"
-	RelUses        = "uses"
-	RelAttachedTo  = "attached_to"
-	RelMounts      = "mounts"
-	RelDependsOn   = "depends_on"
-	RelResolvesTo  = "resolves_to"
-	RelFoundIn     = "found_in"
-	RelContainedIn = "contained_in"
+	RelRunsOn             = "runs_on"
+	RelOn                 = "on"
+	RelOwnedBy            = "owned_by"
+	RelUses               = "uses"
+	RelAttachedTo         = "attached_to"
+	RelMounts             = "mounts"
+	RelDependsOn          = "depends_on"
+	RelResolvesTo         = "resolves_to"
+	RelFoundIn            = "found_in"
+	RelContainedIn        = "contained_in"
+	RelCanAssume          = "can_assume"
+	RelObservedConnection = "observed_connection"
+	RelSameIssueAs        = "same_issue_as"
 )
 
 func kind(name, desc string, identity ...string) schema.KindDeclaration {
@@ -78,6 +81,9 @@ func Declaration() schema.SourceDeclaration {
 			rel(RelDependsOn, schema.Reverse, "From depends on to, so failure of to impacts from."),
 			rel(RelResolvesTo, schema.Reverse, "From resolves to to, so failure of to impacts from."),
 			rel(RelContainedIn, schema.Reverse, "From is contained in to (a package in an image or host), so failure of to impacts from."),
+			rel(RelCanAssume, schema.Forward, "From can assume to (a role or identity), so compromise of from gives the permissions of to."),
+			rel(RelObservedConnection, schema.Forward, "Traffic was observed from from to to, so compromise of from reaches to."),
+			rel(RelSameIssueAs, schema.Forward, "From and to report the same underlying issue; the link groups them and does not carry impact."),
 			rel(RelFoundIn, schema.Forward, "A finding is found in a location, and compromise of the finding gives reach over the location."),
 		},
 	}

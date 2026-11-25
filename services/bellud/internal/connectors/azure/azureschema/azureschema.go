@@ -14,12 +14,12 @@ const (
 
 // Category ids.
 const (
-	CatOwnership = "ownership"
-	CatNetwork   = "network"
-	CatCompute   = "compute"
-	CatIdentity  = "identity"
-	CatData      = "data"
-	CatAI        = "ai"
+	CatOwnership = "azure_ownership"
+	CatNetwork   = "azure_network"
+	CatCompute   = "azure_compute"
+	CatIdentity  = "azure_identity"
+	CatData      = "azure_data"
+	CatAI        = "azure_ai"
 )
 
 // DiscriminatorResourceType is the azure_resource discriminator attribute.

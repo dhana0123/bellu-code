@@ -268,13 +268,25 @@ Collection categories and their status. Generated from the registry; do not edit
 <!-- roadmap:start -->
 | Category | Status | Read operations a collector needs |
 | --- | --- | --- |
+| `azure_ai` | implemented | none |
+| `azure_compute` | implemented | none |
+| `azure_data` | implemented | none |
+| `azure_identity` | implemented | none |
+| `azure_network` | implemented | none |
+| `azure_ownership` | implemented | none |
 | `compute` | registered-only | `autoscaling:DescribeAutoScalingGroups`, `ec2:DescribeImages`, `ec2:DescribeLaunchTemplates`, `ecs:DescribeServices`, `ecs:DescribeTasks`, `ecs:ListClusters`, `ecs:ListTasks`, `eks:DescribeCluster`, `eks:ListClusters`, `eks:ListNodegroups`, `iam:ListInstanceProfiles`, `lambda:ListLayers` |
 | `controls` | registered-only | `cloudtrail:DescribeTrails`, `config:DescribeConfigRules`, `config:DescribeConfigurationRecorders`, `guardduty:GetFindings`, `guardduty:ListDetectors`, `guardduty:ListFindings`, `inspector2:ListFindings`, `securityhub:GetFindings`, `wafv2:ListWebACLs` |
 | `data` | registered-only | `dynamodb:DescribeTable`, `dynamodb:ListTables`, `ec2:DescribeSnapshots`, `ec2:DescribeVolumes`, `elasticfilesystem:DescribeFileSystems`, `kms:DescribeKey`, `kms:ListAliases`, `kms:ListKeys`, `rds:DescribeDBClusters`, `s3:GetBucketEncryption`, `s3:GetBucketPolicy`, `secretsmanager:ListSecrets`, `ssm:DescribeParameters` |
 | `dns` | registered-only | `route53:ListHostedZones`, `route53:ListResourceRecordSets` |
+| `gcp_compute` | registered-only | `compute.instances.list`, `container.clusters.list` |
+| `gcp_data` | registered-only | `sql.instances.list`, `storage.buckets.list` |
+| `gcp_identity` | registered-only | `cloudresourcemanager.projects.getIamPolicy`, `iam.serviceAccounts.list` |
+| `gcp_network` | registered-only | `compute.firewalls.list`, `compute.networks.list`, `compute.subnetworks.list` |
+| `gcp_ownership` | registered-only | `cloudresourcemanager.projects.get` |
 | `identity` | registered-only | `iam:GetAccountAuthorizationDetails`, `iam:GetPolicyVersion`, `iam:GetRole`, `iam:ListGroups`, `iam:ListPolicies`, `iam:ListUsers` |
 | `network` | implemented | none |
 | `ownership` | registered-only | `organizations:DescribeOrganization`, `organizations:ListAccountsForParent`, `organizations:ListOrganizationalUnitsForParent`, `organizations:ListPolicies`, `organizations:ListRoots`, `organizations:ListTargetsForPolicy` |
+| `workloads` | implemented | none |
 <!-- roadmap:end -->
 
 ## Add a new Collector

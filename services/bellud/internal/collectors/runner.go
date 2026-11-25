@@ -41,6 +41,7 @@ type RunStatus struct {
 	AuthError      string          // set when credentials were rejected; the run ended
 	DeniedScopes   []string        // access-denied scopes; the run continued
 	Truncations    []Truncation    // caps reached; the run continued
+	Gaps           []Gap           // resource types or scopes that could not be read; persisted to collector_gap
 }
 
 // StatusReporter is an optional Collector interface. RunStatus is read after
@@ -105,6 +106,7 @@ func (r *StatusRecorder) Status() RunStatus {
 		AuthError:      r.st.AuthError,
 		DeniedScopes:   append([]string(nil), r.st.DeniedScopes...),
 		Truncations:    append([]Truncation(nil), r.st.Truncations...),
+		Gaps:           append([]Gap(nil), r.st.Gaps...),
 	}
 }
 
@@ -161,6 +163,7 @@ type Runner struct {
 	now        func() time.Time
 	timeout    time.Duration
 	onBatch    func(ctx context.Context, b graph.Batch) error
+	gapSink    GapSink
 
 	mu     sync.Mutex // guards states, forgot and serializes status writes
 	states map[string]*state
@@ -270,6 +273,7 @@ func (r *Runner) RunOnce(ctx context.Context, c Collector) error {
 		status, msg = StatusError, err.Error()
 	}
 	r.record(ctx, c.Name(), status, msg)
+	r.persistGaps(ctx, c)
 	return err
 }
 
@@ -378,5 +382,17 @@ func entity(name string, st *state) batch.Entity {
 			"last_error": st.lastError,
 			"last_run":   st.lastRun.UTC().Format(time.RFC3339Nano),
 		},
+	}
+}
+
+// persistGaps hands the run's gaps to the gap sink. A sink failure is logged
+// and does not change the run's status.
+func (r *Runner) persistGaps(ctx context.Context, c Collector) {
+	sr, ok := c.(StatusReporter)
+	if !ok || r.gapSink == nil {
+		return
+	}
+	if err := r.gapSink(ctx, c.Name(), sr.RunStatus().Gaps, r.now()); err != nil && ctx.Err() == nil {
+		r.log.Println("collector_gap write failed:", err)
 	}
 }

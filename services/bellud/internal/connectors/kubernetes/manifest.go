@@ -37,6 +37,18 @@ const (
 // read, except SelfSubjectRulesReview: a POST read query restricted by
 // IsSelfSubjectRulesReviewBody.
 func Manifest() manifest.Manifest {
+	ops := []manifest.Operation{
+		{Name: opVersion, Class: manifest.ClassRead, Method: "GET", Host: hostPlaceholder, Path: "/version"},
+		{Name: opNamespaces, Class: manifest.ClassRead, Method: "GET", Host: hostPlaceholder, Path: "/api/v1/namespaces"},
+		{Name: opRulesQuery, Class: manifest.ClassRead, Method: "POST", Query: true,
+			Host: hostPlaceholder, Path: rulesReviewPath, MaxBytes: 16 << 10},
+	}
+	// The collector lists each resource type with GET only. Secrets and
+	// ConfigMaps are requested as PartialObjectMetadataList (names only).
+	for _, rt := range resourceTypes {
+		ops = append(ops, manifest.Operation{Name: "GET " + rt.path, Class: manifest.ClassRead,
+			Method: "GET", Host: hostPlaceholder, Path: rt.path})
+	}
 	return manifest.Manifest{
 		ID: ConnectorID, Version: "1.0.0", Name: "Kubernetes", Icon: "kubernetes", Builtin: true,
 		AuthMethods: []manifest.AuthMethod{
@@ -46,14 +58,9 @@ func Manifest() manifest.Manifest {
 		Permissions: []manifest.Permission{
 			{Name: "view", Description: "Read most namespaced resources (built-in view ClusterRole)", ReadOnly: true},
 		},
-		Operations: []manifest.Operation{
-			{Name: opVersion, Class: manifest.ClassRead, Method: "GET", Host: hostPlaceholder, Path: "/version"},
-			{Name: opNamespaces, Class: manifest.ClassRead, Method: "GET", Host: hostPlaceholder, Path: "/api/v1/namespaces"},
-			{Name: opRulesQuery, Class: manifest.ClassRead, Method: "POST", Query: true,
-				Host: hostPlaceholder, Path: rulesReviewPath, MaxBytes: 16 << 10},
-		},
-		Egress:   []string{hostPlaceholder},
-		Entities: []string{"kubernetes_namespace"},
+		Operations: ops,
+		Egress:     []string{hostPlaceholder},
+		Entities:   []string{"kubernetes_namespace"},
 	}
 }
 

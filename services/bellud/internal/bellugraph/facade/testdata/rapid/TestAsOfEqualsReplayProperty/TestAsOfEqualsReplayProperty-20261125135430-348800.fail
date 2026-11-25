@@ -1,0 +1,30 @@
+# 2026/11/25 13:54:30.273594 [TestAsOfEqualsReplayProperty] [rapid] draw events: 1
+# 2026/11/25 13:54:30.273600 [TestAsOfEqualsReplayProperty] [rapid] draw present: false
+# 2026/11/25 13:54:30.273687 [TestAsOfEqualsReplayProperty] [rapid] draw present: false
+# 2026/11/25 13:54:30.273689 [TestAsOfEqualsReplayProperty] [rapid] draw present: false
+# 2026/11/25 13:54:30.273690 [TestAsOfEqualsReplayProperty] [rapid] draw present: false
+# 2026/11/25 13:54:30.273713 [TestAsOfEqualsReplayProperty] graph schema registry: schema check failed with 15 failure(s):
+# aws/azure: category "compute": duplicate-name: category declared by more than one source
+# aws/gcp: category "compute": duplicate-name: category declared by more than one source
+# aws/azure: category "data": duplicate-name: category declared by more than one source
+# aws/gcp: category "data": duplicate-name: category declared by more than one source
+# aws/azure: category "identity": duplicate-name: category declared by more than one source
+# aws/gcp: category "identity": duplicate-name: category declared by more than one source
+# aws/azure: category "network": duplicate-name: category declared by more than one source
+# aws/gcp: category "network": duplicate-name: category declared by more than one source
+# aws/azure: category "ownership": duplicate-name: category declared by more than one source
+# aws/gcp: category "ownership": duplicate-name: category declared by more than one source
+# azure/gcp: category "compute": duplicate-name: category declared by more than one source
+# azure/gcp: category "data": duplicate-name: category declared by more than one source
+# azure/gcp: category "identity": duplicate-name: category declared by more than one source
+# azure/gcp: category "network": duplicate-name: category declared by more than one source
+# azure/gcp: category "ownership": duplicate-name: category declared by more than one source
+# 
+v0.4.8#593293462281774576
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
