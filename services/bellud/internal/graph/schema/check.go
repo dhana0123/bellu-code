@@ -51,7 +51,7 @@ const (
 // genericRelations keep one meaning in every source.
 var genericRelations = map[string]bool{
 	"owned_by": true, "runs_on": true, "on": true, "uses": true, "attached_to": true,
-	"depends_on": true, "mounts": true, "resolves_to": true, "found_in": true,
+	"depends_on": true, "mounts": true, "resolves_to": true, "found_in": true, "contained_in": true,
 	"affected_by": true, "same_as": true, "likely_same_as": true,
 }
 
@@ -97,6 +97,8 @@ func normalize(d SourceDeclaration) SourceDeclaration {
 		out.Categories[i] = cloneCategory(c)
 	}
 	slices.SortStableFunc(out.Categories, func(a, b CategoryDeclaration) int { return cmp.Compare(a.ID, b.ID) })
+	out.FindingTypes = slices.Clone(d.FindingTypes)
+	slices.SortStableFunc(out.FindingTypes, func(a, b FindingTypeDeclaration) int { return cmp.Compare(a.Type, b.Type) })
 	return out
 }
 
@@ -162,6 +164,18 @@ func (c *checker) source(d SourceDeclaration) {
 				c.add(d.Source, "type", t.Name, "name-pattern", "type name must be non-blank and have no surrounding space")
 			}
 			c.description(d.Source, "type", t.Name, t.Description)
+			if t.Overview != "" && !t.Overview.Valid() {
+				c.add(d.Source, "type", t.Name, "overview-invalid", fmt.Sprintf("Overview %q is not one of the nine categories", t.Overview))
+			}
+		}
+	}
+	for _, f := range d.FindingTypes {
+		dup("finding_type", f.Type)
+		if !validName(f.Type) {
+			c.add(d.Source, "finding_type", f.Type, "name-pattern", "finding type must match [a-z][a-z0-9_]* and be at most 64 characters")
+		}
+		if !f.Overview.Valid() {
+			c.add(d.Source, "finding_type", f.Type, "overview-invalid", fmt.Sprintf("Overview %q is not one of the nine categories", f.Overview))
 		}
 	}
 	for _, r := range d.Relations {
@@ -188,6 +202,12 @@ func (c *checker) kind(d SourceDeclaration, k KindDeclaration) {
 	}
 	c.prefix(d, "kind", k.Name)
 	c.description(d.Source, "kind", k.Name, k.Description)
+	switch {
+	case k.Overview == "":
+		c.add(d.Source, "kind", k.Name, "overview-missing", "kind must declare an Overview category")
+	case !k.Overview.Valid():
+		c.add(d.Source, "kind", k.Name, "overview-invalid", fmt.Sprintf("Overview %q is not one of the nine categories", k.Overview))
+	}
 	if n := len(k.Identity); n < 1 || n > maxIdentityLen {
 		c.add(d.Source, "kind", k.Name, "identity-count", fmt.Sprintf("identity has %d attributes, want 1..%d", n, maxIdentityLen))
 	}
@@ -343,6 +363,28 @@ func (c *checker) crossSource(ds []SourceDeclaration) {
 					if srcs[i] != srcs[j] {
 						c.pair(srcs[i], srcs[j], subject, name, "duplicate-name", subject+" declared by more than one source")
 					}
+				}
+			}
+		}
+	}
+	ftypes := map[string][]struct {
+		src Source
+		ov  OverviewCategory
+	}{}
+	for _, d := range ds {
+		for _, f := range d.FindingTypes {
+			ftypes[f.Type] = append(ftypes[f.Type], struct {
+				src Source
+				ov  OverviewCategory
+			}{d.Source, f.Overview})
+		}
+	}
+	for name, at := range ftypes {
+		for i := range at {
+			for j := i + 1; j < len(at); j++ {
+				if at[i].src != at[j].src && at[i].ov != at[j].ov {
+					c.pair(at[i].src, at[j].src, "finding_type", name, "overview-conflict",
+						fmt.Sprintf("Overview %s (%s) differs from %s (%s)", at[i].ov, at[i].src, at[j].ov, at[j].src))
 				}
 			}
 		}

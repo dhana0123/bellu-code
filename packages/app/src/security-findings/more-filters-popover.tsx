@@ -1,28 +1,26 @@
 import { createEffect, createSignal, For, onCleanup, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/runtime/i18n/language"
-import { resourceTypeLabelKey, severityLabelKey } from "./badges"
+import { categoryLabelKey, statusLabelKey, typeLabelKey } from "./badges"
 import { Glyph } from "./glyph"
 import {
-  DEPENDENCY_TYPES,
-  RESOURCE_TYPES,
-  SEVERITIES,
-  type DependencyType,
+  CATEGORIES,
+  FINDING_TYPES,
+  STATUSES,
+  type Category,
   type FilterState,
-  type ResourceType,
-  type Severity,
+  type FindingType,
+  type Status,
 } from "./model"
-
 type Draft = {
-  resourceTypes: ResourceType[]
-  dependencyTypes: DependencyType[]
-  relatedSeverities: Severity[]
+  types: FindingType[]
+  statuses: Status[]
+  categories: Category[]
 }
-
 const FOCUSABLE = "input, button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"
 
 export const selectedCount = (filters: Draft) =>
-  filters.resourceTypes.length + filters.dependencyTypes.length + filters.relatedSeverities.length
+  filters.types.length + filters.statuses.length + filters.categories.length
 
 /**
  * The "More filters" panel. Choices stay in a draft until Apply, so closing the panel discards them. On narrow screens
@@ -31,7 +29,7 @@ export const selectedCount = (filters: Draft) =>
 export function MoreFiltersPopover(props: { filters: FilterState; onApply: (patch: Partial<FilterState>) => void }) {
   const language = useLanguage()
   const [open, setOpen] = createSignal(false)
-  const [draft, setDraft] = createStore<Draft>({ resourceTypes: [], dependencyTypes: [], relatedSeverities: [] })
+  const [draft, setDraft] = createStore<Draft>({ types: [], statuses: [], categories: [] })
   let trigger!: HTMLButtonElement
   let panel: HTMLDivElement | undefined
 
@@ -39,9 +37,9 @@ export function MoreFiltersPopover(props: { filters: FilterState; onApply: (patc
 
   const show = () => {
     setDraft({
-      resourceTypes: [...props.filters.resourceTypes],
-      dependencyTypes: [...props.filters.dependencyTypes],
-      relatedSeverities: [...props.filters.relatedSeverities],
+      types: [...props.filters.types],
+      statuses: [...props.filters.statuses],
+      categories: [...props.filters.categories],
     })
     setOpen(true)
   }
@@ -108,25 +106,22 @@ export function MoreFiltersPopover(props: { filters: FilterState; onApply: (patc
         >
           <div data-slot="popover-body">
             <Group
-              legend={language.t("security.findings.more.resourceType")}
-              options={RESOURCE_TYPES.map((value) => ({ value, label: language.t(resourceTypeLabelKey(value)) }))}
-              selected={draft.resourceTypes}
-              onChange={(next) => setDraft("resourceTypes", next)}
+              legend={language.t("security.findings.more.type")}
+              options={FINDING_TYPES.map((value) => ({ value, label: language.t(typeLabelKey(value)) }))}
+              selected={draft.types}
+              onChange={(next) => setDraft("types", next)}
             />
             <Group
-              legend={language.t("security.findings.more.dependencyType")}
-              options={DEPENDENCY_TYPES.map((value) => ({
-                value,
-                label: language.t(`security.findings.dependency.${value}`),
-              }))}
-              selected={draft.dependencyTypes}
-              onChange={(next) => setDraft("dependencyTypes", next)}
+              legend={language.t("security.findings.more.status")}
+              options={STATUSES.map((value) => ({ value, label: language.t(statusLabelKey(value)) }))}
+              selected={draft.statuses}
+              onChange={(next) => setDraft("statuses", next)}
             />
             <Group
-              legend={language.t("security.findings.more.relatedSeverity")}
-              options={SEVERITIES.map((value) => ({ value, label: language.t(severityLabelKey(value)) }))}
-              selected={draft.relatedSeverities}
-              onChange={(next) => setDraft("relatedSeverities", next)}
+              legend={language.t("security.findings.more.category")}
+              options={CATEGORIES.map((value) => ({ value, label: language.t(categoryLabelKey(value)) }))}
+              selected={draft.categories}
+              onChange={(next) => setDraft("categories", next)}
             />
           </div>
           <div data-slot="popover-footer">
@@ -134,7 +129,7 @@ export function MoreFiltersPopover(props: { filters: FilterState; onApply: (patc
               type="button"
               class="sf-button"
               data-variant="text"
-              onClick={() => setDraft({ resourceTypes: [], dependencyTypes: [], relatedSeverities: [] })}
+              onClick={() => setDraft({ types: [], statuses: [], categories: [] })}
             >
               {language.t("security.findings.clearAll")}
             </button>
@@ -144,9 +139,9 @@ export function MoreFiltersPopover(props: { filters: FilterState; onApply: (patc
               data-variant="primary"
               onClick={() => {
                 props.onApply({
-                  resourceTypes: [...draft.resourceTypes],
-                  dependencyTypes: [...draft.dependencyTypes],
-                  relatedSeverities: [...draft.relatedSeverities],
+                  types: [...draft.types],
+                  statuses: [...draft.statuses],
+                  categories: [...draft.categories],
                 })
                 close(true)
               }}

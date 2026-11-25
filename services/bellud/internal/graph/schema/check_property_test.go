@@ -39,7 +39,7 @@ func addKind(ds []SourceDeclaration, i int, k KindDeclaration) {
 }
 
 func goodKind(name string) KindDeclaration {
-	return KindDeclaration{Name: name, Identity: []string{"arn"}, Description: "A kind."}
+	return KindDeclaration{Name: name, Identity: []string{"arn"}, Description: "A kind.", Overview: OvCloud}
 }
 
 func kindDefect(label, rule string, mutate func(k *KindDeclaration, p string)) defect {
@@ -91,9 +91,9 @@ var defects = []defect{
 		b.Relations = append(b.Relations, relation("depends_on", Reverse, Extracted))
 	}),
 	pairDefect("identity list conflict", "identity-conflict", "package", func(a, b *SourceDeclaration) {
-		a.Kinds = append(a.Kinds, KindDeclaration{Name: "package", Identity: []string{"name", "version"}, Description: "A package."})
+		a.Kinds = append(a.Kinds, KindDeclaration{Name: "package", Identity: []string{"name", "version"}, Description: "A package.", Overview: OvCloud})
 		// Same attributes in another order is still a conflict.
-		b.Kinds = append(b.Kinds, KindDeclaration{Name: "package", Identity: []string{"version", "name"}, Description: "A package."})
+		b.Kinds = append(b.Kinds, KindDeclaration{Name: "package", Identity: []string{"version", "name"}, Description: "A package.", Overview: OvCloud})
 	}),
 	pairDefect("generic confidence conflict", "confidence-conflict", "found_in", func(a, b *SourceDeclaration) {
 		a.Relations = append(a.Relations, relation("found_in", Forward, Extracted))

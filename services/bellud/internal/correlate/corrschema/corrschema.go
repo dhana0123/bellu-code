@@ -20,6 +20,7 @@ func Declaration() schema.SourceDeclaration {
 		Source: schema.SourceCorrelator,
 		Kinds: []schema.KindDeclaration{{
 			Name:        KindVulnerability,
+			Overview:    schema.OvVuln,
 			Identity:    []string{"id"},
 			Description: "A vulnerability with one node per canonical id, shared by every package it affects.",
 		}},

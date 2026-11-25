@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/facade"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schema"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/schemaall"
 	"github.com/bellu/bellucode/services/bellud/internal/risk"
 )
@@ -45,17 +46,24 @@ type Params struct {
 type Engine struct {
 	src Source
 	now func() time.Time
+
+	// reg and cats are the category lenses, set by BindCategories.
+	reg  *schema.Registry
+	cats []Def
+	// catTime and catMax override the category budget when non-zero (tests).
+	catTime time.Duration
+	catMax  int
 }
 
 // NewEngine returns an Engine over src.
 func NewEngine(src Source) *Engine { return &Engine{src: src, now: time.Now} }
 
 // Catalog lists the lens definitions.
-func (e *Engine) Catalog() []Def { return Catalog() }
+func (e *Engine) Catalog() []Def { return append(Catalog(), e.cats...) }
 
 // Slice builds the slice of lens id. Unknown ids return ErrUnknownLens.
 func (e *Engine) Slice(ctx context.Context, id string, p Params) (Slice, error) {
-	def, ok := lookup(id)
+	def, ok := e.lookup(id)
 	if !ok {
 		return Slice{}, ErrUnknownLens{ID: id}
 	}
@@ -70,6 +78,8 @@ func (e *Engine) Slice(ctx context.Context, id string, p Params) (Slice, error) 
 		err = b.selectAttackPaths(ctx, p)
 	case SelectReachableVul:
 		err = b.selectReachable(ctx)
+	case SelectCategory:
+		err = b.selectCategory(ctx, e)
 	}
 	if err != nil {
 		return Slice{}, err
@@ -109,13 +119,23 @@ func (e *Engine) complete(ctx context.Context, b *builder, def Def, p Params) Sl
 		s.MissingData = append(s.MissingData, MissingNoExposedEntity)
 	}
 	maxN, maxE := p.MaxNodes, p.MaxEdges
+	if def.Select == SelectCategory {
+		// The category budget is the entity limit, not the HTTP node default.
+		_, maxN = e.categoryBudget()
+		maxE = categoryMaxEdges
+	}
 	if maxN <= 0 {
 		maxN = DefaultMaxNodes
 	}
 	if maxE <= 0 {
 		maxE = DefaultMaxEdges
 	}
-	return Budget(s, maxN, maxE)
+	s = Budget(s, maxN, maxE)
+	s.Reason = b.reason
+	if def.Select == SelectCategory && s.Truncated && s.Reason == "" {
+		s.Reason = ReasonEntityLimit
+	}
+	return s
 }
 
 // MissingData returns the registered-only categories that an answer of def
@@ -146,6 +166,9 @@ type builder struct {
 	paths     []Path
 	reachable map[string]bool
 	truncated bool
+	// reason and maxEntities belong to category lenses.
+	reason      string
+	maxEntities int
 	// netOnly marks nodes reached only through network reach.
 	netOnly map[string]bool
 	// noExposed is set when attack-path found no internet-exposed entity.

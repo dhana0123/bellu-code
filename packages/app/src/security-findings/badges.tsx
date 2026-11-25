@@ -1,14 +1,19 @@
 import { Show } from "solid-js"
 import { useLanguage } from "@/runtime/i18n/language"
-import { Glyph } from "./glyph"
-import type { Provider, Resource, ResourceType, Severity, Tech } from "./model"
+import type { Category, FindingType, Severity, Status } from "./model"
 
 export function severityLabelKey(severity: Severity) {
   return `security.findings.severity.${severity}` as const
 }
 
-export function resourceTypeLabelKey(type: ResourceType) {
-  return `security.findings.resourceType.${type}` as const
+export function typeLabelKey(type: FindingType) {
+  return `security.findings.type.${type}` as const
+}
+export function categoryLabelKey(category: Category) {
+  return `security.findings.category.${category}` as const
+}
+export function statusLabelKey(status: Status) {
+  return `security.findings.status.${status}` as const
 }
 
 /** Severity is always spelled out. The color only reinforces the label. */
@@ -21,16 +26,16 @@ export function SeverityPill(props: { severity: Severity }) {
   )
 }
 
-export function StatusPill() {
+export function StatusPill(props: { status: Status }) {
   const language = useLanguage()
   return (
-    <span data-slot="pill" data-status="unresolved">
-      {language.t("security.findings.status.unresolved")}
+    <span data-slot="pill" data-status={props.status}>
+      {language.t(statusLabelKey(props.status))}
     </span>
   )
 }
 
-const LETTERS = { critical: "C", high: "H", medium: "M", low: "L" } as const
+const LETTERS = { critical: "C", high: "H", medium: "M", low: "L", info: "I" } as const
 
 /** A small letter chip with a count, for example the red "C 59" next to an orange "H 323". */
 export function RiskChip(props: { severity: Severity; count: number }) {
@@ -53,37 +58,6 @@ export function RiskChip(props: { severity: Severity; count: number }) {
   )
 }
 
-const TECH_LABEL: Record<Tech, string> = {
-  java: "Jv",
-  python: "Py",
-  javascript: "JS",
-  go: "Go",
-  os: "OS",
-  browser: "Fx",
-}
-
-export function TechBadge(props: { tech: Tech }) {
-  return (
-    <span data-slot="tech" data-tech={props.tech} aria-hidden="true">
-      {TECH_LABEL[props.tech]}
-    </span>
-  )
-}
-
-export function ResourceGlyph(props: { type: ResourceType }) {
-  return <Glyph name={props.type === "container-image" ? "container" : props.type} class="sf-icon" />
-}
-
-const PROVIDER_LABEL: Record<Provider, string> = { aws: "AWS", azure: "Azure", gcp: "GCP", github: "GitHub" }
-
-export function ProviderGlyph(props: { provider: Provider }) {
-  return (
-    <span data-slot="provider" data-provider={props.provider} title={PROVIDER_LABEL[props.provider]}>
-      <Glyph name={props.provider === "github" ? "repository" : "cloud"} class="sf-icon" />
-    </span>
-  )
-}
-
 /**
  * A long name that keeps its start and end, for example an image digest. The full name is the tooltip. Splitting
  * at the last 12 characters keeps the distinguishing tail visible when the middle is cut off.
@@ -99,8 +73,4 @@ export function MiddleTruncate(props: { text: string; tail?: number }) {
       </Show>
     </span>
   )
-}
-
-export function resourceTypeText(resource: Resource, language: ReturnType<typeof useLanguage>) {
-  return language.t(resourceTypeLabelKey(resource.type))
 }

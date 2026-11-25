@@ -21,7 +21,7 @@ export function SecurityMenuItem() {
       <Menu.Portal>
         <Menu.SubContent style={{ "min-width": "200px" }}>
           <For each={security.items()}>{(item) => <PageItem item={item} open={security.open} />}</For>
-          <For each={security.soon}>
+          <For each={security.soon()}>
             {(item) => (
               <Menu.Item onSelect={() => security.announce(item.label)}>
                 <span class="flex items-center gap-2">

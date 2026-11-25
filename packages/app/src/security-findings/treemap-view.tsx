@@ -9,8 +9,8 @@ import { squarify } from "./treemap-layout"
 const WIDTH = 100
 const HEIGHT = 50
 
-/** Boxes grouped by component, sized by critical plus high findings and colored by the worst severity. */
-export function TreemapView(props: { groups: TreemapGroup[]; onSelect: (componentId: string) => void }) {
+/** Boxes grouped by asset, sized by critical plus high findings and colored by the worst severity. */
+export function TreemapView(props: { groups: TreemapGroup[]; onSelect: (assetId: string) => void }) {
   const language = useLanguage()
   const [hover, setHover] = createStore<{ id?: string; x: number; y: number }>({ x: 0, y: 0 })
   const boxes = createMemo(() => {
@@ -21,7 +21,7 @@ export function TreemapView(props: { groups: TreemapGroup[]; onSelect: (componen
     )
     return props.groups.map((group, index) => ({ group, rect: rects[index] }))
   })
-  const active = () => boxes().find((box) => box.group.component.id === hover.id)?.group
+  const active = () => boxes().find((box) => box.group.group.id === hover.id)?.group
 
   return (
     <div data-slot="treemap-card">
@@ -43,11 +43,11 @@ export function TreemapView(props: { groups: TreemapGroup[]; onSelect: (componen
                   height: `${(box.rect.h / HEIGHT) * 100}%`,
                 }}
                 aria-label={describe(language, box.group)}
-                onClick={() => props.onSelect(box.group.component.id)}
+                onClick={() => props.onSelect(box.group.group.id)}
                 onPointerMove={(event) => {
                   const bounds = event.currentTarget.parentElement!.getBoundingClientRect()
                   setHover({
-                    id: box.group.component.id,
+                    id: box.group.group.id,
                     x: event.clientX - bounds.left,
                     y: event.clientY - bounds.top,
                   })
@@ -57,14 +57,14 @@ export function TreemapView(props: { groups: TreemapGroup[]; onSelect: (componen
                   const bounds = event.currentTarget.parentElement!.getBoundingClientRect()
                   const target = event.currentTarget.getBoundingClientRect()
                   setHover({
-                    id: box.group.component.id,
+                    id: box.group.group.id,
                     x: target.left - bounds.left + 8,
                     y: target.top - bounds.top + 8,
                   })
                 }}
                 onBlur={() => setHover("id", undefined)}
               >
-                <span data-slot="box-name">{box.group.component.name}</span>
+                <span data-slot="box-name">{box.group.group.name}</span>
                 <span data-slot="box-meta">
                   {language.t(severityLabelKey(box.group.top))} · {box.group.value.toLocaleString()}
                 </span>
@@ -74,9 +74,7 @@ export function TreemapView(props: { groups: TreemapGroup[]; onSelect: (componen
           <Show when={active()}>
             {(group) => (
               <div data-slot="tooltip" role="tooltip" style={{ left: `${hover.x + 12}px`, top: `${hover.y + 12}px` }}>
-                <strong>
-                  {group().component.name} {group().component.version}
-                </strong>
+                <strong>{group().group.name}</strong>
                 <span>
                   {language.t("security.findings.treemap.critical", { count: group().critical.toLocaleString() })}
                 </span>
@@ -92,8 +90,7 @@ export function TreemapView(props: { groups: TreemapGroup[]; onSelect: (componen
 
 function describe(language: ReturnType<typeof useLanguage>, group: TreemapGroup) {
   return language.t("security.findings.treemap.box", {
-    name: group.component.name,
-    version: group.component.version,
+    name: group.group.name,
     critical: group.critical.toLocaleString(),
     high: group.high.toLocaleString(),
   })

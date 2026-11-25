@@ -188,3 +188,25 @@ func TestStartStop(t *testing.T) {
 	}
 	New(e, nil).Start(context.Background()) // no collectors is a no-op
 }
+
+func TestOnBatchHookRunsAfterApply(t *testing.T) {
+	e := openEngine(t)
+	var got []string
+	col := fake{"hooked", func(context.Context) (graph.Batch, error) { return hostBatch("h1"), nil }}
+	r := New(e, []Collector{col}, WithOnBatch(func(_ context.Context, b graph.Batch) error {
+		if !hostFound(e, "h1") {
+			t.Error("hook ran before the batch was applied")
+		}
+		got = append(got, b.Entities[0].Identity["hostname"])
+		return errors.New("hook failure must not fail the tick")
+	}))
+	if err := r.RunOnce(context.Background(), col); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0] != "h1" {
+		t.Fatalf("hook calls %v", got)
+	}
+	if a := status(t, e, "hooked"); a["status"] != StatusOK {
+		t.Fatalf("%v", a)
+	}
+}

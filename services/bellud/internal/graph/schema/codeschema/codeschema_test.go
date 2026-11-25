@@ -9,7 +9,7 @@ import (
 
 func TestDeclarationShape(t *testing.T) {
 	d := Declaration()
-	if len(d.Kinds) != 4 || len(d.Relations) != 9 {
+	if len(d.Kinds) != 4 || len(d.Relations) != 10 {
 		t.Fatalf("got %d kinds, %d relations", len(d.Kinds), len(d.Relations))
 	}
 	for _, k := range d.Kinds {
@@ -20,7 +20,7 @@ func TestDeclarationShape(t *testing.T) {
 		}
 	}
 	for _, r := range d.Relations {
-		if (r.Name == RelReachableFrom || r.Name == RelSupersedes) != (r.Direction == schema.Forward) {
+		if (r.Name == RelReachableFrom || r.Name == RelSupersedes || r.Name == RelAffects) != (r.Direction == schema.Forward) {
 			t.Errorf("%s: unexpected direction %s", r.Name, r.Direction)
 		}
 	}

@@ -9,7 +9,7 @@ import (
 func coreDecl() SourceDeclaration {
 	return SourceDeclaration{
 		Source: SourceCore,
-		Kinds:  []KindDeclaration{{Name: "host", Identity: []string{"hostname"}, Description: "A host."}},
+		Kinds:  []KindDeclaration{{Name: "host", Identity: []string{"hostname"}, Description: "A host.", Overview: OvCloud}},
 		Relations: []RelationDeclaration{
 			{Name: "runs_on", Direction: Reverse, Confidence: Extracted, Description: "Runs on."},
 		},
@@ -20,7 +20,7 @@ func awsDecl() SourceDeclaration {
 	return SourceDeclaration{
 		Source: SourceAWS, Prefix: "aws_",
 		Kinds: []KindDeclaration{{
-			Name: "aws_resource", Identity: []string{"connection", "arn"}, Description: "A resource.",
+			Name: "aws_resource", Identity: []string{"connection", "arn"}, Description: "A resource.", Overview: OvCloud,
 			Discriminator: "resource_type",
 			Types:         []TypeDeclaration{{Name: "ec2:vpc", Category: "network", Description: "A VPC."}},
 		}},
@@ -72,7 +72,7 @@ func TestMergeAcceptsValidAndKeepsIdenticalGenericOnce(t *testing.T) {
 func TestMergeIsOrderIndependent(t *testing.T) {
 	a, b := coreDecl(), awsDecl()
 	b.Kinds[0].Identity = []string{"arn", "connection"}
-	b.Kinds = append(b.Kinds, KindDeclaration{Name: "host", Identity: []string{"x"}, Description: "d"})
+	b.Kinds = append(b.Kinds, KindDeclaration{Name: "host", Identity: []string{"x"}, Description: "d", Overview: OvCloud})
 	_, e1 := Merge(a, b)
 	_, e2 := Merge(b, a)
 	if e1 == nil || e1.Error() != e2.Error() {
@@ -83,9 +83,9 @@ func TestMergeIsOrderIndependent(t *testing.T) {
 func TestCheckReportsEveryFailure(t *testing.T) {
 	d := coreDecl()
 	d.Kinds = append(d.Kinds,
-		KindDeclaration{Name: "Bad-Name", Identity: []string{"a", "a", ""}, Description: " "},
-		KindDeclaration{Name: strings.Repeat("a", 65), Identity: []string{"api_token"}, Description: "d"},
-		KindDeclaration{Name: "data_kind", Identity: []string{"data"}, Description: "d"},
+		KindDeclaration{Name: "Bad-Name", Identity: []string{"a", "a", ""}, Description: " ", Overview: OvCloud},
+		KindDeclaration{Name: strings.Repeat("a", 65), Identity: []string{"api_token"}, Description: "d", Overview: OvCloud},
+		KindDeclaration{Name: "data_kind", Identity: []string{"data"}, Description: "d", Overview: OvCloud},
 	)
 	d.Relations = append(d.Relations,
 		RelationDeclaration{Name: "r", Direction: 5, Confidence: "maybe", Description: "d"},
@@ -108,7 +108,7 @@ func TestCheckReportsEveryFailure(t *testing.T) {
 func TestCrossSourceConflicts(t *testing.T) {
 	core := coreDecl()
 	a := SourceDeclaration{Source: SourceAWS, Prefix: "aws_",
-		Kinds:     []KindDeclaration{{Name: "host", Identity: []string{"id"}, Description: "d"}},
+		Kinds:     []KindDeclaration{{Name: "host", Identity: []string{"id"}, Description: "d", Overview: OvCloud}},
 		Relations: []RelationDeclaration{{Name: "runs_on", Direction: Forward, Confidence: Extracted, Description: "d"}},
 	}
 	_, err := Merge(core, a)
@@ -132,8 +132,8 @@ func TestCrossSourceConflicts(t *testing.T) {
 
 func TestPrefixRule(t *testing.T) {
 	d := awsDecl()
-	d.Kinds = append(d.Kinds, KindDeclaration{Name: "package", Identity: []string{"p"}, Description: "legacy"},
-		KindDeclaration{Name: "widget", Identity: []string{"p"}, Description: "no prefix"})
+	d.Kinds = append(d.Kinds, KindDeclaration{Name: "package", Identity: []string{"p"}, Description: "legacy", Overview: OvCloud},
+		KindDeclaration{Name: "widget", Identity: []string{"p"}, Description: "no prefix", Overview: OvCloud})
 	_, err := Merge(d, coreDecl())
 	fs := failures(t, err)
 	if len(fs) != 1 || !hasRule(fs, "prefix", "widget") || !strings.Contains(fs[0].Detail, "aws_") {

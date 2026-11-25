@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Verifies THIRD_PARTY_LICENSES against go.mod (Requirements 19.3, 23.12).
+# Only the listed entries are checked: each must have 4 fields, appear once, be a direct
+# requirement in go.mod, and match the exact version in go.mod.
+# Usage: script/check-third-party-licenses [THIRD_PARTY_LICENSES] [go.mod]
+set -euo pipefail
+root="$(cd "$(dirname "$0")/.." && pwd)"
+list="${1:-$root/THIRD_PARTY_LICENSES}"
+gomod="${2:-$root/go.mod}"
+[ -f "$list" ] || { echo "missing $list"; exit 1; }
+[ -f "$gomod" ] || { echo "missing $gomod"; exit 1; }
+
+# "module version direct|indirect" for every require line, inside or outside a block.
+reqs="$(awk '
+  /^require[[:space:]]*\(/ {inblk=1; next}
+  inblk && /^\)/ {inblk=0; next}
+  {
+    line=$0
+    if (inblk) {} else if ($1=="require") { sub(/^require[[:space:]]+/, "", line) } else next
+    ind = (line ~ /\/\/ *indirect/) ? "indirect" : "direct"
+    sub(/\/\/.*/, "", line)
+    n=split(line, f, /[[:space:]]+/)
+    k=1; if (f[1]=="") k=2
+    if (f[k] != "" && f[k+1] != "") print f[k], f[k+1], ind
+  }' "$gomod")"
+
+status=0
+declare -A seen=()
+while IFS= read -r raw || [ -n "$raw" ]; do
+  line="${raw%$'\r'}"
+  case "$line" in ''|'#'*|[[:space:]]*'#'*) continue ;; esac
+  read -r -a f <<<"$line"
+  if [ "${#f[@]}" -ne 4 ]; then
+    echo "THIRD_PARTY_LICENSES: expected 4 fields (name version spdx url): $line"; status=1; continue
+  fi
+  name="${f[0]}"; ver="${f[1]}"; spdx="${f[2]}"; url="${f[3]}"
+  case "$url" in http://*|https://*) ;; *) echo "THIRD_PARTY_LICENSES: $name: source URL must be http(s): $url"; status=1 ;; esac
+  case "$spdx" in *[!A-Za-z0-9.+-]*|'') echo "THIRD_PARTY_LICENSES: $name: invalid SPDX id: $spdx"; status=1 ;; esac
+  if [ -n "${seen[$name]:-}" ]; then
+    echo "THIRD_PARTY_LICENSES: duplicate entry for $name"; status=1; continue
+  fi
+  seen[$name]=1
+  actual="$(awk -v m="$name" '$1==m {print $2, $3; exit}' <<<"$reqs")"
+  if [ -z "$actual" ]; then
+    echo "THIRD_PARTY_LICENSES: $name $ver is not required in go.mod"; status=1; continue
+  fi
+  gv="${actual% *}"; gi="${actual#* }"
+  if [ "$gv" != "$ver" ]; then
+    echo "THIRD_PARTY_LICENSES: $name version mismatch: listed $ver, go.mod has $gv"; status=1
+  fi
+  if [ "$gi" != "direct" ]; then
+    echo "THIRD_PARTY_LICENSES: $name is indirect in go.mod; list direct dependencies only"; status=1
+  fi
+done <"$list"
+
+[ "$status" -eq 0 ] && echo "THIRD_PARTY_LICENSES OK (${#seen[@]} entries)"
+exit "$status"

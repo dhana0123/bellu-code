@@ -3520,6 +3520,991 @@ export interface ExperimentalConnectorsApi<E = never> {
   readonly forgetAll: ExperimentalConnectorsForgetAllOperation<E>
 }
 
+export type ExperimentalOverviewCategoriesOutput = {
+  readonly revision: number
+  readonly categories: ReadonlyArray<{
+    readonly category:
+      | "cloud_infrastructure"
+      | "identity"
+      | "vulnerabilities"
+      | "network_exposure"
+      | "secrets"
+      | "data_security"
+      | "code_and_dependencies"
+      | "runtime"
+      | "ai_security"
+    readonly title: string
+    readonly subtitle: string
+    readonly entityCount: number
+    readonly severity: {
+      readonly critical: number
+      readonly high: number
+      readonly medium: number
+      readonly low: number
+      readonly info: number
+    }
+    readonly topIssues: ReadonlyArray<{
+      readonly id: string
+      readonly title: string
+      readonly severity: "critical" | "high" | "medium" | "low" | "info"
+      readonly riskScore: number
+    }>
+    readonly emptyState?: { readonly missingSource: string; readonly setupLink: string } | undefined
+    readonly kinds: { readonly [x: string]: number }
+  }>
+}
+export type ExperimentalOverviewCategoriesOperation<E = never> = () => Effect.Effect<
+  ExperimentalOverviewCategoriesOutput,
+  E
+>
+
+export interface ExperimentalOverviewApi<E = never> {
+  readonly categories: ExperimentalOverviewCategoriesOperation<E>
+}
+
+export type ExperimentalFindingsListInput = {
+  readonly category?:
+    | ReadonlyArray<
+        | "cloud_infrastructure"
+        | "identity"
+        | "vulnerabilities"
+        | "network_exposure"
+        | "secrets"
+        | "data_security"
+        | "code_and_dependencies"
+        | "runtime"
+        | "ai_security"
+      >
+    | undefined
+  readonly severity?: ReadonlyArray<"critical" | "high" | "medium" | "low" | "info"> | undefined
+  readonly status?: ReadonlyArray<"open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"> | undefined
+  readonly type?:
+    | ReadonlyArray<
+        | "vulnerability"
+        | "misconfiguration"
+        | "secret"
+        | "license"
+        | "malware"
+        | "runtime_threat"
+        | "ai_risk"
+        | "data_exposure"
+        | "identity_risk"
+      >
+    | undefined
+  readonly asset?: ReadonlyArray<string> | undefined
+  readonly source?: ReadonlyArray<string> | undefined
+  readonly from?: string | undefined
+  readonly to?: string | undefined
+  readonly sort?:
+    | (
+        | "last_seen"
+        | "-last_seen"
+        | "first_seen"
+        | "-first_seen"
+        | "severity"
+        | "-severity"
+        | "risk_score"
+        | "-risk_score"
+      )
+    | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+export type ExperimentalFindingsListOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly ruleId: string
+    readonly title: string
+    readonly description: string
+    readonly category:
+      | "cloud_infrastructure"
+      | "identity"
+      | "vulnerabilities"
+      | "network_exposure"
+      | "secrets"
+      | "data_security"
+      | "code_and_dependencies"
+      | "runtime"
+      | "ai_security"
+    readonly type:
+      | "vulnerability"
+      | "misconfiguration"
+      | "secret"
+      | "license"
+      | "malware"
+      | "runtime_threat"
+      | "ai_risk"
+      | "data_exposure"
+      | "identity_risk"
+    readonly severity: "critical" | "high" | "medium" | "low" | "info"
+    readonly status: "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+    readonly assetId: string
+    readonly evidence: ReadonlyArray<{
+      readonly kind: string
+      readonly ref: string
+      readonly line?: number | undefined
+      readonly excerpt?: string | undefined
+    }>
+    readonly firstSeen: string
+    readonly lastSeen: string
+    readonly resolvedAt?: string | undefined
+    readonly source: string
+    readonly sourceRevision?: string | undefined
+    readonly rulePackVersion?: string | undefined
+    readonly occurrences: number
+    readonly riskScore?: number | undefined
+    readonly unmappedSeverity?: boolean | undefined
+    readonly details?: Schema.Json | undefined
+  }>
+  readonly nextCursor?: string | undefined
+  readonly truncated: boolean
+}
+export type ExperimentalFindingsListOperation<E = never> = (
+  input?: ExperimentalFindingsListInput,
+) => Effect.Effect<ExperimentalFindingsListOutput, E>
+
+export type ExperimentalFindingsGetInput = { readonly id: string }
+export type ExperimentalFindingsGetOutput = {
+  readonly id: string
+  readonly ruleId: string
+  readonly title: string
+  readonly description: string
+  readonly category:
+    | "cloud_infrastructure"
+    | "identity"
+    | "vulnerabilities"
+    | "network_exposure"
+    | "secrets"
+    | "data_security"
+    | "code_and_dependencies"
+    | "runtime"
+    | "ai_security"
+  readonly type:
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "license"
+    | "malware"
+    | "runtime_threat"
+    | "ai_risk"
+    | "data_exposure"
+    | "identity_risk"
+  readonly severity: "critical" | "high" | "medium" | "low" | "info"
+  readonly status: "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+  readonly assetId: string
+  readonly evidence: ReadonlyArray<{
+    readonly kind: string
+    readonly ref: string
+    readonly line?: number | undefined
+    readonly excerpt?: string | undefined
+  }>
+  readonly firstSeen: string
+  readonly lastSeen: string
+  readonly resolvedAt?: string | undefined
+  readonly source: string
+  readonly sourceRevision?: string | undefined
+  readonly rulePackVersion?: string | undefined
+  readonly occurrences: number
+  readonly riskScore?: number | undefined
+  readonly unmappedSeverity?: boolean | undefined
+  readonly details?: Schema.Json | undefined
+  readonly events: ReadonlyArray<{
+    readonly seq: number
+    readonly at: string
+    readonly actor: string
+    readonly prevStatus?: ("open" | "in_progress" | "resolved" | "ignored" | "accepted_risk") | undefined
+    readonly newStatus: "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+    readonly reason?: string | undefined
+  }>
+}
+export type ExperimentalFindingsGetOperation<E = never> = (
+  input: ExperimentalFindingsGetInput,
+) => Effect.Effect<ExperimentalFindingsGetOutput, E>
+
+export type ExperimentalFindingsSetStatusInput = {
+  readonly id: string
+  readonly status: "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+  readonly reason?: string | undefined
+  readonly until?: string | undefined
+}
+export type ExperimentalFindingsSetStatusOutput = {
+  readonly id: string
+  readonly ruleId: string
+  readonly title: string
+  readonly description: string
+  readonly category:
+    | "cloud_infrastructure"
+    | "identity"
+    | "vulnerabilities"
+    | "network_exposure"
+    | "secrets"
+    | "data_security"
+    | "code_and_dependencies"
+    | "runtime"
+    | "ai_security"
+  readonly type:
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "license"
+    | "malware"
+    | "runtime_threat"
+    | "ai_risk"
+    | "data_exposure"
+    | "identity_risk"
+  readonly severity: "critical" | "high" | "medium" | "low" | "info"
+  readonly status: "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+  readonly assetId: string
+  readonly evidence: ReadonlyArray<{
+    readonly kind: string
+    readonly ref: string
+    readonly line?: number | undefined
+    readonly excerpt?: string | undefined
+  }>
+  readonly firstSeen: string
+  readonly lastSeen: string
+  readonly resolvedAt?: string | undefined
+  readonly source: string
+  readonly sourceRevision?: string | undefined
+  readonly rulePackVersion?: string | undefined
+  readonly occurrences: number
+  readonly riskScore?: number | undefined
+  readonly unmappedSeverity?: boolean | undefined
+  readonly details?: Schema.Json | undefined
+  readonly events: ReadonlyArray<{
+    readonly seq: number
+    readonly at: string
+    readonly actor: string
+    readonly prevStatus?: ("open" | "in_progress" | "resolved" | "ignored" | "accepted_risk") | undefined
+    readonly newStatus: "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+    readonly reason?: string | undefined
+  }>
+}
+export type ExperimentalFindingsSetStatusOperation<E = never> = (
+  input: ExperimentalFindingsSetStatusInput,
+) => Effect.Effect<ExperimentalFindingsSetStatusOutput, E>
+
+export interface ExperimentalFindingsApi<E = never> {
+  readonly list: ExperimentalFindingsListOperation<E>
+  readonly get: ExperimentalFindingsGetOperation<E>
+  readonly setStatus: ExperimentalFindingsSetStatusOperation<E>
+}
+
+export type ExperimentalScansEnqueueInput = {
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly targetId: string
+}
+export type ExperimentalScansEnqueueOutput = {
+  readonly id: string
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly targetId: string
+  readonly status: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged"
+  readonly reason?: string | undefined
+  readonly queuedAt: string
+  readonly startedAt?: string | undefined
+  readonly endedAt?: string | undefined
+  readonly created: number
+  readonly updated: number
+  readonly resolved: number
+  readonly durationMs?: number | undefined
+  readonly scannerVersions: { readonly [x: string]: string }
+}
+export type ExperimentalScansEnqueueOperation<E = never> = (
+  input: ExperimentalScansEnqueueInput,
+) => Effect.Effect<ExperimentalScansEnqueueOutput, E>
+
+export type ExperimentalScansListInput = {
+  readonly status?: ("queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged") | undefined
+  readonly kind?:
+    | ("sbom" | "vulnerability" | "misconfiguration" | "secret" | "posture" | "data_classification" | "ai_inventory")
+    | undefined
+  readonly limit?: number | undefined
+}
+export type ExperimentalScansListOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly kind:
+      | "sbom"
+      | "vulnerability"
+      | "misconfiguration"
+      | "secret"
+      | "posture"
+      | "data_classification"
+      | "ai_inventory"
+    readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+    readonly targetId: string
+    readonly status: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged"
+    readonly reason?: string | undefined
+    readonly queuedAt: string
+    readonly startedAt?: string | undefined
+    readonly endedAt?: string | undefined
+    readonly created: number
+    readonly updated: number
+    readonly resolved: number
+    readonly durationMs?: number | undefined
+    readonly scannerVersions: { readonly [x: string]: string }
+  }>
+  readonly nextCursor?: string | undefined
+  readonly truncated: boolean
+}
+export type ExperimentalScansListOperation<E = never> = (
+  input?: ExperimentalScansListInput,
+) => Effect.Effect<ExperimentalScansListOutput, E>
+
+export type ExperimentalScansScannersOutput = {
+  readonly items: ReadonlyArray<{
+    readonly name: string
+    readonly kind:
+      | "sbom"
+      | "vulnerability"
+      | "misconfiguration"
+      | "secret"
+      | "posture"
+      | "data_classification"
+      | "ai_inventory"
+    readonly version: string
+    readonly license: string
+    readonly libraries?: { readonly [x: string]: string } | undefined
+    readonly lastRun?:
+      | {
+          readonly id: string
+          readonly kind:
+            | "sbom"
+            | "vulnerability"
+            | "misconfiguration"
+            | "secret"
+            | "posture"
+            | "data_classification"
+            | "ai_inventory"
+          readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+          readonly targetId: string
+          readonly status: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged"
+          readonly reason?: string | undefined
+          readonly queuedAt: string
+          readonly startedAt?: string | undefined
+          readonly endedAt?: string | undefined
+          readonly created: number
+          readonly updated: number
+          readonly resolved: number
+          readonly durationMs?: number | undefined
+          readonly scannerVersions: { readonly [x: string]: string }
+        }
+      | undefined
+  }>
+  readonly nextCursor?: string | undefined
+  readonly truncated: boolean
+}
+export type ExperimentalScansScannersOperation<E = never> = () => Effect.Effect<ExperimentalScansScannersOutput, E>
+
+export type ExperimentalScansGetInput = { readonly id: string }
+export type ExperimentalScansGetOutput = {
+  readonly id: string
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly targetId: string
+  readonly status: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged"
+  readonly reason?: string | undefined
+  readonly queuedAt: string
+  readonly startedAt?: string | undefined
+  readonly endedAt?: string | undefined
+  readonly created: number
+  readonly updated: number
+  readonly resolved: number
+  readonly durationMs?: number | undefined
+  readonly scannerVersions: { readonly [x: string]: string }
+}
+export type ExperimentalScansGetOperation<E = never> = (
+  input: ExperimentalScansGetInput,
+) => Effect.Effect<ExperimentalScansGetOutput, E>
+
+export type ExperimentalScansCancelInput = { readonly id: string }
+export type ExperimentalScansCancelOutput = {
+  readonly id: string
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly targetId: string
+  readonly status: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged"
+  readonly reason?: string | undefined
+  readonly queuedAt: string
+  readonly startedAt?: string | undefined
+  readonly endedAt?: string | undefined
+  readonly created: number
+  readonly updated: number
+  readonly resolved: number
+  readonly durationMs?: number | undefined
+  readonly scannerVersions: { readonly [x: string]: string }
+}
+export type ExperimentalScansCancelOperation<E = never> = (
+  input: ExperimentalScansCancelInput,
+) => Effect.Effect<ExperimentalScansCancelOutput, E>
+
+export type ExperimentalScansScheduleInput = {
+  readonly id: string
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly intervalSeconds: number
+  readonly enabled: boolean
+}
+export type ExperimentalScansScheduleOutput = {
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly targetId: string
+  readonly intervalSeconds: number
+  readonly enabled: boolean
+}
+export type ExperimentalScansScheduleOperation<E = never> = (
+  input: ExperimentalScansScheduleInput,
+) => Effect.Effect<ExperimentalScansScheduleOutput, E>
+
+export interface ExperimentalScansApi<E = never> {
+  readonly enqueue: ExperimentalScansEnqueueOperation<E>
+  readonly list: ExperimentalScansListOperation<E>
+  readonly scanners: ExperimentalScansScannersOperation<E>
+  readonly get: ExperimentalScansGetOperation<E>
+  readonly cancel: ExperimentalScansCancelOperation<E>
+  readonly schedule: ExperimentalScansScheduleOperation<E>
+}
+
+export type ExperimentalSbomListOutput = {
+  readonly items: ReadonlyArray<{
+    readonly assetId: string
+    readonly digest: string
+    readonly packageCount: number
+    readonly createdAt: string
+    readonly ecosystems: { readonly [x: string]: number }
+    readonly licenses: { readonly [x: string]: number }
+  }>
+}
+export type ExperimentalSbomListOperation<E = never> = () => Effect.Effect<ExperimentalSbomListOutput, E>
+
+export type ExperimentalSbomGetInput = {
+  readonly assetId: string
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+export type ExperimentalSbomGetOutput = {
+  readonly assetId: string
+  readonly digest: string
+  readonly packageCount: number
+  readonly createdAt: string
+  readonly ecosystems: { readonly [x: string]: number }
+  readonly licenses: { readonly [x: string]: number }
+  readonly subject?: string | undefined
+  readonly items: ReadonlyArray<{
+    readonly type?: string | undefined
+    readonly name: string
+    readonly version?: string | undefined
+    readonly purl?: string | undefined
+    readonly ecosystem?: string | undefined
+    readonly licenses: ReadonlyArray<string>
+    readonly supplier?: string | undefined
+    readonly locations: ReadonlyArray<string>
+    readonly properties?: { readonly [x: string]: string } | undefined
+  }>
+  readonly nextCursor?: string | undefined
+}
+export type ExperimentalSbomGetOperation<E = never> = (
+  input: ExperimentalSbomGetInput,
+) => Effect.Effect<ExperimentalSbomGetOutput, E>
+
+export type ExperimentalSbomExportInput = {
+  readonly assetId: string
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+export type ExperimentalSbomExportOutput = globalThis.Uint8Array
+export type ExperimentalSbomExportOperation<E = never> = (
+  input: ExperimentalSbomExportInput,
+) => Effect.Effect<ExperimentalSbomExportOutput, E>
+
+export interface ExperimentalSbomApi<E = never> {
+  readonly list: ExperimentalSbomListOperation<E>
+  readonly get: ExperimentalSbomGetOperation<E>
+  readonly export: ExperimentalSbomExportOperation<E>
+}
+
+export type ExperimentalCveLookupInput = {
+  readonly id?: string | undefined
+  readonly purl?: string | undefined
+  readonly version?: string | undefined
+  readonly cpe?: string | undefined
+  readonly mode?: ("db" | "graph" | "both") | undefined
+}
+export type ExperimentalCveLookupOutput = {
+  readonly vulns: ReadonlyArray<{
+    readonly id: string
+    readonly aliases: ReadonlyArray<string>
+    readonly summary: string
+    readonly severity: string
+    readonly cvssScore: number
+    readonly cvssVector?: string | undefined
+    readonly cvssVersion?: string | undefined
+    readonly ranges: ReadonlyArray<{ readonly introduced: string; readonly fixed: string }>
+    readonly fixedVersions: ReadonlyArray<string>
+    readonly kev: boolean
+    readonly epss: number
+    readonly published?: string | undefined
+    readonly modified?: string | undefined
+    readonly affectedState?: string | undefined
+    readonly origin: string
+  }>
+  readonly gaps: ReadonlyArray<{ readonly kind: string; readonly cause: string }>
+  readonly warnings: ReadonlyArray<{ readonly code: string; readonly message: string }>
+  readonly fieldFrom: { readonly [x: string]: string }
+  readonly truncated: boolean
+}
+export type ExperimentalCveLookupOperation<E = never> = (
+  input?: ExperimentalCveLookupInput,
+) => Effect.Effect<ExperimentalCveLookupOutput, E>
+
+export type ExperimentalCveGraphInput = {
+  readonly id?: string | undefined
+  readonly relTypes?: string | undefined
+  readonly nodeTypes?: string | undefined
+  readonly depth?: number | undefined
+  readonly limit?: number | undefined
+}
+export type ExperimentalCveGraphOutput = {
+  readonly nodes: ReadonlyArray<{
+    readonly id: string
+    readonly type: string
+    readonly key: string
+    readonly label: string
+    readonly properties?: { readonly [x: string]: unknown } | undefined
+  }>
+  readonly edges: ReadonlyArray<{
+    readonly id: string
+    readonly source: string
+    readonly target: string
+    readonly type: string
+    readonly viewID?: string | undefined
+  }>
+  readonly gaps: ReadonlyArray<{ readonly kind: string; readonly cause: string }>
+  readonly warnings: ReadonlyArray<{ readonly code: string; readonly message: string }>
+  readonly fieldFrom: { readonly [x: string]: string }
+  readonly truncated: boolean
+}
+export type ExperimentalCveGraphOperation<E = never> = (
+  input?: ExperimentalCveGraphInput,
+) => Effect.Effect<ExperimentalCveGraphOutput, E>
+
+export type ExperimentalCveStatusOutput = {
+  readonly mode: "db" | "graph" | "both"
+  readonly dbInstalled: boolean
+  readonly dataAgeHours: number
+  readonly stale: boolean
+  readonly staleLimitHours: number
+  readonly bskgReachable: boolean
+  readonly graphEnabled: boolean
+  readonly lastGap: { readonly kind: string; readonly cause: string } | null
+}
+export type ExperimentalCveStatusOperation<E = never> = () => Effect.Effect<ExperimentalCveStatusOutput, E>
+
+export type ExperimentalCveSetModeInput = { readonly mode: "db" | "graph" | "both" }
+export type ExperimentalCveSetModeOutput = { readonly mode: "db" | "graph" | "both" }
+export type ExperimentalCveSetModeOperation<E = never> = (
+  input: ExperimentalCveSetModeInput,
+) => Effect.Effect<ExperimentalCveSetModeOutput, E>
+
+export type ExperimentalCveGetInput = { readonly id: string; readonly mode?: ("db" | "graph" | "both") | undefined }
+export type ExperimentalCveGetOutput = {
+  readonly id: string
+  readonly aliases: ReadonlyArray<string>
+  readonly summary: string
+  readonly severity: string
+  readonly cvssScore: number
+  readonly cvssVector?: string | undefined
+  readonly cvssVersion?: string | undefined
+  readonly ranges: ReadonlyArray<{ readonly introduced: string; readonly fixed: string }>
+  readonly fixedVersions: ReadonlyArray<string>
+  readonly kev: boolean
+  readonly epss: number
+  readonly published?: string | undefined
+  readonly modified?: string | undefined
+  readonly affectedState?: string | undefined
+  readonly origin: string
+  readonly cwes: ReadonlyArray<{
+    readonly id: string
+    readonly type: string
+    readonly key: string
+    readonly label: string
+  }>
+  readonly exploits: ReadonlyArray<{
+    readonly id: string
+    readonly type: string
+    readonly key: string
+    readonly label: string
+  }>
+  readonly affected: ReadonlyArray<{
+    readonly id: string
+    readonly type: string
+    readonly key: string
+    readonly label: string
+  }>
+  readonly related: ReadonlyArray<{
+    readonly id: string
+    readonly type: string
+    readonly key: string
+    readonly label: string
+  }>
+  readonly conflicts?: { readonly [x: string]: { readonly DB: unknown; readonly Graph: unknown } } | undefined
+  readonly gaps: ReadonlyArray<{ readonly kind: string; readonly cause: string }>
+  readonly warnings: ReadonlyArray<{ readonly code: string; readonly message: string }>
+  readonly fieldFrom: { readonly [x: string]: string }
+  readonly truncated: boolean
+}
+export type ExperimentalCveGetOperation<E = never> = (
+  input: ExperimentalCveGetInput,
+) => Effect.Effect<ExperimentalCveGetOutput, E>
+
+export interface ExperimentalCveApi<E = never> {
+  readonly lookup: ExperimentalCveLookupOperation<E>
+  readonly graph: ExperimentalCveGraphOperation<E>
+  readonly status: ExperimentalCveStatusOperation<E>
+  readonly setMode: ExperimentalCveSetModeOperation<E>
+  readonly get: ExperimentalCveGetOperation<E>
+}
+
+export type ExperimentalBomSbomListOutput = {
+  readonly items: ReadonlyArray<{
+    readonly assetId: string
+    readonly digest: string
+    readonly packageCount: number
+    readonly createdAt: string
+    readonly ecosystems: { readonly [x: string]: number }
+    readonly licenses: { readonly [x: string]: number }
+  }>
+}
+export type ExperimentalBomSbomListOperation<E = never> = () => Effect.Effect<ExperimentalBomSbomListOutput, E>
+
+export type ExperimentalBomSbomExportInput = {
+  readonly assetId: string
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+export type ExperimentalBomSbomExportOutput = globalThis.Uint8Array
+export type ExperimentalBomSbomExportOperation<E = never> = (
+  input: ExperimentalBomSbomExportInput,
+) => Effect.Effect<ExperimentalBomSbomExportOutput, E>
+
+export interface ExperimentalBomApi<E = never> {
+  readonly sbomList: ExperimentalBomSbomListOperation<E>
+  readonly sbomExport: ExperimentalBomSbomExportOperation<E>
+}
+
+export type ExperimentalIssuesListInput = {
+  readonly category?:
+    | ReadonlyArray<
+        | "cloud_infrastructure"
+        | "identity"
+        | "vulnerabilities"
+        | "network_exposure"
+        | "secrets"
+        | "data_security"
+        | "code_and_dependencies"
+        | "runtime"
+        | "ai_security"
+      >
+    | undefined
+  readonly severity?: ReadonlyArray<"critical" | "high" | "medium" | "low" | "info"> | undefined
+  readonly status?: ReadonlyArray<"open" | "resolved" | "ignored"> | undefined
+  readonly asset?: string | undefined
+  readonly sort?: ("risk_score" | "-risk_score") | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+export type ExperimentalIssuesListOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly title: string
+    readonly ruleId: string
+    readonly severity: "critical" | "high" | "medium" | "low" | "info"
+    readonly riskScore: number
+    readonly status: "open" | "resolved" | "ignored"
+    readonly category:
+      | "cloud_infrastructure"
+      | "identity"
+      | "vulnerabilities"
+      | "network_exposure"
+      | "secrets"
+      | "data_security"
+      | "code_and_dependencies"
+      | "runtime"
+      | "ai_security"
+    readonly includesInferred: boolean
+    readonly findingCount: number
+    readonly path: ReadonlyArray<{
+      readonly entityId: string
+      readonly relation?: string | undefined
+      readonly evidence: ReadonlyArray<string>
+      readonly inferred: boolean
+    }>
+    readonly createdAt: string
+    readonly updatedAt: string
+  }>
+  readonly nextCursor?: string | undefined
+  readonly truncated: boolean
+}
+export type ExperimentalIssuesListOperation<E = never> = (
+  input?: ExperimentalIssuesListInput,
+) => Effect.Effect<ExperimentalIssuesListOutput, E>
+
+export type ExperimentalIssuesGetInput = { readonly id: string }
+export type ExperimentalIssuesGetOutput = {
+  readonly id: string
+  readonly title: string
+  readonly ruleId: string
+  readonly severity: "critical" | "high" | "medium" | "low" | "info"
+  readonly riskScore: number
+  readonly status: "open" | "resolved" | "ignored"
+  readonly category:
+    | "cloud_infrastructure"
+    | "identity"
+    | "vulnerabilities"
+    | "network_exposure"
+    | "secrets"
+    | "data_security"
+    | "code_and_dependencies"
+    | "runtime"
+    | "ai_security"
+  readonly includesInferred: boolean
+  readonly findingCount: number
+  readonly path: ReadonlyArray<{
+    readonly entityId: string
+    readonly relation?: string | undefined
+    readonly evidence: ReadonlyArray<string>
+    readonly inferred: boolean
+  }>
+  readonly createdAt: string
+  readonly updatedAt: string
+  readonly findings: ReadonlyArray<{
+    readonly id: string
+    readonly title?: string | undefined
+    readonly ruleId?: string | undefined
+    readonly severity?: string | undefined
+    readonly status?: string | undefined
+    readonly assetId?: string | undefined
+  }>
+}
+export type ExperimentalIssuesGetOperation<E = never> = (
+  input: ExperimentalIssuesGetInput,
+) => Effect.Effect<ExperimentalIssuesGetOutput, E>
+
+export type ExperimentalIssuesSetStatusInput = { readonly id: string; readonly status: "open" | "resolved" | "ignored" }
+export type ExperimentalIssuesSetStatusOutput = {
+  readonly id: string
+  readonly title: string
+  readonly ruleId: string
+  readonly severity: "critical" | "high" | "medium" | "low" | "info"
+  readonly riskScore: number
+  readonly status: "open" | "resolved" | "ignored"
+  readonly category:
+    | "cloud_infrastructure"
+    | "identity"
+    | "vulnerabilities"
+    | "network_exposure"
+    | "secrets"
+    | "data_security"
+    | "code_and_dependencies"
+    | "runtime"
+    | "ai_security"
+  readonly includesInferred: boolean
+  readonly findingCount: number
+  readonly path: ReadonlyArray<{
+    readonly entityId: string
+    readonly relation?: string | undefined
+    readonly evidence: ReadonlyArray<string>
+    readonly inferred: boolean
+  }>
+  readonly createdAt: string
+  readonly updatedAt: string
+  readonly findings: ReadonlyArray<{
+    readonly id: string
+    readonly title?: string | undefined
+    readonly ruleId?: string | undefined
+    readonly severity?: string | undefined
+    readonly status?: string | undefined
+    readonly assetId?: string | undefined
+  }>
+}
+export type ExperimentalIssuesSetStatusOperation<E = never> = (
+  input: ExperimentalIssuesSetStatusInput,
+) => Effect.Effect<ExperimentalIssuesSetStatusOutput, E>
+
+export interface ExperimentalIssuesApi<E = never> {
+  readonly list: ExperimentalIssuesListOperation<E>
+  readonly get: ExperimentalIssuesGetOperation<E>
+  readonly setStatus: ExperimentalIssuesSetStatusOperation<E>
+}
+
+export type ExperimentalRulesPacksOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly version: string
+    readonly enabled: boolean
+    readonly ruleCount: number
+  }>
+}
+export type ExperimentalRulesPacksOperation<E = never> = () => Effect.Effect<ExperimentalRulesPacksOutput, E>
+
+export type ExperimentalRulesPackRulesInput = { readonly id: string }
+export type ExperimentalRulesPackRulesOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly packId: string
+    readonly title: string
+    readonly description: string
+    readonly kind: "posture" | "toxic_combination" | "runtime" | "identity"
+    readonly category: string
+    readonly appliesTo: ReadonlyArray<string>
+    readonly benchmarks: ReadonlyArray<string>
+    readonly enabled: boolean
+    readonly severity: "critical" | "high" | "medium" | "low" | "info"
+    readonly defaultSeverity: "critical" | "high" | "medium" | "low" | "info"
+  }>
+}
+export type ExperimentalRulesPackRulesOperation<E = never> = (
+  input: ExperimentalRulesPackRulesInput,
+) => Effect.Effect<ExperimentalRulesPackRulesOutput, E>
+
+export type ExperimentalRulesOverrideInput = {
+  readonly packId: string
+  readonly ruleId?: string | undefined
+  readonly enabled?: boolean | undefined
+  readonly severity?: ("critical" | "high" | "medium" | "low" | "info") | undefined
+}
+export type ExperimentalRulesOverrideOutput =
+  | { readonly id: string; readonly version: string; readonly enabled: boolean; readonly ruleCount: number }
+  | {
+      readonly id: string
+      readonly packId: string
+      readonly title: string
+      readonly description: string
+      readonly kind: "posture" | "toxic_combination" | "runtime" | "identity"
+      readonly category: string
+      readonly appliesTo: ReadonlyArray<string>
+      readonly benchmarks: ReadonlyArray<string>
+      readonly enabled: boolean
+      readonly severity: "critical" | "high" | "medium" | "low" | "info"
+      readonly defaultSeverity: "critical" | "high" | "medium" | "low" | "info"
+    }
+export type ExperimentalRulesOverrideOperation<E = never> = (
+  input: ExperimentalRulesOverrideInput,
+) => Effect.Effect<ExperimentalRulesOverrideOutput, E>
+
+export type ExperimentalRulesComplianceInput = { readonly benchmark?: string | undefined }
+export type ExperimentalRulesComplianceOutput =
+  | { readonly benchmarks: ReadonlyArray<string> }
+  | {
+      readonly benchmark: string
+      readonly controls: ReadonlyArray<{
+        readonly control: string
+        readonly status: "pass" | "fail" | "not_applicable" | "error"
+        readonly failingEntities: number
+      }>
+    }
+export type ExperimentalRulesComplianceOperation<E = never> = (
+  input?: ExperimentalRulesComplianceInput,
+) => Effect.Effect<ExperimentalRulesComplianceOutput, E>
+
+export interface ExperimentalRulesApi<E = never> {
+  readonly packs: ExperimentalRulesPacksOperation<E>
+  readonly packRules: ExperimentalRulesPackRulesOperation<E>
+  readonly override: ExperimentalRulesOverrideOperation<E>
+  readonly compliance: ExperimentalRulesComplianceOperation<E>
+}
+
+export type ExperimentalDataStoresInput = { readonly limit?: number | undefined; readonly cursor?: string | undefined }
+export type ExperimentalDataStoresOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly type: string
+    readonly name: string
+    readonly region?: string | undefined
+    readonly encryptionAtRest: Schema.Json
+    readonly encryptionInTransit: Schema.Json
+    readonly publicAccess: Schema.Json
+    readonly backup: Schema.Json
+    readonly logging: Schema.Json
+    readonly classes: ReadonlyArray<string>
+    readonly matchCounts: { readonly [x: string]: number }
+    readonly openExposureCount: number
+  }>
+  readonly nextCursor?: string | undefined
+  readonly truncated: boolean
+}
+export type ExperimentalDataStoresOperation<E = never> = (
+  input?: ExperimentalDataStoresInput,
+) => Effect.Effect<ExperimentalDataStoresOutput, E>
+
+export type ExperimentalDataStoreInput = { readonly id: string }
+export type ExperimentalDataStoreOutput = {
+  readonly id: string
+  readonly type: string
+  readonly name: string
+  readonly region?: string | undefined
+  readonly encryptionAtRest: Schema.Json
+  readonly encryptionInTransit: Schema.Json
+  readonly publicAccess: Schema.Json
+  readonly backup: Schema.Json
+  readonly logging: Schema.Json
+  readonly classes: ReadonlyArray<string>
+  readonly matchCounts: { readonly [x: string]: number }
+  readonly openExposureCount: number
+}
+export type ExperimentalDataStoreOperation<E = never> = (
+  input: ExperimentalDataStoreInput,
+) => Effect.Effect<ExperimentalDataStoreOutput, E>
+
+export interface ExperimentalDataApi<E = never> {
+  readonly stores: ExperimentalDataStoresOperation<E>
+  readonly store: ExperimentalDataStoreOperation<E>
+}
+
 export type ShellListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
 export type ShellListOutput = { readonly location: Location.PublicRef; readonly data: ReadonlyArray<Shell.Info> }
 export type ShellListOperation<E = never> = (input?: ShellListInput) => Effect.Effect<ShellListOutput, E>
@@ -4310,6 +5295,249 @@ export type ConnectorsForgetAllOutput = ExperimentalConnectorsForgetAllOutput
 /** @deprecated Use `ExperimentalConnectorsForgetAllOperation`. Removed in the next minor. */
 export type ConnectorsForgetAllOperation<E = never> = ExperimentalConnectorsForgetAllOperation<E>
 
+/** @deprecated Use `ExperimentalOverviewCategoriesOutput`. Removed in the next minor. */
+export type OverviewCategoriesOutput = ExperimentalOverviewCategoriesOutput
+
+/** @deprecated Use `ExperimentalOverviewCategoriesOperation`. Removed in the next minor. */
+export type OverviewCategoriesOperation<E = never> = ExperimentalOverviewCategoriesOperation<E>
+
+/** @deprecated Use `ExperimentalFindingsListInput`. Removed in the next minor. */
+export type FindingsListInput = ExperimentalFindingsListInput
+
+/** @deprecated Use `ExperimentalFindingsListOutput`. Removed in the next minor. */
+export type FindingsListOutput = ExperimentalFindingsListOutput
+
+/** @deprecated Use `ExperimentalFindingsListOperation`. Removed in the next minor. */
+export type FindingsListOperation<E = never> = ExperimentalFindingsListOperation<E>
+
+/** @deprecated Use `ExperimentalFindingsGetInput`. Removed in the next minor. */
+export type FindingsGetInput = ExperimentalFindingsGetInput
+
+/** @deprecated Use `ExperimentalFindingsGetOutput`. Removed in the next minor. */
+export type FindingsGetOutput = ExperimentalFindingsGetOutput
+
+/** @deprecated Use `ExperimentalFindingsGetOperation`. Removed in the next minor. */
+export type FindingsGetOperation<E = never> = ExperimentalFindingsGetOperation<E>
+
+/** @deprecated Use `ExperimentalFindingsSetStatusInput`. Removed in the next minor. */
+export type FindingsSetStatusInput = ExperimentalFindingsSetStatusInput
+
+/** @deprecated Use `ExperimentalFindingsSetStatusOutput`. Removed in the next minor. */
+export type FindingsSetStatusOutput = ExperimentalFindingsSetStatusOutput
+
+/** @deprecated Use `ExperimentalFindingsSetStatusOperation`. Removed in the next minor. */
+export type FindingsSetStatusOperation<E = never> = ExperimentalFindingsSetStatusOperation<E>
+
+/** @deprecated Use `ExperimentalScansEnqueueInput`. Removed in the next minor. */
+export type ScansEnqueueInput = ExperimentalScansEnqueueInput
+
+/** @deprecated Use `ExperimentalScansEnqueueOutput`. Removed in the next minor. */
+export type ScansEnqueueOutput = ExperimentalScansEnqueueOutput
+
+/** @deprecated Use `ExperimentalScansEnqueueOperation`. Removed in the next minor. */
+export type ScansEnqueueOperation<E = never> = ExperimentalScansEnqueueOperation<E>
+
+/** @deprecated Use `ExperimentalScansListInput`. Removed in the next minor. */
+export type ScansListInput = ExperimentalScansListInput
+
+/** @deprecated Use `ExperimentalScansListOutput`. Removed in the next minor. */
+export type ScansListOutput = ExperimentalScansListOutput
+
+/** @deprecated Use `ExperimentalScansListOperation`. Removed in the next minor. */
+export type ScansListOperation<E = never> = ExperimentalScansListOperation<E>
+
+/** @deprecated Use `ExperimentalScansScannersOutput`. Removed in the next minor. */
+export type ScansScannersOutput = ExperimentalScansScannersOutput
+
+/** @deprecated Use `ExperimentalScansScannersOperation`. Removed in the next minor. */
+export type ScansScannersOperation<E = never> = ExperimentalScansScannersOperation<E>
+
+/** @deprecated Use `ExperimentalScansGetInput`. Removed in the next minor. */
+export type ScansGetInput = ExperimentalScansGetInput
+
+/** @deprecated Use `ExperimentalScansGetOutput`. Removed in the next minor. */
+export type ScansGetOutput = ExperimentalScansGetOutput
+
+/** @deprecated Use `ExperimentalScansGetOperation`. Removed in the next minor. */
+export type ScansGetOperation<E = never> = ExperimentalScansGetOperation<E>
+
+/** @deprecated Use `ExperimentalScansCancelInput`. Removed in the next minor. */
+export type ScansCancelInput = ExperimentalScansCancelInput
+
+/** @deprecated Use `ExperimentalScansCancelOutput`. Removed in the next minor. */
+export type ScansCancelOutput = ExperimentalScansCancelOutput
+
+/** @deprecated Use `ExperimentalScansCancelOperation`. Removed in the next minor. */
+export type ScansCancelOperation<E = never> = ExperimentalScansCancelOperation<E>
+
+/** @deprecated Use `ExperimentalScansScheduleInput`. Removed in the next minor. */
+export type ScansScheduleInput = ExperimentalScansScheduleInput
+
+/** @deprecated Use `ExperimentalScansScheduleOutput`. Removed in the next minor. */
+export type ScansScheduleOutput = ExperimentalScansScheduleOutput
+
+/** @deprecated Use `ExperimentalScansScheduleOperation`. Removed in the next minor. */
+export type ScansScheduleOperation<E = never> = ExperimentalScansScheduleOperation<E>
+
+/** @deprecated Use `ExperimentalSbomListOutput`. Removed in the next minor. */
+export type SbomListOutput = ExperimentalSbomListOutput
+
+/** @deprecated Use `ExperimentalSbomListOperation`. Removed in the next minor. */
+export type SbomListOperation<E = never> = ExperimentalSbomListOperation<E>
+
+/** @deprecated Use `ExperimentalSbomGetInput`. Removed in the next minor. */
+export type SbomGetInput = ExperimentalSbomGetInput
+
+/** @deprecated Use `ExperimentalSbomGetOutput`. Removed in the next minor. */
+export type SbomGetOutput = ExperimentalSbomGetOutput
+
+/** @deprecated Use `ExperimentalSbomGetOperation`. Removed in the next minor. */
+export type SbomGetOperation<E = never> = ExperimentalSbomGetOperation<E>
+
+/** @deprecated Use `ExperimentalSbomExportInput`. Removed in the next minor. */
+export type SbomExportInput = ExperimentalSbomExportInput
+
+/** @deprecated Use `ExperimentalSbomExportOutput`. Removed in the next minor. */
+export type SbomExportOutput = ExperimentalSbomExportOutput
+
+/** @deprecated Use `ExperimentalSbomExportOperation`. Removed in the next minor. */
+export type SbomExportOperation<E = never> = ExperimentalSbomExportOperation<E>
+
+/** @deprecated Use `ExperimentalCveLookupInput`. Removed in the next minor. */
+export type CveLookupInput = ExperimentalCveLookupInput
+
+/** @deprecated Use `ExperimentalCveLookupOutput`. Removed in the next minor. */
+export type CveLookupOutput = ExperimentalCveLookupOutput
+
+/** @deprecated Use `ExperimentalCveLookupOperation`. Removed in the next minor. */
+export type CveLookupOperation<E = never> = ExperimentalCveLookupOperation<E>
+
+/** @deprecated Use `ExperimentalCveGraphInput`. Removed in the next minor. */
+export type CveGraphInput = ExperimentalCveGraphInput
+
+/** @deprecated Use `ExperimentalCveGraphOutput`. Removed in the next minor. */
+export type CveGraphOutput = ExperimentalCveGraphOutput
+
+/** @deprecated Use `ExperimentalCveGraphOperation`. Removed in the next minor. */
+export type CveGraphOperation<E = never> = ExperimentalCveGraphOperation<E>
+
+/** @deprecated Use `ExperimentalCveStatusOutput`. Removed in the next minor. */
+export type CveStatusOutput = ExperimentalCveStatusOutput
+
+/** @deprecated Use `ExperimentalCveStatusOperation`. Removed in the next minor. */
+export type CveStatusOperation<E = never> = ExperimentalCveStatusOperation<E>
+
+/** @deprecated Use `ExperimentalCveSetModeInput`. Removed in the next minor. */
+export type CveSetModeInput = ExperimentalCveSetModeInput
+
+/** @deprecated Use `ExperimentalCveSetModeOutput`. Removed in the next minor. */
+export type CveSetModeOutput = ExperimentalCveSetModeOutput
+
+/** @deprecated Use `ExperimentalCveSetModeOperation`. Removed in the next minor. */
+export type CveSetModeOperation<E = never> = ExperimentalCveSetModeOperation<E>
+
+/** @deprecated Use `ExperimentalCveGetInput`. Removed in the next minor. */
+export type CveGetInput = ExperimentalCveGetInput
+
+/** @deprecated Use `ExperimentalCveGetOutput`. Removed in the next minor. */
+export type CveGetOutput = ExperimentalCveGetOutput
+
+/** @deprecated Use `ExperimentalCveGetOperation`. Removed in the next minor. */
+export type CveGetOperation<E = never> = ExperimentalCveGetOperation<E>
+
+/** @deprecated Use `ExperimentalBomSbomListOutput`. Removed in the next minor. */
+export type BomSbomListOutput = ExperimentalBomSbomListOutput
+
+/** @deprecated Use `ExperimentalBomSbomListOperation`. Removed in the next minor. */
+export type BomSbomListOperation<E = never> = ExperimentalBomSbomListOperation<E>
+
+/** @deprecated Use `ExperimentalBomSbomExportInput`. Removed in the next minor. */
+export type BomSbomExportInput = ExperimentalBomSbomExportInput
+
+/** @deprecated Use `ExperimentalBomSbomExportOutput`. Removed in the next minor. */
+export type BomSbomExportOutput = ExperimentalBomSbomExportOutput
+
+/** @deprecated Use `ExperimentalBomSbomExportOperation`. Removed in the next minor. */
+export type BomSbomExportOperation<E = never> = ExperimentalBomSbomExportOperation<E>
+
+/** @deprecated Use `ExperimentalIssuesListInput`. Removed in the next minor. */
+export type IssuesListInput = ExperimentalIssuesListInput
+
+/** @deprecated Use `ExperimentalIssuesListOutput`. Removed in the next minor. */
+export type IssuesListOutput = ExperimentalIssuesListOutput
+
+/** @deprecated Use `ExperimentalIssuesListOperation`. Removed in the next minor. */
+export type IssuesListOperation<E = never> = ExperimentalIssuesListOperation<E>
+
+/** @deprecated Use `ExperimentalIssuesGetInput`. Removed in the next minor. */
+export type IssuesGetInput = ExperimentalIssuesGetInput
+
+/** @deprecated Use `ExperimentalIssuesGetOutput`. Removed in the next minor. */
+export type IssuesGetOutput = ExperimentalIssuesGetOutput
+
+/** @deprecated Use `ExperimentalIssuesGetOperation`. Removed in the next minor. */
+export type IssuesGetOperation<E = never> = ExperimentalIssuesGetOperation<E>
+
+/** @deprecated Use `ExperimentalIssuesSetStatusInput`. Removed in the next minor. */
+export type IssuesSetStatusInput = ExperimentalIssuesSetStatusInput
+
+/** @deprecated Use `ExperimentalIssuesSetStatusOutput`. Removed in the next minor. */
+export type IssuesSetStatusOutput = ExperimentalIssuesSetStatusOutput
+
+/** @deprecated Use `ExperimentalIssuesSetStatusOperation`. Removed in the next minor. */
+export type IssuesSetStatusOperation<E = never> = ExperimentalIssuesSetStatusOperation<E>
+
+/** @deprecated Use `ExperimentalRulesPacksOutput`. Removed in the next minor. */
+export type RulesPacksOutput = ExperimentalRulesPacksOutput
+
+/** @deprecated Use `ExperimentalRulesPacksOperation`. Removed in the next minor. */
+export type RulesPacksOperation<E = never> = ExperimentalRulesPacksOperation<E>
+
+/** @deprecated Use `ExperimentalRulesPackRulesInput`. Removed in the next minor. */
+export type RulesPackRulesInput = ExperimentalRulesPackRulesInput
+
+/** @deprecated Use `ExperimentalRulesPackRulesOutput`. Removed in the next minor. */
+export type RulesPackRulesOutput = ExperimentalRulesPackRulesOutput
+
+/** @deprecated Use `ExperimentalRulesPackRulesOperation`. Removed in the next minor. */
+export type RulesPackRulesOperation<E = never> = ExperimentalRulesPackRulesOperation<E>
+
+/** @deprecated Use `ExperimentalRulesOverrideInput`. Removed in the next minor. */
+export type RulesOverrideInput = ExperimentalRulesOverrideInput
+
+/** @deprecated Use `ExperimentalRulesOverrideOutput`. Removed in the next minor. */
+export type RulesOverrideOutput = ExperimentalRulesOverrideOutput
+
+/** @deprecated Use `ExperimentalRulesOverrideOperation`. Removed in the next minor. */
+export type RulesOverrideOperation<E = never> = ExperimentalRulesOverrideOperation<E>
+
+/** @deprecated Use `ExperimentalRulesComplianceInput`. Removed in the next minor. */
+export type RulesComplianceInput = ExperimentalRulesComplianceInput
+
+/** @deprecated Use `ExperimentalRulesComplianceOutput`. Removed in the next minor. */
+export type RulesComplianceOutput = ExperimentalRulesComplianceOutput
+
+/** @deprecated Use `ExperimentalRulesComplianceOperation`. Removed in the next minor. */
+export type RulesComplianceOperation<E = never> = ExperimentalRulesComplianceOperation<E>
+
+/** @deprecated Use `ExperimentalDataStoresInput`. Removed in the next minor. */
+export type DataStoresInput = ExperimentalDataStoresInput
+
+/** @deprecated Use `ExperimentalDataStoresOutput`. Removed in the next minor. */
+export type DataStoresOutput = ExperimentalDataStoresOutput
+
+/** @deprecated Use `ExperimentalDataStoresOperation`. Removed in the next minor. */
+export type DataStoresOperation<E = never> = ExperimentalDataStoresOperation<E>
+
+/** @deprecated Use `ExperimentalDataStoreInput`. Removed in the next minor. */
+export type DataStoreInput = ExperimentalDataStoreInput
+
+/** @deprecated Use `ExperimentalDataStoreOutput`. Removed in the next minor. */
+export type DataStoreOutput = ExperimentalDataStoreOutput
+
+/** @deprecated Use `ExperimentalDataStoreOperation`. Removed in the next minor. */
+export type DataStoreOperation<E = never> = ExperimentalDataStoreOperation<E>
+
 /** @deprecated Use `ExperimentalMigrationV1StatusOutput`. Removed in the next minor. */
 export type MigrationV1StatusOutput = ExperimentalMigrationV1StatusOutput
 
@@ -4346,6 +5574,33 @@ export type GraphApi<E = never> = ExperimentalGraphApi<E>
 /** @deprecated Use `ExperimentalConnectorsApi`. Removed in the next minor. */
 export type ConnectorsApi<E = never> = ExperimentalConnectorsApi<E>
 
+/** @deprecated Use `ExperimentalOverviewApi`. Removed in the next minor. */
+export type OverviewApi<E = never> = ExperimentalOverviewApi<E>
+
+/** @deprecated Use `ExperimentalFindingsApi`. Removed in the next minor. */
+export type FindingsApi<E = never> = ExperimentalFindingsApi<E>
+
+/** @deprecated Use `ExperimentalScansApi`. Removed in the next minor. */
+export type ScansApi<E = never> = ExperimentalScansApi<E>
+
+/** @deprecated Use `ExperimentalSbomApi`. Removed in the next minor. */
+export type SbomApi<E = never> = ExperimentalSbomApi<E>
+
+/** @deprecated Use `ExperimentalCveApi`. Removed in the next minor. */
+export type CveApi<E = never> = ExperimentalCveApi<E>
+
+/** @deprecated Use `ExperimentalBomApi`. Removed in the next minor. */
+export type BomApi<E = never> = ExperimentalBomApi<E>
+
+/** @deprecated Use `ExperimentalIssuesApi`. Removed in the next minor. */
+export type IssuesApi<E = never> = ExperimentalIssuesApi<E>
+
+/** @deprecated Use `ExperimentalRulesApi`. Removed in the next minor. */
+export type RulesApi<E = never> = ExperimentalRulesApi<E>
+
+/** @deprecated Use `ExperimentalDataApi`. Removed in the next minor. */
+export type DataApi<E = never> = ExperimentalDataApi<E>
+
 /** @deprecated Use `ExperimentalMigrationApi`. Removed in the next minor. */
 export type MigrationApi<E = never> = ExperimentalMigrationApi<E>
 
@@ -4367,6 +5622,15 @@ export interface AppApi<E = never> {
     readonly file: ExperimentalFileApi<E>
     readonly graph: ExperimentalGraphApi<E>
     readonly connectors: ExperimentalConnectorsApi<E>
+    readonly overview: ExperimentalOverviewApi<E>
+    readonly findings: ExperimentalFindingsApi<E>
+    readonly scans: ExperimentalScansApi<E>
+    readonly sbom: ExperimentalSbomApi<E>
+    readonly cve: ExperimentalCveApi<E>
+    readonly bom: ExperimentalBomApi<E>
+    readonly issues: ExperimentalIssuesApi<E>
+    readonly rules: ExperimentalRulesApi<E>
+    readonly data: ExperimentalDataApi<E>
     readonly migration: ExperimentalMigrationApi<E>
     readonly usage: ExperimentalUsageApi<E>
     readonly config: ExperimentalConfigApi<E>
@@ -4539,6 +5803,120 @@ export interface AppApi<E = never> {
 
     /** @deprecated Use `client.experimental.connectors.forgetAll`. Removed in the next minor. */
     readonly forgetAll: ExperimentalConnectorsForgetAllOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.overview`. Removed in the next minor. */
+  readonly overview: {
+    /** @deprecated Use `client.experimental.overview.categories`. Removed in the next minor. */
+    readonly categories: ExperimentalOverviewCategoriesOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.findings`. Removed in the next minor. */
+  readonly findings: {
+    /** @deprecated Use `client.experimental.findings.list`. Removed in the next minor. */
+    readonly list: ExperimentalFindingsListOperation<E>
+
+    /** @deprecated Use `client.experimental.findings.get`. Removed in the next minor. */
+    readonly get: ExperimentalFindingsGetOperation<E>
+
+    /** @deprecated Use `client.experimental.findings.setStatus`. Removed in the next minor. */
+    readonly setStatus: ExperimentalFindingsSetStatusOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.scans`. Removed in the next minor. */
+  readonly scans: {
+    /** @deprecated Use `client.experimental.scans.enqueue`. Removed in the next minor. */
+    readonly enqueue: ExperimentalScansEnqueueOperation<E>
+
+    /** @deprecated Use `client.experimental.scans.list`. Removed in the next minor. */
+    readonly list: ExperimentalScansListOperation<E>
+
+    /** @deprecated Use `client.experimental.scans.scanners`. Removed in the next minor. */
+    readonly scanners: ExperimentalScansScannersOperation<E>
+
+    /** @deprecated Use `client.experimental.scans.get`. Removed in the next minor. */
+    readonly get: ExperimentalScansGetOperation<E>
+
+    /** @deprecated Use `client.experimental.scans.cancel`. Removed in the next minor. */
+    readonly cancel: ExperimentalScansCancelOperation<E>
+
+    /** @deprecated Use `client.experimental.scans.schedule`. Removed in the next minor. */
+    readonly schedule: ExperimentalScansScheduleOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.sbom`. Removed in the next minor. */
+  readonly sbom: {
+    /** @deprecated Use `client.experimental.sbom.list`. Removed in the next minor. */
+    readonly list: ExperimentalSbomListOperation<E>
+
+    /** @deprecated Use `client.experimental.sbom.get`. Removed in the next minor. */
+    readonly get: ExperimentalSbomGetOperation<E>
+
+    /** @deprecated Use `client.experimental.sbom.export`. Removed in the next minor. */
+    readonly export: ExperimentalSbomExportOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.cve`. Removed in the next minor. */
+  readonly cve: {
+    /** @deprecated Use `client.experimental.cve.lookup`. Removed in the next minor. */
+    readonly lookup: ExperimentalCveLookupOperation<E>
+
+    /** @deprecated Use `client.experimental.cve.graph`. Removed in the next minor. */
+    readonly graph: ExperimentalCveGraphOperation<E>
+
+    /** @deprecated Use `client.experimental.cve.status`. Removed in the next minor. */
+    readonly status: ExperimentalCveStatusOperation<E>
+
+    /** @deprecated Use `client.experimental.cve.setMode`. Removed in the next minor. */
+    readonly setMode: ExperimentalCveSetModeOperation<E>
+
+    /** @deprecated Use `client.experimental.cve.get`. Removed in the next minor. */
+    readonly get: ExperimentalCveGetOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.bom`. Removed in the next minor. */
+  readonly bom: {
+    /** @deprecated Use `client.experimental.bom.sbomList`. Removed in the next minor. */
+    readonly sbomList: ExperimentalBomSbomListOperation<E>
+
+    /** @deprecated Use `client.experimental.bom.sbomExport`. Removed in the next minor. */
+    readonly sbomExport: ExperimentalBomSbomExportOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.issues`. Removed in the next minor. */
+  readonly issues: {
+    /** @deprecated Use `client.experimental.issues.list`. Removed in the next minor. */
+    readonly list: ExperimentalIssuesListOperation<E>
+
+    /** @deprecated Use `client.experimental.issues.get`. Removed in the next minor. */
+    readonly get: ExperimentalIssuesGetOperation<E>
+
+    /** @deprecated Use `client.experimental.issues.setStatus`. Removed in the next minor. */
+    readonly setStatus: ExperimentalIssuesSetStatusOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.rules`. Removed in the next minor. */
+  readonly rules: {
+    /** @deprecated Use `client.experimental.rules.packs`. Removed in the next minor. */
+    readonly packs: ExperimentalRulesPacksOperation<E>
+
+    /** @deprecated Use `client.experimental.rules.packRules`. Removed in the next minor. */
+    readonly packRules: ExperimentalRulesPackRulesOperation<E>
+
+    /** @deprecated Use `client.experimental.rules.override`. Removed in the next minor. */
+    readonly override: ExperimentalRulesOverrideOperation<E>
+
+    /** @deprecated Use `client.experimental.rules.compliance`. Removed in the next minor. */
+    readonly compliance: ExperimentalRulesComplianceOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.data`. Removed in the next minor. */
+  readonly data: {
+    /** @deprecated Use `client.experimental.data.stores`. Removed in the next minor. */
+    readonly stores: ExperimentalDataStoresOperation<E>
+
+    /** @deprecated Use `client.experimental.data.store`. Removed in the next minor. */
+    readonly store: ExperimentalDataStoreOperation<E>
   }
 
   /** @deprecated Use `client.experimental.migration`. Removed in the next minor. */

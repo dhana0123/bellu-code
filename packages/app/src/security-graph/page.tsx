@@ -2,6 +2,7 @@ import type { GraphLens, GraphLensNode, GraphLensRisk } from "@bellucode/client/
 import { Loader } from "@bellucode/ui/loader"
 import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show, untrack, type JSX } from "solid-js"
 import { createStore } from "solid-js/store"
+import { useSearchParams } from "@solidjs/router"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useServerSDK } from "@/runtime/server/client"
 import { GRAPH_DATA } from "./data"
@@ -42,6 +43,8 @@ type Details = { node: GraphNode; risk: GraphLensRisk | null }
 export function SecurityGraphPage(props: { headerAction?: JSX.Element }) {
   const language = useLanguage()
   const sdk = useServerSDK()
+  // `?lens=` opens that lens (an Overview card link); an unknown id falls back like a stale stored lens.
+  const [search] = useSearchParams<{ lens?: string }>()
   const [lensStore, setLensStore, , lensReady] = createLensStorage()
   const [state, setState] = createSignal(initial)
   const [ui, setUi] = createStore<{ connected: boolean; lenses: readonly GraphLens[] }>({ connected: false, lenses: [] })
@@ -167,7 +170,7 @@ export function SecurityGraphPage(props: { headerAction?: JSX.Element }) {
     setUi({ connected: true, lenses })
     dispatch({
       type: "lenses-loaded",
-      stored: lensStore.lens || undefined,
+      stored: (typeof search.lens === "string" ? search.lens : undefined) || lensStore.lens || undefined,
       lenses: lenses.map((lens) => lens.id),
       defaultLens: (lenses.find((lens) => lens.default) ?? lenses[0]!).id,
     })

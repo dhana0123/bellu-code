@@ -17,6 +17,9 @@ type netClient struct {
 	peerings  []PeeringConnection
 	truncate  map[string]bool // step -> listing reports Truncated
 	calls     []string
+	buckets   []Bucket
+	bucketSec map[string]DataSecurity
+	dbs       []DBInstance
 }
 
 func newNetClient() *netClient {
@@ -64,7 +67,13 @@ func (n *netClient) Regions(context.Context) ([]string, error) { return []string
 func (n *netClient) Instances(_ context.Context, r string) (Listing[Instance], error) {
 	return list(n, "ec2", r, n.instances...)
 }
-func (n *netClient) Buckets(context.Context) ([]Bucket, error) { return nil, n.err("s3", "") }
+func (n *netClient) Buckets(context.Context) ([]Bucket, error) { return n.buckets, n.err("s3", "") }
+func (n *netClient) BucketSecurity(_ context.Context, b, _ string) (DataSecurity, error) {
+	if s, ok := n.bucketSec[b]; ok {
+		return s, nil
+	}
+	return unknownSecurity(), nil
+}
 func (n *netClient) SecurityGroups(_ context.Context, r string) (Listing[SecurityGroup], error) {
 	return list(n, "security-groups", r, n.groups...)
 }
@@ -76,7 +85,7 @@ func (n *netClient) Functions(_ context.Context, r string) ([]Function, error) {
 	return nil, n.err("lambda", r)
 }
 func (n *netClient) DBInstances(_ context.Context, r string) ([]DBInstance, error) {
-	return nil, n.err("rds", r)
+	return n.dbs, n.err("rds", r)
 }
 func (n *netClient) Subnets(_ context.Context, r string) (Listing[Subnet], error) {
 	return list(n, "subnet", r, Subnet{ID: "subnet-1", Region: r, VPCID: "vpc-1", CIDR: "10.0.1.0/24"})

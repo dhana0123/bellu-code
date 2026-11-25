@@ -160,6 +160,7 @@ type Runner struct {
 	log        Logger
 	now        func() time.Time
 	timeout    time.Duration
+	onBatch    func(ctx context.Context, b graph.Batch) error
 
 	mu     sync.Mutex // guards states, forgot and serializes status writes
 	states map[string]*state
@@ -183,6 +184,15 @@ func WithClock(now func() time.Time) Option { return func(r *Runner) { r.now = n
 
 // WithTickTimeout overrides the per-tick timeout (default 30s).
 func WithTickTimeout(d time.Duration) Option { return func(r *Runner) { r.timeout = d } }
+
+// WithOnBatch sets a hook called after a collector's batch was applied, with
+// the applied batch. The hook runs inside the tick, so the tick timeout bounds
+// it. Its error is logged and does not change the collector's status. The
+// engine receipt does not say which entities changed, so the hook gets every
+// entity of the batch.
+func WithOnBatch(f func(ctx context.Context, b graph.Batch) error) Option {
+	return func(r *Runner) { r.onBatch = f }
+}
 
 // New builds a runner. The engine is only used through Ingest().Apply.
 func New(e graph.Engine, cols []Collector, opts ...Option) *Runner {
@@ -287,8 +297,15 @@ func (r *Runner) tick(ctx context.Context, c Collector) (partial *PartialError, 
 		r.log.Println("audit: secret leak blocked collector=" + c.Name() + " rule=" + rule)
 		return nil, redact.ErrSecretLeak
 	}
-	_, err = r.engine.Ingest().Apply(ctx, b)
-	return partial, err
+	if _, err = r.engine.Ingest().Apply(ctx, b); err != nil {
+		return partial, err
+	}
+	if r.onBatch != nil {
+		if herr := r.onBatch(ctx, b); herr != nil {
+			r.log.Println("collector", c.Name(), "on-batch hook failed:", herr)
+		}
+	}
+	return partial, nil
 }
 
 // Forget drops a collector's state so its collector_status entity is removed

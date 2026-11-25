@@ -2,57 +2,49 @@ import { createMemo, For, Match, Show, Switch } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/runtime/i18n/language"
 import { showToast } from "@/shell/notifications/toast"
-import {
-  MiddleTruncate,
-  ProviderGlyph,
-  ResourceGlyph,
-  RiskChip,
-  SeverityPill,
-  StatusPill,
-  resourceTypeLabelKey,
-} from "./badges"
+import { MiddleTruncate, SeverityPill, StatusPill, categoryLabelKey, typeLabelKey } from "./badges"
 import { copyText, downloadJson } from "./clipboard"
 import { Dropdown } from "./dropdown"
 import { Glyph } from "./glyph"
 import { PAGE_SIZES, type Finding, type SortKey, type SortState } from "./model"
+import { formatTime } from "./time"
 
-type ColumnId =
-  | "finding"
-  | "resource"
-  | "component"
-  | "status"
-  | "severity"
-  | "related"
-  | "fix"
-  | "detection"
-  | "subscription"
-
+type ColumnId = "finding" | "asset" | "type" | "status" | "severity" | "risk" | "firstSeen" | "lastSeen" | "source"
 const COLUMNS: readonly { id: ColumnId; sort: SortKey; width: number }[] = [
-  { id: "finding", sort: "cve", width: 176 },
-  { id: "resource", sort: "resource", width: 260 },
-  { id: "component", sort: "component", width: 200 },
-  { id: "status", sort: "status", width: 108 },
+  { id: "finding", sort: "title", width: 260 },
+  { id: "asset", sort: "asset", width: 260 },
+  { id: "type", sort: "type", width: 180 },
+  { id: "status", sort: "status", width: 120 },
   { id: "severity", sort: "severity", width: 100 },
-  { id: "related", sort: "related", width: 140 },
-  { id: "fix", sort: "fix", width: 180 },
-  { id: "detection", sort: "detection", width: 120 },
-  { id: "subscription", sort: "subscription", width: 200 },
+  { id: "risk", sort: "risk", width: 100 },
+  { id: "firstSeen", sort: "firstSeen", width: 180 },
+  { id: "lastSeen", sort: "lastSeen", width: 180 },
+  { id: "source", sort: "source", width: 160 },
 ]
 const ACTIONS_WIDTH = 64
 const SKELETON_ROWS = 10
 
-/** The findings table: sticky header, sortable columns, column visibility, row menu and pagination. */
+/**
+ * The findings table: sticky header, sortable columns, column visibility, row menu and pagination. Pages are cut from
+ * the rows loaded so far, and "Load more" fetches the next page from the server.
+ */
 export function FindingsTable(props: {
   rows: readonly Finding[]
   loading: boolean
+  loadingMore: boolean
+  /** The server has more rows after the ones loaded. */
+  hasMore: boolean
+  /** The server stopped the query at its time budget, so the list may be incomplete. */
+  truncated: boolean
   sort: SortState
   page: number
   pageSize: number
   onSort: (sort: SortState) => void
   onPage: (page: number) => void
   onPageSize: (size: number) => void
+  onMore: () => void
   onOpen: (finding: Finding, row: HTMLElement) => void
-  onIgnore: (finding: Finding) => void
+  onIgnore: (finding: Finding, row: HTMLElement) => void
   onClear: () => void
 }) {
   const language = useLanguage()
@@ -70,8 +62,8 @@ export function FindingsTable(props: {
     props.sort?.key !== key ? "none" : props.sort.dir === "asc" ? "ascending" : "descending"
 
   const copy = (finding: Finding) =>
-    copyText(finding.cve).then(() =>
-      showToast({ title: language.t("security.findings.toast.copied", { value: finding.cve }) }),
+    copyText(finding.id).then(() =>
+      showToast({ title: language.t("security.findings.toast.copied", { value: finding.id }) }),
     )
 
   return (
@@ -139,7 +131,7 @@ export function FindingsTable(props: {
                     <tr
                       ref={row}
                       tabindex="0"
-                      aria-label={language.t("security.findings.row.open", { cve: finding.cve })}
+                      aria-label={language.t("security.findings.row.open", { title: finding.title })}
                       onClick={(event) => {
                         if ((event.target as Element).closest("[data-slot=actions], [role=menu]")) return
                         props.onOpen(finding, event.currentTarget)
@@ -154,7 +146,7 @@ export function FindingsTable(props: {
                       <For each={columns()}>{(column) => <td>{cell(column.id, finding)}</td>}</For>
                       <td data-slot="actions" onClick={(event) => event.stopPropagation()}>
                         <Dropdown
-                          label={language.t("security.findings.row.actions", { cve: finding.cve })}
+                          label={language.t("security.findings.row.actions", { title: finding.title })}
                           triggerClass="sf-icon-button"
                           align="end"
                           trigger={<Glyph name="kebab" />}
@@ -167,20 +159,20 @@ export function FindingsTable(props: {
                             {
                               id: "ignore",
                               label: language.t("security.findings.action.ignore"),
-                              onSelect: () => props.onIgnore(finding),
+                              onSelect: () => props.onIgnore(finding, row),
                             },
                             {
                               id: "copy",
-                              label: language.t("security.findings.action.copyCve"),
+                              label: language.t("security.findings.action.copyId"),
                               onSelect: () => void copy(finding),
                             },
                             {
                               id: "export",
                               label: language.t("security.findings.action.exportRow"),
                               onSelect: () => {
-                                downloadJson(`${finding.cve}.json`, { ...finding, searchText: undefined })
+                                downloadJson(`${finding.id}.json`, { ...finding, searchText: undefined })
                                 showToast({
-                                  title: language.t("security.findings.toast.exported", { value: finding.cve }),
+                                  title: language.t("security.findings.toast.exported", { value: finding.title }),
                                 })
                               },
                             },
@@ -220,6 +212,22 @@ export function FindingsTable(props: {
                 total: props.rows.length.toLocaleString(),
               })}
         </span>
+        <Show when={props.truncated}>
+          <span role="status">{language.t("security.findings.page.truncated")}</span>
+        </Show>
+        <Show when={props.hasMore}>
+          <button
+            type="button"
+            class="sf-button"
+            data-variant="outline"
+            disabled={props.loadingMore}
+            onClick={() => props.onMore()}
+          >
+            {props.loadingMore
+              ? language.t("security.findings.page.loadingMore")
+              : language.t("security.findings.page.loadMore")}
+          </button>
+        </Show>
         <button
           type="button"
           data-slot="icon-button"
@@ -246,69 +254,42 @@ export function FindingsTable(props: {
     return (
       <Switch>
         <Match when={id === "finding"}>
-          <span data-slot="finding">
-            <span data-slot="gutter">
-              <Show when={finding.fixVersion}>
-                <Glyph name="check" size={12} class="sf-fix" />
-                <span class="sr-only">{language.t("security.findings.fixAvailable")}</span>
-              </Show>
-            </span>
-            <Glyph name="bug" class="sf-icon" />
-            <span data-slot="strong">{finding.cve}</span>
-          </span>
-        </Match>
-        <Match when={id === "resource"}>
           <span data-slot="two-line">
             <span data-slot="line">
-              <ResourceGlyph type={finding.resource.type} />
-              <MiddleTruncate text={finding.resource.name} />
-            </span>
-            <span data-slot="sub">{language.t(resourceTypeLabelKey(finding.resource.type))}</span>
-          </span>
-        </Match>
-        <Match when={id === "component"}>
-          <span data-slot="two-line">
-            <span data-slot="line">
-              <Glyph name="package" class="sf-icon" />
-              <span data-slot="truncate" title={`${finding.component.name} ${finding.component.version}`}>
-                {finding.component.name}
+              <Glyph name="bug" class="sf-icon" />
+              <span data-slot="strong" title={finding.title}>
+                {finding.title}
               </span>
             </span>
-            <span data-slot="sub">{finding.component.kind}</span>
+            <span data-slot="sub" title={finding.ruleId}>
+              {finding.ruleId}
+            </span>
+          </span>
+        </Match>
+        <Match when={id === "asset"}>
+          <span data-slot="line">
+            <Glyph name="cloud" class="sf-icon" />
+            <MiddleTruncate text={finding.assetId} />
+          </span>
+        </Match>
+        <Match when={id === "type"}>
+          <span data-slot="two-line">
+            <span data-slot="line">{language.t(typeLabelKey(finding.type))}</span>
+            <span data-slot="sub">{language.t(categoryLabelKey(finding.category))}</span>
           </span>
         </Match>
         <Match when={id === "status"}>
-          <StatusPill />
+          <StatusPill status={finding.status} />
         </Match>
         <Match when={id === "severity"}>
           <SeverityPill severity={finding.severity} />
         </Match>
-        <Match when={id === "related"}>
-          <span data-slot="chips">
-            <RiskChip severity="critical" count={finding.related.critical} />
-            <RiskChip
-              severity={finding.related.high > 0 ? "high" : "medium"}
-              count={finding.related.high > 0 ? finding.related.high : finding.related.medium}
-            />
-          </span>
-        </Match>
-        <Match when={id === "fix"}>
-          <span data-slot="truncate" title={finding.fixVersion}>
-            {finding.fixVersion ?? "—"}
-          </span>
-        </Match>
-        <Match when={id === "detection"}>
-          {language.t(`security.findings.detection.${finding.component.dependency}`)}
-        </Match>
-        <Match when={id === "subscription"}>
-          <span data-slot="two-line">
-            <span data-slot="line">
-              <ProviderGlyph provider={finding.resource.subscription.provider} />
-              <span data-slot="truncate">{finding.resource.subscription.name}</span>
-            </span>
-            <span data-slot="sub" title={finding.resource.subscription.id}>
-              {finding.resource.subscription.id}
-            </span>
+        <Match when={id === "risk"}>{finding.riskScore === undefined ? "—" : Math.round(finding.riskScore)}</Match>
+        <Match when={id === "firstSeen"}>{formatTime(finding.firstSeen)}</Match>
+        <Match when={id === "lastSeen"}>{formatTime(finding.lastSeen)}</Match>
+        <Match when={id === "source"}>
+          <span data-slot="truncate" title={finding.source}>
+            {finding.source}
           </span>
         </Match>
       </Switch>

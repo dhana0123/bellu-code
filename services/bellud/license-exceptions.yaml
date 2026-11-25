@@ -1,0 +1,12 @@
+# Reviewed license exceptions for dependencies of services/bellud (Requirement 19.4).
+#
+# A dependency whose license is AGPL-3.0, GPL-3.0 or SSPL fails script/check-licenses
+# unless its module path is listed here. An entry counts as reviewed only when it was
+# merged through a pull request approved by a reviewer other than its author.
+#
+# One entry per module:
+#   - module: example.com/some/module
+#     license: GPL-3.0
+#     reason: why the dependency is acceptable (for example build-time only, not linked)
+#     reviewed_by: github-login of the approving reviewer
+exceptions: []

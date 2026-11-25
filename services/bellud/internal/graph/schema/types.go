@@ -52,7 +52,46 @@ const (
 	SourceAWS        Source = "aws"
 	SourceCorrelator Source = "correlator"
 	SourceCode       Source = "code"
+	SourcePosture    Source = "posture"
+	SourceGCP        Source = "gcp"
+	SourceAzure      Source = "azure"
+	SourceK8s        Source = "k8s"
 )
+
+// OverviewCategory is one of the nine Overview groupings. It is not a
+// collection category (CategoryDeclaration), which lens.Needs uses.
+type OverviewCategory string
+
+const (
+	OvCloud    OverviewCategory = "cloud_infrastructure"
+	OvIdentity OverviewCategory = "identity"
+	OvVuln     OverviewCategory = "vulnerabilities"
+	OvNetwork  OverviewCategory = "network_exposure"
+	OvSecrets  OverviewCategory = "secrets"
+	OvData     OverviewCategory = "data_security"
+	OvCode     OverviewCategory = "code_and_dependencies"
+	OvRuntime  OverviewCategory = "runtime"
+	OvAI       OverviewCategory = "ai_security"
+)
+
+// OverviewOrder is the display order of the nine Overview categories.
+var OverviewOrder = [...]OverviewCategory{OvCloud, OvIdentity, OvVuln, OvNetwork, OvSecrets, OvData, OvCode, OvRuntime, OvAI}
+
+// Valid reports whether c is one of the nine Overview categories.
+func (c OverviewCategory) Valid() bool {
+	for _, o := range OverviewOrder {
+		if o == c {
+			return true
+		}
+	}
+	return false
+}
+
+// FindingTypeDeclaration declares the default Overview category of findings of one type.
+type FindingTypeDeclaration struct {
+	Type     string // for example vulnerability, misconfiguration, secret
+	Overview OverviewCategory
+}
 
 // KindDeclaration declares an entity kind.
 type KindDeclaration struct {
@@ -64,6 +103,8 @@ type KindDeclaration struct {
 	// Discriminator optionally names the attribute that selects Types.
 	Discriminator string
 	Types         []TypeDeclaration
+	// Overview is required: the default Overview category of every value of the kind.
+	Overview OverviewCategory
 }
 
 // TypeDeclaration declares one value of a kind's discriminator attribute.
@@ -71,6 +112,8 @@ type TypeDeclaration struct {
 	Name        string // for example "ec2:subnet"
 	Category    string // CategoryDeclaration.ID
 	Description string
+	// Overview optionally overrides the kind's Overview category for this value.
+	Overview OverviewCategory
 }
 
 // RelationDeclaration declares a relation type.
@@ -103,6 +146,8 @@ type SourceDeclaration struct {
 	Kinds      []KindDeclaration
 	Relations  []RelationDeclaration
 	Categories []CategoryDeclaration
+	// FindingTypes declare the default Overview category per finding type.
+	FindingTypes []FindingTypeDeclaration
 }
 
 // Requirement lists names that a source's declaration must contain.

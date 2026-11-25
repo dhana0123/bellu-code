@@ -340,6 +340,58 @@ import type {
   ExperimentalConnectorsUnlockVaultOutput,
   ExperimentalConnectorsRotateMasterKeyOutput,
   ExperimentalConnectorsForgetAllOutput,
+  ExperimentalOverviewCategoriesOutput,
+  ExperimentalFindingsListInput,
+  ExperimentalFindingsListOutput,
+  ExperimentalFindingsGetInput,
+  ExperimentalFindingsGetOutput,
+  ExperimentalFindingsSetStatusInput,
+  ExperimentalFindingsSetStatusOutput,
+  ExperimentalScansEnqueueInput,
+  ExperimentalScansEnqueueOutput,
+  ExperimentalScansListInput,
+  ExperimentalScansListOutput,
+  ExperimentalScansScannersOutput,
+  ExperimentalScansGetInput,
+  ExperimentalScansGetOutput,
+  ExperimentalScansCancelInput,
+  ExperimentalScansCancelOutput,
+  ExperimentalScansScheduleInput,
+  ExperimentalScansScheduleOutput,
+  ExperimentalSbomListOutput,
+  ExperimentalSbomGetInput,
+  ExperimentalSbomGetOutput,
+  ExperimentalSbomExportInput,
+  ExperimentalSbomExportOutput,
+  ExperimentalCveLookupInput,
+  ExperimentalCveLookupOutput,
+  ExperimentalCveGraphInput,
+  ExperimentalCveGraphOutput,
+  ExperimentalCveStatusOutput,
+  ExperimentalCveSetModeInput,
+  ExperimentalCveSetModeOutput,
+  ExperimentalCveGetInput,
+  ExperimentalCveGetOutput,
+  ExperimentalBomSbomListOutput,
+  ExperimentalBomSbomExportInput,
+  ExperimentalBomSbomExportOutput,
+  ExperimentalIssuesListInput,
+  ExperimentalIssuesListOutput,
+  ExperimentalIssuesGetInput,
+  ExperimentalIssuesGetOutput,
+  ExperimentalIssuesSetStatusInput,
+  ExperimentalIssuesSetStatusOutput,
+  ExperimentalRulesPacksOutput,
+  ExperimentalRulesPackRulesInput,
+  ExperimentalRulesPackRulesOutput,
+  ExperimentalRulesOverrideInput,
+  ExperimentalRulesOverrideOutput,
+  ExperimentalRulesComplianceInput,
+  ExperimentalRulesComplianceOutput,
+  ExperimentalDataStoresInput,
+  ExperimentalDataStoresOutput,
+  ExperimentalDataStoreInput,
+  ExperimentalDataStoreOutput,
   ShellListInput,
   ShellListOutput,
   ShellCreateInput,
@@ -2146,6 +2198,275 @@ const adaptGroupExperimentalConnectors = (raw: RawClient["server.connectors"]) =
   forgetAll: EndpointExperimentalConnectorsForgetAll(raw),
 })
 
+const EndpointExperimentalOverviewCategories = (raw: RawClient["server.overview"]) => () =>
+  preserveEffect<ExperimentalOverviewCategoriesOutput>()(raw["categories"]({}).pipe(Effect.mapError(mapClientError)))
+
+const adaptGroupExperimentalOverview = (raw: RawClient["server.overview"]) => ({
+  categories: EndpointExperimentalOverviewCategories(raw),
+})
+
+const EndpointExperimentalFindingsList =
+  (raw: RawClient["server.findings"]) => (input?: ExperimentalFindingsListInput) =>
+    preserveEffect<ExperimentalFindingsListOutput>()(
+      raw["list"]({
+        query: {
+          category: input?.["category"],
+          severity: input?.["severity"],
+          status: input?.["status"],
+          type: input?.["type"],
+          asset: input?.["asset"],
+          source: input?.["source"],
+          from: input?.["from"],
+          to: input?.["to"],
+          sort: input?.["sort"],
+          limit: input?.["limit"],
+          cursor: input?.["cursor"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalFindingsGet = (raw: RawClient["server.findings"]) => (input: ExperimentalFindingsGetInput) =>
+  preserveEffect<ExperimentalFindingsGetOutput>()(
+    raw["get"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalFindingsSetStatus =
+  (raw: RawClient["server.findings"]) => (input: ExperimentalFindingsSetStatusInput) =>
+    preserveEffect<ExperimentalFindingsSetStatusOutput>()(
+      raw["setStatus"]({
+        params: { id: input["id"] },
+        payload: { status: input["status"], reason: input["reason"], until: input["until"] },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const adaptGroupExperimentalFindings = (raw: RawClient["server.findings"]) => ({
+  list: EndpointExperimentalFindingsList(raw),
+  get: EndpointExperimentalFindingsGet(raw),
+  setStatus: EndpointExperimentalFindingsSetStatus(raw),
+})
+
+const EndpointExperimentalScansEnqueue = (raw: RawClient["server.scans"]) => (input: ExperimentalScansEnqueueInput) =>
+  preserveEffect<ExperimentalScansEnqueueOutput>()(
+    raw["enqueue"]({
+      payload: { kind: input["kind"], targetType: input["targetType"], targetId: input["targetId"] },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalScansList = (raw: RawClient["server.scans"]) => (input?: ExperimentalScansListInput) =>
+  preserveEffect<ExperimentalScansListOutput>()(
+    raw["list"]({ query: { status: input?.["status"], kind: input?.["kind"], limit: input?.["limit"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
+const EndpointExperimentalScansScanners = (raw: RawClient["server.scans"]) => () =>
+  preserveEffect<ExperimentalScansScannersOutput>()(raw["scanners"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalScansGet = (raw: RawClient["server.scans"]) => (input: ExperimentalScansGetInput) =>
+  preserveEffect<ExperimentalScansGetOutput>()(
+    raw["get"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalScansCancel = (raw: RawClient["server.scans"]) => (input: ExperimentalScansCancelInput) =>
+  preserveEffect<ExperimentalScansCancelOutput>()(
+    raw["cancel"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalScansSchedule = (raw: RawClient["server.scans"]) => (input: ExperimentalScansScheduleInput) =>
+  preserveEffect<ExperimentalScansScheduleOutput>()(
+    raw["schedule"]({
+      params: { id: input["id"] },
+      payload: {
+        kind: input["kind"],
+        targetType: input["targetType"],
+        intervalSeconds: input["intervalSeconds"],
+        enabled: input["enabled"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalScans = (raw: RawClient["server.scans"]) => ({
+  enqueue: EndpointExperimentalScansEnqueue(raw),
+  list: EndpointExperimentalScansList(raw),
+  scanners: EndpointExperimentalScansScanners(raw),
+  get: EndpointExperimentalScansGet(raw),
+  cancel: EndpointExperimentalScansCancel(raw),
+  schedule: EndpointExperimentalScansSchedule(raw),
+})
+
+const EndpointExperimentalSbomList = (raw: RawClient["server.sbom"]) => () =>
+  preserveEffect<ExperimentalSbomListOutput>()(raw["list"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalSbomGet = (raw: RawClient["server.sbom"]) => (input: ExperimentalSbomGetInput) =>
+  preserveEffect<ExperimentalSbomGetOutput>()(
+    raw["get"]({
+      params: { assetId: input["assetId"] },
+      query: { limit: input["limit"], cursor: input["cursor"] },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalSbomExport = (raw: RawClient["server.sbom"]) => (input: ExperimentalSbomExportInput) =>
+  preserveEffect<ExperimentalSbomExportOutput>()(
+    raw["export"]({
+      params: { assetId: input["assetId"] },
+      query: { format: input["format"], version: input["version"] },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalSbom = (raw: RawClient["server.sbom"]) => ({
+  list: EndpointExperimentalSbomList(raw),
+  get: EndpointExperimentalSbomGet(raw),
+  export: EndpointExperimentalSbomExport(raw),
+})
+
+const EndpointExperimentalCveLookup = (raw: RawClient["server.cve"]) => (input?: ExperimentalCveLookupInput) =>
+  preserveEffect<ExperimentalCveLookupOutput>()(
+    raw["lookup"]({
+      query: {
+        id: input?.["id"],
+        purl: input?.["purl"],
+        version: input?.["version"],
+        cpe: input?.["cpe"],
+        mode: input?.["mode"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalCveGraph = (raw: RawClient["server.cve"]) => (input?: ExperimentalCveGraphInput) =>
+  preserveEffect<ExperimentalCveGraphOutput>()(
+    raw["graph"]({
+      query: {
+        id: input?.["id"],
+        relTypes: input?.["relTypes"],
+        nodeTypes: input?.["nodeTypes"],
+        depth: input?.["depth"],
+        limit: input?.["limit"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalCveStatus = (raw: RawClient["server.cve"]) => () =>
+  preserveEffect<ExperimentalCveStatusOutput>()(raw["status"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalCveSetMode = (raw: RawClient["server.cve"]) => (input: ExperimentalCveSetModeInput) =>
+  preserveEffect<ExperimentalCveSetModeOutput>()(
+    raw["setMode"]({ payload: { mode: input["mode"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalCveGet = (raw: RawClient["server.cve"]) => (input: ExperimentalCveGetInput) =>
+  preserveEffect<ExperimentalCveGetOutput>()(
+    raw["get"]({ params: { id: input["id"] }, query: { mode: input["mode"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalCve = (raw: RawClient["server.cve"]) => ({
+  lookup: EndpointExperimentalCveLookup(raw),
+  graph: EndpointExperimentalCveGraph(raw),
+  status: EndpointExperimentalCveStatus(raw),
+  setMode: EndpointExperimentalCveSetMode(raw),
+  get: EndpointExperimentalCveGet(raw),
+})
+
+const EndpointExperimentalBomSbomList = (raw: RawClient["server.bom"]) => () =>
+  preserveEffect<ExperimentalBomSbomListOutput>()(raw["sbomList"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalBomSbomExport = (raw: RawClient["server.bom"]) => (input: ExperimentalBomSbomExportInput) =>
+  preserveEffect<ExperimentalBomSbomExportOutput>()(
+    raw["sbomExport"]({
+      params: { assetId: input["assetId"] },
+      query: { format: input["format"], version: input["version"] },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalBom = (raw: RawClient["server.bom"]) => ({
+  sbomList: EndpointExperimentalBomSbomList(raw),
+  sbomExport: EndpointExperimentalBomSbomExport(raw),
+})
+
+const EndpointExperimentalIssuesList = (raw: RawClient["server.issues"]) => (input?: ExperimentalIssuesListInput) =>
+  preserveEffect<ExperimentalIssuesListOutput>()(
+    raw["list"]({
+      query: {
+        category: input?.["category"],
+        severity: input?.["severity"],
+        status: input?.["status"],
+        asset: input?.["asset"],
+        sort: input?.["sort"],
+        limit: input?.["limit"],
+        cursor: input?.["cursor"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalIssuesGet = (raw: RawClient["server.issues"]) => (input: ExperimentalIssuesGetInput) =>
+  preserveEffect<ExperimentalIssuesGetOutput>()(
+    raw["get"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalIssuesSetStatus =
+  (raw: RawClient["server.issues"]) => (input: ExperimentalIssuesSetStatusInput) =>
+    preserveEffect<ExperimentalIssuesSetStatusOutput>()(
+      raw["setStatus"]({ params: { id: input["id"] }, payload: { status: input["status"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const adaptGroupExperimentalIssues = (raw: RawClient["server.issues"]) => ({
+  list: EndpointExperimentalIssuesList(raw),
+  get: EndpointExperimentalIssuesGet(raw),
+  setStatus: EndpointExperimentalIssuesSetStatus(raw),
+})
+
+const EndpointExperimentalRulesPacks = (raw: RawClient["server.rules"]) => () =>
+  preserveEffect<ExperimentalRulesPacksOutput>()(raw["packs"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalRulesPackRules =
+  (raw: RawClient["server.rules"]) => (input: ExperimentalRulesPackRulesInput) =>
+    preserveEffect<ExperimentalRulesPackRulesOutput>()(
+      raw["packRules"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalRulesOverride = (raw: RawClient["server.rules"]) => (input: ExperimentalRulesOverrideInput) =>
+  preserveEffect<ExperimentalRulesOverrideOutput>()(
+    raw["override"]({
+      payload: {
+        packId: input["packId"],
+        ruleId: input["ruleId"],
+        enabled: input["enabled"],
+        severity: input["severity"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalRulesCompliance =
+  (raw: RawClient["server.rules"]) => (input?: ExperimentalRulesComplianceInput) =>
+    preserveEffect<ExperimentalRulesComplianceOutput>()(
+      raw["compliance"]({ query: { benchmark: input?.["benchmark"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const adaptGroupExperimentalRules = (raw: RawClient["server.rules"]) => ({
+  packs: EndpointExperimentalRulesPacks(raw),
+  packRules: EndpointExperimentalRulesPackRules(raw),
+  override: EndpointExperimentalRulesOverride(raw),
+  compliance: EndpointExperimentalRulesCompliance(raw),
+})
+
+const EndpointExperimentalDataStores = (raw: RawClient["server.data"]) => (input?: ExperimentalDataStoresInput) =>
+  preserveEffect<ExperimentalDataStoresOutput>()(
+    raw["stores"]({ query: { limit: input?.["limit"], cursor: input?.["cursor"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
+const EndpointExperimentalDataStore = (raw: RawClient["server.data"]) => (input: ExperimentalDataStoreInput) =>
+  preserveEffect<ExperimentalDataStoreOutput>()(
+    raw["store"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalData = (raw: RawClient["server.data"]) => ({
+  stores: EndpointExperimentalDataStores(raw),
+  store: EndpointExperimentalDataStore(raw),
+})
+
 const EndpointShellList = (raw: RawClient["server.shell"]) => (input?: ShellListInput) =>
   preserveEffect<ShellListOutput>()(
     raw["shell.list"]({ query: { location: input?.["location"] } }).pipe(Effect.mapError(mapClientError)),
@@ -2377,6 +2698,15 @@ const adaptClient = (raw: RawClient) => {
       file: adaptGroupExperimentalFile(raw["server.fs"]),
       graph: adaptGroupExperimentalGraph(raw["server.graph"]),
       connectors: adaptGroupExperimentalConnectors(raw["server.connectors"]),
+      overview: adaptGroupExperimentalOverview(raw["server.overview"]),
+      findings: adaptGroupExperimentalFindings(raw["server.findings"]),
+      scans: adaptGroupExperimentalScans(raw["server.scans"]),
+      sbom: adaptGroupExperimentalSbom(raw["server.sbom"]),
+      cve: adaptGroupExperimentalCve(raw["server.cve"]),
+      bom: adaptGroupExperimentalBom(raw["server.bom"]),
+      issues: adaptGroupExperimentalIssues(raw["server.issues"]),
+      rules: adaptGroupExperimentalRules(raw["server.rules"]),
+      data: adaptGroupExperimentalData(raw["server.data"]),
       migration: adaptGroupExperimentalMigration(raw["server.migration"]),
       usage: adaptGroupExperimentalUsage(raw["server.usage"]),
       config: adaptGroupExperimentalConfig(raw["server.config"]),
@@ -2565,6 +2895,91 @@ const adaptClient = (raw: RawClient) => {
       rotateMasterKey: client.experimental.connectors.rotateMasterKey,
       /** @deprecated Use `client.experimental.connectors.forgetAll`. Removed in the next minor. */
       forgetAll: client.experimental.connectors.forgetAll,
+    },
+    /** @deprecated Use `client.experimental.overview`. Removed in the next minor. */
+    overview: {
+      /** @deprecated Use `client.experimental.overview.categories`. Removed in the next minor. */
+      categories: client.experimental.overview.categories,
+    },
+    /** @deprecated Use `client.experimental.findings`. Removed in the next minor. */
+    findings: {
+      /** @deprecated Use `client.experimental.findings.list`. Removed in the next minor. */
+      list: client.experimental.findings.list,
+      /** @deprecated Use `client.experimental.findings.get`. Removed in the next minor. */
+      get: client.experimental.findings.get,
+      /** @deprecated Use `client.experimental.findings.setStatus`. Removed in the next minor. */
+      setStatus: client.experimental.findings.setStatus,
+    },
+    /** @deprecated Use `client.experimental.scans`. Removed in the next minor. */
+    scans: {
+      /** @deprecated Use `client.experimental.scans.enqueue`. Removed in the next minor. */
+      enqueue: client.experimental.scans.enqueue,
+      /** @deprecated Use `client.experimental.scans.list`. Removed in the next minor. */
+      list: client.experimental.scans.list,
+      /** @deprecated Use `client.experimental.scans.scanners`. Removed in the next minor. */
+      scanners: client.experimental.scans.scanners,
+      /** @deprecated Use `client.experimental.scans.get`. Removed in the next minor. */
+      get: client.experimental.scans.get,
+      /** @deprecated Use `client.experimental.scans.cancel`. Removed in the next minor. */
+      cancel: client.experimental.scans.cancel,
+      /** @deprecated Use `client.experimental.scans.schedule`. Removed in the next minor. */
+      schedule: client.experimental.scans.schedule,
+    },
+    /** @deprecated Use `client.experimental.sbom`. Removed in the next minor. */
+    sbom: {
+      /** @deprecated Use `client.experimental.sbom.list`. Removed in the next minor. */
+      list: client.experimental.sbom.list,
+      /** @deprecated Use `client.experimental.sbom.get`. Removed in the next minor. */
+      get: client.experimental.sbom.get,
+      /** @deprecated Use `client.experimental.sbom.export`. Removed in the next minor. */
+      export: client.experimental.sbom.export,
+    },
+    /** @deprecated Use `client.experimental.cve`. Removed in the next minor. */
+    cve: {
+      /** @deprecated Use `client.experimental.cve.lookup`. Removed in the next minor. */
+      lookup: client.experimental.cve.lookup,
+      /** @deprecated Use `client.experimental.cve.graph`. Removed in the next minor. */
+      graph: client.experimental.cve.graph,
+      /** @deprecated Use `client.experimental.cve.status`. Removed in the next minor. */
+      status: client.experimental.cve.status,
+      /** @deprecated Use `client.experimental.cve.setMode`. Removed in the next minor. */
+      setMode: client.experimental.cve.setMode,
+      /** @deprecated Use `client.experimental.cve.get`. Removed in the next minor. */
+      get: client.experimental.cve.get,
+    },
+    /** @deprecated Use `client.experimental.bom`. Removed in the next minor. */
+    bom: {
+      /** @deprecated Use `client.experimental.bom.sbomList`. Removed in the next minor. */
+      sbomList: client.experimental.bom.sbomList,
+      /** @deprecated Use `client.experimental.bom.sbomExport`. Removed in the next minor. */
+      sbomExport: client.experimental.bom.sbomExport,
+    },
+    /** @deprecated Use `client.experimental.issues`. Removed in the next minor. */
+    issues: {
+      /** @deprecated Use `client.experimental.issues.list`. Removed in the next minor. */
+      list: client.experimental.issues.list,
+      /** @deprecated Use `client.experimental.issues.get`. Removed in the next minor. */
+      get: client.experimental.issues.get,
+      /** @deprecated Use `client.experimental.issues.setStatus`. Removed in the next minor. */
+      setStatus: client.experimental.issues.setStatus,
+    },
+    /** @deprecated Use `client.experimental.rules`. Removed in the next minor. */
+    rules: {
+      /** @deprecated Use `client.experimental.rules.packs`. Removed in the next minor. */
+      packs: client.experimental.rules.packs,
+      /** @deprecated Use `client.experimental.rules.packRules`. Removed in the next minor. */
+      packRules: client.experimental.rules.packRules,
+      /** @deprecated Use `client.experimental.rules.override`. Removed in the next minor. */
+      override: client.experimental.rules.override,
+      /** @deprecated Use `client.experimental.rules.compliance`. Removed in the next minor. */
+      compliance: client.experimental.rules.compliance,
+    },
+    /** @deprecated Use `client.experimental.data`. Removed in the next minor. */
+    data: {
+      /** @deprecated Use `client.experimental.data.stores`. Removed in the next minor. */
+      stores: client.experimental.data.stores,
+      /** @deprecated Use `client.experimental.data.store`. Removed in the next minor. */
+      store: client.experimental.data.store,
     },
     /** @deprecated Use `client.experimental.migration`. Removed in the next minor. */
     migration: {

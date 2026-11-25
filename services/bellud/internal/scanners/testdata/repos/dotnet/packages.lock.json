@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net6.0": {
+      "Newtonsoft.Json": {
+        "type": "Direct",
+        "requested": "[12.0.1, )",
+        "resolved": "12.0.1",
+        "contentHash": "fixture"
+      },
+      "log4net": {
+        "type": "Direct",
+        "requested": "[2.0.8, )",
+        "resolved": "2.0.8",
+        "contentHash": "fixture"
+      }
+    }
+  }
+}

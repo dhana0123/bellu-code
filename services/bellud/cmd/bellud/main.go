@@ -65,9 +65,13 @@ func main() {
 		}
 		return
 	}
+	if len(os.Args) >= 2 && os.Args[1] == "security" {
+		os.Exit(runSecurity(os.Args[2:], securityEnv{getenv: os.Getenv, stdout: os.Stdout, stderr: os.Stderr}))
+	}
 	if len(os.Args) < 2 || os.Args[1] != "serve" {
 		fmt.Fprintln(os.Stderr, "usage: bellud serve [--hostname HOST] [--port PORT] [--repo DIR]")
 		fmt.Fprintln(os.Stderr, "       bellud cve update|status|import ...")
+		fmt.Fprintln(os.Stderr, "       bellud security scan|findings|sbom ...")
 		os.Exit(2)
 	}
 	if err := serve(os.Args[2:]); err != nil {
@@ -125,7 +129,17 @@ func serve(args []string) error {
 		return fmt.Errorf("graph tokens: %w", err)
 	}
 	lensSvc := lens.NewService()
-	engine, runner, intel := openGraph(logger, set, lensSvc, scanRoots(filepath.Dir(filepath.Dir(cliDir))))
+	roots := scanRoots(filepath.Dir(filepath.Dir(cliDir)))
+	// Findings and the scan queue exist only with the security_findings flag on.
+	var fnd *findingsWiring
+	if dd, derr := config.DataDir(); derr != nil {
+		logger.Println("warning: findings unavailable:", derr)
+	} else {
+		fnd = openFindings(logger, os.Getenv, os.LookupEnv, dd, roots)
+	}
+	engine, runner, intel := openGraph(logger, set, lensSvc, fnd.mcpExtras(os.Getenv), roots, fnd.collectorOptions()...)
+	fnd.project(engine)
+	fnd.attachScanners(logger, os.Getenv, os.LookupEnv, engine, intel)
 
 	if engine != nil {
 		if berr := lensSvc.Bind(engine); berr != nil {
@@ -140,9 +154,16 @@ func serve(args []string) error {
 
 	// Connectors need the open graph engine; nil while the flag is off.
 	conn := openConnectors(logger, engine, set, allowedHostsOf(cfg.Hostname))
+	// Overview needs the ready engine; findings are optional for it.
+	ov := openOverview(logger, os.Getenv, engine, fnd)
+	pw := openPosture(logger, os.Getenv, os.LookupEnv, engine, fnd)
 	closeAll := func() {
+		pw.stop()          // before the findings database closes
+		ov.stop()          // before the findings database closes
 		conn.close(logger) // before the graph: its collectors write to the engine
+		fnd.stop()         // before the engine closes: the projector writes to it
 		stopGraph(engine, runner, intel, logger)
+		fnd.release() // after the runner stopped: its batch hook enqueues scans
 	}
 
 	if err := cfg.ValidateBind(); err != nil {
@@ -223,7 +244,7 @@ func serve(args []string) error {
 	handler := &server.Server{
 		Table:  table,
 		Auth:   authn,
-		Go:     conn.wrap(goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) }, intel.option(), apigraph.WithLens(lensSvc), apigraph.WithOverlay(overlay.NewHub()))),
+		Go:     conn.wrap(securityHandler(os.Getenv, fnd, ov, pw, engine, goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) }, intel.option(), apigraph.WithLens(lensSvc), apigraph.WithOverlay(overlay.NewHub())))),
 		GoAuth: conn.auth(graphGoAuth(table, set, authn.Authorize)),
 		Proxy:  proxy.New(sup.Current),
 		CORS:   origins,
@@ -306,9 +327,20 @@ func mcpExtras(logger *log.Logger, lens func(*mcp.Server)) func(*mcp.Server) {
 	}
 }
 
+// composeExtras runs lens then the optional security tools registrar.
+func composeExtras(lens, security func(*mcp.Server)) func(*mcp.Server) {
+	if security == nil {
+		return lens
+	}
+	return func(s *mcp.Server) {
+		lens(s)
+		security(s)
+	}
+}
+
 // openGraph opens the graph engine and, when it is enabled and ready, starts the
 // collector runner. A failed open leaves the engine disabled; serving continues.
-func openGraph(logger *log.Logger, set mcptoken.Set, lensSvc *lens.Service, roots []string) (graph.Engine, *collectors.Runner, *intelStack) {
+func openGraph(logger *log.Logger, set mcptoken.Set, lensSvc *lens.Service, security func(*mcp.Server), roots []string, runnerOpts ...collectors.Option) (graph.Engine, *collectors.Runner, *intelStack) {
 	gcfg, err := graph.LoadConfig()
 	if err != nil {
 		logger.Println("warning: graph config:", err)
@@ -316,7 +348,7 @@ func openGraph(logger *log.Logger, set mcptoken.Set, lensSvc *lens.Service, root
 	}
 	gcfg.MCPToken = set.Write.String()
 	gcfg.Grants = grantsOf(set)
-	gcfg.MCPExtras = mcpExtras(logger, lensmcp.Extras(lensSvc))
+	gcfg.MCPExtras = mcpExtras(logger, composeExtras(lensmcp.Extras(lensSvc), security))
 	eng, err := graph.Open(context.Background(), gcfg)
 	if err != nil {
 		logger.Println("warning: graph unavailable:", err)
@@ -345,7 +377,7 @@ func openGraph(logger *log.Logger, set mcptoken.Set, lensSvc *lens.Service, root
 		cor.Store(in.cor)
 		cols = append(cols, in.cor)
 	}
-	r := collectors.New(eng, cols, collectors.WithLogger(logger))
+	r := collectors.New(eng, cols, append([]collectors.Option{collectors.WithLogger(logger)}, runnerOpts...)...)
 	r.Start(context.Background())
 	if in != nil {
 		in.cor.Start(context.Background(), r)

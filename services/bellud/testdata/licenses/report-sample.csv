@@ -1,0 +1,6 @@
+github.com/ok/pkg,v1.0.0,Apache-2.0
+github.com/bad/agpl,v2.1.0,AGPL-3.0
+github.com/bad/agpl/sub,v2.1.0,AGPL-3.0
+github.com/ok/lgpl,v1.0.0,LGPL-3.0
+github.com/bad/sspl,v1.0.0,SSPL-1.0
+github.com/bad/gpl,v1.0.0,GPL-3.0

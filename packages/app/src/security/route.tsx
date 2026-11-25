@@ -11,9 +11,13 @@ import { SettingsConnectors } from "@/settings/connectors/connectors-page"
 import { ConnectionList } from "@/settings/connectors/connection-list"
 import { ConnectDialog } from "@/settings/connectors/connect-dialog"
 import { useSecurityConnection } from "./connection"
+import { useSecurityNav } from "./nav-context"
 import type { SecurityPage } from "./nav-items"
 
 // Each page loads on demand so the graph renderer and the findings table stay out of the main chunk.
+const SecurityOverviewPage = lazy(() =>
+  import("@/security-overview/page").then((module) => ({ default: module.SecurityOverviewPage })),
+)
 const SecurityGraphPage = lazy(() =>
   import("@/security-graph/page").then((module) => ({ default: module.SecurityGraphPage })),
 )
@@ -21,6 +25,15 @@ const SecurityFindingsPage = lazy(() =>
   import("@/security-findings/page").then((module) => ({ default: module.SecurityFindingsPage })),
 )
 
+const SecurityBomPage = lazy(() =>
+  import("@/security-bom/page").then((module) => ({ default: module.SecurityBomPage })),
+)
+const SecurityIssuesPage = lazy(() =>
+  import("@/security-issues/page").then((module) => ({ default: module.SecurityIssuesPage })),
+)
+const SecurityScannersPage = lazy(() =>
+  import("@/security-scanners/page").then((module) => ({ default: module.SecurityScannersPage })),
+)
 /** A security page in the whole main area. The sidebar stays unless the page's maximize button hides it. */
 export function SecurityRoute() {
   const layout = useLayout()
@@ -33,6 +46,7 @@ export function SecurityRoute() {
   }
 
   const connection = useSecurityConnection()
+  const nav = useSecurityNav()
 
   const maximize = () => (
     <Tooltip
@@ -79,6 +93,15 @@ export function SecurityRoute() {
               }
             >
               <Switch>
+                {/* Not registered while the `security_overview` flag is off. */}
+                <Match when={page() === "overview" && nav.overview()}>
+                  <div data-slot="security-overview" class="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <div class="flex shrink-0 justify-end px-3 pt-2">{maximize()}</div>
+                    <div data-scrollable class="min-h-0 flex-1 overflow-y-auto">
+                      <SecurityOverviewPage />
+                    </div>
+                  </div>
+                </Match>
                 <Match when={page() === "graph"}>
                   <div data-slot="security-graph" class="flex min-h-0 min-w-0 flex-1 flex-col">
                     <SecurityGraphPage headerAction={maximize()} />
@@ -89,6 +112,33 @@ export function SecurityRoute() {
                     <div class="flex shrink-0 justify-end px-3 pt-2">{maximize()}</div>
                     <div data-scrollable class="min-h-0 flex-1 overflow-y-auto">
                       <SecurityFindingsPage />
+                    </div>
+                  </div>
+                </Match>
+                {/* Not registered while the `security_scanners` flag is off. */}
+                <Match when={page() === "bom" && nav.bom()}>
+                  <div data-slot="security-bom" class="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <div class="flex shrink-0 justify-end px-3 pt-2">{maximize()}</div>
+                    <div data-scrollable class="min-h-0 flex-1 overflow-y-auto">
+                      <SecurityBomPage />
+                    </div>
+                  </div>
+                </Match>
+                {/* Not registered while the `security_scanners` flag is off. */}
+                <Match when={page() === "scanners" && nav.scanners()}>
+                  <div data-slot="security-scanners" class="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <div class="flex shrink-0 justify-end px-3 pt-2">{maximize()}</div>
+                    <div data-scrollable class="min-h-0 flex-1 overflow-y-auto">
+                      <SecurityScannersPage />
+                    </div>
+                  </div>
+                </Match>
+                {/* Not registered while the `security_posture` flag is off. */}
+                <Match when={page() === "issues" && nav.issues()}>
+                  <div data-slot="security-issues" class="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <div class="flex shrink-0 justify-end px-3 pt-2">{maximize()}</div>
+                    <div data-scrollable class="min-h-0 flex-1 overflow-y-auto">
+                      <SecurityIssuesPage />
                     </div>
                   </div>
                 </Match>

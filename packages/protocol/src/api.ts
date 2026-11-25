@@ -4,7 +4,16 @@ import { SchemaErrorMiddleware } from "./middleware/schema-error.js"
 import { GenerateGroup } from "./groups/generate.js"
 import { ExperimentalGroup } from "./groups/experimental.js"
 import { ExperimentalConnectorsGroup } from "./groups/experimental-connectors.js"
+import { ExperimentalBomGroup } from "./groups/experimental-bom.js"
+import { ExperimentalDataGroup } from "./groups/experimental-data.js"
+import { ExperimentalIssuesGroup } from "./groups/experimental-issues.js"
+import { ExperimentalRulesGroup } from "./groups/experimental-rules.js"
+import { ExperimentalFindingsGroup } from "./groups/experimental-findings.js"
 import { ExperimentalGraphGroup } from "./groups/experimental-graph.js"
+import { ExperimentalOverviewGroup } from "./groups/experimental-overview.js"
+import { ExperimentalSbomGroup } from "./groups/experimental-sbom.js"
+import { ExperimentalCveGroup } from "./groups/experimental-cve.js"
+import { ExperimentalScansGroup } from "./groups/experimental-scans.js"
 import { VoiceGroup } from "./groups/voice.js"
 import { MessageGroup } from "./groups/message.js"
 import { ModelGroup } from "./groups/model.js"
@@ -105,6 +114,15 @@ type ApiGroups<
   | typeof ExperimentalGroup
   | typeof ExperimentalGraphGroup
   | typeof ExperimentalConnectorsGroup
+  | typeof ExperimentalOverviewGroup
+  | typeof ExperimentalFindingsGroup
+  | typeof ExperimentalScansGroup
+  | typeof ExperimentalSbomGroup
+  | typeof ExperimentalCveGroup
+  | typeof ExperimentalBomGroup
+  | typeof ExperimentalIssuesGroup
+  | typeof ExperimentalRulesGroup
+  | typeof ExperimentalDataGroup
   | typeof CredentialGroup
   | typeof ProjectGroup
   | LocationGroups<LocationId>
@@ -194,6 +212,15 @@ const makeApiFromGroup = <
     .add(ExperimentalGroup)
     .add(ExperimentalGraphGroup)
     .add(ExperimentalConnectorsGroup)
+    .add(ExperimentalOverviewGroup)
+    .add(ExperimentalFindingsGroup)
+    .add(ExperimentalScansGroup)
+    .add(ExperimentalSbomGroup)
+    .add(ExperimentalCveGroup)
+    .add(ExperimentalBomGroup)
+    .add(ExperimentalIssuesGroup)
+    .add(ExperimentalRulesGroup)
+    .add(ExperimentalDataGroup)
     .add(ShellGroup.middleware(locationMiddleware))
     .add(ReferenceGroup.middleware(locationMiddleware))
     .add(WorktreeGroup)

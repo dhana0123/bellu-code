@@ -33,6 +33,7 @@ func genCoreDecl(t *rapid.T) SourceDeclaration {
 			Name:        n,
 			Identity:    rapid.SliceOfNDistinct(nameGen, 1, 4, func(s string) string { return s }).Draw(t, "identity"),
 			Description: "A kind.",
+			Overview:    OvCloud,
 		})
 	}
 	rels := rapid.SliceOfNDistinct(nameGen, 0, 6, func(s string) string { return s }).Draw(t, "relNames")
@@ -53,7 +54,7 @@ func genInvalidDecl(t *rapid.T, base SourceDeclaration) SourceDeclaration {
 	switch rapid.IntRange(0, 3).Draw(t, "invalidKind") {
 	case 0: // blank description
 		return SourceDeclaration{Source: SourceGitHub, Prefix: "github_", Kinds: []KindDeclaration{
-			{Name: "github_x", Identity: []string{"id"}, Description: "  "},
+			{Name: "github_x", Identity: []string{"id"}, Description: "  ", Overview: OvCloud},
 		}}
 	case 1: // invalid name
 		return SourceDeclaration{Source: SourceGitHub, Prefix: "github_", Relations: []RelationDeclaration{
@@ -62,7 +63,7 @@ func genInvalidDecl(t *rapid.T, base SourceDeclaration) SourceDeclaration {
 	case 2: // same kind name as base, different identity
 		k := rapid.SampledFrom(base.Kinds).Draw(t, "kind")
 		return SourceDeclaration{Source: SourceGitHub, Prefix: "github_", Kinds: []KindDeclaration{
-			{Name: k.Name, Identity: append(append([]string{}, k.Identity...), "extra_attr"), Description: "Conflicts."},
+			{Name: k.Name, Identity: append(append([]string{}, k.Identity...), "extra_attr"), Description: "Conflicts.", Overview: OvCloud},
 		}}
 	default: // bad confidence
 		return SourceDeclaration{Source: SourceGitHub, Prefix: "github_", Relations: []RelationDeclaration{

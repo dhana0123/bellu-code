@@ -72,6 +72,38 @@ jobs:
           bun services/bellud/script/gen-gocontract.ts --check
           bun services/bellud/script/gen-contract-schemas.ts --check
 
+  licenses:
+    name: licenses
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    defaults:
+      run:
+        working-directory: services/bellud
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: services/bellud/go.mod
+          cache-dependency-path: services/bellud/go.sum
+      - name: Deny-listed licenses (AGPL-3.0, GPL-3.0, SSPL)
+        run: script/check-licenses
+      - name: THIRD_PARTY_LICENSES matches go.mod
+        run: script/check-third-party-licenses
+  rulepacks:
+    name: rule packs
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    defaults:
+      run:
+        working-directory: services/bellud
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version-file: services/bellud/go.mod
+          cache-dependency-path: services/bellud/go.sum
+      - name: Compile and schema-check bundled Rule_Packs
+        run: go run ./script/checkpacks
   cross:
     name: build ${{ matrix.goos }}/${{ matrix.goarch }}
     if: ${{ !github.event.pull_request.draft }}

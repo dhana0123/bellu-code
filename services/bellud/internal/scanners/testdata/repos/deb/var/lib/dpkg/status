@@ -1,0 +1,22 @@
+Package: zlib1g
+Status: install ok installed
+Priority: required
+Section: libs
+Installed-Size: 164
+Maintainer: Mark Brown <broonie@debian.org>
+Architecture: amd64
+Multi-Arch: same
+Source: zlib
+Version: 1:1.2.11.dfsg-2
+Description: compression library - runtime
+
+Package: tzdata
+Status: install ok installed
+Priority: required
+Section: localization
+Installed-Size: 3000
+Maintainer: GNU Libc Maintainers <debian-glibc@lists.debian.org>
+Architecture: all
+Version: 2021a-1+deb11u1
+Description: time zone and daylight-saving time data
+

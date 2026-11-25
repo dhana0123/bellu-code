@@ -1,5 +1,7 @@
 package lens
 
+import "github.com/bellu/bellucode/services/bellud/internal/graph/schema"
+
 // DefaultLens is used when a request names no lens.
 const DefaultLens = "code-to-cloud"
 
@@ -50,6 +52,11 @@ type Def struct {
 	Params      []Param  `json:"params"`
 	// Needs lists the collection categories an answer depends on.
 	Needs []string `json:"-"`
+	// Relations lists the relation types a category lens includes. Empty for
+	// other lenses.
+	Relations []string `json:"-"`
+	// Overview is the Overview category of a category lens (Select category).
+	Overview schema.OverviewCategory `json:"-"`
 	// CollapseRules replaces rule nodes with group-to-peer edges by default;
 	// the collapse_rules parameter overrides it.
 	CollapseRules bool `json:"-"`

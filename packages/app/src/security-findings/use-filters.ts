@@ -1,11 +1,12 @@
 import { useSearchParams } from "@solidjs/router"
 import { createMemo } from "solid-js"
 import {
-  DEPENDENCY_TYPES,
+  CATEGORIES,
+  FINDING_TYPES,
   PAGE_SIZES,
-  RESOURCE_TYPES,
   SEVERITIES,
   SORT_KEYS,
+  STATUSES,
   type FilterState,
   type SortState,
   type ViewMode,
@@ -23,12 +24,10 @@ export function useFilters() {
   const filters = createMemo<FilterState>(() => ({
     search: text(params.q),
     severity: SEVERITIES.find((item) => item === text(params.sev)) ?? "all",
-    hasFix: params.fix === "1",
-    hasExploit: params.exploit === "1",
-    resourceTypes: list(params.res, RESOURCE_TYPES),
-    dependencyTypes: list(params.dep, DEPENDENCY_TYPES),
-    relatedSeverities: list(params.rel, SEVERITIES),
-    component: text(params.comp) || undefined,
+    types: list(params.type, FINDING_TYPES),
+    statuses: list(params.status, STATUSES),
+    categories: list(params.cat, CATEGORIES),
+    asset: text(params.asset) || undefined,
   }))
   const view = createMemo<ViewMode>(() => (params.view === "treemap" ? "treemap" : "table"))
   const sort = createMemo<SortState>(() => {
@@ -53,12 +52,10 @@ export function useFilters() {
       write({
         q: next.search || undefined,
         sev: next.severity === "all" ? undefined : next.severity,
-        fix: next.hasFix ? "1" : undefined,
-        exploit: next.hasExploit ? "1" : undefined,
-        res: next.resourceTypes.join(",") || undefined,
-        dep: next.dependencyTypes.join(",") || undefined,
-        rel: next.relatedSeverities.join(",") || undefined,
-        comp: next.component,
+        type: next.types.join(",") || undefined,
+        status: next.statuses.join(",") || undefined,
+        cat: next.categories.join(",") || undefined,
+        asset: next.asset,
         page: undefined,
         ...(view ? { view: view === "table" ? undefined : view } : {}),
       })
@@ -68,12 +65,10 @@ export function useFilters() {
       write({
         q: undefined,
         sev: undefined,
-        fix: undefined,
-        exploit: undefined,
-        res: undefined,
-        dep: undefined,
-        rel: undefined,
-        comp: undefined,
+        type: undefined,
+        status: undefined,
+        cat: undefined,
+        asset: undefined,
         page: undefined,
       })
     },
@@ -87,10 +82,8 @@ export function useFilters() {
 export const hasActiveFilters = (filters: FilterState) =>
   filters.search !== "" ||
   filters.severity !== "all" ||
-  filters.hasFix ||
-  filters.hasExploit ||
-  filters.resourceTypes.length + filters.dependencyTypes.length + filters.relatedSeverities.length > 0 ||
-  filters.component !== undefined
+  filters.types.length + filters.statuses.length + filters.categories.length > 0 ||
+  filters.asset !== undefined
 
 function text(value: string | string[] | undefined) {
   return typeof value === "string" ? value : ""

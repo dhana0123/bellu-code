@@ -35,7 +35,7 @@ function SecurityRows(props: { security: SecurityItems; inset?: boolean }) {
   return (
     <>
       <For each={props.security.items()}>{page}</For>
-      <For each={props.security.soon}>
+      <For each={props.security.soon()}>
         {(item) => (
           <button
             type="button"

@@ -127,28 +127,54 @@ type vulnAcc struct {
 }
 
 func (a *vulnAcc) entity() batch.Entity {
-	kev := "false"
-	if a.v.KnownExploited {
-		kev = "true"
-	}
 	fixed := make([]string, 0, len(a.fixed))
 	for f := range a.fixed {
 		fixed = append(fixed, f)
 	}
-	sort.Strings(fixed)
-	attrs := map[string]any{
-		"name":     a.id,
-		"summary":  a.v.Summary,
-		"cvss":     a.v.CVSS.Score,
-		"epss":     a.v.EPSS,
-		"kev":      kev,
-		"severity": string(a.v.Severity),
-		"fixed_in": strings.Join(fixed, ","),
+	return VulnEntity(a.v, fixed)
+}
+
+// VulnEntity returns the `vulnerability` entity for v with the identity and
+// attributes Plan writes, so that another planner (for example the vulnmatch
+// scanner) merges with the correlator's entity instead of duplicating it.
+// fixed lists the fixed versions of the matched package entries. Blank and
+// repeated values are dropped and the rest are sorted.
+func VulnEntity(v model.Vuln, fixed []string) batch.Entity {
+	id := strings.TrimSpace(v.ID)
+	kev := "false"
+	if v.KnownExploited {
+		kev = "true"
 	}
-	if k, ok := canonical.Key(canonical.KindVuln, a.id); ok {
+	uniq := map[string]bool{}
+	for _, f := range fixed {
+		if f = strings.TrimSpace(f); f != "" {
+			uniq[f] = true
+		}
+	}
+	fs := make([]string, 0, len(uniq))
+	for f := range uniq {
+		fs = append(fs, f)
+	}
+	sort.Strings(fs)
+	attrs := map[string]any{
+		"name":     id,
+		"summary":  v.Summary,
+		"cvss":     v.CVSS.Score,
+		"epss":     v.EPSS,
+		"kev":      kev,
+		"severity": string(v.Severity),
+		"fixed_in": strings.Join(fs, ","),
+	}
+	if k, ok := canonical.Key(canonical.KindVuln, id); ok {
 		attrs[canonical.AttrCanonicalKey] = k
 	}
-	return batch.Entity{Type: KindVulnerability, Identity: map[string]string{"id": a.id}, Attributes: attrs}
+	return batch.Entity{Type: KindVulnerability, Identity: map[string]string{"id": id}, Attributes: attrs}
+}
+
+// VulnEntityID returns the Entity_ID of the vulnerability with the given id.
+func VulnEntityID(id string) (string, error) {
+	h, err := identity.Hash(KindVulnerability, map[string]string{"id": strings.TrimSpace(id)})
+	return string(h), err
 }
 
 // PlanSameAs returns the identity relations among ents.

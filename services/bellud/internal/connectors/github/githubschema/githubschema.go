@@ -15,7 +15,7 @@ const (
 )
 
 func kind(name, desc string, identity ...string) schema.KindDeclaration {
-	return schema.KindDeclaration{Name: name, Identity: identity, Description: desc}
+	return schema.KindDeclaration{Name: name, Identity: identity, Description: desc, Overview: overviewByKind[name]}
 }
 
 // Declaration returns the github source declaration. Its kinds are
@@ -34,4 +34,15 @@ func Declaration() schema.SourceDeclaration {
 			kind(KindPackage, "A software package that a connection reports, identified by its package URL.", "connection", "scope", "purl"),
 		},
 	}
+}
+
+// overviewByKind is the Overview category of each kind (design: Category
+// assignment and the nine Lenses).
+var overviewByKind = map[string]schema.OverviewCategory{
+	KindOrg:         schema.OvCode,
+	KindRepo:        schema.OvCode,
+	KindWorkflow:    schema.OvCode,
+	KindPullRequest: schema.OvCode,
+	KindAlert:       schema.OvVuln,
+	KindPackage:     schema.OvCode,
 }

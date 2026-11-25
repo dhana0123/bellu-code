@@ -1,0 +1,91 @@
+package posture
+
+import (
+	"context"
+	"testing"
+)
+
+func bundledEngine(t *testing.T) *Engine {
+	t.Helper()
+	ps, errs, err := LoadAll(Bundled())
+	if err != nil || len(errs) != 0 {
+		t.Fatalf("load: %v %v", err, errs)
+	}
+	e, cerrs := NewEngine(context.Background(), ps, fakeReader{})
+	if len(cerrs) != 0 {
+		t.Fatal(cerrs)
+	}
+	return e
+}
+
+func fired(t *testing.T, e *Engine, typ string, attrs map[string]any) map[string]bool {
+	t.Helper()
+	ms, errs := e.EvalEntity(context.Background(), Input{ID: typ + ":1", Type: typ, Attributes: attrs})
+	if len(errs) != 0 {
+		t.Fatal(errs)
+	}
+	out := map[string]bool{}
+	for _, m := range ms {
+		out[m.PackID+"/"+m.RuleID] = true
+	}
+	return out
+}
+
+func TestBundledPacksRules(t *testing.T) {
+	e := bundledEngine(t)
+	type c struct {
+		typ   string
+		attrs map[string]any
+		rule  string
+	}
+	bad := []c{
+		{"aws_resource", map[string]any{"resource_type": "s3:bucket", "public_access": "enabled"}, "cis_aws/s3_public_access"},
+		{"aws_resource", map[string]any{"resource_type": "s3:bucket", "encryption_at_rest": "disabled"}, "cis_aws/s3_encryption_at_rest"},
+		{"aws_resource", map[string]any{"resource_type": "s3:bucket", "logging": "disabled"}, "cis_aws/s3_logging"},
+		{"aws_resource", map[string]any{"resource_type": "rds:instance", "encryption_at_rest": "disabled"}, "cis_aws/rds_encrypted"},
+		{"aws_resource", map[string]any{"resource_type": "rds:instance", "public_access": "enabled"}, "cis_aws/rds_not_public"},
+		{"aws_resource", map[string]any{"resource_type": "rds:instance", "backup": "disabled"}, "cis_aws/rds_backups"},
+		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "true", "from_port": 20, "to_port": 30, "sg": "sg"}, "cis_aws/sg_ssh_open"},
+		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "true", "sg": "sg"}, "cis_aws/sg_rdp_open"},
+		{"aws_policy_statement", map[string]any{"effect": "Allow", "actions": "*", "resources": []any{"*"}}, "cis_aws/iam_admin_policy"},
+		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "true", "from_port": 8080, "to_port": 8080, "sg": "sg"}, "bellu/open_ingress"},
+		{"aws_resource", map[string]any{"public_access": "enabled", "data_classes": []any{"PII"}}, "bellu/data_exposure"},
+		{"github_repo", map[string]any{"visibility": "public"}, "repo_hygiene/repo_public"},
+		{"github_repo", map[string]any{"default_branch": "main", "default_branch_protected": false}, "repo_hygiene/repo_branch_protection"},
+		{"github_alert", map[string]any{"alert_type": "dependabot", "state": "open"}, "repo_hygiene/open_dependabot_alert"},
+		{"github_alert", map[string]any{"alert_type": "secret_scanning", "state": "open"}, "repo_hygiene/open_secret_scanning_alert"},
+	}
+	for _, b := range bad {
+		if !fired(t, e, b.typ, b.attrs)[b.rule] {
+			t.Errorf("%s did not fire", b.rule)
+		}
+	}
+	good := []c{
+		{"aws_resource", map[string]any{"resource_type": "s3:bucket", "public_access": "disabled", "encryption_at_rest": "enabled", "logging": "enabled", "encryption_in_transit": "enabled"}, ""},
+		{"aws_resource", map[string]any{"resource_type": "rds:instance", "public_access": "disabled", "encryption_at_rest": "enabled", "backup": "enabled"}, ""},
+		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "false", "from_port": 22, "to_port": 22}, ""},
+		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "true", "from_port": 443, "to_port": 443}, ""},
+		{"aws_policy_statement", map[string]any{"effect": "Allow", "actions": []any{"s3:GetObject"}, "resources": "*"}, ""},
+		{"aws_resource", map[string]any{"public_access": "enabled", "data_classes": []any{"public_docs"}}, ""},
+		{"github_repo", map[string]any{"visibility": "private", "default_branch_protected": true}, ""},
+		{"github_alert", map[string]any{"alert_type": "dependabot", "state": "fixed"}, ""},
+	}
+	for _, g := range good {
+		if f := fired(t, e, g.typ, g.attrs); len(f) != 0 {
+			t.Errorf("compliant %v fired %v", g.attrs, f)
+		}
+	}
+	// Unknown values never violate.
+	unknown := []c{
+		{"aws_resource", map[string]any{"resource_type": "s3:bucket", "public_access": "unknown", "encryption_at_rest": "unknown", "logging": "unknown", "encryption_in_transit": "unknown"}, ""},
+		{"aws_resource", map[string]any{"resource_type": "rds:instance", "public_access": "unknown", "encryption_at_rest": "unknown", "backup": "unknown"}, ""},
+		{"aws_resource", map[string]any{"public_access": "unknown", "encryption_at_rest": "unknown", "data_classes": []any{"pii"}}, ""},
+		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "unknown", "from_port": 22, "to_port": 22}, ""},
+		{"github_repo", map[string]any{}, ""},
+	}
+	for _, u := range unknown {
+		if f := fired(t, e, u.typ, u.attrs); len(f) != 0 {
+			t.Errorf("unknown %v fired %v", u.attrs, f)
+		}
+	}
+}

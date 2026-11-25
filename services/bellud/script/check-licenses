@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Fails when a direct or transitive dependency of services/bellud is licensed under
+# AGPL-3.0, GPL-3.0 or SSPL and has no entry in license-exceptions.yaml (Requirement 19.4).
+# Reports name, version and license id of each offender.
+#
+# Usage: script/check-licenses                 run go-licenses over ./... (needs go-licenses on PATH or network)
+#        script/check-licenses --report FILE   read a CSV report instead: name,version,license-id
+set -euo pipefail
+root="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$root"
+exceptions="${LICENSE_EXCEPTIONS:-$root/license-exceptions.yaml}"
+report=""
+if [ "${1:-}" = "--report" ]; then report="${2:?--report needs a file}"; fi
+
+if [ -z "$report" ]; then
+  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+  report="$tmp/report.csv"
+  gl=(go-licenses)
+  command -v go-licenses >/dev/null || gl=(go run github.com/google/go-licenses@v1.6.0)
+  # Template columns: package, module version, license id. go-licenses reports the
+  # package path; the version comes from the module that provides it.
+  printf '%s\n' '{{range .}}{{.Name}},{{.Version}},{{.LicenseName}}{{"\n"}}{{end}}' >"$tmp/tpl"
+  "${gl[@]}" report ./... --ignore github.com/bellu/bellucode/services/bellud --template "$tmp/tpl" >"$report"
+fi
+
+# Module paths with a reviewed exception.
+excepted="$(sed -n 's/^[[:space:]]*-[[:space:]]*module:[[:space:]]*\([^[:space:]#]*\).*/\1/p' "$exceptions")"
+
+# Deny list. Anchored so LGPL-3.0 and AGPL-compatible ids are not matched by "GPL-3.0".
+deny='^(AGPL-3\.0|GPL-3\.0|SSPL-1\.0|SSPL)(-only|-or-later|\+)?$'
+status=0
+n=0
+while IFS=, read -r name version license; do
+  [ -n "$name" ] || continue
+  n=$((n+1))
+  # A package may carry several ids ("A AND B", "A/B"); test each.
+  hit=""
+  for id in $(printf '%s' "$license" | tr '/,;()' ' ' | sed 's/ AND / /g; s/ OR / /g'); do
+    if printf '%s' "$id" | grep -Eiq "$deny"; then hit="$id"; break; fi
+  done
+  [ -n "$hit" ] || continue
+  ok=""
+  while IFS= read -r m; do
+    [ -n "$m" ] || continue
+    case "$name" in "$m"|"$m"/*) ok=1 ;; esac
+  done <<<"$excepted"
+  if [ -z "$ok" ]; then
+    [ -n "$version" ] || version="$(go list -f '{{if .Module}}{{.Module.Version}}{{end}}' "$name" 2>/dev/null || true)"
+    echo "DENIED LICENSE: $name ${version:-unknown} $hit"
+    status=1
+  fi
+done <"$report"
+[ "$status" -eq 0 ] && echo "license check OK ($n packages)"
+exit "$status"

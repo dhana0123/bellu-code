@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/rds"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/aws/smithy-go"
 )
@@ -90,6 +91,35 @@ type Bucket struct {
 	CreatedAt time.Time
 }
 
+// Data store attribute values. A value is unknown when the data was not
+// readable, never a guess in either direction.
+const (
+	StateEnabled  = "enabled"
+	StateDisabled = "disabled"
+	StateUnknown  = "unknown"
+)
+
+// DataSecurity holds the five security attributes of one data store. Gaps
+// lists the API calls that were denied or failed (e.g. "s3:GetBucketLogging");
+// the attributes they feed are unknown.
+type DataSecurity struct {
+	EncryptionAtRest, EncryptionInTransit, PublicAccess, Backup, Logging string
+	Gaps                                                                 []string
+}
+
+// unknownSecurity is the starting point: nothing proven.
+func unknownSecurity() DataSecurity {
+	return DataSecurity{EncryptionAtRest: StateUnknown, EncryptionInTransit: StateUnknown,
+		PublicAccess: StateUnknown, Backup: StateUnknown, Logging: StateUnknown}
+}
+
+func state(b bool) string {
+	if b {
+		return StateEnabled
+	}
+	return StateDisabled
+}
+
 // SecurityGroup is an EC2 security group projection.
 type SecurityGroup struct {
 	ID       string
@@ -141,6 +171,11 @@ type DBInstance struct {
 	Engine    string
 	Status    string
 	CreatedAt time.Time
+
+	StorageEncrypted   bool
+	PubliclyAccessible bool
+	BackupRetention    int32
+	LogExports         []string
 }
 
 // Client is the typed AWS wrapper used by the provider and the collector.
@@ -151,6 +186,10 @@ type Client interface {
 	Regions(ctx context.Context) ([]string, error)
 	Instances(ctx context.Context, region string) (Listing[Instance], error)
 	Buckets(ctx context.Context) ([]Bucket, error)
+	// BucketSecurity reads the security attributes of one bucket. A denied or
+	// failed call is recorded in Gaps and leaves its attributes unknown; only a
+	// credential rejection returns an error.
+	BucketSecurity(ctx context.Context, bucket, region string) (DataSecurity, error)
 	SecurityGroups(ctx context.Context, region string) (Listing[SecurityGroup], error)
 	VPCs(ctx context.Context, region string) (Listing[VPC], error)
 	Roles(ctx context.Context) ([]Role, error)
@@ -220,6 +259,8 @@ func (c *client) base(region string) awssdk.Config {
 func (c *client) sts() *sts.Client { return sts.NewFromConfig(c.base(c.home)) }
 func (c *client) iam() *iam.Client { return iam.NewFromConfig(c.base("us-east-1")) }
 func (c *client) s3() *s3.Client   { return s3.NewFromConfig(c.base(c.home)) }
+
+func (c *client) s3At(r string) *s3.Client { return s3.NewFromConfig(c.base(r)) }
 
 func (c *client) ec2At(r string) *ec2.Client {
 	c.mu.Lock()
@@ -431,6 +472,89 @@ func (c *client) Buckets(ctx context.Context) ([]Bucket, error) {
 	return res, err
 }
 
+func (c *client) BucketSecurity(ctx context.Context, bucket, region string) (DataSecurity, error) {
+	cl, name := c.s3At(region), awssdk.String(bucket)
+	sec := unknownSecurity()
+	// gap records a failed call. A rejected credential ends the read.
+	gap := func(op string, err error) error {
+		err = mapErr(err)
+		if isRejected(err) {
+			return err
+		}
+		sec.Gaps = append(sec.Gaps, op)
+		return nil
+	}
+	code := func(err error) string {
+		var ae smithy.APIError
+		if errors.As(err, &ae) {
+			return ae.ErrorCode()
+		}
+		return ""
+	}
+
+	enc, err := cl.GetBucketEncryption(ctx, &s3.GetBucketEncryptionInput{Bucket: name})
+	switch {
+	case err == nil:
+		sec.EncryptionAtRest = state(enc.ServerSideEncryptionConfiguration != nil && len(enc.ServerSideEncryptionConfiguration.Rules) > 0)
+	case code(err) == "ServerSideEncryptionConfigurationNotFoundError":
+		sec.EncryptionAtRest = StateDisabled
+	default:
+		if e := gap("s3:GetBucketEncryption", err); e != nil {
+			return sec, e
+		}
+	}
+
+	allBlocked, pabKnown := false, false
+	pab, err := cl.GetPublicAccessBlock(ctx, &s3.GetPublicAccessBlockInput{Bucket: name})
+	switch {
+	case err == nil && pab.PublicAccessBlockConfiguration != nil:
+		cfg := pab.PublicAccessBlockConfiguration
+		allBlocked, pabKnown = awssdk.ToBool(cfg.BlockPublicAcls) && awssdk.ToBool(cfg.IgnorePublicAcls) &&
+			awssdk.ToBool(cfg.BlockPublicPolicy) && awssdk.ToBool(cfg.RestrictPublicBuckets), true
+	case code(err) == "NoSuchPublicAccessBlockConfiguration":
+		pabKnown = true
+	case err != nil:
+		if e := gap("s3:GetPublicAccessBlock", err); e != nil {
+			return sec, e
+		}
+	}
+	policyPublic, policyKnown := false, false
+	ps, err := cl.GetBucketPolicyStatus(ctx, &s3.GetBucketPolicyStatusInput{Bucket: name})
+	switch {
+	case err == nil && ps.PolicyStatus != nil:
+		policyPublic, policyKnown = awssdk.ToBool(ps.PolicyStatus.IsPublic), true
+	case code(err) == "NoSuchBucketPolicy":
+		policyKnown = true
+	case err != nil:
+		if e := gap("s3:GetBucketPolicyStatus", err); e != nil {
+			return sec, e
+		}
+	}
+	// Public ACLs are not read, so only a full block proves the bucket private.
+	switch {
+	case policyKnown && policyPublic:
+		sec.PublicAccess = StateEnabled
+	case pabKnown && allBlocked:
+		sec.PublicAccess = StateDisabled
+	}
+
+	lg, err := cl.GetBucketLogging(ctx, &s3.GetBucketLoggingInput{Bucket: name})
+	if err == nil {
+		sec.Logging = state(lg.LoggingEnabled != nil)
+	} else if e := gap("s3:GetBucketLogging", err); e != nil {
+		return sec, e
+	}
+
+	ver, err := cl.GetBucketVersioning(ctx, &s3.GetBucketVersioningInput{Bucket: name})
+	if err == nil {
+		// Versioning stands in for backup.
+		sec.Backup = state(ver.Status == s3types.BucketVersioningStatusEnabled)
+	} else if e := gap("s3:GetBucketVersioning", err); e != nil {
+		return sec, e
+	}
+	return sec, nil
+}
+
 func (c *client) SecurityGroups(ctx context.Context, region string) (Listing[SecurityGroup], error) {
 	p := ec2.NewDescribeSecurityGroupsPaginator(c.ec2At(region), &ec2.DescribeSecurityGroupsInput{})
 	return listAll(ctx, p.HasMorePages, func(ctx context.Context) ([]SecurityGroup, error) {
@@ -518,6 +642,8 @@ func (c *client) DBInstances(ctx context.Context, region string) ([]DBInstance, 
 			db := DBInstance{
 				ARN: awssdk.ToString(d.DBInstanceArn), ID: awssdk.ToString(d.DBInstanceIdentifier),
 				Region: region, Engine: awssdk.ToString(d.Engine), Status: awssdk.ToString(d.DBInstanceStatus),
+				StorageEncrypted: awssdk.ToBool(d.StorageEncrypted), PubliclyAccessible: awssdk.ToBool(d.PubliclyAccessible),
+				BackupRetention: awssdk.ToInt32(d.BackupRetentionPeriod), LogExports: d.EnabledCloudwatchLogsExports,
 			}
 			if d.InstanceCreateTime != nil {
 				db.CreatedAt = *d.InstanceCreateTime

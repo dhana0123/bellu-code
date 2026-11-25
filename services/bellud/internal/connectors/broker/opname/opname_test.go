@@ -70,6 +70,12 @@ func TestResolveSDKOperations(t *testing.T) {
 			})
 		}},
 		{"DescribeInstances", func(c aws.Config) { _, _ = ec2.NewFromConfig(c).DescribeInstances(ctx, &ec2.DescribeInstancesInput{}) }},
+		{"ListObjectsV2", func(c aws.Config) {
+			_, _ = s3.NewFromConfig(c).ListObjectsV2(ctx, &s3.ListObjectsV2Input{Bucket: aws.String("sample-bucket"), MaxKeys: aws.Int32(5)})
+		}},
+		{"GetObject", func(c aws.Config) {
+			_, _ = s3.NewFromConfig(c).GetObject(ctx, &s3.GetObjectInput{Bucket: aws.String("sample-bucket"), Key: aws.String("d/k.txt"), Range: aws.String("bytes=0-9")})
+		}},
 		{"ListBuckets", func(c aws.Config) { _, _ = s3.NewFromConfig(c).ListBuckets(ctx, &s3.ListBucketsInput{}) }},
 	}
 	for _, tc := range cases {

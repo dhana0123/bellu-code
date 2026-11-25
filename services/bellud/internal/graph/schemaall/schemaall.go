@@ -6,11 +6,15 @@ import (
 	"sync"
 
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/aws/awsschema"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/azure/azureschema"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/gcp/gcpschema"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/github/githubschema"
+	"github.com/bellu/bellucode/services/bellud/internal/connectors/kubernetes/k8sschema"
 	"github.com/bellu/bellucode/services/bellud/internal/correlate/corrschema"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/schema"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/schema/codeschema"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/schema/coreschema"
+	"github.com/bellu/bellucode/services/bellud/internal/posture/postureschema"
 )
 
 // Sources returns the declaration of every source.
@@ -21,6 +25,10 @@ func Sources() []schema.SourceDeclaration {
 		awsschema.Declaration(),
 		corrschema.Declaration(),
 		codeschema.Declaration(),
+		postureschema.Declaration(),
+		gcpschema.Declaration(),
+		azureschema.Declaration(),
+		k8sschema.Declaration(),
 	}
 }
 
@@ -32,6 +40,8 @@ var (
 
 // Default merges Sources once and returns the registry, or the merge error.
 func Default() (*schema.Registry, error) {
-	once.Do(func() { reg, err = schema.MergeRequired(map[schema.Source]schema.Requirement{schema.SourceAWS: awsschema.Required}, Sources()...) })
+	once.Do(func() {
+		reg, err = schema.MergeRequired(map[schema.Source]schema.Requirement{schema.SourceAWS: awsschema.Required}, Sources()...)
+	})
 	return reg, err
 }

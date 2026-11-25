@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bad-helm-pod
+spec:
+  containers:
+    - name: app
+      image: {{ .Values.image }}
+      securityContext:
+        privileged: true

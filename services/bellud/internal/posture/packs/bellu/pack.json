@@ -1,0 +1,116 @@
+{
+  "id": "bellu",
+  "version": "1",
+  "rules": [
+    {
+      "id": "open_ingress",
+      "title": "Security group open to the internet on a non-allowed port",
+      "description": "An ingress rule open to 0.0.0.0/0 covers a port outside the allowed list (default 80, 443).",
+      "severity": "high",
+      "category": "network_exposure",
+      "applies_to": [
+        "aws_sg_rule"
+      ],
+      "remediation": "Restrict the source CIDR or remove the rule.",
+      "benchmarks": [],
+      "rego": "open_ingress.rego"
+    },
+    {
+      "id": "data_exposure",
+      "title": "Sensitive data store is exposed",
+      "description": "A data store holding a sensitive data class has public access enabled or encryption at rest disabled.",
+      "severity": "high",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Block public access and enable encryption at rest.",
+      "benchmarks": [],
+      "rego": "data_exposure.rego"
+    },
+    {
+      "id": "toxic_exposed_vuln",
+      "title": "Internet-exposed workload with an exploitable vulnerability",
+      "description": "An internet-exposed workload runs an image with a package affected by a vulnerability that is KEV-listed or has an EPSS score of 0.5 or higher.",
+      "severity": "critical",
+      "category": "vulnerabilities",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Patch or replace the affected package, or remove the workload's internet exposure.",
+      "benchmarks": [],
+      "kind": "toxic_combination",
+      "rego": "toxic_exposed_vuln.rego"
+    },
+    {
+      "id": "toxic_exposed_data_access",
+      "title": "Internet-exposed workload can read a sensitive data store",
+      "description": "An internet-exposed workload runs with a role that can read a data store holding a sensitive data class.",
+      "severity": "critical",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Remove the workload's internet exposure or narrow the role's access to the data store.",
+      "benchmarks": [],
+      "kind": "toxic_combination",
+      "rego": "toxic_exposed_data_access.rego"
+    },
+    {
+      "id": "toxic_public_sensitive_bucket",
+      "title": "Public storage bucket holds sensitive data",
+      "description": "A storage bucket with public access enabled holds a sensitive data class.",
+      "severity": "critical",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Block public access on the bucket.",
+      "benchmarks": [],
+      "kind": "toxic_combination",
+      "rego": "toxic_public_sensitive_bucket.rego"
+    },
+    {
+      "id": "toxic_secret_reachable",
+      "title": "Workload with a leaked secret can reach the secret's target",
+      "description": "A workload has an open leaked-secret finding and network egress to the system the secret grants access to.",
+      "severity": "high",
+      "category": "secrets",
+      "applies_to": [
+        "finding"
+      ],
+      "remediation": "Revoke and rotate the secret, and restrict the workload's egress to the target.",
+      "benchmarks": [],
+      "kind": "toxic_combination",
+      "rego": "toxic_secret_reachable.rego"
+    },
+    {
+      "id": "toxic_k8s_privileged_admin",
+      "title": "Privileged pod bound to cluster-admin",
+      "description": "A Kubernetes pod with a privileged container runs under a service account bound to cluster-admin. Matches once Kubernetes entities exist (Phase 7).",
+      "severity": "critical",
+      "category": "runtime",
+      "applies_to": [
+        "k8s_pod"
+      ],
+      "remediation": "Remove the privileged setting and replace the cluster-admin binding with a least-privilege role.",
+      "benchmarks": [],
+      "kind": "toxic_combination",
+      "rego": "toxic_k8s_privileged_admin.rego"
+    },
+    {
+      "id": "toxic_ai_agent_write_external",
+      "title": "AI agent with a write tool reads unvalidated external input",
+      "description": "An AI agent has a tool that can write and reads input from an external source that is not validated. Matches once AI entities exist (Phase 9).",
+      "severity": "high",
+      "category": "ai_security",
+      "applies_to": [
+        "ai_agent"
+      ],
+      "remediation": "Validate the external input or remove the agent's write tool.",
+      "benchmarks": [],
+      "kind": "toxic_combination",
+      "rego": "toxic_ai_agent_write_external.rego"
+    }
+  ]
+}

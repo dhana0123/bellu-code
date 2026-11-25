@@ -40,7 +40,10 @@ func (s *stubClient) Buckets(context.Context) ([]Bucket, error) { return nil, ni
 func (s *stubClient) SecurityGroups(context.Context, string) (Listing[SecurityGroup], error) {
 	return Listing[SecurityGroup]{}, nil
 }
-func (s *stubClient) VPCs(context.Context, string) (Listing[VPC], error)        { return Listing[VPC]{}, nil }
+func (s *stubClient) VPCs(context.Context, string) (Listing[VPC], error) { return Listing[VPC]{}, nil }
+func (s *stubClient) BucketSecurity(context.Context, string, string) (DataSecurity, error) {
+	return unknownSecurity(), nil
+}
 func (s *stubClient) Roles(context.Context) ([]Role, error)                     { return nil, nil }
 func (s *stubClient) Functions(context.Context, string) ([]Function, error)     { return nil, nil }
 func (s *stubClient) DBInstances(context.Context, string) ([]DBInstance, error) { return nil, nil }
@@ -114,7 +117,7 @@ func TestManifestRegistersAndHasExpectedShape(t *testing.T) {
 			t.Errorf("%s is a write", op.Name)
 		}
 	}
-	if sso != 1 || assume != 1 || auth != 1 || len(e.Manifest.Operations) != 28 {
+	if sso != 1 || assume != 1 || auth != 1 || len(e.Manifest.Operations) != 35 {
 		t.Fatalf("sso=%d assume=%d auth=%d ops=%d", sso, assume, auth, len(e.Manifest.Operations))
 	}
 	// At least one region is required; only selected regions are reachable.

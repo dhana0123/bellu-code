@@ -20,6 +20,7 @@ type Registry struct {
 	relIdx     map[string]int
 	catIdx     map[string]int
 	typeCat    map[string]string
+	typeOv     map[string]OverviewCategory
 	kindSource map[string]Source
 	relSource  map[string]Source
 }
@@ -32,6 +33,7 @@ func newRegistry(ds []SourceDeclaration) *Registry {
 		relIdx:     map[string]int{},
 		catIdx:     map[string]int{},
 		typeCat:    map[string]string{},
+		typeOv:     map[string]OverviewCategory{},
 		kindSource: map[string]Source{},
 		relSource:  map[string]Source{},
 	}
@@ -41,6 +43,9 @@ func newRegistry(ds []SourceDeclaration) *Registry {
 			r.kindSource[k.Name] = d.Source
 			for _, t := range k.Types {
 				r.typeCat[t.Name] = t.Category
+				if t.Overview != "" {
+					r.typeOv[k.Name+"\x00"+t.Name] = t.Overview
+				}
 			}
 		}
 		for _, rel := range d.Relations {
@@ -130,6 +135,20 @@ func (r *Registry) Category(id string) (CategoryDeclaration, bool) {
 func (r *Registry) CategoryOfType(typeName string) (string, bool) {
 	c, ok := r.typeCat[typeName]
 	return c, ok
+}
+
+// OverviewOf returns the Overview category of an entity: the type override
+// when typeValue names a declared type of the kind with one, else the kind's
+// default. It returns "" only for an unregistered kind.
+func (r *Registry) OverviewOf(kind, typeValue string) OverviewCategory {
+	i, ok := r.kindIdx[kind]
+	if !ok {
+		return ""
+	}
+	if ov, ok := r.typeOv[kind+"\x00"+typeValue]; ok {
+		return ov
+	}
+	return r.kinds[i].Overview
 }
 
 // SourceOfKind returns the source that owns a kind.

@@ -100,3 +100,13 @@ func TestValidateBindLoopbackOnly(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadPostureCustomDir(t *testing.T) {
+	env := func(k string) (string, bool) { return " /x ", k == "BELLUCODE_POSTURE_CUSTOM_DIR" }
+	if c := LoadPosture(env); c.CustomDir != "/x" {
+		t.Fatalf("%+v", c)
+	}
+	if c := LoadPosture(func(string) (string, bool) { return "", false }); c.CustomDir != "" {
+		t.Fatalf("%+v", c)
+	}
+}

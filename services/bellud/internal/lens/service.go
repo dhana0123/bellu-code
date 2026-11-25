@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/facade"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schemaall"
 )
 
 // Service owns a lens Engine whose graph is bound after the graph opens, so
@@ -29,24 +30,34 @@ func (s *Service) Bind(eng facade.Engine) error {
 		return err
 	}
 	s.eng = NewEngine(src)
+	if reg, rerr := schemaall.Default(); rerr == nil {
+		s.eng.BindCategories(reg)
+	}
 	return nil
 }
 
 // Catalog lists the lens definitions. It does not need the graph.
-func (s *Service) Catalog() []Def { return Catalog() }
+func (s *Service) Catalog() []Def {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.eng == nil {
+		return Catalog()
+	}
+	return s.eng.Catalog()
+}
 
 // Slice builds a slice for lens id. An empty id selects DefaultLens.
 func (s *Service) Slice(ctx context.Context, id string, p Params) (Slice, error) {
 	if id == "" {
 		id = DefaultLens
 	}
-	if _, ok := lookup(id); !ok {
-		return Slice{}, ErrUnknownLens{ID: id}
-	}
 	s.mu.RLock()
 	eng := s.eng
 	s.mu.RUnlock()
 	if eng == nil {
+		if _, ok := lookup(id); !ok {
+			return Slice{}, ErrUnknownLens{ID: id}
+		}
 		return Slice{}, ErrUnavailable
 	}
 	return eng.Slice(ctx, id, p)

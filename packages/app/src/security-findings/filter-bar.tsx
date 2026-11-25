@@ -8,10 +8,12 @@ import { Segmented } from "./segmented"
 
 const DEBOUNCE_MS = 250
 
-/** One search box, a severity control, two switches and a single "More filters" panel. */
+/** One search box, a severity control and a single "More filters" panel. */
 export function FilterBar(props: {
   filters: FilterState
   count: number
+  /** The server has more rows than are loaded, so the count is a lower bound. */
+  more: boolean
   loading: boolean
   onChange: (patch: Partial<FilterState>) => void
   onRefresh: () => void
@@ -84,22 +86,12 @@ export function FilterBar(props: {
         ]}
         onChange={(severity) => props.onChange({ severity })}
       />
-      <Toggle
-        label={language.t("security.findings.filter.hasFix")}
-        checked={props.filters.hasFix}
-        onChange={(hasFix) => props.onChange({ hasFix })}
-      />
-      <Toggle
-        label={language.t("security.findings.filter.hasExploit")}
-        checked={props.filters.hasExploit}
-        onChange={(hasExploit) => props.onChange({ hasExploit })}
-      />
       <MoreFiltersPopover filters={props.filters} onApply={props.onChange} />
       <div data-slot="filter-result">
         <span role="status" aria-live="polite">
           {props.loading
             ? language.t("security.findings.count.loading")
-            : language.plural("security.findings.count", props.count, { total: props.count.toLocaleString() })}
+            : language.plural("security.findings.count", props.count, { total: `${props.count.toLocaleString()}${props.more ? "+" : ""}` })}
         </span>
         <button
           type="button"
@@ -112,22 +104,5 @@ export function FilterBar(props: {
         </button>
       </div>
     </div>
-  )
-}
-
-function Toggle(props: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={props.checked}
-      data-slot="switch"
-      onClick={() => props.onChange(!props.checked)}
-    >
-      <span data-slot="switch-track" aria-hidden="true">
-        <span data-slot="switch-thumb" />
-      </span>
-      {props.label}
-    </button>
   )
 }

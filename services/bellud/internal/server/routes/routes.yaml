@@ -153,6 +153,18 @@ routes:
     public: false
     stream: false
   - method: "GET"
+    pattern: "/api/experimental/bom/sbom"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/sbom/{assetId}/export"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
     pattern: "/api/experimental/client-mcp"
     group: mcp
     owner: ts
@@ -344,6 +356,66 @@ routes:
     owner: go
     public: false
     stream: false
+  - method: "GET"
+    pattern: "/api/experimental/cve/graph"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/cve/lookup"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PUT"
+    pattern: "/api/experimental/cve/mode"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/cve/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/cve/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/data/stores"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/data/stores/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/findings"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/findings/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/findings/{id}/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "DELETE"
     pattern: "/api/experimental/fs/watch"
     group: filesystem
@@ -507,6 +579,24 @@ routes:
     public: false
     stream: false
   - method: "GET"
+    pattern: "/api/experimental/issues"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/issues/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/issues/{id}/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
     pattern: "/api/experimental/job"
     group: experimental
     owner: ts
@@ -546,6 +636,12 @@ routes:
     pattern: "/api/experimental/migration/v1"
     group: migration
     owner: ts
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/overview/categories"
+    group: experimental
+    owner: go
     public: false
     stream: false
   - method: "POST"
@@ -594,6 +690,84 @@ routes:
     pattern: "/api/experimental/persistent-pty/{ptyID}/snapshot"
     group: persistentPty
     owner: ts
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/rules/compliance"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PUT"
+    pattern: "/api/experimental/rules/overrides"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/rules/packs"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/rules/packs/{id}/rules"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/sbom"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/sbom/{assetId}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/sbom/{assetId}/export"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/scans"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/scans"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/scans/scanners"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PUT"
+    pattern: "/api/experimental/scans/schedules/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/scans/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/scans/{id}/cancel"
+    group: experimental
+    owner: go
     public: false
     stream: false
   - method: "GET"

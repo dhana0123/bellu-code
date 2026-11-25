@@ -77,6 +77,7 @@ func genSourceDecl(t *rapid.T, s Source, meaning map[string]genericMeaning) Sour
 			Name:        fmt.Sprintf("%sk%d_%s", p, i, rapid.StringMatching(`[a-z0-9_]{0,8}`).Draw(t, "ksuffix")),
 			Identity:    rapid.SliceOfNDistinct(rapid.SampledFrom(identityAttrs), 1, 4, func(a string) string { return a }).Draw(t, "identity"),
 			Description: genDescription().Draw(t, "kdesc"),
+			Overview:    OvCloud,
 		}
 		endpoints = append(endpoints, k.Name)
 		if nt := rapid.IntRange(0, 2).Draw(t, "ntypes"); nt > 0 {

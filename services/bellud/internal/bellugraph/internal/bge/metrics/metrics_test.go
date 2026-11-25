@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 )
 
 func TestHandlerExposesPrefixedMetrics(t *testing.T) {
@@ -28,7 +29,7 @@ func TestHandlerExposesPrefixedMetrics(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 	s.Handler().ServeHTTP(rec, httptest.NewRequest("GET", "/metrics", nil))
-	var p expfmt.TextParser
+	p := expfmt.NewTextParser(model.UTF8Validation)
 	fams, err := p.TextToMetricFamilies(strings.NewReader(rec.Body.String()))
 	if err != nil {
 		t.Fatal(err)

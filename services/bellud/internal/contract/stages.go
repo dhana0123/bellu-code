@@ -11,7 +11,7 @@ import (
 //
 // Stage order (earlier stages must be promoted before later ones):
 //
-//	0  graph and connectors routes (/api/experimental/{graph,connectors}/*): Go-native, TS never served them,
+//	0  graph, connectors, overview and findings routes (/api/experimental/{graph,connectors,overview,findings}/*): Go-native, TS never served them,
 //	   so no TS fixtures exist; validated by the Go-side contract test instead.
 //	1  auth, pairing, web UI
 //	2  server info, health, event feed
@@ -32,7 +32,7 @@ type Stage struct {
 
 // Stages is the promotion manifest. Only Stage 0 is promoted today.
 var Stages = []Stage{
-	{Index: 0, Name: "graph", Prefix: "/api/experimental/graph", Extra: []string{"/api/experimental/connectors"}, Native: true, Promoted: true},
+	{Index: 0, Name: "graph", Prefix: "/api/experimental/graph", Extra: []string{"/api/experimental/connectors", "/api/experimental/overview", "/api/experimental/findings", "/api/experimental/scans", "/api/experimental/sbom", "/api/experimental/bom", "/api/experimental/issues", "/api/experimental/rules", "/api/experimental/data", "/api/experimental/cve"}, Native: true, Promoted: true},
 	{Index: 1, Name: "auth-pairing-webui", Groups: []string{"auth", "web"}},
 	{Index: 2, Name: "server-info-health-events", Groups: []string{"server", "event", "openapi"}},
 	{Index: 3, Name: "remaining", Groups: []string{"agent", "api", "command", "config", "credential", "debug", "filesystem", "form", "generate", "integration", "location", "mcp", "migration", "model", "permission", "persistentPty", "plugin", "project", "provider", "pty", "reference", "rpc", "shell", "skill", "usage", "vcs", "voice", "websearch", "worktree", "experimental"}},

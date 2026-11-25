@@ -88,7 +88,60 @@ func restAction(req *http.Request) (string, bool) {
 	if req.Method == http.MethodGet && req.URL.Path == "/" && (req.URL.RawQuery == "" || req.URL.RawQuery == "x-id=ListBuckets") && isS3Service(host) {
 		return "ListBuckets", true
 	}
+	if req.Method == http.MethodGet && req.URL.Path == "/" && strings.Contains(host, ".s3.") {
+		return bucketAction(req.URL.Query())
+	}
+	// Content sampling (13.4): GET https://bucket.s3.../key?x-id=GetObject. Any
+	// other query key (versionId, uploadId, acl, ...) is not recognised.
+	if req.Method == http.MethodGet && len(req.URL.Path) > 1 && strings.Contains(host, ".s3.") {
+		q := req.URL.Query()
+		if len(q) == 1 && q.Get("x-id") == "GetObject" {
+			return "GetObject", true
+		}
+	}
 	return "", false
+}
+
+// bucketSubresources maps the read-only S3 bucket subresource query keys to
+// their operation names (virtual-host style: GET https://bucket.s3.../?key).
+var bucketSubresources = map[string]string{
+	"encryption": "GetBucketEncryption", "publicAccessBlock": "GetPublicAccessBlock",
+	"policyStatus": "GetBucketPolicyStatus", "logging": "GetBucketLogging", "versioning": "GetBucketVersioning",
+}
+
+// listObjectsKeys are the query keys ListObjectsV2 may carry besides list-type.
+var listObjectsKeys = map[string]bool{
+	"list-type": true, "max-keys": true, "prefix": true, "continuation-token": true,
+	"start-after": true, "encoding-type": true, "delimiter": true, "fetch-owner": true, "x-id": true,
+}
+
+func bucketAction(q url.Values) (string, bool) {
+	if q.Get("list-type") == "2" {
+		for k := range q {
+			if !listObjectsKeys[k] {
+				return "", false
+			}
+		}
+		if q.Has("x-id") && q.Get("x-id") != "ListObjectsV2" {
+			return "", false
+		}
+		return "ListObjectsV2", true
+	}
+	op := ""
+	for k := range q {
+		if k == "x-id" {
+			continue
+		}
+		name, ok := bucketSubresources[k]
+		if !ok || op != "" {
+			return "", false
+		}
+		op = name
+	}
+	if op == "" || (q.Has("x-id") && q.Get("x-id") != op) {
+		return "", false
+	}
+	return op, true
 }
 
 // isS3Service matches the regional/global S3 service endpoints and rejects

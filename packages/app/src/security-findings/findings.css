@@ -1955,3 +1955,73 @@
     width: 100%;
   }
 }
+
+/* Info severity, the statuses the server adds, the status form and the load error */
+:is(
+    [data-component="security-findings"],
+    [data-component="security-findings-menu"],
+    [data-component="security-findings-drawer-layer"]
+  )
+  [data-severity="info"] {
+  --hue: var(--sf-muted);
+}
+:is(
+    [data-component="security-findings"],
+    [data-component="security-findings-menu"],
+    [data-component="security-findings-drawer-layer"]
+  )
+  [data-slot="pill"][data-status="open"] {
+  background: color-mix(in srgb, var(--sf-critical) 12%, transparent);
+  color: color-mix(in srgb, var(--sf-critical) 70%, var(--sf-text));
+}
+:is(
+    [data-component="security-findings"],
+    [data-component="security-findings-menu"],
+    [data-component="security-findings-drawer-layer"]
+  )
+  [data-slot="pill"]:is([data-status="in_progress"], [data-status="resolved"], [data-status="ignored"], [data-status="accepted_risk"]) {
+  background: color-mix(in srgb, var(--sf-muted) 14%, transparent);
+  color: var(--sf-text);
+}
+[data-component="security-findings-drawer-layer"] [data-slot="status-form"] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+[data-component="security-findings-drawer-layer"] [data-slot="status-form"] label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--sf-muted);
+}
+[data-component="security-findings-drawer-layer"] [data-slot="status-form"] :is(select, textarea, input) {
+  border: 1px solid var(--sf-border);
+  border-radius: 4px;
+  background: var(--sf-surface);
+  color: var(--sf-text);
+  padding: 4px 6px;
+  font: inherit;
+}
+[data-component="security-findings-drawer-layer"] [data-slot="status-form"] [aria-invalid="true"] {
+  border-color: var(--sf-critical);
+}
+[data-component="security-findings-drawer-layer"] [data-slot="field-error"] {
+  margin: 0;
+  color: var(--sf-critical);
+}
+[data-component="security-findings-drawer-layer"] [data-slot="status-form"] button[type="submit"] {
+  align-self: flex-start;
+}
+[data-component="security-findings"] [data-slot="load-error"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--sf-border);
+  border-radius: 8px;
+  color: var(--sf-text);
+}
+[data-component="security-findings"] [data-slot="load-error"] p {
+  margin: 0;
+  flex: 1;
+}

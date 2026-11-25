@@ -86,9 +86,30 @@
         "id": "golden-id"
       },
       "hash": "finding:9aac6f0de8d3977e48c9120986aab020"
+    },
+    "posture_pack": {
+      "identity": [
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id"
+      },
+      "hash": "posture_pack:5ad638cb6842c95a240d5244a8d97dfc"
+    },
+    "posture_rule": {
+      "identity": [
+        "pack",
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id",
+        "pack": "golden-pack"
+      },
+      "hash": "posture_rule:ba03d74af119b40b373c40174322cb37"
     }
   },
   "relations": {
+    "affects": "forward",
     "aws_alias_of": "reverse",
     "aws_allows_egress_to": "forward",
     "aws_allows_ingress_from": "reverse",
@@ -150,12 +171,14 @@
     "aws_writes_to": "forward",
     "built_into": "reverse",
     "calls": "reverse",
+    "contained_in": "reverse",
     "declares_dependency": "reverse",
     "defined_in": "reverse",
     "deployed_as": "reverse",
     "imports": "reverse",
     "in_community": "reverse",
     "reachable_from": "forward",
+    "rule_applies_to": "forward",
     "supersedes": "forward"
   }
 }

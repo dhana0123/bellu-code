@@ -1,5 +1,6 @@
 import { useServer } from "@/runtime/server/current"
 import { ServerScope } from "@/runtime/server/scope"
+import { overviewFixture } from "./overview-fixtures"
 
 const providers = [
   "bellucode-go",
@@ -46,7 +47,19 @@ const client = {
   },
 }
 
+// `?args=scenario:<name>` chooses the Overview response: `error` always fails, `flaky` fails once, then answers.
+const scenario = new URLSearchParams(location.search).get("args")?.match(/(?:^|;)scenario:([^;]*)/)?.[1] ?? "populated"
+let overviewCalls = 0
 const api = {
+  experimental: {
+    overview: {
+      categories: async () => {
+        overviewCalls++
+        if (scenario === "error" || (scenario === "flaky" && overviewCalls === 1)) throw new Error("overview unavailable")
+        return overviewFixture(scenario)
+      },
+    },
+  },
   session: {
     form: {
       reply: async () => ({ data: true }),

@@ -1,0 +1,15 @@
+# Third-party libraries added by the Bellu security platform feature (Requirement 19.3).
+#
+# Format: one entry per line, four whitespace-separated fields, no blank fields:
+#   <module path> <exact version> <SPDX license id> <source URL>
+# Lines starting with '#' and blank lines are ignored. Append new entries below the marker.
+# script/check-third-party-licenses checks each entry against go.mod (direct require, same version).
+# --- entries ---
+github.com/anchore/syft v1.57.2 Apache-2.0 https://github.com/anchore/syft
+github.com/anchore/grype v0.122.1 Apache-2.0 https://github.com/anchore/grype
+github.com/google/osv-scanner/v2 v2.7.2-0.20261123234433-66586f4a200a Apache-2.0 https://github.com/google/osv-scanner
+github.com/aquasecurity/trivy v0.76.2 Apache-2.0 https://github.com/aquasecurity/trivy
+github.com/zricethezav/gitleaks/v8 v8.30.1 MIT https://github.com/gitleaks/gitleaks
+github.com/open-policy-agent/opa v1.22.4 Apache-2.0 https://github.com/open-policy-agent/opa
+github.com/CycloneDX/cyclonedx-go v0.12.0 Apache-2.0 https://github.com/CycloneDX/cyclonedx-go
+github.com/spdx/tools-golang v0.6.0-rc4 Apache-2.0 https://github.com/spdx/tools-golang

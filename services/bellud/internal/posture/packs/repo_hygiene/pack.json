@@ -1,0 +1,58 @@
+{
+  "id": "repo_hygiene",
+  "version": "1",
+  "rules": [
+    {
+      "id": "repo_public",
+      "title": "Repository is public",
+      "description": "The GitHub repository has public visibility.",
+      "severity": "medium",
+      "category": "code_and_dependencies",
+      "applies_to": [
+        "github_repo"
+      ],
+      "remediation": "Make the repository private unless it is meant to be open source.",
+      "benchmarks": [],
+      "rego": "repo_public.rego"
+    },
+    {
+      "id": "repo_branch_protection",
+      "title": "Default branch is not protected",
+      "description": "The default branch has no branch protection. Needs attribute default_branch_protected (not emitted by the collector yet, so unknown never violates).",
+      "severity": "medium",
+      "category": "code_and_dependencies",
+      "applies_to": [
+        "github_repo"
+      ],
+      "remediation": "Enable branch protection with required reviews on the default branch.",
+      "benchmarks": [],
+      "rego": "repo_branch_protection.rego"
+    },
+    {
+      "id": "open_dependabot_alert",
+      "title": "Open Dependabot alert",
+      "description": "A Dependabot alert is open on the repository.",
+      "severity": "medium",
+      "category": "code_and_dependencies",
+      "applies_to": [
+        "github_alert"
+      ],
+      "remediation": "Update the vulnerable dependency or dismiss the alert with a reason.",
+      "benchmarks": [],
+      "rego": "open_dependabot_alert.rego"
+    },
+    {
+      "id": "open_secret_scanning_alert",
+      "title": "Open secret scanning alert",
+      "description": "A secret scanning alert is open on the repository.",
+      "severity": "high",
+      "category": "code_and_dependencies",
+      "applies_to": [
+        "github_alert"
+      ],
+      "remediation": "Revoke the exposed secret, rotate it and close the alert.",
+      "benchmarks": [],
+      "rego": "open_secret_scanning_alert.rego"
+    }
+  ]
+}

@@ -26,19 +26,20 @@ const (
 
 // Relation type names.
 const (
-	RelRunsOn     = "runs_on"
-	RelOn         = "on"
-	RelOwnedBy    = "owned_by"
-	RelUses       = "uses"
-	RelAttachedTo = "attached_to"
-	RelMounts     = "mounts"
-	RelDependsOn  = "depends_on"
-	RelResolvesTo = "resolves_to"
-	RelFoundIn    = "found_in"
+	RelRunsOn      = "runs_on"
+	RelOn          = "on"
+	RelOwnedBy     = "owned_by"
+	RelUses        = "uses"
+	RelAttachedTo  = "attached_to"
+	RelMounts      = "mounts"
+	RelDependsOn   = "depends_on"
+	RelResolvesTo  = "resolves_to"
+	RelFoundIn     = "found_in"
+	RelContainedIn = "contained_in"
 )
 
 func kind(name, desc string, identity ...string) schema.KindDeclaration {
-	return schema.KindDeclaration{Name: name, Identity: identity, Description: desc}
+	return schema.KindDeclaration{Name: name, Identity: identity, Description: desc, Overview: overviewByKind[name]}
 }
 
 func rel(name string, d schema.Direction, desc string) schema.RelationDeclaration {
@@ -76,7 +77,29 @@ func Declaration() schema.SourceDeclaration {
 			rel(RelMounts, schema.Reverse, "From mounts to, so failure of to impacts from."),
 			rel(RelDependsOn, schema.Reverse, "From depends on to, so failure of to impacts from."),
 			rel(RelResolvesTo, schema.Reverse, "From resolves to to, so failure of to impacts from."),
+			rel(RelContainedIn, schema.Reverse, "From is contained in to (a package in an image or host), so failure of to impacts from."),
 			rel(RelFoundIn, schema.Forward, "A finding is found in a location, and compromise of the finding gives reach over the location."),
 		},
 	}
+}
+
+// overviewByKind is the Overview category of each kind (design: Category
+// assignment and the nine Lenses).
+var overviewByKind = map[string]schema.OverviewCategory{
+	KindHost:            schema.OvCloud,
+	KindProcess:         schema.OvRuntime,
+	KindListeningPort:   schema.OvRuntime,
+	KindContainer:       schema.OvCloud,
+	KindImage:           schema.OvCloud,
+	KindNetwork:         schema.OvCloud,
+	KindVolume:          schema.OvCloud,
+	KindRepository:      schema.OvCode,
+	KindDependency:      schema.OvCode,
+	KindWorkflow:        schema.OvCode,
+	KindSecretRef:       schema.OvSecrets,
+	KindIacResource:     schema.OvCode,
+	KindK8sObject:       schema.OvCode,
+	KindSecretFinding:   schema.OvSecrets,
+	KindCollectorStatus: schema.OvCloud,
+	KindEndpoint:        schema.OvNetwork,
 }

@@ -1,0 +1,210 @@
+/* Security Overview. Colors come from the app theme tokens; severity hues match the Findings page. */
+[data-component="security-overview"] {
+  --so-critical: #dc2626;
+  --so-high: #ea580c;
+  --so-medium: #ca8a04;
+  --so-low: #6b7280;
+  --so-info: #2563eb;
+  --so-border: var(--v2-border-border-base);
+  --so-text: var(--v2-text-text-base);
+  --so-muted: var(--v2-text-text-muted);
+  --so-layer: var(--v2-background-bg-layer-01);
+  --so-focus: var(--v2-border-border-focus);
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--so-text);
+}
+[data-component="security-overview"] [data-severity] {
+  --hue: var(--so-low);
+}
+[data-component="security-overview"] [data-severity="critical"] {
+  --hue: var(--so-critical);
+}
+[data-component="security-overview"] [data-severity="high"] {
+  --hue: var(--so-high);
+}
+[data-component="security-overview"] [data-severity="medium"] {
+  --hue: var(--so-medium);
+}
+[data-component="security-overview"] [data-severity="info"] {
+  --hue: var(--so-info);
+}
+[data-component="security-overview"] [data-slot="overview-heading"] {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 500;
+}
+[data-component="security-overview"] [data-slot="overview-grid"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-component="security-overview"] [data-slot="overview-card"] {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--so-border);
+  border-radius: 10px;
+  background: var(--so-layer);
+}
+[data-component="security-overview"] [data-slot="overview-card"]:has([data-slot="card-link"]:hover) {
+  border-color: var(--v2-border-border-muted);
+  background: var(--v2-overlay-simple-overlay-hover);
+}
+[data-component="security-overview"] [data-slot="card-title"] {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+/* The link covers the whole card, so a click anywhere opens the lens. */
+[data-component="security-overview"] [data-slot="card-link"] {
+  color: inherit;
+  text-decoration: none;
+}
+[data-component="security-overview"] [data-slot="card-link"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+[data-component="security-overview"] [data-slot="card-link"]:focus-visible {
+  outline: none;
+}
+[data-component="security-overview"] [data-slot="card-link"]:focus-visible::after {
+  outline: 2px solid var(--so-focus);
+  outline-offset: 2px;
+}
+[data-component="security-overview"] [data-slot="card-subtitle"] {
+  margin: 0;
+  color: var(--so-muted);
+}
+[data-component="security-overview"] [data-slot="card-count"] {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+}
+[data-component="security-overview"] [data-slot="card-count"] strong {
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+[data-component="security-overview"] [data-slot="card-count"] span,
+[data-component="security-overview"] [data-slot="card-severity"] span {
+  color: var(--so-muted);
+}
+[data-component="security-overview"] [data-slot="card-severity"] {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-component="security-overview"] [data-slot="card-severity"] li {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: 4px;
+  border-top: 2px solid var(--hue);
+}
+[data-component="security-overview"] [data-slot="card-severity"] strong {
+  font-variant-numeric: tabular-nums;
+}
+[data-component="security-overview"] [data-slot="card-severity"] span {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+[data-component="security-overview"] [data-slot="card-issues"] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-component="security-overview"] [data-slot="card-issues"] li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+[data-component="security-overview"] [data-slot="issue-severity"] {
+  flex: none;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--hue);
+}
+[data-component="security-overview"] [data-slot="issue-title"] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-component="security-overview"] [data-slot="card-empty"] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--so-muted);
+}
+[data-component="security-overview"] [data-slot="card-empty"] p {
+  margin: 0;
+}
+/* Above the stretched card link so it stays clickable. */
+[data-component="security-overview"] [data-slot="card-connect"] {
+  position: relative;
+  z-index: 1;
+  color: var(--so-text);
+  text-decoration: underline;
+}
+[data-component="security-overview"] [data-slot="card-connect"]:focus-visible,
+[data-component="security-overview"] [data-slot="overview-retry"]:focus-visible {
+  outline: 2px solid var(--so-focus);
+  outline-offset: 2px;
+}
+[data-component="security-overview"] [data-slot="overview-loading"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--so-muted);
+}
+[data-component="security-overview"] [data-slot="overview-error"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--v2-text-text-danger);
+  border-radius: 10px;
+}
+[data-component="security-overview"] [data-slot="overview-error"] p {
+  margin: 2px 0 0;
+  color: var(--so-muted);
+}
+[data-component="security-overview"] [data-slot="overview-retry"] {
+  flex: none;
+  padding: 6px 12px;
+  border: 1px solid var(--so-border);
+  border-radius: 8px;
+  background: var(--so-layer);
+  color: var(--so-text);
+  cursor: pointer;
+}
+/* Above the stretched card link so it stays clickable. */
+[data-component="security-overview"] [data-slot="issue-title"]:is(a) {
+  position: relative;
+  z-index: 1;
+  color: inherit;
+  text-decoration: underline;
+}
+[data-component="security-overview"] [data-slot="issue-title"]:is(a):focus-visible {
+  outline: 2px solid var(--so-focus);
+  outline-offset: 2px;
+}

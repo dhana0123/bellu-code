@@ -18,14 +18,16 @@ const (
 
 // Slice is the Lens_Slice shared by the HTTP API and MCP.
 type Slice struct {
-	Lens        string      `json:"lens"`
-	GeneratedAt time.Time   `json:"generated_at"`
-	Truncated   bool        `json:"truncated"`
-	Counts      Counts      `json:"counts"`
-	Nodes       []Node      `json:"nodes"`
-	Edges       []SliceEdge `json:"edges"`
-	Groups      []Group     `json:"groups"`
-	Paths       []Path      `json:"paths,omitempty"`
+	Lens        string    `json:"lens"`
+	GeneratedAt time.Time `json:"generated_at"`
+	Truncated   bool      `json:"truncated"`
+	// Reason is time_limit or entity_limit on a truncated category slice.
+	Reason string      `json:"reason,omitempty"`
+	Counts Counts      `json:"counts"`
+	Nodes  []Node      `json:"nodes"`
+	Edges  []SliceEdge `json:"edges"`
+	Groups []Group     `json:"groups"`
+	Paths  []Path      `json:"paths,omitempty"`
 	// MissingData lists the registered-only categories the answer depends on,
 	// plus sentinel entries. Never nil.
 	MissingData []string `json:"missing_data"`

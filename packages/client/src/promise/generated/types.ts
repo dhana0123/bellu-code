@@ -496,6 +496,124 @@ export type ConnectorsScope = {
   operations: { [x: string]: Array<string> }
 }
 
+export type OverviewCategory =
+  | "cloud_infrastructure"
+  | "identity"
+  | "vulnerabilities"
+  | "network_exposure"
+  | "secrets"
+  | "data_security"
+  | "code_and_dependencies"
+  | "runtime"
+  | "ai_security"
+
+export type OverviewSeverityCounts = { critical: number; high: number; medium: number; low: number; info: number }
+
+export type OverviewSeverity = "critical" | "high" | "medium" | "low" | "info"
+
+export type OverviewEmptyState = { missingSource: string; setupLink: string }
+
+export type FindingsType =
+  | "vulnerability"
+  | "misconfiguration"
+  | "secret"
+  | "license"
+  | "malware"
+  | "runtime_threat"
+  | "ai_risk"
+  | "data_exposure"
+  | "identity_risk"
+
+export type FindingsStatus = "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+
+export type FindingsEvidence = { kind: string; ref: string; line?: number; excerpt?: string }
+
+export type ScansKind =
+  | "sbom"
+  | "vulnerability"
+  | "misconfiguration"
+  | "secret"
+  | "posture"
+  | "data_classification"
+  | "ai_inventory"
+
+export type ScansTargetType = "repository" | "image" | "host" | "cloud_account" | "cluster"
+
+export type ScansStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged"
+
+export type SbomSummary = {
+  assetId: string
+  digest: string
+  packageCount: number
+  createdAt: string
+  ecosystems: { [x: string]: number }
+  licenses: { [x: string]: number }
+}
+
+export type SbomPackage = {
+  type?: string
+  name: string
+  version?: string
+  purl?: string
+  ecosystem?: string
+  licenses: Array<string>
+  supplier?: string
+  locations: Array<string>
+  properties?: { [x: string]: string }
+}
+
+export type CveRange = { introduced: string; fixed: string }
+
+export type CveGap = { kind: string; cause: string }
+
+export type CveWarning = { code: string; message: string }
+
+export type CveNode = { id: string; type: string; key: string; label: string; properties?: { [x: string]: JsonValue } }
+
+export type CveEdge = { id: string; source: string; target: string; type: string; viewID?: string }
+
+export type CveMode = "db" | "graph" | "both"
+
+export type CveRef = { id: string; type: string; key: string; label: string }
+
+export type CveConflict = { DB: JsonValue; Graph: JsonValue }
+
+export type IssuesStatus = "open" | "resolved" | "ignored"
+
+export type IssuesHop = { entityId: string; relation?: string; evidence: Array<string>; inferred: boolean }
+
+export type IssuesMember = {
+  id: string
+  title?: string
+  ruleId?: string
+  severity?: string
+  status?: string
+  assetId?: string
+}
+
+export type RulesPack = { id: string; version: string; enabled: boolean; ruleCount: number }
+
+export type RulesKind = "posture" | "toxic_combination" | "runtime" | "identity"
+
+export type RulesBenchmarkList = { benchmarks: Array<string> }
+
+export type RulesControlStatus = "pass" | "fail" | "not_applicable" | "error"
+
+export type DataStore = {
+  id: string
+  type: string
+  name: string
+  region?: string
+  encryptionAtRest: JsonValue
+  encryptionInTransit: JsonValue
+  publicAccess: JsonValue
+  backup: JsonValue
+  logging: JsonValue
+  classes: Array<string>
+  matchCounts: { [x: string]: number }
+  openExposureCount: number
+}
+
 export type ReferenceGitSource = { type: "git"; repository: string; branch?: string }
 
 export type VcsBranch = { current?: string; default?: string }
@@ -1252,6 +1370,202 @@ export type ConnectorsGithubRepoList = {
 }
 
 export type ConnectorsScopeOptionList = { items: Array<ConnectorsScopeOption> }
+
+export type OverviewIssue = {
+  id: string
+  title: string
+  severity: OverviewSeverity
+  riskScore: number | "Infinity" | "-Infinity" | "NaN"
+}
+
+export type FindingsEvent = {
+  seq: number
+  at: string
+  actor: string
+  prevStatus?: FindingsStatus
+  newStatus: FindingsStatus
+  reason?: string
+}
+
+export type FindingsFinding = {
+  id: string
+  ruleId: string
+  title: string
+  description: string
+  category: OverviewCategory
+  type: FindingsType
+  severity: OverviewSeverity
+  status: FindingsStatus
+  assetId: string
+  evidence: Array<FindingsEvidence>
+  firstSeen: string
+  lastSeen: string
+  resolvedAt?: string
+  source: string
+  sourceRevision?: string
+  rulePackVersion?: string
+  occurrences: number
+  riskScore?: number | "Infinity" | "-Infinity" | "NaN"
+  unmappedSeverity?: boolean
+  details?: JsonValue
+}
+
+export type ScansSchedule = {
+  kind: ScansKind
+  targetType: ScansTargetType
+  targetId: string
+  intervalSeconds: number
+  enabled: boolean
+}
+
+export type ScansJob = {
+  id: string
+  kind: ScansKind
+  targetType: ScansTargetType
+  targetId: string
+  status: ScansStatus
+  reason?: string
+  queuedAt: string
+  startedAt?: string
+  endedAt?: string
+  created: number
+  updated: number
+  resolved: number
+  durationMs?: number
+  scannerVersions: { [x: string]: string }
+}
+
+export type SbomSummaryList = { items: Array<SbomSummary> }
+
+export type SbomDetail = {
+  assetId: string
+  digest: string
+  packageCount: number
+  createdAt: string
+  ecosystems: { [x: string]: number }
+  licenses: { [x: string]: number }
+  subject?: string
+  items: Array<SbomPackage>
+  nextCursor?: string
+}
+
+export type CveVuln = {
+  id: string
+  aliases: Array<string>
+  summary: string
+  severity: string
+  cvssScore: number | "Infinity" | "-Infinity" | "NaN"
+  cvssVector?: string
+  cvssVersion?: string
+  ranges: Array<CveRange>
+  fixedVersions: Array<string>
+  kev: boolean
+  epss: number | "Infinity" | "-Infinity" | "NaN"
+  published?: string
+  modified?: string
+  affectedState?: string
+  origin: string
+}
+
+export type CveGraph = {
+  nodes: Array<CveNode>
+  edges: Array<CveEdge>
+  gaps: Array<CveGap>
+  warnings: Array<CveWarning>
+  fieldFrom: { [x: string]: string }
+  truncated: boolean
+}
+
+export type CveStatus = {
+  mode: CveMode
+  dbInstalled: boolean
+  dataAgeHours: number
+  stale: boolean
+  staleLimitHours: number
+  bskgReachable: boolean
+  graphEnabled: boolean
+  lastGap: CveGap | null
+}
+
+export type CveModeResult = { mode: CveMode }
+
+export type CveDetail = {
+  id: string
+  aliases: Array<string>
+  summary: string
+  severity: string
+  cvssScore: number | "Infinity" | "-Infinity" | "NaN"
+  cvssVector?: string
+  cvssVersion?: string
+  ranges: Array<CveRange>
+  fixedVersions: Array<string>
+  kev: boolean
+  epss: number | "Infinity" | "-Infinity" | "NaN"
+  published?: string
+  modified?: string
+  affectedState?: string
+  origin: string
+  cwes: Array<CveRef>
+  exploits: Array<CveRef>
+  affected: Array<CveRef>
+  related: Array<CveRef>
+  conflicts?: { [x: string]: CveConflict }
+  gaps: Array<CveGap>
+  warnings: Array<CveWarning>
+  fieldFrom: { [x: string]: string }
+  truncated: boolean
+}
+
+export type IssuesIssue = {
+  id: string
+  title: string
+  ruleId: string
+  severity: OverviewSeverity
+  riskScore: number | "Infinity" | "-Infinity" | "NaN"
+  status: IssuesStatus
+  category: OverviewCategory
+  includesInferred: boolean
+  findingCount: number
+  path: Array<IssuesHop>
+  createdAt: string
+  updatedAt: string
+}
+
+export type IssuesDetail = {
+  id: string
+  title: string
+  ruleId: string
+  severity: OverviewSeverity
+  riskScore: number | "Infinity" | "-Infinity" | "NaN"
+  status: IssuesStatus
+  category: OverviewCategory
+  includesInferred: boolean
+  findingCount: number
+  path: Array<IssuesHop>
+  createdAt: string
+  updatedAt: string
+  findings: Array<IssuesMember>
+}
+
+export type RulesPackList = { items: Array<RulesPack> }
+
+export type RulesRule = {
+  id: string
+  packId: string
+  title: string
+  description: string
+  kind: RulesKind
+  category: string
+  appliesTo: Array<string>
+  benchmarks: Array<string>
+  enabled: boolean
+  severity: OverviewSeverity
+  defaultSeverity: OverviewSeverity
+}
+
+export type RulesControl = { control: string; status: RulesControlStatus; failingEntities: number }
+
+export type DataStorePage = { items: Array<DataStore>; nextCursor?: string; truncated: boolean }
 
 export type VcsInfo = { provider?: string; branch: VcsBranch }
 
@@ -2565,6 +2879,70 @@ export type ConnectorsDeviceAuthorizationStatus = {
 
 export type ConnectorsAuthConfigList = { items: Array<ConnectorsAuthConfig> }
 
+export type OverviewCategorySummary = {
+  category: OverviewCategory
+  title: string
+  subtitle: string
+  entityCount: number
+  severity: OverviewSeverityCounts
+  topIssues: Array<OverviewIssue>
+  emptyState?: OverviewEmptyState
+  kinds: { [x: string]: number }
+}
+
+export type FindingsDetail = {
+  id: string
+  ruleId: string
+  title: string
+  description: string
+  category: OverviewCategory
+  type: FindingsType
+  severity: OverviewSeverity
+  status: FindingsStatus
+  assetId: string
+  evidence: Array<FindingsEvidence>
+  firstSeen: string
+  lastSeen: string
+  resolvedAt?: string
+  source: string
+  sourceRevision?: string
+  rulePackVersion?: string
+  occurrences: number
+  riskScore?: number | "Infinity" | "-Infinity" | "NaN"
+  unmappedSeverity?: boolean
+  details?: JsonValue
+  events: Array<FindingsEvent>
+}
+
+export type FindingsPage = { items: Array<FindingsFinding>; nextCursor?: string; truncated: boolean }
+
+export type ScansJobPage = { items: Array<ScansJob>; nextCursor?: string; truncated: boolean }
+
+export type ScansScanner = {
+  name: string
+  kind: ScansKind
+  version: string
+  license: string
+  libraries?: { [x: string]: string }
+  lastRun?: ScansJob
+}
+
+export type CveLookupResult = {
+  vulns: Array<CveVuln>
+  gaps: Array<CveGap>
+  warnings: Array<CveWarning>
+  fieldFrom: { [x: string]: string }
+  truncated: boolean
+}
+
+export type IssuesPage = { items: Array<IssuesIssue>; nextCursor?: string; truncated: boolean }
+
+export type RulesRuleList = { items: Array<RulesRule> }
+
+export type RulesOverrideResult = RulesPack | RulesRule
+
+export type RulesCompliance = { benchmark: string; controls: Array<RulesControl> }
+
 export type SessionInboxMove = {
   id: SessionMessageID
   sessionID: SessionID
@@ -2885,6 +3263,14 @@ export type ConfigEntry =
           codemode_vm?: boolean
           bellu_graph?: boolean
           connectors?: boolean
+          security_overview?: boolean
+          security_findings?: boolean
+          security_scanners?: boolean
+          security_posture?: boolean
+          security_cve_graph?: boolean
+          security_multicloud?: boolean
+          security_runtime?: boolean
+          security_ai?: boolean
           part_rows?: boolean
           image_generate?: boolean | { model?: string | { providerID: string; model: string; variant?: string } }
           subagent_depth?: number
@@ -2998,6 +3384,12 @@ export type ScheduleInfo = {
 }
 
 export type ConnectorsCatalog = { items: Array<ConnectorsManifest> }
+
+export type OverviewCategories = { revision: number; categories: Array<OverviewCategorySummary> }
+
+export type ScansScannerPage = { items: Array<ScansScanner>; nextCursor?: string; truncated: boolean }
+
+export type RulesComplianceResult = RulesBenchmarkList | RulesCompliance
 
 export type AgentInfo = {
   id: AgentID
@@ -5300,6 +5692,241 @@ export type ExperimentalConnectorsRotateMasterKeyOutput = ConnectorsVaultResult
 
 export type ExperimentalConnectorsForgetAllOutput = ConnectorsVaultResult
 
+export type ExperimentalOverviewCategoriesOutput = OverviewCategories
+
+export type ExperimentalFindingsListInput = {
+  readonly category?:
+    | ReadonlyArray<
+        | "cloud_infrastructure"
+        | "identity"
+        | "vulnerabilities"
+        | "network_exposure"
+        | "secrets"
+        | "data_security"
+        | "code_and_dependencies"
+        | "runtime"
+        | "ai_security"
+      >
+    | undefined
+  readonly severity?: ReadonlyArray<"critical" | "high" | "medium" | "low" | "info"> | undefined
+  readonly status?: ReadonlyArray<"open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"> | undefined
+  readonly type?:
+    | ReadonlyArray<
+        | "vulnerability"
+        | "misconfiguration"
+        | "secret"
+        | "license"
+        | "malware"
+        | "runtime_threat"
+        | "ai_risk"
+        | "data_exposure"
+        | "identity_risk"
+      >
+    | undefined
+  readonly asset?: ReadonlyArray<string> | undefined
+  readonly source?: ReadonlyArray<string> | undefined
+  readonly from?: string | undefined
+  readonly to?: string | undefined
+  readonly sort?:
+    | (
+        | "last_seen"
+        | "-last_seen"
+        | "first_seen"
+        | "-first_seen"
+        | "severity"
+        | "-severity"
+        | "risk_score"
+        | "-risk_score"
+      )
+    | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalFindingsListOutput = FindingsPage
+
+export type ExperimentalFindingsGetInput = { readonly id: string }
+
+export type ExperimentalFindingsGetOutput = FindingsDetail
+
+export type ExperimentalFindingsSetStatusInput = {
+  readonly id: string
+  readonly status: "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+  readonly reason?: string | undefined
+  readonly until?: string | undefined
+}
+
+export type ExperimentalFindingsSetStatusOutput = FindingsDetail
+
+export type ExperimentalScansEnqueueInput = {
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly targetId: string
+}
+
+export type ExperimentalScansEnqueueOutput = ScansJob
+
+export type ExperimentalScansListInput = {
+  readonly status?: ("queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged") | undefined
+  readonly kind?:
+    | ("sbom" | "vulnerability" | "misconfiguration" | "secret" | "posture" | "data_classification" | "ai_inventory")
+    | undefined
+  readonly limit?: number | undefined
+}
+
+export type ExperimentalScansListOutput = ScansJobPage
+
+export type ExperimentalScansScannersOutput = ScansScannerPage
+
+export type ExperimentalScansGetInput = { readonly id: string }
+
+export type ExperimentalScansGetOutput = ScansJob
+
+export type ExperimentalScansCancelInput = { readonly id: string }
+
+export type ExperimentalScansCancelOutput = ScansJob
+
+export type ExperimentalScansScheduleInput = {
+  readonly id: string
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly intervalSeconds: number
+  readonly enabled: boolean
+}
+
+export type ExperimentalScansScheduleOutput = ScansSchedule
+
+export type ExperimentalSbomListOutput = SbomSummaryList
+
+export type ExperimentalSbomGetInput = {
+  readonly assetId: string
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalSbomGetOutput = SbomDetail
+
+export type ExperimentalSbomExportInput = {
+  readonly assetId: string
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+
+export type ExperimentalSbomExportOutput = globalThis.Uint8Array
+
+export type ExperimentalCveLookupInput = {
+  readonly id?: string | undefined
+  readonly purl?: string | undefined
+  readonly version?: string | undefined
+  readonly cpe?: string | undefined
+  readonly mode?: ("db" | "graph" | "both") | undefined
+}
+
+export type ExperimentalCveLookupOutput = CveLookupResult
+
+export type ExperimentalCveGraphInput = {
+  readonly id?: string | undefined
+  readonly relTypes?: string | undefined
+  readonly nodeTypes?: string | undefined
+  readonly depth?: number | undefined
+  readonly limit?: number | undefined
+}
+
+export type ExperimentalCveGraphOutput = CveGraph
+
+export type ExperimentalCveStatusOutput = CveStatus
+
+export type ExperimentalCveSetModeInput = { readonly mode: "db" | "graph" | "both" }
+
+export type ExperimentalCveSetModeOutput = CveModeResult
+
+export type ExperimentalCveGetInput = { readonly id: string; readonly mode?: ("db" | "graph" | "both") | undefined }
+
+export type ExperimentalCveGetOutput = CveDetail
+
+export type ExperimentalBomSbomListOutput = SbomSummaryList
+
+export type ExperimentalBomSbomExportInput = {
+  readonly assetId: string
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+
+export type ExperimentalBomSbomExportOutput = globalThis.Uint8Array
+
+export type ExperimentalIssuesListInput = {
+  readonly category?:
+    | ReadonlyArray<
+        | "cloud_infrastructure"
+        | "identity"
+        | "vulnerabilities"
+        | "network_exposure"
+        | "secrets"
+        | "data_security"
+        | "code_and_dependencies"
+        | "runtime"
+        | "ai_security"
+      >
+    | undefined
+  readonly severity?: ReadonlyArray<"critical" | "high" | "medium" | "low" | "info"> | undefined
+  readonly status?: ReadonlyArray<"open" | "resolved" | "ignored"> | undefined
+  readonly asset?: string | undefined
+  readonly sort?: ("risk_score" | "-risk_score") | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalIssuesListOutput = IssuesPage
+
+export type ExperimentalIssuesGetInput = { readonly id: string }
+
+export type ExperimentalIssuesGetOutput = IssuesDetail
+
+export type ExperimentalIssuesSetStatusInput = { readonly id: string; readonly status: "open" | "resolved" | "ignored" }
+
+export type ExperimentalIssuesSetStatusOutput = IssuesDetail
+
+export type ExperimentalRulesPacksOutput = RulesPackList
+
+export type ExperimentalRulesPackRulesInput = { readonly id: string }
+
+export type ExperimentalRulesPackRulesOutput = RulesRuleList
+
+export type ExperimentalRulesOverrideInput = {
+  readonly packId: string
+  readonly ruleId?: string | undefined
+  readonly enabled?: boolean | undefined
+  readonly severity?: ("critical" | "high" | "medium" | "low" | "info") | undefined
+}
+
+export type ExperimentalRulesOverrideOutput = RulesOverrideResult
+
+export type ExperimentalRulesComplianceInput = { readonly benchmark?: string | undefined }
+
+export type ExperimentalRulesComplianceOutput = RulesComplianceResult
+
+export type ExperimentalDataStoresInput = { readonly limit?: number | undefined; readonly cursor?: string | undefined }
+
+export type ExperimentalDataStoresOutput = DataStorePage
+
+export type ExperimentalDataStoreInput = { readonly id: string }
+
+export type ExperimentalDataStoreOutput = DataStore
+
 export type ShellListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
 
 export type ShellListOutput = { location: LocationPublicRef; data: Array<ShellInfo1> }
@@ -5800,6 +6427,162 @@ export type ConnectorsRotateMasterKeyOutput = ExperimentalConnectorsRotateMaster
 
 /** @deprecated Use `ExperimentalConnectorsForgetAllOutput`. Removed in the next minor. */
 export type ConnectorsForgetAllOutput = ExperimentalConnectorsForgetAllOutput
+
+/** @deprecated Use `ExperimentalOverviewCategoriesOutput`. Removed in the next minor. */
+export type OverviewCategoriesOutput = ExperimentalOverviewCategoriesOutput
+
+/** @deprecated Use `ExperimentalFindingsListInput`. Removed in the next minor. */
+export type FindingsListInput = ExperimentalFindingsListInput
+
+/** @deprecated Use `ExperimentalFindingsListOutput`. Removed in the next minor. */
+export type FindingsListOutput = ExperimentalFindingsListOutput
+
+/** @deprecated Use `ExperimentalFindingsGetInput`. Removed in the next minor. */
+export type FindingsGetInput = ExperimentalFindingsGetInput
+
+/** @deprecated Use `ExperimentalFindingsGetOutput`. Removed in the next minor. */
+export type FindingsGetOutput = ExperimentalFindingsGetOutput
+
+/** @deprecated Use `ExperimentalFindingsSetStatusInput`. Removed in the next minor. */
+export type FindingsSetStatusInput = ExperimentalFindingsSetStatusInput
+
+/** @deprecated Use `ExperimentalFindingsSetStatusOutput`. Removed in the next minor. */
+export type FindingsSetStatusOutput = ExperimentalFindingsSetStatusOutput
+
+/** @deprecated Use `ExperimentalScansEnqueueInput`. Removed in the next minor. */
+export type ScansEnqueueInput = ExperimentalScansEnqueueInput
+
+/** @deprecated Use `ExperimentalScansEnqueueOutput`. Removed in the next minor. */
+export type ScansEnqueueOutput = ExperimentalScansEnqueueOutput
+
+/** @deprecated Use `ExperimentalScansListInput`. Removed in the next minor. */
+export type ScansListInput = ExperimentalScansListInput
+
+/** @deprecated Use `ExperimentalScansListOutput`. Removed in the next minor. */
+export type ScansListOutput = ExperimentalScansListOutput
+
+/** @deprecated Use `ExperimentalScansScannersOutput`. Removed in the next minor. */
+export type ScansScannersOutput = ExperimentalScansScannersOutput
+
+/** @deprecated Use `ExperimentalScansGetInput`. Removed in the next minor. */
+export type ScansGetInput = ExperimentalScansGetInput
+
+/** @deprecated Use `ExperimentalScansGetOutput`. Removed in the next minor. */
+export type ScansGetOutput = ExperimentalScansGetOutput
+
+/** @deprecated Use `ExperimentalScansCancelInput`. Removed in the next minor. */
+export type ScansCancelInput = ExperimentalScansCancelInput
+
+/** @deprecated Use `ExperimentalScansCancelOutput`. Removed in the next minor. */
+export type ScansCancelOutput = ExperimentalScansCancelOutput
+
+/** @deprecated Use `ExperimentalScansScheduleInput`. Removed in the next minor. */
+export type ScansScheduleInput = ExperimentalScansScheduleInput
+
+/** @deprecated Use `ExperimentalScansScheduleOutput`. Removed in the next minor. */
+export type ScansScheduleOutput = ExperimentalScansScheduleOutput
+
+/** @deprecated Use `ExperimentalSbomListOutput`. Removed in the next minor. */
+export type SbomListOutput = ExperimentalSbomListOutput
+
+/** @deprecated Use `ExperimentalSbomGetInput`. Removed in the next minor. */
+export type SbomGetInput = ExperimentalSbomGetInput
+
+/** @deprecated Use `ExperimentalSbomGetOutput`. Removed in the next minor. */
+export type SbomGetOutput = ExperimentalSbomGetOutput
+
+/** @deprecated Use `ExperimentalSbomExportInput`. Removed in the next minor. */
+export type SbomExportInput = ExperimentalSbomExportInput
+
+/** @deprecated Use `ExperimentalSbomExportOutput`. Removed in the next minor. */
+export type SbomExportOutput = ExperimentalSbomExportOutput
+
+/** @deprecated Use `ExperimentalCveLookupInput`. Removed in the next minor. */
+export type CveLookupInput = ExperimentalCveLookupInput
+
+/** @deprecated Use `ExperimentalCveLookupOutput`. Removed in the next minor. */
+export type CveLookupOutput = ExperimentalCveLookupOutput
+
+/** @deprecated Use `ExperimentalCveGraphInput`. Removed in the next minor. */
+export type CveGraphInput = ExperimentalCveGraphInput
+
+/** @deprecated Use `ExperimentalCveGraphOutput`. Removed in the next minor. */
+export type CveGraphOutput = ExperimentalCveGraphOutput
+
+/** @deprecated Use `ExperimentalCveStatusOutput`. Removed in the next minor. */
+export type CveStatusOutput = ExperimentalCveStatusOutput
+
+/** @deprecated Use `ExperimentalCveSetModeInput`. Removed in the next minor. */
+export type CveSetModeInput = ExperimentalCveSetModeInput
+
+/** @deprecated Use `ExperimentalCveSetModeOutput`. Removed in the next minor. */
+export type CveSetModeOutput = ExperimentalCveSetModeOutput
+
+/** @deprecated Use `ExperimentalCveGetInput`. Removed in the next minor. */
+export type CveGetInput = ExperimentalCveGetInput
+
+/** @deprecated Use `ExperimentalCveGetOutput`. Removed in the next minor. */
+export type CveGetOutput = ExperimentalCveGetOutput
+
+/** @deprecated Use `ExperimentalBomSbomListOutput`. Removed in the next minor. */
+export type BomSbomListOutput = ExperimentalBomSbomListOutput
+
+/** @deprecated Use `ExperimentalBomSbomExportInput`. Removed in the next minor. */
+export type BomSbomExportInput = ExperimentalBomSbomExportInput
+
+/** @deprecated Use `ExperimentalBomSbomExportOutput`. Removed in the next minor. */
+export type BomSbomExportOutput = ExperimentalBomSbomExportOutput
+
+/** @deprecated Use `ExperimentalIssuesListInput`. Removed in the next minor. */
+export type IssuesListInput = ExperimentalIssuesListInput
+
+/** @deprecated Use `ExperimentalIssuesListOutput`. Removed in the next minor. */
+export type IssuesListOutput = ExperimentalIssuesListOutput
+
+/** @deprecated Use `ExperimentalIssuesGetInput`. Removed in the next minor. */
+export type IssuesGetInput = ExperimentalIssuesGetInput
+
+/** @deprecated Use `ExperimentalIssuesGetOutput`. Removed in the next minor. */
+export type IssuesGetOutput = ExperimentalIssuesGetOutput
+
+/** @deprecated Use `ExperimentalIssuesSetStatusInput`. Removed in the next minor. */
+export type IssuesSetStatusInput = ExperimentalIssuesSetStatusInput
+
+/** @deprecated Use `ExperimentalIssuesSetStatusOutput`. Removed in the next minor. */
+export type IssuesSetStatusOutput = ExperimentalIssuesSetStatusOutput
+
+/** @deprecated Use `ExperimentalRulesPacksOutput`. Removed in the next minor. */
+export type RulesPacksOutput = ExperimentalRulesPacksOutput
+
+/** @deprecated Use `ExperimentalRulesPackRulesInput`. Removed in the next minor. */
+export type RulesPackRulesInput = ExperimentalRulesPackRulesInput
+
+/** @deprecated Use `ExperimentalRulesPackRulesOutput`. Removed in the next minor. */
+export type RulesPackRulesOutput = ExperimentalRulesPackRulesOutput
+
+/** @deprecated Use `ExperimentalRulesOverrideInput`. Removed in the next minor. */
+export type RulesOverrideInput = ExperimentalRulesOverrideInput
+
+/** @deprecated Use `ExperimentalRulesOverrideOutput`. Removed in the next minor. */
+export type RulesOverrideOutput = ExperimentalRulesOverrideOutput
+
+/** @deprecated Use `ExperimentalRulesComplianceInput`. Removed in the next minor. */
+export type RulesComplianceInput = ExperimentalRulesComplianceInput
+
+/** @deprecated Use `ExperimentalRulesComplianceOutput`. Removed in the next minor. */
+export type RulesComplianceOutput = ExperimentalRulesComplianceOutput
+
+/** @deprecated Use `ExperimentalDataStoresInput`. Removed in the next minor. */
+export type DataStoresInput = ExperimentalDataStoresInput
+
+/** @deprecated Use `ExperimentalDataStoresOutput`. Removed in the next minor. */
+export type DataStoresOutput = ExperimentalDataStoresOutput
+
+/** @deprecated Use `ExperimentalDataStoreInput`. Removed in the next minor. */
+export type DataStoreInput = ExperimentalDataStoreInput
+
+/** @deprecated Use `ExperimentalDataStoreOutput`. Removed in the next minor. */
+export type DataStoreOutput = ExperimentalDataStoreOutput
 
 /** @deprecated Use `ExperimentalMigrationV1StatusOutput`. Removed in the next minor. */
 export type MigrationV1StatusOutput = ExperimentalMigrationV1StatusOutput

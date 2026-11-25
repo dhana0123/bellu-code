@@ -1,0 +1,190 @@
+/* Issues page. Colors come from the app theme tokens. */
+[data-component="security-issues"] {
+  --si-border: var(--v2-border-border-base);
+  --si-text: var(--v2-text-text-base);
+  --si-muted: var(--v2-text-text-muted);
+  --si-layer: var(--v2-background-bg-layer-01);
+  --si-hover: var(--v2-overlay-simple-overlay-hover);
+  --si-focus: var(--v2-border-border-focus);
+  font-size: 13px;
+  line-height: var(--line-height-compact);
+  color: var(--si-text);
+}
+[data-component="security-issues"] [data-slot="issues-heading"] {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+[data-component="security-issues"] h3 {
+  color: var(--si-muted);
+  font-size: 12px;
+  margin: 12px 0 4px;
+}
+[data-component="security-issues"] [data-slot="issues-tabs"] {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--si-border);
+  margin-bottom: 12px;
+}
+[data-component="security-issues"] button {
+  cursor: pointer;
+}
+[data-component="security-issues"] :is(button, select, input, a):focus-visible {
+  outline: 2px solid var(--si-focus);
+  outline-offset: 1px;
+}
+[data-component="security-issues"] [data-slot="issues-tab"] {
+  padding: 6px 12px;
+  color: var(--si-muted);
+  border-bottom: 2px solid transparent;
+}
+[data-component="security-issues"] [data-slot="issues-tab"][aria-selected="true"] {
+  color: var(--si-text);
+  border-bottom-color: var(--si-text);
+}
+[data-component="security-issues"] [data-slot="issues-filters"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+[data-component="security-issues"] [data-slot="issues-filter"] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--si-muted);
+}
+[data-component="security-issues"] :is(select, input, [data-slot="issues-retry"], [data-slot="issues-more"], [data-slot="issues-close"]) {
+  padding: 4px 10px;
+  border: 1px solid var(--si-border);
+  border-radius: 6px;
+  background: var(--si-layer);
+  color: var(--si-text);
+}
+[data-component="security-issues"] [data-slot="issues-body"] {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+[data-component="security-issues"] [data-slot="issues-body"][data-open="true"] {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+}
+[data-component="security-issues"] [data-slot="issues-table"] {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+[data-component="security-issues"] [data-slot="issues-table"] th {
+  color: var(--si-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--si-border);
+}
+[data-component="security-issues"] [data-slot="issues-table"] :is(th, td) {
+  padding: 6px 8px;
+}
+[data-component="security-issues"] [data-slot="issue-row"] {
+  border-bottom: 1px solid var(--si-border);
+}
+[data-component="security-issues"] [data-slot="issue-row"][aria-selected="true"] {
+  background: var(--si-layer);
+}
+[data-component="security-issues"] [data-slot="issue-open"] {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  color: inherit;
+}
+[data-component="security-issues"] [data-slot="issue-open"]:hover {
+  text-decoration: underline;
+}
+[data-component="security-issues"] [data-slot="inferred-badge"] {
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px dashed var(--si-muted);
+  border-radius: 999px;
+  color: var(--si-muted);
+  font-size: 11px;
+}
+[data-component="security-issues"] :is([data-slot="issues-loading"], [data-slot="issues-error"]) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  color: var(--si-muted);
+}
+[data-component="security-issues"] [data-slot="issues-empty"] {
+  border: 1px dashed var(--si-border);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+}
+[data-component="security-issues"] :is([data-slot="issues-empty"] p, [data-slot="issues-muted"], [data-slot="issues-hint"]) {
+  color: var(--si-muted);
+}
+[data-component="security-issues"] [data-slot="issues-more"] {
+  margin-top: 8px;
+}
+[data-component="security-issues"] [data-slot="issue-detail"] {
+  border: 1px solid var(--si-border);
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 0;
+}
+[data-component="security-issues"] [data-slot="issue-detail"] [data-slot="issue-title"] {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 8px 0;
+}
+[data-component="security-issues"] [data-slot="issue-meta"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 8px;
+  color: var(--si-muted);
+}
+[data-component="security-issues"] [data-slot="issue-path"] {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid var(--si-border);
+}
+[data-component="security-issues"] [data-slot="issue-hop"] {
+  padding: 4px 0 8px;
+}
+[data-component="security-issues"] [data-slot="issue-hop"][data-inferred="true"] {
+  border-left: 2px dashed var(--si-muted);
+  margin-left: -14px;
+  padding-left: 12px;
+}
+[data-component="security-issues"] [data-slot="hop-head"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+[data-component="security-issues"] [data-slot="hop-relation"] {
+  color: var(--si-muted);
+}
+[data-component="security-issues"] [data-slot="hop-evidence"] {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  color: var(--si-muted);
+}
+[data-component="security-issues"] [data-slot="issue-members"] {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+[data-component="security-issues"] [data-slot="issue-members"] li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+[data-component="security-issues"] [data-slot="member-link"] {
+  text-decoration: underline;
+}

@@ -1,6 +1,6 @@
 import { createMemo, For, Show } from "solid-js"
 import { useLanguage } from "@/runtime/i18n/language"
-import { resourceTypeLabelKey, severityLabelKey } from "./badges"
+import { categoryLabelKey, severityLabelKey, statusLabelKey, typeLabelKey } from "./badges"
 import { Glyph } from "./glyph"
 import type { FilterState, ViewMode } from "./model"
 import { Segmented } from "./segmented"
@@ -11,7 +11,6 @@ type Chip = { key: string; label: string; remove: () => void }
 /** The applied filters as removable chips, plus the Table and Treemap switch, which is always visible. */
 export function ActiveFilters(props: {
   filters: FilterState
-  componentLabel?: string
   view: ViewMode
   onChange: (patch: Partial<FilterState>) => void
   onClear: () => void
@@ -42,49 +41,27 @@ export function ActiveFilters(props: {
               remove: () => props.onChange({ severity: "all" }),
             },
           ]),
-      ...(filters.hasFix
+      ...filters.types.map((value) => ({
+        key: `type-${value}`,
+        label: language.t("security.findings.chip.type", { value: language.t(typeLabelKey(value)) }),
+        remove: () => props.onChange({ types: filters.types.filter((item) => item !== value) }),
+      })),
+      ...filters.statuses.map((value) => ({
+        key: `status-${value}`,
+        label: language.t("security.findings.chip.status", { value: language.t(statusLabelKey(value)) }),
+        remove: () => props.onChange({ statuses: filters.statuses.filter((item) => item !== value) }),
+      })),
+      ...filters.categories.map((value) => ({
+        key: `cat-${value}`,
+        label: language.t("security.findings.chip.category", { value: language.t(categoryLabelKey(value)) }),
+        remove: () => props.onChange({ categories: filters.categories.filter((item) => item !== value) }),
+      })),
+      ...(filters.asset
         ? [
             {
-              key: "fix",
-              label: language.t("security.findings.filter.hasFix"),
-              remove: () => props.onChange({ hasFix: false }),
-            },
-          ]
-        : []),
-      ...(filters.hasExploit
-        ? [
-            {
-              key: "exploit",
-              label: language.t("security.findings.filter.hasExploit"),
-              remove: () => props.onChange({ hasExploit: false }),
-            },
-          ]
-        : []),
-      ...filters.resourceTypes.map((value) => ({
-        key: `res-${value}`,
-        label: language.t("security.findings.chip.resource", { value: language.t(resourceTypeLabelKey(value)) }),
-        remove: () => props.onChange({ resourceTypes: filters.resourceTypes.filter((item) => item !== value) }),
-      })),
-      ...filters.dependencyTypes.map((value) => ({
-        key: `dep-${value}`,
-        label: language.t("security.findings.chip.dependency", {
-          value: language.t(`security.findings.dependency.${value}`),
-        }),
-        remove: () => props.onChange({ dependencyTypes: filters.dependencyTypes.filter((item) => item !== value) }),
-      })),
-      ...filters.relatedSeverities.map((value) => ({
-        key: `rel-${value}`,
-        label: language.t("security.findings.chip.related", { value: language.t(severityLabelKey(value)) }),
-        remove: () => props.onChange({ relatedSeverities: filters.relatedSeverities.filter((item) => item !== value) }),
-      })),
-      ...(filters.component
-        ? [
-            {
-              key: "component",
-              label: language.t("security.findings.chip.component", {
-                value: props.componentLabel ?? filters.component,
-              }),
-              remove: () => props.onChange({ component: undefined }),
+              key: "asset",
+              label: language.t("security.findings.chip.asset", { value: filters.asset }),
+              remove: () => props.onChange({ asset: undefined }),
             },
           ]
         : []),

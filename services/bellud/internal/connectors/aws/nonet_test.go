@@ -65,3 +65,7 @@ func (n noNetwork) Listeners(_ context.Context, r, _ string) ([]Listener, error)
 func (n noNetwork) TargetHealth(_ context.Context, r, _ string) ([]TargetHealth, error) {
 	return nil, n.call("target-health", r)
 }
+
+func (n noNetwork) BucketSecurity(context.Context, string, string) (DataSecurity, error) {
+	return unknownSecurity(), nil
+}

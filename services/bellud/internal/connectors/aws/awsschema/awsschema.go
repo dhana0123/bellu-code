@@ -111,6 +111,8 @@ const (
 	TypeRecord     = "route53:record"
 )
 
+const dataStoreAttrs = " Data store attributes (s3:bucket and rds:instance): encryption_at_rest, encryption_in_transit, public_access, backup and logging, each enabled, disabled or unknown; unknown means the data was not readable. missing_data (string, comma-separated API calls that were denied or failed)."
+
 // Documented scalar attributes read by lenses and Authorization_Analysis.
 const (
 	resourceAttrs = " Scalar attributes read by lenses: resource_type (string, the service type name, one of the declared types); region (string, an AWS region id such as us-east-1); " +
@@ -118,8 +120,17 @@ const (
 	sgRuleAttrs = " Attributes: direction (ingress or egress); from_port and to_port (integer 0..65535); internet_open (true or false); prefix_list (string, a prefix list id)."
 )
 
+// typ declares a resource type. The registry matches type values exactly, so
+// the iam:*, rds:* and similar overrides of the design table are enumerated
+// from the collected types; ovTyp carries the override.
 func typ(name, category, desc string) schema.TypeDeclaration {
 	return schema.TypeDeclaration{Name: name, Category: category, Description: desc}
+}
+
+func ovTyp(name, category, desc string, ov schema.OverviewCategory) schema.TypeDeclaration {
+	t := typ(name, category, desc)
+	t.Overview = ov
+	return t
 }
 
 // Declaration returns the aws source declaration.
@@ -130,11 +141,13 @@ func Declaration() schema.SourceDeclaration {
 		Kinds: []schema.KindDeclaration{
 			{
 				Name:        KindAccount,
+				Overview:    schema.OvCloud,
 				Identity:    []string{"connection", "account_id"},
 				Description: "An AWS account that a connection reads. Attribute rules_truncated (string: true) marks an account whose security group rules were cut short; truncated (string: true) marks a cut-short collection.",
 			},
 			{
 				Name:          KindResource,
+				Overview:      schema.OvCloud,
 				Identity:      []string{"connection", "arn"},
 				Description:   "An AWS resource identified by its ARN. The resource_type attribute says which service type it is." + resourceAttrs + " rules_truncated (string: true) marks a security group whose rules were cut short.",
 				Discriminator: DiscriminatorResourceType,
@@ -173,16 +186,16 @@ func Declaration() schema.SourceDeclaration {
 					typ(TypeEKSNodegroup, CatCompute, "An EKS node group."),
 					typ(TypeLambda, CatCompute, "A Lambda function."),
 					typ(TypeLambdaLayer, CatCompute, "A Lambda layer."),
-					typ(TypeUser, CatIdentity, "An IAM user."),
-					typ(TypeGroup, CatIdentity, "An IAM group."),
-					typ(TypeRole, CatIdentity, "An IAM role."),
-					typ(TypeInstanceProfile, CatIdentity, "An IAM instance profile."),
-					typ(TypePolicy, CatIdentity, "A managed IAM policy."),
-					typ(TypeInlinePolicy, CatIdentity, "An inline IAM policy."),
-					typ(TypeBucket, CatData, "An S3 bucket."),
-					typ(TypeRDSInstance, CatData, "An RDS database instance."),
-					typ(TypeRDSCluster, CatData, "An RDS database cluster."),
-					typ(TypeDynamoDBTable, CatData, "A DynamoDB table."),
+					ovTyp(TypeUser, CatIdentity, "An IAM user.", schema.OvIdentity),
+					ovTyp(TypeGroup, CatIdentity, "An IAM group.", schema.OvIdentity),
+					ovTyp(TypeRole, CatIdentity, "An IAM role.", schema.OvIdentity),
+					ovTyp(TypeInstanceProfile, CatIdentity, "An IAM instance profile.", schema.OvIdentity),
+					ovTyp(TypePolicy, CatIdentity, "A managed IAM policy.", schema.OvIdentity),
+					ovTyp(TypeInlinePolicy, CatIdentity, "An inline IAM policy.", schema.OvIdentity),
+					ovTyp(TypeBucket, CatData, "An S3 bucket."+dataStoreAttrs, schema.OvData),
+					ovTyp(TypeRDSInstance, CatData, "An RDS database instance."+dataStoreAttrs, schema.OvData),
+					ovTyp(TypeRDSCluster, CatData, "An RDS database cluster.", schema.OvData),
+					ovTyp(TypeDynamoDBTable, CatData, "A DynamoDB table.", schema.OvData),
 					typ(TypeVolume, CatData, "An EBS volume."),
 					typ(TypeSnapshot, CatData, "An EBS snapshot."),
 					typ(TypeEFSFileSystem, CatData, "An EFS file system."),
@@ -204,16 +217,19 @@ func Declaration() schema.SourceDeclaration {
 			},
 			{
 				Name:        KindSGRule,
+				Overview:    schema.OvNetwork,
 				Identity:    []string{"connection", "sg", "rule_id"},
 				Description: "One security group rule. sg is the security group ARN." + sgRuleAttrs,
 			},
 			{
 				Name:        KindCIDR,
+				Overview:    schema.OvNetwork,
 				Identity:    []string{"connection", "cidr"},
 				Description: "A CIDR block that a security group rule names as its peer. internet_open (true or false) is true for 0.0.0.0/0 and ::/0.",
 			},
 			{
 				Name:          KindPolicyStatement,
+				Overview:      schema.OvIdentity,
 				Identity:      []string{"connection", "policy", "statement_id"},
 				Description:   "One statement of an IAM policy or role. policy is the policy or role ARN. statement_kind is statement, trust, or boundary. Registered only; no collector emits it yet.",
 				Discriminator: DiscriminatorStatementKind,

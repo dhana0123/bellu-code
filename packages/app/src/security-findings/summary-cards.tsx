@@ -1,9 +1,9 @@
 import { For, Show, type JSX } from "solid-js"
 import { useLanguage } from "@/runtime/i18n/language"
-import { MiddleTruncate, ResourceGlyph, RiskChip, TechBadge, severityLabelKey } from "./badges"
+import { MiddleTruncate, RiskChip, severityLabelKey } from "./badges"
 import type { RankedGroup } from "./filters"
 import { Glyph } from "./glyph"
-import { SEVERITIES, type Component, type FilterState, type Resource, type Severity } from "./model"
+import { SEVERITIES, type FilterState, type Severity } from "./model"
 
 /**
  * Three cards that follow the active filters. The severity card ignores the severity filter itself, so choosing
@@ -11,9 +11,12 @@ import { SEVERITIES, type Component, type FilterState, type Resource, type Sever
  */
 export function SummaryCards(props: {
   severity: FilterState["severity"]
-  counts: Record<Severity, number>
-  components: RankedGroup<Component>[]
-  resources: RankedGroup<Resource>[]
+  /** A severity the server was not asked for has no count. */
+  counts: Partial<Record<Severity, number>>
+  /** The server has more rows than are loaded, so each count is a lower bound. */
+  more: boolean
+  rules: RankedGroup[]
+  assets: RankedGroup[]
   onSeverity: (severity: Severity) => void
 }) {
   const language = useLanguage()
@@ -31,7 +34,7 @@ export function SummaryCards(props: {
                   onClick={() => props.onSeverity(severity)}
                 >
                   <span data-slot="bar" aria-hidden="true" />
-                  <strong>{props.counts[severity].toLocaleString()}</strong>
+                  <strong>{count(props.counts[severity], props.more)}</strong>
                   <span>{language.t(severityLabelKey(severity))}</span>
                 </button>
               </li>
@@ -39,17 +42,16 @@ export function SummaryCards(props: {
           </For>
         </ul>
       </Card>
-      <Card title={language.t("security.findings.cards.components")}>
-        <Show when={props.components.length > 0} fallback={<Empty />}>
+      <Card title={language.t("security.findings.cards.rules")}>
+        <Show when={props.rules.length > 0} fallback={<Empty />}>
           <ul data-slot="rank-list" data-scrollable>
-            <For each={props.components}>
+            <For each={props.rules}>
               {(group) => (
                 <li>
-                  <TechBadge tech={group.item.tech} />
+                  <Glyph name="bug" class="sf-icon" />
                   <span data-slot="rank-name" title={group.item.name}>
                     {group.item.name}
                   </span>
-                  <span data-slot="rank-version">{group.item.version}</span>
                   <Chips critical={group.critical} high={group.high} />
                 </li>
               )}
@@ -57,13 +59,13 @@ export function SummaryCards(props: {
           </ul>
         </Show>
       </Card>
-      <Card title={language.t("security.findings.cards.resources")}>
-        <Show when={props.resources.length > 0} fallback={<Empty />}>
+      <Card title={language.t("security.findings.cards.assets")}>
+        <Show when={props.assets.length > 0} fallback={<Empty />}>
           <ul data-slot="rank-list" data-scrollable>
-            <For each={props.resources}>
+            <For each={props.assets}>
               {(group) => (
                 <li>
-                  <ResourceGlyph type={group.item.type} />
+                  <Glyph name="cloud" class="sf-icon" />
                   <span data-slot="rank-name">
                     <MiddleTruncate text={group.item.name} />
                   </span>
@@ -78,6 +80,10 @@ export function SummaryCards(props: {
   )
 }
 
+function count(value: number | undefined, more: boolean) {
+  if (value === undefined) return "–"
+  return `${value.toLocaleString()}${more ? "+" : ""}`
+}
 function Card(props: { title: string; children: JSX.Element }) {
   const language = useLanguage()
   return (

@@ -140,6 +140,7 @@ var (
 		"name": true, "state": true, "tag_count": true, "instance_type": true, "created_at": true,
 		"runtime": true, "engine": true, "account_id": true, "alias": true, "regions": true,
 		"canonical_key": true, "internet_exposed": true,
+		"encryption_at_rest": true, "encryption_in_transit": true, "public_access": true, "backup": true, "logging": true, "missing_data": true,
 	}
 )
 

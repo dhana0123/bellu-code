@@ -1,0 +1,154 @@
+{
+  "id": "cis_aws",
+  "version": "1",
+  "rules": [
+    {
+      "id": "s3_public_access",
+      "title": "S3 bucket allows public access",
+      "description": "The S3 bucket is publicly accessible; Block Public Access is not fully enabled.",
+      "severity": "high",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Enable all four S3 Block Public Access settings on the bucket and the account.",
+      "benchmarks": [
+        "CIS-AWS-3.0:2.1.4"
+      ],
+      "rego": "s3_public_access.rego"
+    },
+    {
+      "id": "s3_encryption_at_rest",
+      "title": "S3 bucket is not encrypted at rest",
+      "description": "Default encryption is not enabled on the S3 bucket.",
+      "severity": "medium",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Enable default SSE-S3 or SSE-KMS encryption on the bucket.",
+      "benchmarks": [
+        "CIS-AWS-1.4:2.1.1"
+      ],
+      "rego": "s3_encryption_at_rest.rego"
+    },
+    {
+      "id": "s3_encryption_in_transit",
+      "title": "S3 bucket allows unencrypted transport",
+      "description": "The S3 bucket does not require HTTPS.",
+      "severity": "medium",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Add a bucket policy that denies requests where aws:SecureTransport is false.",
+      "benchmarks": [
+        "CIS-AWS-3.0:2.1.1"
+      ],
+      "rego": "s3_encryption_in_transit.rego"
+    },
+    {
+      "id": "s3_logging",
+      "title": "S3 bucket access logging is disabled",
+      "description": "Server access logging is not enabled on the S3 bucket.",
+      "severity": "low",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Enable server access logging to a dedicated log bucket.",
+      "benchmarks": [
+        "CIS-AWS-1.4:3.6"
+      ],
+      "rego": "s3_logging.rego"
+    },
+    {
+      "id": "rds_encrypted",
+      "title": "RDS instance is not encrypted",
+      "description": "Storage encryption is not enabled on the RDS instance.",
+      "severity": "high",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Create an encrypted snapshot copy and restore it as an encrypted instance.",
+      "benchmarks": [
+        "CIS-AWS-3.0:2.2.1"
+      ],
+      "rego": "rds_encrypted.rego"
+    },
+    {
+      "id": "rds_not_public",
+      "title": "RDS instance is publicly accessible",
+      "description": "The RDS instance is publicly accessible.",
+      "severity": "high",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Set PubliclyAccessible to false and place the instance in private subnets.",
+      "benchmarks": [
+        "CIS-AWS-3.0:2.2.3"
+      ],
+      "rego": "rds_not_public.rego"
+    },
+    {
+      "id": "rds_backups",
+      "title": "RDS instance has no automated backups",
+      "description": "Automated backups are disabled on the RDS instance.",
+      "severity": "medium",
+      "category": "data_security",
+      "applies_to": [
+        "aws_resource"
+      ],
+      "remediation": "Set the backup retention period to at least 7 days.",
+      "benchmarks": [],
+      "rego": "rds_backups.rego"
+    },
+    {
+      "id": "sg_ssh_open",
+      "title": "Security group allows 0.0.0.0/0 to SSH (22)",
+      "description": "An ingress security group rule open to the internet covers SSH (22).",
+      "severity": "high",
+      "category": "network_exposure",
+      "applies_to": [
+        "aws_sg_rule"
+      ],
+      "remediation": "Restrict the source CIDR to known administrative addresses or use a bastion/SSM.",
+      "benchmarks": [
+        "CIS-AWS-3.0:5.2"
+      ],
+      "rego": "sg_ssh_open.rego"
+    },
+    {
+      "id": "sg_rdp_open",
+      "title": "Security group allows 0.0.0.0/0 to RDP (3389)",
+      "description": "An ingress security group rule open to the internet covers RDP (3389).",
+      "severity": "high",
+      "category": "network_exposure",
+      "applies_to": [
+        "aws_sg_rule"
+      ],
+      "remediation": "Restrict the source CIDR to known administrative addresses or use a bastion/SSM.",
+      "benchmarks": [
+        "CIS-AWS-3.0:5.2"
+      ],
+      "rego": "sg_rdp_open.rego"
+    },
+    {
+      "id": "iam_admin_policy",
+      "title": "IAM policy grants *:* administrative access",
+      "description": "An Allow statement grants all actions on all resources.",
+      "severity": "high",
+      "category": "identity",
+      "applies_to": [
+        "aws_policy_statement"
+      ],
+      "remediation": "Replace the statement with least-privilege permissions.",
+      "benchmarks": [
+        "CIS-AWS-3.0:1.16"
+      ],
+      "rego": "iam_admin_policy.rego"
+    }
+  ]
+}
