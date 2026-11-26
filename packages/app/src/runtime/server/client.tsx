@@ -11,6 +11,9 @@ import { createRefCountMap } from "@/runtime/server/refcount"
 import { createRequestQueue } from "@/runtime/server/request-queue"
 import { ServerScope } from "@/runtime/server/scope"
 import { useServer } from "./current"
+import { createGroupUnavailableReporter, unavailableApiGroup } from "./group-unavailable"
+import { showToast } from "@/shell/notifications/toast"
+import { useLanguage } from "@/runtime/i18n/language"
 import { createEndpointSyncState, transitionEndpointSync, type EndpointSyncEvent } from "./server-sync/endpoint-machine"
 
 type BelluCodeEventMap = { [Type in BelluCodeEvent["type"]]: Extract<BelluCodeEvent, { type: Type }> }
@@ -83,7 +86,19 @@ const unready = { url: "http://127.0.0.1:0" }
 
 function createServerSdkContextBase(server: ServerConnection.Any, scope: ServerScope): ServerSDKBase {
   const platform = usePlatform()
-  const transport = createServerTransport({ http: ServerConnection.http(server) ?? unready, fetch: platform.fetch })
+  const language = useLanguage()
+  const transport = createServerTransport({
+    http: ServerConnection.http(server) ?? unready,
+    fetch: platform.fetch,
+    // Shown once per group and server, as a toast, so the view that made the call keeps its state and unsaved input.
+    onGroupUnavailable: createGroupUnavailableReporter((group) =>
+      showToast({
+        variant: "error",
+        title: language.t("error.apiGroupUnavailable.title", { group }),
+        description: language.t("error.apiGroupUnavailable.description", { group }),
+      }),
+    ),
+  })
   const media = createMediaCache(() => transport.api)
   const serverKey = ServerConnection.key(server)
   setMediaBlobLoader(serverKey, (uri) => media.load(uri))
@@ -228,15 +243,29 @@ export interface ServerTransport {
 export function createServerTransport(input: {
   http: ServerConnection.HttpBase
   fetch?: typeof globalThis.fetch
+  onGroupUnavailable?: (group: string) => void
 }): ServerTransport {
   const queue = createRequestQueue({ fetch: input.fetch ?? globalThis.fetch })
+  const notify = input.onGroupUnavailable
+  const fetch: typeof globalThis.fetch = notify
+    ? Object.assign(
+        async (...args: Parameters<typeof globalThis.fetch>) => {
+          const response = await queue.fetch(...args)
+          const url = args[0] instanceof Request ? args[0].url : String(args[0])
+          const group = await unavailableApiGroup(url, response).catch(() => undefined)
+          if (group) notify(group)
+          return response
+        },
+        { preconnect: queue.fetch.preconnect },
+      )
+    : queue.fetch
 
   // Keeps the endpoint as plain values: a plugin's endpoint can be a store proxy that already reads the next password,
   // and the client built here keeps the one it started with.
   const build = (input: ServerConnection.HttpBase) => {
     const http = { url: input.url, password: input.password }
 
-    return { http, api: createApiForServer({ server: http, fetch: queue.fetch }) }
+    return { http, api: createApiForServer({ server: http, fetch }) }
   }
 
   const state = { current: build(input.http) }

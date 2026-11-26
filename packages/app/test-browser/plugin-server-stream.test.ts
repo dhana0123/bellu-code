@@ -38,6 +38,10 @@ test("a plugin server's event stream follows the endpoint the plugin reports", a
 
   mock.module("@/runtime/platform/platform", () => ({ ...real, usePlatform: () => ({ fetch }) }))
 
+  // The app always mounts the SDK under `LanguageProvider` (AppBaseProviders wraps AppInterface in entry.tsx and
+  // desktop-app.tsx); the toast text is the only thing the SDK reads from it.
+  const language = await import("@/runtime/i18n/language")
+  mock.module("@/runtime/i18n/language", () => ({ ...language, useLanguage: () => ({ t: (key: string) => key }) }))
   const { createServerSdkContext } = await import("@/runtime/server/client")
 
   // A server restored from the plugin's last inventory: not ready yet, and no `reconnect`.

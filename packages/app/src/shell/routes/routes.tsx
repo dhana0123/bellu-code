@@ -14,6 +14,7 @@ import { SettingsSurfaceProvider } from "@/settings/surface"
 import Shell from "@/shell/shell"
 import { requireServerKey } from "./session"
 import { PluginAttachment } from "@/runtime/plugin/root"
+import { RouteBoundary } from "./route-boundary"
 
 export const File = lazy(() => import("@bellucode/session-ui/file").then((module) => ({ default: module.File })))
 
@@ -51,32 +52,65 @@ export function preloadRoute(url: string) {
   return Promise.resolve()
 }
 
+function HomeScreen() {
+  return (
+    <RouteBoundary screen={{ key: "home.title" }}>
+      <Home />
+    </RouteBoundary>
+  )
+}
+function SettingsRoute() {
+  return (
+    <RouteBoundary screen={{ key: "sidebar.settings" }}>
+      <SettingsScreen />
+    </RouteBoundary>
+  )
+}
+function SecurityScreen() {
+  return (
+    <RouteBoundary screen={{ key: "home.security" }}>
+      <SecurityRoute />
+    </RouteBoundary>
+  )
+}
+function NewSessionRoute() {
+  return (
+    <RouteBoundary screen={{ key: "command.session.new" }}>
+      <DraftRoute />
+    </RouteBoundary>
+  )
+}
+function ComponentsRoute() {
+  return <RouteBoundary screen={{ text: "Components" }}>{ComponentsLab && <ComponentsLab />}</RouteBoundary>
+}
 export function AppRoutes() {
   return (
     <Route component={AppLayout}>
-      <Route path="/" component={Home} />
-      <Route path="/settings" component={SettingsScreen} />
-      <Route path="/security/:page" component={SecurityRoute} />
+      <Route path="/" component={HomeScreen} />
+      <Route path="/settings" component={SettingsRoute} />
+      <Route path="/security/:page" component={SecurityScreen} />
       <Route
         path="/server/:serverKey/session/:id"
         component={() => (
           <SessionRouteFrame>
-            <Suspense
-              fallback={
-                <div class="flex min-h-0 flex-1 px-[var(--shell-inline-inset,8px)] pb-[var(--shell-bottom-inset,8px)] pt-[var(--shell-top-inset,8px)]">
-                  <SessionPanelFrame raised />
-                </div>
-              }
-            >
-              <TargetServerRoute>
-                <TargetSessionRouteContent />
-              </TargetServerRoute>
-            </Suspense>
+            <RouteBoundary screen={{ key: "session.tab.session" }}>
+              <Suspense
+                fallback={
+                  <div class="flex min-h-0 flex-1 px-[var(--shell-inline-inset,8px)] pb-[var(--shell-bottom-inset,8px)] pt-[var(--shell-top-inset,8px)]">
+                    <SessionPanelFrame raised />
+                  </div>
+                }
+              >
+                <TargetServerRoute>
+                  <TargetSessionRouteContent />
+                </TargetServerRoute>
+              </Suspense>
+            </RouteBoundary>
           </SessionRouteFrame>
         )}
       />
-      <Route path="/new-session" component={DraftRoute} />
-      {ComponentsLab && <Route path="/components" component={ComponentsLab} />}
+      <Route path="/new-session" component={NewSessionRoute} />
+      {ComponentsLab && <Route path="/components" component={ComponentsRoute} />}
     </Route>
   )
 }

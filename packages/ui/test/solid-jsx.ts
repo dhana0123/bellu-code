@@ -6,6 +6,8 @@ import { plugin } from "bun"
 const transpiler = new Bun.Transpiler({
   loader: "tsx",
   trimUnusedImports: true,
+  // Without this the automatic runtime emits `jsx(...)` calls but no import for them.
+  autoImportJSX: true,
   tsconfig: { compilerOptions: { jsx: "react-jsx", jsxImportSource: "solid-js/h" } },
 })
 
