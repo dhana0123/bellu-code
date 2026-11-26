@@ -64,6 +64,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "Berkas tidak dipilih melalui pemilih",
   "desktop.picker.error.sizeLimit": "Lampiran yang dipilih melebihi batas {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Pemeriksa ejaan",
+  "desktop.contextMenu.spellcheckLanguages": "Bahasa pemeriksa ejaan",
 
   "command.category.suggested": "Disarankan",
   "command.category.view": "Tampilan",
@@ -676,7 +678,7 @@ export const dict = {
   "desktop.menu.installCli": "Instal CLI...",
   "desktop.cli.installed.title": "CLI Terinstal",
   "desktop.cli.installed.message":
-    "CLI terinstal di {{path}}\n\nMulai ulang terminal untuk menggunakan perintah 'bellucode2'.",
+    "CLI terinstal di {{path}}\n\nMulai ulang terminal untuk menggunakan perintah 'bellucode'.",
   "desktop.cli.failed.title": "Instalasi Gagal",
   "desktop.cli.failed.message": "Gagal menginstal CLI: {{error}}",
   "command.project.copyID": "Salin ID Proyek",

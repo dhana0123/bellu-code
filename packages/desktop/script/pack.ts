@@ -4,6 +4,7 @@ import { cp, mkdir, readdir, rm } from "node:fs/promises"
 import path from "node:path"
 import { getConfig } from "../electron-builder.config"
 import { getCurrentCli, resolveChannel } from "./utils"
+import { verifyResources } from "./verify-bundles"
 
 // Packages the built app (out/) for BELLUCODE_TARGET into dist/desktop at the repository root, unsigned:
 // macOS: the .app as a tarball. Windows: the unpacked app in app/, or with BELLUCODE_DESKTOP_APP, the NSIS
@@ -25,6 +26,10 @@ const app = process.env.BELLUCODE_DESKTOP_APP
 const flags = [`--${os}`, `--${cli.cpu}`, "--publish", "never", "--config", "electron-builder.config.ts"]
 
 process.chdir(dir)
+
+// Fail closed before deleting or writing anything, so earlier artifacts in dist/ survive a failed run.
+// A prepackaged app already carries its resources, so only check when electron-builder will copy them.
+if (!app) await verifyResources(path.join(dir, "resources"), cli.os)
 
 await rm("dist", { recursive: true, force: true })
 

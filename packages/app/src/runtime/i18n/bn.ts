@@ -65,6 +65,8 @@ export const dict = {
   "desktop.dialog.files": "ফাইল",
   "desktop.picker.error.notSelected": "ফাইল পিকার দ্বারা নির্বাচন করা হয়নি",
   "desktop.picker.error.sizeLimit": "নির্বাচিত সংযুক্তিগুলি {{limit}} MB সীমা অতিক্রম করেছে৷",
+  "desktop.contextMenu.spellcheck": "বানান পরীক্ষা",
+  "desktop.contextMenu.spellcheckLanguages": "বানান পরীক্ষার ভাষা",
   "command.category.suggested": "প্রস্তাবিত",
   "command.category.view": "দেখুন",
   "command.category.project": "প্রকল্প",
@@ -606,7 +608,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI ইনস্টল করুন...",
   "desktop.cli.installed.title": "CLI ইনস্টল হয়েছে",
   "desktop.cli.installed.message":
-    "CLI {{path}}-এ ইনস্টল হয়েছে\n\n'bellucode2' কমান্ড ব্যবহার করতে টার্মিনাল পুনরায় চালু করুন।",
+    "CLI {{path}}-এ ইনস্টল হয়েছে\n\n'bellucode' কমান্ড ব্যবহার করতে টার্মিনাল পুনরায় চালু করুন।",
   "desktop.cli.failed.title": "ইনস্টলেশন ব্যর্থ হয়েছে",
   "desktop.cli.failed.message": "CLI ইনস্টল করা যায়নি: {{error}}",
   "command.project.copyID": "প্রকল্পের ID কপি করুন",

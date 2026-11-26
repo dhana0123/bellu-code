@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import { Deferred, Effect, Fiber } from "effect"
+import { SidecarStartupError } from "./bellud-probe"
 import { BackgroundServiceMachine } from "./background-service-machine"
 
 const A = { url: "http://127.0.0.1:4100", password: "a" }
@@ -404,5 +405,19 @@ describe("background service driver", () => {
     )
 
     expect(result).toEqual({ first: A, next: B, published: [A.url, B.url] })
+  })
+
+  test("a sidecar startup failure rejects the waiting window with the fixed message", () => {
+    const r = reply()
+    const error = new SidecarStartupError("bellud exited (code 1) before it was ready")
+
+    const result = replay([
+      { type: "connection.requested", reply: r },
+      { type: "connect.failed", attempt: 1, error },
+    ])
+
+    expect(result.state).toEqual({ status: "failed", attempt: 1, error, last: undefined })
+    expect(result.commands.at(-1)).toEqual([{ type: "reject", replies: [r], error }])
+    expect(error.message).toBe("Sidecar server failed to start")
   })
 })

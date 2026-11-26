@@ -265,6 +265,8 @@ export const dict = {
   "desktop.dialog.files": "Bestanden",
   "desktop.picker.error.notSelected": "Er is geen bestand geselecteerd in de bestandskiezer",
   "desktop.picker.error.sizeLimit": "De geselecteerde bijlagen overschrijden de limiet van {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Spellingcontrole",
+  "desktop.contextMenu.spellcheckLanguages": "Talen voor spellingcontrole",
   "command.category.suggested": "Voorgesteld",
   "command.category.view": "Weergave",
   "command.category.project": "Project",
@@ -812,7 +814,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI installeren...",
   "desktop.cli.installed.title": "CLI geïnstalleerd",
   "desktop.cli.installed.message":
-    "CLI is geïnstalleerd in {{path}}.\n\nStart de terminal opnieuw om de opdracht 'bellucode2' te gebruiken.",
+    "CLI is geïnstalleerd in {{path}}.\n\nStart de terminal opnieuw om de opdracht 'bellucode' te gebruiken.",
   "desktop.cli.failed.title": "Installatie mislukt",
   "desktop.cli.failed.message": "Kan CLI niet installeren: {{error}}",
   "command.project.copyID": "Project-ID kopiëren",

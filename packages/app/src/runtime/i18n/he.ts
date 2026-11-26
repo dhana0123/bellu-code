@@ -60,6 +60,8 @@ export const dict = {
   "desktop.dialog.files": "קבצים",
   "desktop.picker.error.notSelected": "לא נבחר קובץ",
   "desktop.picker.error.sizeLimit": "הקבצים המצורפים שנבחרו חורגים ממגבלת ה-{{limit}} MB",
+  "desktop.contextMenu.spellcheck": "בדיקת איות",
+  "desktop.contextMenu.spellcheckLanguages": "שפות בדיקת איות",
   "command.category.suggested": "מוצע",
   "command.category.view": "הצג",
   "command.category.project": "פרויקט",
@@ -624,7 +626,7 @@ export const dict = {
   "desktop.menu.installCli": "התקנת CLI...",
   "desktop.cli.installed.title": "CLI הותקן",
   "desktop.cli.installed.message":
-    "CLI הותקן ב-\u2068{{path}}\u2069\n\nיש להפעיל מחדש את המסוף כדי להשתמש בפקודה 'bellucode2'.",
+    "CLI הותקן ב-\u2068{{path}}\u2069\n\nיש להפעיל מחדש את המסוף כדי להשתמש בפקודה 'bellucode'.",
   "desktop.cli.failed.title": "ההתקנה נכשלה",
   "desktop.cli.failed.message": "התקנת CLI נכשלה: \u2068{{error}}\u2069",
   "dialog.server.menu.hide": "הסתר מרשימת הפרויקטים",

@@ -741,6 +741,8 @@ export const dict = {
   "desktop.dialog.files": "Tiedostot",
   "desktop.picker.error.notSelected": "Tiedostovalitsimessa ei valittu tiedostoa",
   "desktop.picker.error.sizeLimit": "Valitut liitteet ylittävät {{limit}} Mt:n rajan",
+  "desktop.contextMenu.spellcheck": "Oikoluku",
+  "desktop.contextMenu.spellcheckLanguages": "Oikolukukielet",
   "command.logs.export": "Vie lokit",
 
   "provider.disconnect.toast.noCredentials.description":
@@ -802,7 +804,7 @@ export const dict = {
   "desktop.menu.installCli": "Asenna CLI...",
   "desktop.cli.installed.title": "CLI asennettu",
   "desktop.cli.installed.message":
-    "CLI asennettiin kohteeseen {{path}}.\n\nKäynnistä terminaali uudelleen, jotta voit käyttää 'bellucode2'-komentoa.",
+    "CLI asennettiin kohteeseen {{path}}.\n\nKäynnistä terminaali uudelleen, jotta voit käyttää 'bellucode'-komentoa.",
   "desktop.cli.failed.title": "Asennus epäonnistui",
   "desktop.cli.failed.message": "CLI:n asennus epäonnistui: {{error}}",
   "command.project.copyID": "Kopioi projektin tunnus",

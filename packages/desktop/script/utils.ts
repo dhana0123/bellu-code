@@ -1,6 +1,6 @@
 import { chmod, copyFile, mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
-import { dirname, join } from "node:path"
+import { delimiter, dirname, join, resolve } from "node:path"
 import { Option, Schema } from "effect"
 
 const CLI_VERSION = "dev"
@@ -57,6 +57,40 @@ export const CLI_BINARIES: Array<{ target: string; package: string; os: string; 
     cpu: "arm64",
   },
 ]
+
+// bellud is the Go sidecar server. It cross-compiles natively, so each CLI target maps to a GOOS/GOARCH pair.
+// In the packaged app it spawns the bundled bellucode-cli binary (via --cli-bin), so no bun or CLI sources ship.
+export const BELLUD_BINARIES: Array<{ target: string; goos: string; goarch: string }> = [
+  { target: "darwin-arm64", goos: "darwin", goarch: "arm64" },
+  { target: "darwin-x64", goos: "darwin", goarch: "amd64" },
+  { target: "windows-arm64", goos: "windows", goarch: "arm64" },
+  { target: "windows-x64", goos: "windows", goarch: "amd64" },
+  { target: "linux-x64", goos: "linux", goarch: "amd64" },
+  { target: "linux-arm64", goos: "linux", goarch: "arm64" },
+]
+
+export function getCurrentBellud(target = process.env.BELLUCODE_TARGET ?? nativeTarget()) {
+  const config = BELLUD_BINARIES.find((item) => item.target === target)
+  if (!config) throw new Error(`bellud configuration not available for target '${target}'`)
+  return config
+}
+
+// Builds services/bellud with the same flags as its plain `build` script (`go build -trimpath ./cmd/bellud`)
+// for the current target, writing the binary straight into resources/ so services/bellud/dist is untouched.
+export async function buildBelludToResources(root: string, dest = windowsify("resources/bellud")) {
+  const { $ } = await import("bun")
+  const bellud = getCurrentBellud()
+  const out = resolve(dest)
+  const env = {
+    ...process.env,
+    PATH: `${process.env.PATH ?? ""}${delimiter}/usr/local/go/bin`,
+    GOOS: bellud.goos,
+    GOARCH: bellud.goarch,
+  }
+  await $`go build -trimpath -o ${out} ./cmd/bellud`.cwd(root).env(env)
+  await prepareCli(out)
+  console.log(`Built bellud for ${bellud.goos}/${bellud.goarch} to ${dest}`)
+}
 
 function nativeTarget() {
   const { platform, arch } = process

@@ -66,6 +66,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "فائل چنندہ میں کوئی فائل منتخب نہیں کی گئی",
   "desktop.picker.error.sizeLimit": "منتخب منسلکات \u2068{{limit}}\u2069 MB کی حد سے زیادہ ہیں",
+  "desktop.contextMenu.spellcheck": "ہجے کی جانچ",
+  "desktop.contextMenu.spellcheckLanguages": "ہجے کی جانچ کی زبانیں",
 
   "command.category.suggested": "تجویز کردہ",
   "command.category.view": "دیکھیں",
@@ -615,7 +617,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI انسٹال کریں...",
   "desktop.cli.installed.title": "CLI انسٹال ہو گیا",
   "desktop.cli.installed.message":
-    "CLI کو \u2068{{path}}\u2069 پر انسٹال کر دیا گیا\n\n'bellucode2' کمانڈ استعمال کرنے کے لیے اپنا ٹرمینل دوبارہ شروع کریں۔",
+    "CLI کو \u2068{{path}}\u2069 پر انسٹال کر دیا گیا\n\n'bellucode' کمانڈ استعمال کرنے کے لیے اپنا ٹرمینل دوبارہ شروع کریں۔",
   "desktop.cli.failed.title": "تنصیب ناکام ہو گئی",
   "desktop.cli.failed.message": "CLI انسٹال نہیں ہو سکا: \u2068{{error}}\u2069",
   "command.project.copyID": "پروجیکٹ ID کاپی کریں",

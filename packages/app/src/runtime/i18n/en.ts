@@ -749,6 +749,8 @@ export const dict = {
   "common.dismiss": "Dismiss",
   "common.moreCountSuffix": " (+{{count}} more)",
   "common.requestFailed": "Request failed",
+  "error.apiGroupUnavailable.title": "{{group}} is unavailable",
+  "error.apiGroupUnavailable.description": "The server does not provide the {{group}} API. Check that the server is up to date and running the security service.",
   "common.moreOptions": "More options",
   "common.learnMore": "Learn more",
   "common.rename": "Rename",

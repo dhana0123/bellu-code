@@ -61,6 +61,8 @@ export const dict = {
   "desktop.dialog.files": "Fayllar",
   "desktop.picker.error.notSelected": "Seçim vasitəsində fayl seçilməyib",
   "desktop.picker.error.sizeLimit": "Seçilmiş əlavələr {{limit}} MB limitini aşır",
+  "desktop.contextMenu.spellcheck": "Orfoqrafiya yoxlanışı",
+  "desktop.contextMenu.spellcheckLanguages": "Orfoqrafiya yoxlanışı dilləri",
   "command.category.suggested": "Təklif olunan",
   "command.category.view": "Görünüş",
   "command.category.project": "Layihə",
@@ -610,7 +612,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI quraşdır...",
   "desktop.cli.installed.title": "CLI quraşdırıldı",
   "desktop.cli.installed.message":
-    "CLI {{path}} ünvanına quraşdırıldı\n\n'bellucode2' əmrindən istifadə etmək üçün terminalı yenidən başladın.",
+    "CLI {{path}} ünvanına quraşdırıldı\n\n'bellucode' əmrindən istifadə etmək üçün terminalı yenidən başladın.",
   "desktop.cli.failed.title": "Quraşdırma uğursuz oldu",
   "desktop.cli.failed.message": "CLI quraşdırmaq mümkün olmadı: {{error}}",
   "command.project.copyID": "Layihə ID-sini kopyala",

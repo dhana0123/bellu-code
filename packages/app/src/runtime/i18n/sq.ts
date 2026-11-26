@@ -61,6 +61,8 @@ export const dict = {
   "desktop.dialog.files": "Skedarët",
   "desktop.picker.error.notSelected": "Skedari nuk u zgjodh nga zgjedhësi",
   "desktop.picker.error.sizeLimit": "Bashkëngjitjet e zgjedhura tejkalojnë kufirin {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Kontrolli drejtshkrimor",
+  "desktop.contextMenu.spellcheckLanguages": "Gjuhët e kontrollit drejtshkrimor",
   "command.category.suggested": "Sugjeruar",
   "command.category.view": "Shiko",
   "command.category.project": "Projekti",
@@ -604,7 +606,7 @@ export const dict = {
   "desktop.menu.installCli": "Instalo CLI-në...",
   "desktop.cli.installed.title": "CLI-ja u instalua",
   "desktop.cli.installed.message":
-    "CLI-ja u instalua te {{path}}\n\nRinisni terminalin për të përdorur komandën 'bellucode2'.",
+    "CLI-ja u instalua te {{path}}\n\nRinisni terminalin për të përdorur komandën 'bellucode'.",
   "desktop.cli.failed.title": "Instalimi dështoi",
   "desktop.cli.failed.message": "Instalimi i CLI-së dështoi: {{error}}",
   "command.project.copyID": "Kopjo ID-në e projektit",

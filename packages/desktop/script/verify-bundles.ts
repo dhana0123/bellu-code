@@ -1,7 +1,32 @@
 import path from "node:path"
 import { Script, SourceTextModule } from "node:vm"
 
+import { stat } from "node:fs/promises"
+
 const targets = ["main", "preload"] as const
+
+// Resources that electron-builder copies into the installer. Packaging must not start without all of them.
+export function requiredResources(os: string) {
+  const ext = os === "win32" ? ".exe" : ""
+
+  return [`bellucode-cli${ext}`, `bellud${ext}`]
+}
+
+// Fails closed: throws naming every missing or empty required resource, before anything is packaged or
+// any previous artifact is touched.
+export async function verifyResources(resourcesDir: string, os: string) {
+  const missing: string[] = []
+
+  for (const name of requiredResources(os)) {
+    const file = path.join(resourcesDir, name)
+    const info = await stat(file).catch(() => undefined)
+
+    if (!info?.isFile() || info.size === 0) missing.push(file)
+  }
+
+  if (missing.length > 0)
+    throw new Error(`Missing required desktop resources (not packaging):\n${missing.map((f) => `  - ${f}`).join("\n")}`)
+}
 
 // Parses every built main and preload bundle without executing it, catching syntax and early
 // redeclaration errors even in chunks that the app loads lazily at runtime.

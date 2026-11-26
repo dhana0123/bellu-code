@@ -82,3 +82,26 @@ describe("desktop native ICU data", () => {
     }
   })
 })
+
+describe("desktop native locale dictionaries", () => {
+  test("every locale dict maps native keys to strings that match English placeholders and command name", async () => {
+    const native = new Set<string>(DESKTOP_NATIVE_KEYS)
+    for (const locale of DESKTOP_NATIVE_LOCALES) {
+      if (locale === "en") continue
+      const { dict } = (await import(`./${locale}`)) as { dict: Record<string, unknown> }
+      for (const key of Object.keys(dict).filter((key) => key.startsWith("desktop."))) {
+        expect(native.has(key), `${locale} has unknown native key ${key}`).toBe(true)
+      }
+      for (const key of DESKTOP_NATIVE_KEYS) {
+        const value = dict[key]
+        if (value === undefined) continue
+        expect(typeof value, `${locale} ${key}`).toBe("string")
+        const placeholders = (text: string) => (text.match(/\{\{[^{}]+\}\}/g) ?? []).sort()
+        expect(placeholders(value as string), `${locale} ${key} placeholders`).toEqual(
+          placeholders(DESKTOP_NATIVE_ENGLISH[key]),
+        )
+      }
+      expect(dict["desktop.cli.installed.message"] as string, `${locale} cli command`).toMatch(/bellucode(?!\d)/)
+    }
+  })
+})
