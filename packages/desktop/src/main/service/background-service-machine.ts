@@ -1,6 +1,7 @@
 export * as BackgroundServiceMachine from "./background-service-machine"
 
 import { Cause, Effect, Exit, FiberSet } from "effect"
+import { SidecarStartupError } from "./bellud-probe"
 import type { SidecarCredentials } from "./sidecar-credentials"
 
 type Data = SidecarCredentials.Data
@@ -285,7 +286,10 @@ export const make = Effect.fn("BackgroundServiceMachine.make")(function* (input:
           const error = Cause.squash(exit.cause)
           const event = failed(error instanceof Error ? error : new Error(String(error)))
 
-          return Effect.logError("v2 CLI background service failed", { event }).pipe(
+          return Effect.logError("v2 CLI background service failed", {
+            event,
+            detail: error instanceof SidecarStartupError ? error.detail : undefined,
+          }).pipe(
             Effect.andThen(Effect.sync(() => dispatch(event))),
           )
         }),
