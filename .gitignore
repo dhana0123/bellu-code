@@ -46,3 +46,4 @@ services/bellud/dist
 # build outputs
 services/bellud/bellud
 services/bellud/*.test
+.kiro/
