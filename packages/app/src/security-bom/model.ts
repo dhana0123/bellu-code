@@ -23,3 +23,12 @@ export const licenseCounts = (assets: readonly Pick<SbomSummary, "licenses">[]) 
   tally(assets.map((asset) => asset.licenses), licenseKey)
 export const exportName = (assetId: string, format: ExportFormat) =>
   `${assetId.replace(/[^\w.-]+/g, "_")}.${format === "spdx" ? "spdx" : "cdx"}.json`
+
+/** The AI-BOM and Cloud-BOM kinds; each maps to one `client.experimental.bom` pair. */
+export type DocumentKind = "ai" | "cloud"
+/** Property the server sets on a component whose license is on the deny list. */
+export const LICENSE_DENIED_PROPERTY = "bellu:license_denied"
+export const isLicenseDenied = (component: { properties?: Readonly<Record<string, string>> }) =>
+  component.properties?.[LICENSE_DENIED_PROPERTY] === "true"
+export const documentExportName = (kind: DocumentKind, format: ExportFormat) =>
+  `${kind}-bom.${format === "spdx" ? "spdx" : "cdx"}.json`

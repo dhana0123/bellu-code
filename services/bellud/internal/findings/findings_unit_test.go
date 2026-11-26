@@ -201,10 +201,12 @@ type countingIngest struct {
 }
 
 func (c countingIngest) Apply(ctx context.Context, b graph.Batch) (graph.Receipt, error) {
+	r, err := c.Ingest.Apply(ctx, b)
+	// Counted after the apply returns so a waiter that sees the count can read the batch.
 	if b.Collector == ProjectorCollector {
 		c.n.Add(1)
 	}
-	return c.Ingest.Apply(ctx, b)
+	return r, err
 }
 
 func startProjector(t *testing.T, debounce, maxWait time.Duration) (*Store, *countingEngine, graph.Engine, string) {

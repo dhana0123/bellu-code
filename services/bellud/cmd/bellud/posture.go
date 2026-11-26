@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	apirules "github.com/bellu/bellucode/services/bellud/internal/api/rules"
+	"github.com/bellu/bellucode/services/bellud/internal/bom"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -131,7 +132,7 @@ func (w *postureWiring) inputData() map[string]any {
 	if p := w.data.Load(); p != nil {
 		return *p
 	}
-	return nil
+	return bom.PostureData()
 }
 
 // refreshData reloads the classifications from the data_classification table.
@@ -161,6 +162,9 @@ func (w *postureWiring) refreshData(ctx context.Context) error {
 		return err
 	}
 	d := map[string]any{"classifications": cls}
+	for k, v := range bom.PostureData() {
+		d[k] = v
+	}
 	if len(w.allowedPorts) > 0 { // unset keeps the rule's default list
 		d["allowed_ports"] = w.allowedPorts
 	}

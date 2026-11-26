@@ -117,7 +117,7 @@ func TestManifestRegistersAndHasExpectedShape(t *testing.T) {
 			t.Errorf("%s is a write", op.Name)
 		}
 	}
-	if sso != 1 || assume != 1 || auth != 1 || len(e.Manifest.Operations) != 35 {
+	if sso != 1 || assume != 1 || auth != 1 || len(e.Manifest.Operations) != 40 {
 		t.Fatalf("sso=%d assume=%d auth=%d ops=%d", sso, assume, auth, len(e.Manifest.Operations))
 	}
 	// At least one region is required; only selected regions are reachable.

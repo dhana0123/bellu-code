@@ -242,6 +242,8 @@ func (b *builder) retain(rtype, sub string) {
 		}
 	case typeRoleAssignments:
 		b.b.Retain = append(b.b.Retain, batch.Retain{Kind: azureschema.KindRoleAssignment})
+	case typeAI:
+		b.retainAI(sub)
 	}
 }
 
@@ -342,6 +344,13 @@ func (c *collector) Collect(ctx context.Context) (graph.Batch, error) {
 			if err != nil {
 				return err
 			}
+			var accts map[string]armStorageAccount
+			storage := func() map[string]armStorageAccount {
+				if accts == nil {
+					accts = c.storageAccounts(ctx, sub)
+				}
+				return accts
+			}
 			for _, r := range res {
 				t, known := resourceTypes[strings.ToLower(r.Type)]
 				if !known {
@@ -352,6 +361,9 @@ func (c *collector) Collect(ctx context.Context) (graph.Batch, error) {
 				}
 				a := map[string]any{"azure_type": t, "location": r.Location,
 					"subscription_id": sub, "resource_group": resourceGroupOf(r.ID)}
+				for k, v := range c.dataAttrsFor(t, r.ID, storage) {
+					a[k] = v
+				}
 				if _, ok := b.add(azureschema.KindResource, "resource_id", r.ID, a); !ok {
 					continue
 				}
@@ -362,6 +374,8 @@ func (c *collector) Collect(ctx context.Context) (graph.Batch, error) {
 			}
 			return nil
 		})
+
+		try(typeAI, sub, func() error { return b.collectAI(ctx, sub) })
 
 		try(typeRoleAssignments, sub, func() error {
 			ras, err := list[armRoleAssignment](ctx, c, sub,

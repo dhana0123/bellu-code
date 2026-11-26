@@ -259,6 +259,8 @@ func findingType(r Rule) findings.Type {
 		return findings.TypeIdentityRisk
 	case r.Category == schema.OvData:
 		return findings.TypeDataExposure
+	case r.Category == schema.OvAI:
+		return findings.TypeAIRisk
 	}
 	return findings.TypeMisconfiguration
 }

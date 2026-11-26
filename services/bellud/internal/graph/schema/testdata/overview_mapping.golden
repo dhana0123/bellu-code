@@ -8,6 +8,10 @@ finding_type	misconfiguration	cloud_infrastructure
 finding_type	runtime_threat	runtime
 finding_type	secret	secrets
 finding_type	vulnerability	vulnerabilities
+kind	ai_agent	ai_security
+kind	ai_model	ai_security
+kind	ai_service	ai_security
+kind	ai_tool	ai_security
 kind	aws_account	cloud_infrastructure
 kind	aws_cidr	network_exposure
 kind	aws_policy_statement	identity
@@ -50,6 +54,7 @@ kind	k8s_service	network_exposure
 kind	k8s_serviceaccount	identity
 kind	k8s_workload	runtime
 kind	listening_port	runtime
+kind	mcp_server	ai_security
 kind	network	cloud_infrastructure
 kind	package	code_and_dependencies
 kind	posture_pack	cloud_infrastructure
@@ -58,6 +63,7 @@ kind	process	runtime
 kind	repository	code_and_dependencies
 kind	secret_finding	secrets
 kind	secret_ref	secrets
+kind	vector_store	ai_security
 kind	volume	cloud_infrastructure
 kind	vulnerability	vulnerabilities
 kind	workflow	code_and_dependencies

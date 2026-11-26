@@ -81,14 +81,14 @@ test("overview and findings endpoints map /api/experimental/<group>/* <-> experi
   ])
 })
 
-test("scans, sbom and bom endpoints map /api/experimental/<group>/* <-> experimental.<group>.*, with the experimental description", () => {
+test("scans, sbom, bom and ai endpoints map /api/experimental/<group>/* <-> experimental.<group>.*, with the experimental description", () => {
   const operations = Object.entries(OpenApi.fromApi(ClientApi).paths).flatMap(([path, item]) =>
     methods.flatMap((method) => {
       const operation = item[method]
       return operation ? [{ path, identifier: operation.operationId, description: operation.description }] : []
     }),
   )
-  for (const group of ["scans", "sbom", "bom"]) {
+  for (const group of ["scans", "sbom", "bom", "ai", "runtime"]) {
     const byPath = operations.filter(({ path }) => path === `/api/experimental/${group}` || path.startsWith(`/api/experimental/${group}/`))
     const byIdentifier = operations.filter(({ identifier }) => identifier.startsWith(`experimental.${group}.`))
     expect(byPath.length).toBeGreaterThan(0)
@@ -96,10 +96,19 @@ test("scans, sbom and bom endpoints map /api/experimental/<group>/* <-> experime
     for (const { description } of byPath) expect(description).toEndWith("Experimental: may change without compatibility guarantees.")
   }
   expect(
-    operations.filter(({ identifier }) => /^experimental\.(scans|sbom|bom)\./.test(identifier)).map(({ identifier }) => identifier).sort(),
+    operations.filter(({ identifier }) => /^experimental\.(scans|sbom|bom|ai|runtime)\./.test(identifier)).map(({ identifier }) => identifier).sort(),
   ).toEqual([
+    "experimental.ai.entities",
+    "experimental.ai.summary",
+    "experimental.bom.ai",
+    "experimental.bom.aiExport",
+    "experimental.bom.cloud",
+    "experimental.bom.cloudExport",
     "experimental.bom.sbomExport",
     "experimental.bom.sbomList",
+    "experimental.runtime.events",
+    "experimental.runtime.ingest",
+    "experimental.runtime.status",
     "experimental.sbom.export",
     "experimental.sbom.get",
     "experimental.sbom.list",
@@ -158,4 +167,17 @@ test("cve endpoints map /api/experimental/cve/* <-> experimental.cve.*, with the
     "experimental.cve.setMode",
     "experimental.cve.status",
   ])
+})
+test("identity endpoints map /api/experimental/identity/* <-> experimental.identity.*, with the experimental description", () => {
+  const operations = Object.entries(OpenApi.fromApi(ClientApi).paths).flatMap(([path, item]) =>
+    methods.flatMap((method) => {
+      const operation = item[method]
+      return operation ? [{ path, identifier: operation.operationId, description: operation.description }] : []
+    }),
+  )
+  const byPath = operations.filter(({ path }) => path.startsWith("/api/experimental/identity/"))
+  const byIdentifier = operations.filter(({ identifier }) => identifier.startsWith("experimental.identity."))
+  expect(byIdentifier.map(({ path }) => path).sort()).toEqual(byPath.map(({ path }) => path).sort())
+  for (const { description } of byPath) expect(description).toEndWith("Experimental: may change without compatibility guarantees.")
+  expect(byIdentifier.map(({ identifier }) => identifier).sort()).toEqual(["experimental.identity.paths"])
 })

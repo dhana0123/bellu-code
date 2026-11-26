@@ -12,6 +12,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/kubernetes/k8sschema"
 	"github.com/bellu/bellucode/services/bellud/internal/correlate/corrschema"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/schema"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schema/aischema"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/schema/codeschema"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/schema/coreschema"
 	"github.com/bellu/bellucode/services/bellud/internal/posture/postureschema"
@@ -29,6 +30,7 @@ func Sources() []schema.SourceDeclaration {
 		gcpschema.Declaration(),
 		azureschema.Declaration(),
 		k8sschema.Declaration(),
+		aischema.Declaration(),
 	}
 }
 

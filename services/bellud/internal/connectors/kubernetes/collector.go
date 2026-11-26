@@ -421,6 +421,12 @@ func (b *builder) object(rt resourceType, o object) {
 			imgs = append(imgs, ct.Image)
 		}
 		extra["images"] = imgs
+		for _, img := range imgs {
+			if engine := databaseEngine(img); engine != "" {
+				extra["data_store"], extra["database_engine"] = "true", engine
+				break
+			}
+		}
 	}
 
 	key := rt.kind + "/" + o.Metadata.UID
@@ -476,4 +482,25 @@ func (b *builder) retain(rt resourceType) {
 		r.Attrs = map[string]string{"role_kind": rt.roleKind}
 	}
 	b.b.Retain = append(b.b.Retain, r)
+}
+
+// databaseImages lists image repository names that run a database.
+var databaseImages = map[string]bool{
+	"postgres": true, "postgresql": true, "mysql": true, "mariadb": true, "mongo": true, "mongodb": true,
+	"redis": true, "memcached": true, "cassandra": true, "couchdb": true, "couchbase": true,
+	"cockroach": true, "clickhouse-server": true, "influxdb": true, "elasticsearch": true,
+	"opensearch": true, "neo4j": true, "mssql-server": true, "etcd": true, "valkey": true,
+}
+
+// databaseEngine returns the repository name when image is a known database
+// image, or an empty string. The registry host, tag and digest are ignored.
+func databaseEngine(image string) string {
+	ref, _, _ := strings.Cut(image, "@")
+	ref = ref[strings.LastIndex(ref, "/")+1:]
+	name, _, _ := strings.Cut(ref, ":")
+	name = strings.ToLower(name)
+	if databaseImages[name] {
+		return name
+	}
+	return ""
 }

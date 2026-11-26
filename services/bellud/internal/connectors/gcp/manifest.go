@@ -24,6 +24,7 @@ const (
 	StorageHost         = "storage.googleapis.com"
 	SQLAdminHost        = "sqladmin.googleapis.com"
 	IAMHost             = "iam.googleapis.com"
+	AIPlatformHost      = "aiplatform.googleapis.com"
 )
 
 // Operation names and paths.
@@ -76,10 +77,12 @@ func Manifest() manifest.Manifest {
 				Host: SQLAdminHost, Path: "/v1/projects/{p}/instances"},
 			{Name: "GET /v1/projects/{p}/serviceAccounts", Class: manifest.ClassRead, Method: "GET",
 				Host: IAMHost, Path: "/v1/projects/{p}/serviceAccounts"},
+			{Name: "GET /v1/projects/{p}/locations/-/endpoints", Class: manifest.ClassRead, Method: "GET",
+				Host: AIPlatformHost, Path: "/v1/projects/{p}/locations/-/endpoints"},
 			{Name: broker.GCPTokenOperation, Class: manifest.ClassAuth, Method: "POST", Query: true,
 				Host: TokenHost, Path: "/token", MaxBytes: 16 << 10, IssuesCredential: true},
 		},
-		Egress:   []string{ResourceManagerHost, TokenHost, ComputeHost, ContainerHost, StorageHost, SQLAdminHost, IAMHost},
+		Egress:   []string{ResourceManagerHost, TokenHost, ComputeHost, ContainerHost, StorageHost, SQLAdminHost, IAMHost, AIPlatformHost},
 		Entities: []string{"gcp_project"},
 	}
 }

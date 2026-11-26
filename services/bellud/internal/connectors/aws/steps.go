@@ -13,6 +13,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/identity"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schema/aischema"
 )
 
 // step is one unit of collection. Steps run in the order of collectSteps.
@@ -84,6 +85,8 @@ var collectSteps = []step{
 	{name: "iam", types: []string{awsschema.TypeRole}, global: true, run: (*run).iam},
 	{name: "lambda", types: []string{awsschema.TypeLambda}, run: (*run).lambda},
 	{name: "rds", types: []string{awsschema.TypeRDSInstance}, run: (*run).rds},
+	{name: "ai-sagemaker", kinds: []string{aischema.KindService}, run: (*run).sagemaker},
+	{name: "ai-bedrock-agent", kinds: []string{aischema.KindAgent}, run: (*run).bedrockAgents},
 }
 
 // Collect gathers the full current observation. A failing step is skipped,

@@ -99,6 +99,20 @@
   },
   {
     "method": "GET",
+    "path": "/api/experimental/ai/entities",
+    "operationId": "experimental.ai.entities",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/ai/summary",
+    "operationId": "experimental.ai.summary",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
     "path": "/api/experimental/artifacts",
     "operationId": "experimental.artifacts.list",
     "group": "experimental",
@@ -143,6 +157,34 @@
     "method": "GET",
     "path": "/api/experimental/artifacts/providers",
     "operationId": "experimental.artifacts.providers",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/ai",
+    "operationId": "experimental.bom.ai",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/ai/export",
+    "operationId": "experimental.bom.aiExport",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/cloud",
+    "operationId": "experimental.bom.cloud",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/cloud/export",
+    "operationId": "experimental.bom.cloudExport",
     "group": "experimental",
     "stream": false
   },
@@ -581,6 +623,13 @@
     "stream": false
   },
   {
+    "method": "GET",
+    "path": "/api/experimental/identity/paths",
+    "operationId": "experimental.identity.paths",
+    "group": "experimental",
+    "stream": false
+  },
+  {
     "method": "POST",
     "path": "/api/experimental/integration/wellknown",
     "operationId": "experimental.integration.wellknown.add",
@@ -745,6 +794,27 @@
     "method": "GET",
     "path": "/api/experimental/rules/packs/{id}/rules",
     "operationId": "experimental.rules.packRules",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/runtime/events",
+    "operationId": "experimental.runtime.events",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/runtime/ingest",
+    "operationId": "experimental.runtime.ingest",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/runtime/status",
+    "operationId": "experimental.runtime.status",
     "group": "experimental",
     "stream": false
   },

@@ -179,6 +179,23 @@ export const Catalog = Schema.Struct({
 }).annotate({ identifier: "Connectors.Catalog" })
 export interface Catalog extends Schema.Schema.Type<typeof Catalog> {}
 
+export const ConnectionGap = Schema.Struct({
+  resourceType: Schema.String,
+  scope: Schema.String,
+  reason: Schema.String,
+  detail: Schema.String,
+}).annotate({ identifier: "Connectors.ConnectionGap" })
+export interface ConnectionGap extends Schema.Schema.Type<typeof ConnectionGap> {}
+
+/** Per-connection collection state. Connect-only connectors report `not_available`. */
+export const ConnectionStatus = Schema.Struct({
+  id: Schema.String,
+  connectorId: Schema.String,
+  collection: Schema.Literals(["available", "not_available"]),
+  gaps: Schema.Array(ConnectionGap),
+}).annotate({ identifier: "Connectors.ConnectionStatus" })
+export interface ConnectionStatus extends Schema.Schema.Type<typeof ConnectionStatus> {}
+
 /** Flag/offline probe: key source name, persistence and warnings. */
 export const ServiceStatus = Schema.Struct({
   enabled: Schema.Boolean,
@@ -187,6 +204,7 @@ export const ServiceStatus = Schema.Struct({
   persistent: Schema.Boolean,
   locked: Schema.Boolean,
   warnings: Schema.Array(Schema.String),
+  connections: Schema.Array(ConnectionStatus),
 }).annotate({ identifier: "Connectors.ServiceStatus" })
 export interface ServiceStatus extends Schema.Schema.Type<typeof ServiceStatus> {}
 

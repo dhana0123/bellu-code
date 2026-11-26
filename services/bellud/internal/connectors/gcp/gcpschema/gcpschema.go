@@ -39,6 +39,8 @@ const edgeAttrs = " Edge attributes: evidence (string), confidence (extracted or
 
 const resourceAttrs = " Scalar attributes: gcp_type (string, one of the declared types); location (string, a region or zone); internet_exposed (string: true, partial, or false); truncated (string: true, set only when collection was cut short)."
 
+const dataStoreAttrs = " Attributes: encryption_at_rest, encryption_in_transit, public_access, backup, logging; each enabled, disabled or unknown (unknown: not in the list response)."
+
 func typ(name, category, desc string, ov schema.OverviewCategory) schema.TypeDeclaration {
 	return schema.TypeDeclaration{Name: name, Category: category, Description: desc, Overview: ov}
 }
@@ -71,8 +73,8 @@ func Declaration() schema.SourceDeclaration {
 					typ(TypeFirewall, CatNetwork, "A VPC firewall rule.", schema.OvNetwork),
 					typ(TypeInstance, CatCompute, "A Compute Engine instance.", ""),
 					typ(TypeGKECluster, CatCompute, "A Google Kubernetes Engine cluster.", ""),
-					typ(TypeBucket, CatData, "A Cloud Storage bucket.", schema.OvData),
-					typ(TypeSQLInstance, CatData, "A Cloud SQL instance.", schema.OvData),
+					typ(TypeBucket, CatData, "A Cloud Storage bucket."+dataStoreAttrs, schema.OvData),
+					typ(TypeSQLInstance, CatData, "A Cloud SQL instance."+dataStoreAttrs, schema.OvData),
 					typ(TypeServiceAccount, CatIdentity, "An IAM service account.", schema.OvIdentity),
 				},
 			},

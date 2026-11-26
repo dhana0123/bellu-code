@@ -1,4 +1,4 @@
-import type { SbomPackage, SbomSummary } from "@bellucode/client/promise"
+import type { BomDocument, SbomPackage, SbomSummary } from "@bellucode/client/promise"
 // Lifecycle of the SBOM tab. Every request carries an attempt id, and a result for another attempt changes nothing.
 export type AssetsState =
   | { type: "loading"; attempt: number }
@@ -88,4 +88,25 @@ export function exportTransition(state: ExportState, event: ExportEvent): Export
   if (event.type === "start") return state.type === "exporting" ? state : { type: "exporting", attempt: state.attempt + 1 }
   if (state.type !== "exporting" || state.attempt !== event.attempt) return state
   return event.type === "done" ? { type: "idle", attempt: state.attempt } : { type: "failed", attempt: state.attempt }
+}
+
+// Lifecycle of one AI-BOM or Cloud-BOM document tab. A result for another attempt changes nothing.
+export type DocumentState =
+  | { type: "loading"; attempt: number }
+  | { type: "ready"; attempt: number; document: BomDocument }
+  | { type: "failed"; attempt: number; reason: "unavailable" | "error" }
+  | { type: "disposed" }
+export type DocumentEvent =
+  | { type: "refresh" }
+  | { type: "loaded"; attempt: number; document: BomDocument }
+  | { type: "failed"; attempt: number; reason: "unavailable" | "error" }
+  | { type: "disposed" }
+export const documentInitial: DocumentState = { type: "loading", attempt: 1 }
+export function documentTransition(state: DocumentState, event: DocumentEvent): DocumentState {
+  if (state.type === "disposed") return state
+  if (event.type === "disposed") return { type: "disposed" }
+  if (event.type === "refresh") return state.type === "loading" ? state : { type: "loading", attempt: state.attempt + 1 }
+  if (state.type !== "loading" || state.attempt !== event.attempt) return state
+  if (event.type === "failed") return { type: "failed", attempt: state.attempt, reason: event.reason }
+  return { type: "ready", attempt: state.attempt, document: event.document }
 }

@@ -382,14 +382,7 @@ export type GraphIntelState = "not_configured" | "disabled" | "idle" | "syncing"
 
 export type GraphOverlayAction = "focus_node" | "walk_path" | "proposed_change"
 
-export type ConnectorsServiceStatus = {
-  enabled: boolean
-  offline: boolean
-  keySource: string
-  persistent: boolean
-  locked: boolean
-  warnings: Array<string>
-}
+export type ConnectorsConnectionGap = { resourceType: string; scope: string; reason: string; detail: string }
 
 export type ConnectorsConnectorID = string
 
@@ -577,6 +570,55 @@ export type CveMode = "db" | "graph" | "both"
 export type CveRef = { id: string; type: string; key: string; label: string }
 
 export type CveConflict = { DB: JsonValue; Graph: JsonValue }
+
+export type IdentityHop = { from: string; to: string; relation: string; evidence?: string; inferred?: boolean }
+
+export type BomComponent = {
+  type: string
+  name: string
+  version?: string | undefined
+  licenses?: Array<string> | undefined
+  locations?: Array<string> | undefined
+  properties?: { [x: string]: string } | undefined
+}
+
+export type BomGap = { provider: string; cause: string }
+
+export type BomFinding = {
+  ID: string
+  Rule: string
+  Severity: string
+  Component: string
+  Version: string
+  Message: string
+}
+
+export type AiEntity = { id: string; kind: string; name: string; attributes: { [x: string]: any } }
+
+export type AiSummary = { total: number; counts: { [x: string]: number } }
+
+export type RuntimeSensor = {
+  node: string
+  status: string
+  reason?: string
+  drops: { [x: string]: number }
+  rejectedTotal: number
+  seenAt: string
+}
+
+export type RuntimeStoredEvent = {
+  seq: number
+  ts: string
+  type: string
+  node: string
+  namespace?: string
+  pod?: string
+  container_id?: string
+  process_path?: string
+  args?: string
+  user?: string
+  unavailable?: Array<string>
+}
 
 export type IssuesStatus = "open" | "resolved" | "ignored"
 
@@ -1312,6 +1354,13 @@ export type GraphOverlayEvent = {
   explanation: string
 }
 
+export type ConnectorsConnectionStatus = {
+  id: string
+  connectorId: string
+  collection: "available" | "not_available"
+  gaps: Array<ConnectorsConnectionGap>
+}
+
 export type ConnectorsManifestAuthMethod = {
   id: string
   name: string
@@ -1515,6 +1564,27 @@ export type CveDetail = {
   fieldFrom: { [x: string]: string }
   truncated: boolean
 }
+
+export type IdentityPath = {
+  source: string
+  target: string
+  unreachable: boolean
+  inferred?: boolean
+  path: Array<IdentityHop>
+}
+
+export type BomDocument = {
+  kind: string
+  components: Array<BomComponent>
+  incomplete: Array<BomGap>
+  findings: Array<BomFinding>
+}
+
+export type AiPage = { items: Array<AiEntity>; nextCursor?: string | undefined; truncated: boolean }
+
+export type RuntimeStatus = { sensors: Array<RuntimeSensor>; rejectedTotal: number }
+
+export type RuntimeEventPage = { items: Array<RuntimeStoredEvent>; nextCursor?: string; truncated: boolean }
 
 export type IssuesIssue = {
   id: string
@@ -2853,6 +2923,16 @@ export type GraphLensSlice = {
   missing_data?: Array<string>
 }
 
+export type ConnectorsServiceStatus = {
+  enabled: boolean
+  offline: boolean
+  keySource: string
+  persistent: boolean
+  locked: boolean
+  warnings: Array<string>
+  connections: Array<ConnectorsConnectionStatus>
+}
+
 export type ConnectorsManifest = {
   id: ConnectorsConnectorID
   version: string
@@ -2934,6 +3014,8 @@ export type CveLookupResult = {
   fieldFrom: { [x: string]: string }
   truncated: boolean
 }
+
+export type IdentityPaths = { from: string; to: string; paths: Array<IdentityPath> }
 
 export type IssuesPage = { items: Array<IssuesIssue>; nextCursor?: string; truncated: boolean }
 
@@ -4003,6 +4085,10 @@ export const isConnectorError = (value: unknown): value is ConnectorError =>
 export type NotFoundError = { readonly _tag: "NotFoundError"; readonly message: string }
 export const isNotFoundError = (value: unknown): value is NotFoundError =>
   typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "NotFoundError"
+
+export type QueryBudgetExceeded = { readonly _tag: "QueryBudgetExceeded"; readonly message: string }
+export const isQueryBudgetExceeded = (value: unknown): value is QueryBudgetExceeded =>
+  typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "QueryBudgetExceeded"
 
 export type ShellNotFoundError = { readonly _tag: "ShellNotFoundError"; readonly id: string; readonly message: string }
 export const isShellNotFoundError = (value: unknown): value is ShellNotFoundError =>
@@ -5858,6 +5944,14 @@ export type ExperimentalCveGetInput = { readonly id: string; readonly mode?: ("d
 
 export type ExperimentalCveGetOutput = CveDetail
 
+export type ExperimentalIdentityPathsInput = {
+  readonly from: string
+  readonly to: string
+  readonly max_hops?: number | undefined
+}
+
+export type ExperimentalIdentityPathsOutput = IdentityPaths
+
 export type ExperimentalBomSbomListOutput = SbomSummaryList
 
 export type ExperimentalBomSbomExportInput = {
@@ -5867,6 +5961,61 @@ export type ExperimentalBomSbomExportInput = {
 }
 
 export type ExperimentalBomSbomExportOutput = globalThis.Uint8Array
+
+export type ExperimentalBomAiOutput = BomDocument
+
+export type ExperimentalBomAiExportInput = {
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+
+export type ExperimentalBomAiExportOutput = globalThis.Uint8Array
+
+export type ExperimentalBomCloudOutput = BomDocument
+
+export type ExperimentalBomCloudExportInput = {
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+
+export type ExperimentalBomCloudExportOutput = globalThis.Uint8Array
+
+export type ExperimentalAiEntitiesInput = {
+  readonly kind?: string | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalAiEntitiesOutput = AiPage
+
+export type ExperimentalAiSummaryOutput = AiSummary
+
+export type ExperimentalRuntimeStatusOutput = RuntimeStatus
+
+export type ExperimentalRuntimeEventsInput = {
+  readonly type?:
+    | ("process_exec" | "network_connect" | "file_write" | "shell_spawn" | "privilege_change" | "container_escape")
+    | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalRuntimeEventsOutput = RuntimeEventPage
+
+export type ExperimentalRuntimeIngestInput = {
+  readonly ts: string
+  readonly type: string
+  readonly node: string
+  readonly namespace?: string | undefined
+  readonly pod?: string | undefined
+  readonly container_id?: string | undefined
+  readonly process_path?: string | undefined
+  readonly args?: string | undefined
+  readonly user?: string | undefined
+  readonly unavailable?: ReadonlyArray<string> | undefined
+}
+
+export type ExperimentalRuntimeIngestOutput = void
 
 export type ExperimentalIssuesListInput = {
   readonly category?:
@@ -6524,6 +6673,12 @@ export type CveGetInput = ExperimentalCveGetInput
 /** @deprecated Use `ExperimentalCveGetOutput`. Removed in the next minor. */
 export type CveGetOutput = ExperimentalCveGetOutput
 
+/** @deprecated Use `ExperimentalIdentityPathsInput`. Removed in the next minor. */
+export type IdentityPathsInput = ExperimentalIdentityPathsInput
+
+/** @deprecated Use `ExperimentalIdentityPathsOutput`. Removed in the next minor. */
+export type IdentityPathsOutput = ExperimentalIdentityPathsOutput
+
 /** @deprecated Use `ExperimentalBomSbomListOutput`. Removed in the next minor. */
 export type BomSbomListOutput = ExperimentalBomSbomListOutput
 
@@ -6532,6 +6687,48 @@ export type BomSbomExportInput = ExperimentalBomSbomExportInput
 
 /** @deprecated Use `ExperimentalBomSbomExportOutput`. Removed in the next minor. */
 export type BomSbomExportOutput = ExperimentalBomSbomExportOutput
+
+/** @deprecated Use `ExperimentalBomAiOutput`. Removed in the next minor. */
+export type BomAiOutput = ExperimentalBomAiOutput
+
+/** @deprecated Use `ExperimentalBomAiExportInput`. Removed in the next minor. */
+export type BomAiExportInput = ExperimentalBomAiExportInput
+
+/** @deprecated Use `ExperimentalBomAiExportOutput`. Removed in the next minor. */
+export type BomAiExportOutput = ExperimentalBomAiExportOutput
+
+/** @deprecated Use `ExperimentalBomCloudOutput`. Removed in the next minor. */
+export type BomCloudOutput = ExperimentalBomCloudOutput
+
+/** @deprecated Use `ExperimentalBomCloudExportInput`. Removed in the next minor. */
+export type BomCloudExportInput = ExperimentalBomCloudExportInput
+
+/** @deprecated Use `ExperimentalBomCloudExportOutput`. Removed in the next minor. */
+export type BomCloudExportOutput = ExperimentalBomCloudExportOutput
+
+/** @deprecated Use `ExperimentalAiEntitiesInput`. Removed in the next minor. */
+export type AiEntitiesInput = ExperimentalAiEntitiesInput
+
+/** @deprecated Use `ExperimentalAiEntitiesOutput`. Removed in the next minor. */
+export type AiEntitiesOutput = ExperimentalAiEntitiesOutput
+
+/** @deprecated Use `ExperimentalAiSummaryOutput`. Removed in the next minor. */
+export type AiSummaryOutput = ExperimentalAiSummaryOutput
+
+/** @deprecated Use `ExperimentalRuntimeStatusOutput`. Removed in the next minor. */
+export type RuntimeStatusOutput = ExperimentalRuntimeStatusOutput
+
+/** @deprecated Use `ExperimentalRuntimeEventsInput`. Removed in the next minor. */
+export type RuntimeEventsInput = ExperimentalRuntimeEventsInput
+
+/** @deprecated Use `ExperimentalRuntimeEventsOutput`. Removed in the next minor. */
+export type RuntimeEventsOutput = ExperimentalRuntimeEventsOutput
+
+/** @deprecated Use `ExperimentalRuntimeIngestInput`. Removed in the next minor. */
+export type RuntimeIngestInput = ExperimentalRuntimeIngestInput
+
+/** @deprecated Use `ExperimentalRuntimeIngestOutput`. Removed in the next minor. */
+export type RuntimeIngestOutput = ExperimentalRuntimeIngestOutput
 
 /** @deprecated Use `ExperimentalIssuesListInput`. Removed in the next minor. */
 export type IssuesListInput = ExperimentalIssuesListInput

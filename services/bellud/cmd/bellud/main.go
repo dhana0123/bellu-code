@@ -157,7 +157,11 @@ func serve(args []string) error {
 	// Overview needs the ready engine; findings are optional for it.
 	ov := openOverview(logger, os.Getenv, engine, fnd)
 	pw := openPosture(logger, os.Getenv, os.LookupEnv, engine, fnd)
+	rt := openRuntime(logger, os.Getenv, fnd)
 	closeAll := func() {
+		if rt != nil {
+			rt.Close() // before the findings database closes
+		}
 		pw.stop()          // before the findings database closes
 		ov.stop()          // before the findings database closes
 		conn.close(logger) // before the graph: its collectors write to the engine
@@ -244,7 +248,7 @@ func serve(args []string) error {
 	handler := &server.Server{
 		Table:  table,
 		Auth:   authn,
-		Go:     conn.wrap(securityHandler(os.Getenv, fnd, ov, pw, engine, goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) }, intel.option(), apigraph.WithLens(lensSvc), apigraph.WithOverlay(overlay.NewHub())))),
+		Go:     conn.wrap(securityHandler(os.Getenv, fnd, ov, pw, rt, engine, goHandler(engine, set, func() apigraph.ChildState { return apigraph.ChildStateOf(sup.State()) }, intel.option(), apigraph.WithLens(lensSvc), apigraph.WithOverlay(overlay.NewHub())))),
 		GoAuth: conn.auth(graphGoAuth(table, set, authn.Authorize)),
 		Proxy:  proxy.New(sup.Current),
 		CORS:   origins,

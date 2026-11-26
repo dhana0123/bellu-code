@@ -17,6 +17,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/graph/identity"
 	intelstore "github.com/bellu/bellucode/services/bellud/internal/intel/store"
 	"github.com/bellu/bellucode/services/bellud/internal/scanners"
+	"github.com/bellu/bellucode/services/bellud/internal/scanners/aiinv"
 	"github.com/bellu/bellucode/services/bellud/internal/scanners/misconfig"
 	"github.com/bellu/bellucode/services/bellud/internal/scanners/sbomstore"
 	"github.com/bellu/bellucode/services/bellud/internal/scanners/secretscan"
@@ -185,10 +186,12 @@ func (w *findingsWiring) attachScanners(logger interface{ Println(...any) }, get
 	if eng != nil && graph.StateOf(eng).Kind == graph.StateReady {
 		w.eng = eng
 	}
-	w.adapters = []scanners.Adapter{sy, vm, mc, ss}
+	cfgDir, _ := config.ConfigDir()
+	ai := aiinv.New(filepath.Join(cfgDir, "ai-signatures.d"))
+	w.adapters = []scanners.Adapter{sy, vm, mc, ss, ai}
 	w.cve = src
 	w.mu.Unlock()
-	w.mgr.Register(sy, vm, mc, ss)
+	w.mgr.Register(sy, vm, mc, ss, ai)
 }
 
 // mcpExtras returns the read-only security MCP tools, or nil without wiring.

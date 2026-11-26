@@ -9,5 +9,5 @@ import { Api } from "../api"
 const notServed = () => Effect.fail(new UnknownError({ message: "BOM routes are served by the Go server" }))
 
 export const ExperimentalBomHandler = HttpApiBuilder.group(Api, "server.bom", (handlers) =>
-  handlers.handle("sbomList", notServed).handle("sbomExport", notServed),
+  handlers.handle("sbomList", notServed).handle("sbomExport", notServed).handle("ai", notServed).handle("aiExport", notServed).handle("cloud", notServed).handle("cloudExport", notServed),
 )

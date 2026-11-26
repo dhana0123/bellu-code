@@ -1,0 +1,27 @@
+# AI signature table. Each entry matches files by base-name glob and, when
+# pattern is set, a line by regular expression. With no pattern, the file
+# itself is the asset (model files). The name is capture group 1 when the
+# pattern has one, otherwise the file base name for file-only entries or the
+# entry id.
+# kind: ai_model | ai_agent | ai_tool | mcp_server | vector_store
+# link_tools: an agent entry that links to the tools found in the same file.
+signatures:
+  - {id: langchain-agent, kind: ai_agent, files: ["*.py"], pattern: 'create_(?:react|openai_tools|tool_calling)_agent\(|AgentExecutor\(', link_tools: true}
+  - {id: langgraph-agent, kind: ai_agent, files: ["*.py"], pattern: 'StateGraph\(', link_tools: true}
+  - {id: crewai-agent, kind: ai_agent, files: ["*.py"], pattern: '\bAgent\(\s*role\s*=', link_tools: true}
+  - {id: autogen-agent, kind: ai_agent, files: ["*.py"], pattern: '\b(?:AssistantAgent|ConversableAgent)\(', link_tools: true}
+  - {id: openai-agents, kind: ai_agent, files: ["*.py"], pattern: 'from agents import .*\bAgent\b', link_tools: true}
+  - {id: langchain-tool, kind: ai_tool, files: ["*.py"], pattern: '@tool\b'}
+  - {id: function-tool, kind: ai_tool, files: ["*.py"], pattern: '@function_tool\b'}
+  - {id: structured-tool, kind: ai_tool, files: ["*.py"], pattern: 'StructuredTool\.from_function\('}
+  - {id: mcp-server-py, kind: mcp_server, files: ["*.py"], pattern: 'FastMCP\(\s*["'']([^"'']+)["'']'}
+  - {id: mcp-server-ts, kind: mcp_server, files: ["*.ts", "*.js", "*.mjs"], pattern: 'new McpServer\('}
+  - {id: mcp-config, kind: mcp_server, files: ["mcp.json", ".mcp.json", "mcp_settings.json"], pattern: '"mcpServers"'}
+  - {id: chroma, kind: vector_store, files: ["*.py"], pattern: 'chromadb\.(?:Client|PersistentClient|HttpClient)\('}
+  - {id: pinecone, kind: vector_store, files: ["*.py"], pattern: '\bPinecone\('}
+  - {id: qdrant, kind: vector_store, files: ["*.py"], pattern: '\bQdrantClient\('}
+  - {id: faiss, kind: vector_store, files: ["*.py"], pattern: 'faiss\.(?:read_index|Index\w+)\('}
+  - {id: gguf-model, kind: ai_model, files: ["*.gguf"]}
+  - {id: safetensors-model, kind: ai_model, files: ["*.safetensors"]}
+  - {id: onnx-model, kind: ai_model, files: ["*.onnx"]}
+  - {id: pytorch-model, kind: ai_model, files: ["*.pt", "*.pth", "*.ckpt"]}

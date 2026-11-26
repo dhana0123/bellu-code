@@ -268,6 +268,7 @@ Collection categories and their status. Generated from the registry; do not edit
 <!-- roadmap:start -->
 | Category | Status | Read operations a collector needs |
 | --- | --- | --- |
+| `ai_assets` | implemented | none |
 | `azure_ai` | implemented | none |
 | `azure_compute` | implemented | none |
 | `azure_data` | implemented | none |

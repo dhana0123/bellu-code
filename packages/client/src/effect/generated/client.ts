@@ -372,9 +372,25 @@ import type {
   ExperimentalCveSetModeOutput,
   ExperimentalCveGetInput,
   ExperimentalCveGetOutput,
+  ExperimentalIdentityPathsInput,
+  ExperimentalIdentityPathsOutput,
   ExperimentalBomSbomListOutput,
   ExperimentalBomSbomExportInput,
   ExperimentalBomSbomExportOutput,
+  ExperimentalBomAiOutput,
+  ExperimentalBomAiExportInput,
+  ExperimentalBomAiExportOutput,
+  ExperimentalBomCloudOutput,
+  ExperimentalBomCloudExportInput,
+  ExperimentalBomCloudExportOutput,
+  ExperimentalAiEntitiesInput,
+  ExperimentalAiEntitiesOutput,
+  ExperimentalAiSummaryOutput,
+  ExperimentalRuntimeStatusOutput,
+  ExperimentalRuntimeEventsInput,
+  ExperimentalRuntimeEventsOutput,
+  ExperimentalRuntimeIngestInput,
+  ExperimentalRuntimeIngestOutput,
   ExperimentalIssuesListInput,
   ExperimentalIssuesListOutput,
   ExperimentalIssuesGetInput,
@@ -2366,6 +2382,18 @@ const adaptGroupExperimentalCve = (raw: RawClient["server.cve"]) => ({
   get: EndpointExperimentalCveGet(raw),
 })
 
+const EndpointExperimentalIdentityPaths =
+  (raw: RawClient["server.identity"]) => (input: ExperimentalIdentityPathsInput) =>
+    preserveEffect<ExperimentalIdentityPathsOutput>()(
+      raw["paths"]({ query: { from: input["from"], to: input["to"], max_hops: input["max_hops"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const adaptGroupExperimentalIdentity = (raw: RawClient["server.identity"]) => ({
+  paths: EndpointExperimentalIdentityPaths(raw),
+})
+
 const EndpointExperimentalBomSbomList = (raw: RawClient["server.bom"]) => () =>
   preserveEffect<ExperimentalBomSbomListOutput>()(raw["sbomList"]({}).pipe(Effect.mapError(mapClientError)))
 
@@ -2377,9 +2405,85 @@ const EndpointExperimentalBomSbomExport = (raw: RawClient["server.bom"]) => (inp
     }).pipe(Effect.mapError(mapClientError)),
   )
 
+const EndpointExperimentalBomAi = (raw: RawClient["server.bom"]) => () =>
+  preserveEffect<ExperimentalBomAiOutput>()(raw["ai"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalBomAiExport = (raw: RawClient["server.bom"]) => (input?: ExperimentalBomAiExportInput) =>
+  preserveEffect<ExperimentalBomAiExportOutput>()(
+    raw["aiExport"]({ query: { format: input?.["format"], version: input?.["version"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
+const EndpointExperimentalBomCloud = (raw: RawClient["server.bom"]) => () =>
+  preserveEffect<ExperimentalBomCloudOutput>()(raw["cloud"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalBomCloudExport =
+  (raw: RawClient["server.bom"]) => (input?: ExperimentalBomCloudExportInput) =>
+    preserveEffect<ExperimentalBomCloudExportOutput>()(
+      raw["cloudExport"]({ query: { format: input?.["format"], version: input?.["version"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
 const adaptGroupExperimentalBom = (raw: RawClient["server.bom"]) => ({
   sbomList: EndpointExperimentalBomSbomList(raw),
   sbomExport: EndpointExperimentalBomSbomExport(raw),
+  ai: EndpointExperimentalBomAi(raw),
+  aiExport: EndpointExperimentalBomAiExport(raw),
+  cloud: EndpointExperimentalBomCloud(raw),
+  cloudExport: EndpointExperimentalBomCloudExport(raw),
+})
+
+const EndpointExperimentalAiEntities = (raw: RawClient["server.ai"]) => (input?: ExperimentalAiEntitiesInput) =>
+  preserveEffect<ExperimentalAiEntitiesOutput>()(
+    raw["entities"]({ query: { kind: input?.["kind"], limit: input?.["limit"], cursor: input?.["cursor"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
+const EndpointExperimentalAiSummary = (raw: RawClient["server.ai"]) => () =>
+  preserveEffect<ExperimentalAiSummaryOutput>()(raw["summary"]({}).pipe(Effect.mapError(mapClientError)))
+
+const adaptGroupExperimentalAi = (raw: RawClient["server.ai"]) => ({
+  entities: EndpointExperimentalAiEntities(raw),
+  summary: EndpointExperimentalAiSummary(raw),
+})
+
+const EndpointExperimentalRuntimeStatus = (raw: RawClient["server.runtime"]) => () =>
+  preserveEffect<ExperimentalRuntimeStatusOutput>()(raw["status"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalRuntimeEvents =
+  (raw: RawClient["server.runtime"]) => (input?: ExperimentalRuntimeEventsInput) =>
+    preserveEffect<ExperimentalRuntimeEventsOutput>()(
+      raw["events"]({ query: { type: input?.["type"], limit: input?.["limit"], cursor: input?.["cursor"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const EndpointExperimentalRuntimeIngest =
+  (raw: RawClient["server.runtime"]) => (input: ExperimentalRuntimeIngestInput) =>
+    preserveEffect<ExperimentalRuntimeIngestOutput>()(
+      raw["ingest"]({
+        payload: {
+          ts: input["ts"],
+          type: input["type"],
+          node: input["node"],
+          namespace: input["namespace"],
+          pod: input["pod"],
+          container_id: input["container_id"],
+          process_path: input["process_path"],
+          args: input["args"],
+          user: input["user"],
+          unavailable: input["unavailable"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const adaptGroupExperimentalRuntime = (raw: RawClient["server.runtime"]) => ({
+  status: EndpointExperimentalRuntimeStatus(raw),
+  events: EndpointExperimentalRuntimeEvents(raw),
+  ingest: EndpointExperimentalRuntimeIngest(raw),
 })
 
 const EndpointExperimentalIssuesList = (raw: RawClient["server.issues"]) => (input?: ExperimentalIssuesListInput) =>
@@ -2703,7 +2807,10 @@ const adaptClient = (raw: RawClient) => {
       scans: adaptGroupExperimentalScans(raw["server.scans"]),
       sbom: adaptGroupExperimentalSbom(raw["server.sbom"]),
       cve: adaptGroupExperimentalCve(raw["server.cve"]),
+      identity: adaptGroupExperimentalIdentity(raw["server.identity"]),
       bom: adaptGroupExperimentalBom(raw["server.bom"]),
+      ai: adaptGroupExperimentalAi(raw["server.ai"]),
+      runtime: adaptGroupExperimentalRuntime(raw["server.runtime"]),
       issues: adaptGroupExperimentalIssues(raw["server.issues"]),
       rules: adaptGroupExperimentalRules(raw["server.rules"]),
       data: adaptGroupExperimentalData(raw["server.data"]),
@@ -2947,12 +3054,41 @@ const adaptClient = (raw: RawClient) => {
       /** @deprecated Use `client.experimental.cve.get`. Removed in the next minor. */
       get: client.experimental.cve.get,
     },
+    /** @deprecated Use `client.experimental.identity`. Removed in the next minor. */
+    identity: {
+      /** @deprecated Use `client.experimental.identity.paths`. Removed in the next minor. */
+      paths: client.experimental.identity.paths,
+    },
     /** @deprecated Use `client.experimental.bom`. Removed in the next minor. */
     bom: {
       /** @deprecated Use `client.experimental.bom.sbomList`. Removed in the next minor. */
       sbomList: client.experimental.bom.sbomList,
       /** @deprecated Use `client.experimental.bom.sbomExport`. Removed in the next minor. */
       sbomExport: client.experimental.bom.sbomExport,
+      /** @deprecated Use `client.experimental.bom.ai`. Removed in the next minor. */
+      ai: client.experimental.bom.ai,
+      /** @deprecated Use `client.experimental.bom.aiExport`. Removed in the next minor. */
+      aiExport: client.experimental.bom.aiExport,
+      /** @deprecated Use `client.experimental.bom.cloud`. Removed in the next minor. */
+      cloud: client.experimental.bom.cloud,
+      /** @deprecated Use `client.experimental.bom.cloudExport`. Removed in the next minor. */
+      cloudExport: client.experimental.bom.cloudExport,
+    },
+    /** @deprecated Use `client.experimental.ai`. Removed in the next minor. */
+    ai: {
+      /** @deprecated Use `client.experimental.ai.entities`. Removed in the next minor. */
+      entities: client.experimental.ai.entities,
+      /** @deprecated Use `client.experimental.ai.summary`. Removed in the next minor. */
+      summary: client.experimental.ai.summary,
+    },
+    /** @deprecated Use `client.experimental.runtime`. Removed in the next minor. */
+    runtime: {
+      /** @deprecated Use `client.experimental.runtime.status`. Removed in the next minor. */
+      status: client.experimental.runtime.status,
+      /** @deprecated Use `client.experimental.runtime.events`. Removed in the next minor. */
+      events: client.experimental.runtime.events,
+      /** @deprecated Use `client.experimental.runtime.ingest`. Removed in the next minor. */
+      ingest: client.experimental.runtime.ingest,
     },
     /** @deprecated Use `client.experimental.issues`. Removed in the next minor. */
     issues: {

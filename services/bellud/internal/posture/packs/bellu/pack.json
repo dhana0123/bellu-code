@@ -4,12 +4,15 @@
   "rules": [
     {
       "id": "open_ingress",
-      "title": "Security group open to the internet on a non-allowed port",
+      "title": "Ingress rule open to the internet on a non-allowed port",
       "description": "An ingress rule open to 0.0.0.0/0 covers a port outside the allowed list (default 80, 443).",
       "severity": "high",
       "category": "network_exposure",
       "applies_to": [
-        "aws_sg_rule"
+        "aws_sg_rule",
+        "gcp_resource",
+        "azure_resource",
+        "k8s_service"
       ],
       "remediation": "Restrict the source CIDR or remove the rule.",
       "benchmarks": [],
@@ -111,6 +114,47 @@
       "benchmarks": [],
       "kind": "toxic_combination",
       "rego": "toxic_ai_agent_write_external.rego"
+    },
+    {
+      "id": "ai_agent_write_tool_external_input",
+      "title": "AI agent with a write tool reads unvalidated external input",
+      "description": "An AI agent has a tool that can write and reads external input that is not validated.",
+      "severity": "high",
+      "category": "ai_security",
+      "applies_to": [
+        "ai_agent"
+      ],
+      "remediation": "Validate the external input or remove the agent's write tool.",
+      "benchmarks": [],
+      "rego": "ai_agent_write_tool_external_input.rego"
+    },
+    {
+      "id": "ai_endpoint_public_unauthenticated",
+      "title": "AI endpoint is public and requires no sign-in",
+      "description": "A model, agent or AI service endpoint is reachable from the internet without authentication.",
+      "severity": "high",
+      "category": "ai_security",
+      "applies_to": [
+        "ai_service",
+        "ai_agent",
+        "ai_model"
+      ],
+      "remediation": "Require authentication or remove the endpoint's public access.",
+      "benchmarks": [],
+      "rego": "ai_endpoint_public_unauthenticated.rego"
+    },
+    {
+      "id": "ai_model_unsafe_serialization",
+      "title": "AI model uses a serialization format that can run code on load",
+      "description": "A model file is stored in a format such as pickle that can execute code when loaded.",
+      "severity": "high",
+      "category": "ai_security",
+      "applies_to": [
+        "ai_model"
+      ],
+      "remediation": "Convert the model to a safe format such as safetensors or ONNX.",
+      "benchmarks": [],
+      "rego": "ai_model_unsafe_serialization.rego"
     }
   ]
 }

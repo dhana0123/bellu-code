@@ -1,5 +1,49 @@
 {
   "kinds": {
+    "ai_agent": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "ai_agent:354ed2ea9658d605354a87ba1bd24032"
+    },
+    "ai_model": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "ai_model:c85e5ae6142af7fa30fcd924c74f910a"
+    },
+    "ai_service": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "ai_service:088a9ea854f120a0ca06760c19f9a606"
+    },
+    "ai_tool": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "ai_tool:62e6d08139391424566b543407eda169"
+    },
     "aws_cidr": {
       "identity": [
         "connection",
@@ -324,6 +368,17 @@
       },
       "hash": "k8s_workload:e6dabe1fb2c6599f771d0ca357f6eb68"
     },
+    "mcp_server": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "mcp_server:31fcd3f1053b1a7cc7d0daf8f948c5ff"
+    },
     "posture_pack": {
       "identity": [
         "id"
@@ -343,10 +398,26 @@
         "pack": "golden-pack"
       },
       "hash": "posture_rule:ba03d74af119b40b373c40174322cb37"
+    },
+    "vector_store": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "vector_store:442b8d22e6976f999e7ede6f3a7c9b61"
     }
   },
   "relations": {
     "affects": "forward",
+    "ai_has_tool": "forward",
+    "ai_reads_input_from": "forward",
+    "ai_runs_in": "forward",
+    "ai_serves": "forward",
+    "ai_uses_identity": "forward",
     "aws_alias_of": "reverse",
     "aws_allows_egress_to": "forward",
     "aws_allows_ingress_from": "reverse",

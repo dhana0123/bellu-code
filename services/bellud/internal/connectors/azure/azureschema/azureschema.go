@@ -44,6 +44,8 @@ const (
 
 const resourceAttrs = " Scalar attributes: azure_type (string, one of the declared types); location (string, an Azure region); subscription_id (string); resource_group (string); truncated (string: true, set only when collection was cut short)."
 
+const dataStoreAttrs = " Attributes: encryption_at_rest, encryption_in_transit, public_access, backup, logging; each enabled, disabled or unknown (unknown: not readable)."
+
 func typ(name, category, desc string) schema.TypeDeclaration {
 	return schema.TypeDeclaration{Name: name, Category: category, Description: desc}
 }
@@ -81,8 +83,8 @@ func Declaration() schema.SourceDeclaration {
 					typ(TypeVM, CatCompute, "A virtual machine."),
 					typ(TypeAKS, CatCompute, "An AKS cluster."),
 					typ(TypeFunction, CatCompute, "An Azure Functions app."),
-					ovTyp(TypeStorageAccount, CatData, "A storage account.", schema.OvData),
-					ovTyp(TypeSQLDatabase, CatData, "A SQL database.", schema.OvData),
+					ovTyp(TypeStorageAccount, CatData, "A storage account."+dataStoreAttrs, schema.OvData),
+					ovTyp(TypeSQLDatabase, CatData, "A SQL database."+dataStoreAttrs, schema.OvData),
 					ovTyp(TypeKeyVault, CatData, "A Key Vault. Secret values are never collected.", schema.OvSecrets),
 					ovTyp(TypeManagedIdentity, CatIdentity, "A managed identity.", schema.OvIdentity),
 					ovTyp(TypeOpenAIDeploy, CatAI, "An Azure OpenAI deployment.", schema.OvAI),

@@ -2811,6 +2811,17 @@ export type ExperimentalConnectorsStatusOutput = {
   readonly persistent: boolean
   readonly locked: boolean
   readonly warnings: ReadonlyArray<string>
+  readonly connections: ReadonlyArray<{
+    readonly id: string
+    readonly connectorId: string
+    readonly collection: "available" | "not_available"
+    readonly gaps: ReadonlyArray<{
+      readonly resourceType: string
+      readonly scope: string
+      readonly reason: string
+      readonly detail: string
+    }>
+  }>
 }
 export type ExperimentalConnectorsStatusOperation<E = never> = () => Effect.Effect<
   ExperimentalConnectorsStatusOutput,
@@ -4209,6 +4220,36 @@ export interface ExperimentalCveApi<E = never> {
   readonly get: ExperimentalCveGetOperation<E>
 }
 
+export type ExperimentalIdentityPathsInput = {
+  readonly from: string
+  readonly to: string
+  readonly max_hops?: number | undefined
+}
+export type ExperimentalIdentityPathsOutput = {
+  readonly from: string
+  readonly to: string
+  readonly paths: ReadonlyArray<{
+    readonly source: string
+    readonly target: string
+    readonly unreachable: boolean
+    readonly inferred?: boolean | undefined
+    readonly path: ReadonlyArray<{
+      readonly from: string
+      readonly to: string
+      readonly relation: string
+      readonly evidence?: string | undefined
+      readonly inferred?: boolean | undefined
+    }>
+  }>
+}
+export type ExperimentalIdentityPathsOperation<E = never> = (
+  input: ExperimentalIdentityPathsInput,
+) => Effect.Effect<ExperimentalIdentityPathsOutput, E>
+
+export interface ExperimentalIdentityApi<E = never> {
+  readonly paths: ExperimentalIdentityPathsOperation<E>
+}
+
 export type ExperimentalBomSbomListOutput = {
   readonly items: ReadonlyArray<{
     readonly assetId: string
@@ -4231,9 +4272,166 @@ export type ExperimentalBomSbomExportOperation<E = never> = (
   input: ExperimentalBomSbomExportInput,
 ) => Effect.Effect<ExperimentalBomSbomExportOutput, E>
 
+export type ExperimentalBomAiOutput = {
+  readonly kind: string
+  readonly components: ReadonlyArray<{
+    readonly type: string
+    readonly name: string
+    readonly version?: string | undefined
+    readonly licenses?: ReadonlyArray<string> | undefined
+    readonly locations?: ReadonlyArray<string> | undefined
+    readonly properties?: { readonly [x: string]: string } | undefined
+  }>
+  readonly incomplete: ReadonlyArray<{ readonly provider: string; readonly cause: string }>
+  readonly findings: ReadonlyArray<{
+    readonly ID: string
+    readonly Rule: string
+    readonly Severity: string
+    readonly Component: string
+    readonly Version: string
+    readonly Message: string
+  }>
+}
+export type ExperimentalBomAiOperation<E = never> = () => Effect.Effect<ExperimentalBomAiOutput, E>
+
+export type ExperimentalBomAiExportInput = {
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+export type ExperimentalBomAiExportOutput = globalThis.Uint8Array
+export type ExperimentalBomAiExportOperation<E = never> = (
+  input?: ExperimentalBomAiExportInput,
+) => Effect.Effect<ExperimentalBomAiExportOutput, E>
+
+export type ExperimentalBomCloudOutput = {
+  readonly kind: string
+  readonly components: ReadonlyArray<{
+    readonly type: string
+    readonly name: string
+    readonly version?: string | undefined
+    readonly licenses?: ReadonlyArray<string> | undefined
+    readonly locations?: ReadonlyArray<string> | undefined
+    readonly properties?: { readonly [x: string]: string } | undefined
+  }>
+  readonly incomplete: ReadonlyArray<{ readonly provider: string; readonly cause: string }>
+  readonly findings: ReadonlyArray<{
+    readonly ID: string
+    readonly Rule: string
+    readonly Severity: string
+    readonly Component: string
+    readonly Version: string
+    readonly Message: string
+  }>
+}
+export type ExperimentalBomCloudOperation<E = never> = () => Effect.Effect<ExperimentalBomCloudOutput, E>
+
+export type ExperimentalBomCloudExportInput = {
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+export type ExperimentalBomCloudExportOutput = globalThis.Uint8Array
+export type ExperimentalBomCloudExportOperation<E = never> = (
+  input?: ExperimentalBomCloudExportInput,
+) => Effect.Effect<ExperimentalBomCloudExportOutput, E>
+
 export interface ExperimentalBomApi<E = never> {
   readonly sbomList: ExperimentalBomSbomListOperation<E>
   readonly sbomExport: ExperimentalBomSbomExportOperation<E>
+  readonly ai: ExperimentalBomAiOperation<E>
+  readonly aiExport: ExperimentalBomAiExportOperation<E>
+  readonly cloud: ExperimentalBomCloudOperation<E>
+  readonly cloudExport: ExperimentalBomCloudExportOperation<E>
+}
+
+export type ExperimentalAiEntitiesInput = {
+  readonly kind?: string | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+export type ExperimentalAiEntitiesOutput = {
+  readonly items: ReadonlyArray<{
+    readonly id: string
+    readonly kind: string
+    readonly name: string
+    readonly attributes: { readonly [x: string]: unknown }
+  }>
+  readonly nextCursor?: string | undefined
+  readonly truncated: boolean
+}
+export type ExperimentalAiEntitiesOperation<E = never> = (
+  input?: ExperimentalAiEntitiesInput,
+) => Effect.Effect<ExperimentalAiEntitiesOutput, E>
+
+export type ExperimentalAiSummaryOutput = { readonly total: number; readonly counts: { readonly [x: string]: number } }
+export type ExperimentalAiSummaryOperation<E = never> = () => Effect.Effect<ExperimentalAiSummaryOutput, E>
+
+export interface ExperimentalAiApi<E = never> {
+  readonly entities: ExperimentalAiEntitiesOperation<E>
+  readonly summary: ExperimentalAiSummaryOperation<E>
+}
+
+export type ExperimentalRuntimeStatusOutput = {
+  readonly sensors: ReadonlyArray<{
+    readonly node: string
+    readonly status: string
+    readonly reason?: string | undefined
+    readonly drops: { readonly [x: string]: number }
+    readonly rejectedTotal: number
+    readonly seenAt: string
+  }>
+  readonly rejectedTotal: number
+}
+export type ExperimentalRuntimeStatusOperation<E = never> = () => Effect.Effect<ExperimentalRuntimeStatusOutput, E>
+
+export type ExperimentalRuntimeEventsInput = {
+  readonly type?:
+    | ("process_exec" | "network_connect" | "file_write" | "shell_spawn" | "privilege_change" | "container_escape")
+    | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+export type ExperimentalRuntimeEventsOutput = {
+  readonly items: ReadonlyArray<{
+    readonly seq: number
+    readonly ts: string
+    readonly type: string
+    readonly node: string
+    readonly namespace?: string | undefined
+    readonly pod?: string | undefined
+    readonly container_id?: string | undefined
+    readonly process_path?: string | undefined
+    readonly args?: string | undefined
+    readonly user?: string | undefined
+    readonly unavailable?: ReadonlyArray<string> | undefined
+  }>
+  readonly nextCursor?: string | undefined
+  readonly truncated: boolean
+}
+export type ExperimentalRuntimeEventsOperation<E = never> = (
+  input?: ExperimentalRuntimeEventsInput,
+) => Effect.Effect<ExperimentalRuntimeEventsOutput, E>
+
+export type ExperimentalRuntimeIngestInput = {
+  readonly ts: string
+  readonly type: string
+  readonly node: string
+  readonly namespace?: string | undefined
+  readonly pod?: string | undefined
+  readonly container_id?: string | undefined
+  readonly process_path?: string | undefined
+  readonly args?: string | undefined
+  readonly user?: string | undefined
+  readonly unavailable?: ReadonlyArray<string> | undefined
+}
+export type ExperimentalRuntimeIngestOutput = void
+export type ExperimentalRuntimeIngestOperation<E = never> = (
+  input: ExperimentalRuntimeIngestInput,
+) => Effect.Effect<ExperimentalRuntimeIngestOutput, E>
+
+export interface ExperimentalRuntimeApi<E = never> {
+  readonly status: ExperimentalRuntimeStatusOperation<E>
+  readonly events: ExperimentalRuntimeEventsOperation<E>
+  readonly ingest: ExperimentalRuntimeIngestOperation<E>
 }
 
 export type ExperimentalIssuesListInput = {
@@ -5445,6 +5643,15 @@ export type CveGetOutput = ExperimentalCveGetOutput
 /** @deprecated Use `ExperimentalCveGetOperation`. Removed in the next minor. */
 export type CveGetOperation<E = never> = ExperimentalCveGetOperation<E>
 
+/** @deprecated Use `ExperimentalIdentityPathsInput`. Removed in the next minor. */
+export type IdentityPathsInput = ExperimentalIdentityPathsInput
+
+/** @deprecated Use `ExperimentalIdentityPathsOutput`. Removed in the next minor. */
+export type IdentityPathsOutput = ExperimentalIdentityPathsOutput
+
+/** @deprecated Use `ExperimentalIdentityPathsOperation`. Removed in the next minor. */
+export type IdentityPathsOperation<E = never> = ExperimentalIdentityPathsOperation<E>
+
 /** @deprecated Use `ExperimentalBomSbomListOutput`. Removed in the next minor. */
 export type BomSbomListOutput = ExperimentalBomSbomListOutput
 
@@ -5459,6 +5666,75 @@ export type BomSbomExportOutput = ExperimentalBomSbomExportOutput
 
 /** @deprecated Use `ExperimentalBomSbomExportOperation`. Removed in the next minor. */
 export type BomSbomExportOperation<E = never> = ExperimentalBomSbomExportOperation<E>
+
+/** @deprecated Use `ExperimentalBomAiOutput`. Removed in the next minor. */
+export type BomAiOutput = ExperimentalBomAiOutput
+
+/** @deprecated Use `ExperimentalBomAiOperation`. Removed in the next minor. */
+export type BomAiOperation<E = never> = ExperimentalBomAiOperation<E>
+
+/** @deprecated Use `ExperimentalBomAiExportInput`. Removed in the next minor. */
+export type BomAiExportInput = ExperimentalBomAiExportInput
+
+/** @deprecated Use `ExperimentalBomAiExportOutput`. Removed in the next minor. */
+export type BomAiExportOutput = ExperimentalBomAiExportOutput
+
+/** @deprecated Use `ExperimentalBomAiExportOperation`. Removed in the next minor. */
+export type BomAiExportOperation<E = never> = ExperimentalBomAiExportOperation<E>
+
+/** @deprecated Use `ExperimentalBomCloudOutput`. Removed in the next minor. */
+export type BomCloudOutput = ExperimentalBomCloudOutput
+
+/** @deprecated Use `ExperimentalBomCloudOperation`. Removed in the next minor. */
+export type BomCloudOperation<E = never> = ExperimentalBomCloudOperation<E>
+
+/** @deprecated Use `ExperimentalBomCloudExportInput`. Removed in the next minor. */
+export type BomCloudExportInput = ExperimentalBomCloudExportInput
+
+/** @deprecated Use `ExperimentalBomCloudExportOutput`. Removed in the next minor. */
+export type BomCloudExportOutput = ExperimentalBomCloudExportOutput
+
+/** @deprecated Use `ExperimentalBomCloudExportOperation`. Removed in the next minor. */
+export type BomCloudExportOperation<E = never> = ExperimentalBomCloudExportOperation<E>
+
+/** @deprecated Use `ExperimentalAiEntitiesInput`. Removed in the next minor. */
+export type AiEntitiesInput = ExperimentalAiEntitiesInput
+
+/** @deprecated Use `ExperimentalAiEntitiesOutput`. Removed in the next minor. */
+export type AiEntitiesOutput = ExperimentalAiEntitiesOutput
+
+/** @deprecated Use `ExperimentalAiEntitiesOperation`. Removed in the next minor. */
+export type AiEntitiesOperation<E = never> = ExperimentalAiEntitiesOperation<E>
+
+/** @deprecated Use `ExperimentalAiSummaryOutput`. Removed in the next minor. */
+export type AiSummaryOutput = ExperimentalAiSummaryOutput
+
+/** @deprecated Use `ExperimentalAiSummaryOperation`. Removed in the next minor. */
+export type AiSummaryOperation<E = never> = ExperimentalAiSummaryOperation<E>
+
+/** @deprecated Use `ExperimentalRuntimeStatusOutput`. Removed in the next minor. */
+export type RuntimeStatusOutput = ExperimentalRuntimeStatusOutput
+
+/** @deprecated Use `ExperimentalRuntimeStatusOperation`. Removed in the next minor. */
+export type RuntimeStatusOperation<E = never> = ExperimentalRuntimeStatusOperation<E>
+
+/** @deprecated Use `ExperimentalRuntimeEventsInput`. Removed in the next minor. */
+export type RuntimeEventsInput = ExperimentalRuntimeEventsInput
+
+/** @deprecated Use `ExperimentalRuntimeEventsOutput`. Removed in the next minor. */
+export type RuntimeEventsOutput = ExperimentalRuntimeEventsOutput
+
+/** @deprecated Use `ExperimentalRuntimeEventsOperation`. Removed in the next minor. */
+export type RuntimeEventsOperation<E = never> = ExperimentalRuntimeEventsOperation<E>
+
+/** @deprecated Use `ExperimentalRuntimeIngestInput`. Removed in the next minor. */
+export type RuntimeIngestInput = ExperimentalRuntimeIngestInput
+
+/** @deprecated Use `ExperimentalRuntimeIngestOutput`. Removed in the next minor. */
+export type RuntimeIngestOutput = ExperimentalRuntimeIngestOutput
+
+/** @deprecated Use `ExperimentalRuntimeIngestOperation`. Removed in the next minor. */
+export type RuntimeIngestOperation<E = never> = ExperimentalRuntimeIngestOperation<E>
 
 /** @deprecated Use `ExperimentalIssuesListInput`. Removed in the next minor. */
 export type IssuesListInput = ExperimentalIssuesListInput
@@ -5589,8 +5865,17 @@ export type SbomApi<E = never> = ExperimentalSbomApi<E>
 /** @deprecated Use `ExperimentalCveApi`. Removed in the next minor. */
 export type CveApi<E = never> = ExperimentalCveApi<E>
 
+/** @deprecated Use `ExperimentalIdentityApi`. Removed in the next minor. */
+export type IdentityApi<E = never> = ExperimentalIdentityApi<E>
+
 /** @deprecated Use `ExperimentalBomApi`. Removed in the next minor. */
 export type BomApi<E = never> = ExperimentalBomApi<E>
+
+/** @deprecated Use `ExperimentalAiApi`. Removed in the next minor. */
+export type AiApi<E = never> = ExperimentalAiApi<E>
+
+/** @deprecated Use `ExperimentalRuntimeApi`. Removed in the next minor. */
+export type RuntimeApi<E = never> = ExperimentalRuntimeApi<E>
 
 /** @deprecated Use `ExperimentalIssuesApi`. Removed in the next minor. */
 export type IssuesApi<E = never> = ExperimentalIssuesApi<E>
@@ -5627,7 +5912,10 @@ export interface AppApi<E = never> {
     readonly scans: ExperimentalScansApi<E>
     readonly sbom: ExperimentalSbomApi<E>
     readonly cve: ExperimentalCveApi<E>
+    readonly identity: ExperimentalIdentityApi<E>
     readonly bom: ExperimentalBomApi<E>
+    readonly ai: ExperimentalAiApi<E>
+    readonly runtime: ExperimentalRuntimeApi<E>
     readonly issues: ExperimentalIssuesApi<E>
     readonly rules: ExperimentalRulesApi<E>
     readonly data: ExperimentalDataApi<E>
@@ -5874,6 +6162,12 @@ export interface AppApi<E = never> {
     readonly get: ExperimentalCveGetOperation<E>
   }
 
+  /** @deprecated Use `client.experimental.identity`. Removed in the next minor. */
+  readonly identity: {
+    /** @deprecated Use `client.experimental.identity.paths`. Removed in the next minor. */
+    readonly paths: ExperimentalIdentityPathsOperation<E>
+  }
+
   /** @deprecated Use `client.experimental.bom`. Removed in the next minor. */
   readonly bom: {
     /** @deprecated Use `client.experimental.bom.sbomList`. Removed in the next minor. */
@@ -5881,6 +6175,39 @@ export interface AppApi<E = never> {
 
     /** @deprecated Use `client.experimental.bom.sbomExport`. Removed in the next minor. */
     readonly sbomExport: ExperimentalBomSbomExportOperation<E>
+
+    /** @deprecated Use `client.experimental.bom.ai`. Removed in the next minor. */
+    readonly ai: ExperimentalBomAiOperation<E>
+
+    /** @deprecated Use `client.experimental.bom.aiExport`. Removed in the next minor. */
+    readonly aiExport: ExperimentalBomAiExportOperation<E>
+
+    /** @deprecated Use `client.experimental.bom.cloud`. Removed in the next minor. */
+    readonly cloud: ExperimentalBomCloudOperation<E>
+
+    /** @deprecated Use `client.experimental.bom.cloudExport`. Removed in the next minor. */
+    readonly cloudExport: ExperimentalBomCloudExportOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.ai`. Removed in the next minor. */
+  readonly ai: {
+    /** @deprecated Use `client.experimental.ai.entities`. Removed in the next minor. */
+    readonly entities: ExperimentalAiEntitiesOperation<E>
+
+    /** @deprecated Use `client.experimental.ai.summary`. Removed in the next minor. */
+    readonly summary: ExperimentalAiSummaryOperation<E>
+  }
+
+  /** @deprecated Use `client.experimental.runtime`. Removed in the next minor. */
+  readonly runtime: {
+    /** @deprecated Use `client.experimental.runtime.status`. Removed in the next minor. */
+    readonly status: ExperimentalRuntimeStatusOperation<E>
+
+    /** @deprecated Use `client.experimental.runtime.events`. Removed in the next minor. */
+    readonly events: ExperimentalRuntimeEventsOperation<E>
+
+    /** @deprecated Use `client.experimental.runtime.ingest`. Removed in the next minor. */
+    readonly ingest: ExperimentalRuntimeIngestOperation<E>
   }
 
   /** @deprecated Use `client.experimental.issues`. Removed in the next minor. */

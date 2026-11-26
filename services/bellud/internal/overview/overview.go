@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"sync"
 	"time"
@@ -104,6 +105,9 @@ type snapshot struct {
 	severity map[schema.OverviewCategory]map[findings.Severity]int
 	issues   map[schema.OverviewCategory][]IssueBrief
 	data     map[string]int // Data security counters
+	identity map[string]int // Identity counters
+	ai       map[string]int // AI counters
+	runtime  map[string]int // Runtime counters
 	at       time.Time
 }
 
@@ -126,6 +130,7 @@ type Service struct {
 	mu       sync.Mutex
 	started  bool
 	counts   map[schema.OverviewCategory]counts // categoryCounts
+	exposure map[string]int                     // Network exposure counters from entity attributes
 	snap     *snapshot
 	revision uint64
 	last     []CategorySummary // payload behind revision
@@ -228,6 +233,7 @@ func (s *Service) loop(ctx context.Context) {
 // rebuild pages every kind through the engine and replaces categoryCounts.
 func (s *Service) rebuild(ctx context.Context) error {
 	next := map[schema.OverviewCategory]counts{}
+	expo := map[string]int{}
 	done := map[string]bool{}
 	for _, c := range schema.OverviewOrder {
 		for _, k := range s.cats[c] {
@@ -250,6 +256,14 @@ func (s *Service) rebuild(ctx context.Context) error {
 					}
 					n.total++
 					n.byKind[k.Name]++
+					switch ev := fmt.Sprint(pg.Items[i].Attributes["exposure"]); ev {
+					case "internet":
+						expo[ExtraNetInternet]++
+					case "internal":
+						expo[ExtraNetInternal]++
+					case "unknown":
+						expo[ExtraNetUnknown]++
+					}
 					next[cat] = n
 				}
 				if !pg.Truncated || pg.NextCursor == "" {
@@ -260,7 +274,7 @@ func (s *Service) rebuild(ctx context.Context) error {
 		}
 	}
 	s.mu.Lock()
-	s.counts, s.started = next, true
+	s.counts, s.exposure, s.started = next, expo, true
 	s.mu.Unlock()
 	return nil
 }
@@ -295,8 +309,34 @@ func (s *Service) Summaries(ctx context.Context) (Summaries, error) {
 		for k, v := range n.byKind {
 			extra[k] = v
 		}
+		if c == schema.OvNetwork {
+			for _, k := range []string{ExtraNetInternet, ExtraNetInternal, ExtraNetUnknown} {
+				extra[k] = s.exposure[k]
+			}
+		}
+		if c == schema.OvIdentity {
+			for k, v := range snap.identity {
+				extra[k] = v
+			}
+		}
 		if c == schema.OvData {
 			for k, v := range snap.data {
+				extra[k] = v
+			}
+		}
+		if c == schema.OvRuntime {
+			for _, k := range []string{ExtraRuntimeThreatOpen, ExtraRuntimeEvents24h, ExtraSensorsOK, ExtraSensorsUnsupported} {
+				extra[k] += 0 // present even when zero
+			}
+			for k, v := range snap.runtime {
+				extra[k] = v
+			}
+		}
+		if c == schema.OvAI {
+			for _, k := range aiKinds {
+				extra[k] += 0 // present even when zero
+			}
+			for k, v := range snap.ai {
 				extra[k] = v
 			}
 		}
@@ -341,8 +381,75 @@ func (s *Service) load(ctx context.Context) (*snapshot, error) {
 			return nil, err
 		}
 	}
-	return &snapshot{severity: sev, issues: issues, data: data, at: s.now()}, nil
+	var ident map[string]int
+	if s.db != nil {
+		var err error
+		if ident, err = s.identityCounters(ctx); err != nil {
+			return nil, err
+		}
+	}
+	var ai map[string]int
+	if s.db != nil {
+		var n int
+		if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM finding
+			WHERE workspace_id=? AND kind='ai_risk' AND status IN ('open','in_progress')`, s.ws).Scan(&n); err != nil {
+			return nil, err
+		}
+		ai = map[string]int{ExtraAIRiskOpen: n}
+	}
+	var rt map[string]int
+	if s.db != nil {
+		var err error
+		if rt, err = s.runtimeCounters(ctx); err != nil {
+			return nil, err
+		}
+	}
+	return &snapshot{severity: sev, issues: issues, data: data, identity: ident, ai: ai, runtime: rt, at: s.now()}, nil
 }
+
+// Runtime counter keys in the card's Extra.
+const (
+	ExtraRuntimeThreatOpen  = "runtime_threat_open" // open runtime_threat findings
+	ExtraRuntimeEvents24h   = "runtime_events_24h"  // runtime events in the last 24 hours
+	ExtraSensorsOK          = "sensors_ok"          // sensors reporting status ok
+	ExtraSensorsUnsupported = "sensors_unsupported" // sensors reporting status unsupported
+)
+
+// runtimeCounters counts open runtime_threat findings, sensors by status and events in the last 24 hours.
+func (s *Service) runtimeCounters(ctx context.Context) (map[string]int, error) {
+	out := map[string]int{}
+	var threats, events int
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM finding
+		WHERE workspace_id=? AND kind='runtime_threat' AND status IN ('open','in_progress')`, s.ws).Scan(&threats); err != nil {
+		return nil, err
+	}
+	cutoff := s.now().UTC().Add(-24 * time.Hour).Format(time.RFC3339Nano)
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM runtime_event WHERE workspace_id=? AND ts>=?`,
+		s.ws, cutoff).Scan(&events); err != nil {
+		return nil, err
+	}
+	out[ExtraRuntimeThreatOpen], out[ExtraRuntimeEvents24h] = threats, events
+	rows, err := s.db.QueryContext(ctx, `SELECT status, COUNT(*) FROM runtime_sensor WHERE workspace_id=? GROUP BY status`, s.ws)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var st string
+		var n int
+		if err := rows.Scan(&st, &n); err != nil {
+			return nil, err
+		}
+		out["sensors_"+st] = n
+	}
+	return out, rows.Err()
+}
+
+// ExtraAIRiskOpen counts open ai_risk findings on the AI card. The per-kind counts
+// (ai_model, ai_agent, ai_tool, mcp_server, vector_store) come from the entity counts.
+const ExtraAIRiskOpen = "ai_risk_open"
+
+var aiKinds = []string{"ai_model", "ai_agent", "ai_tool", "mcp_server", "vector_store"}
 
 // Data security counter keys in the card's Extra.
 const (
@@ -350,6 +457,24 @@ const (
 	ExtraDataSensitive = "data_sensitive"    // stores with a class other than none
 	ExtraDataExposed   = "data_exposed_open" // stores with an open data_exposure finding
 )
+
+// Network exposure and Identity counter keys in the card's Extra.
+const (
+	ExtraNetInternet = "net_internet" // entities with exposure=internet
+	ExtraNetInternal = "net_internal" // entities with exposure=internal
+	ExtraNetUnknown  = "net_unknown"  // entities with exposure=unknown
+
+	ExtraIdentityRisky = "identity_risky_open" // identities with an open identity_risk finding
+	ExtraIdentityRisks = "identity_risk_open"  // open identity_risk findings
+)
+
+// identityCounters counts open identity_risk findings and the identities they name.
+func (s *Service) identityCounters(ctx context.Context) (map[string]int, error) {
+	var risks, risky int
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*), COUNT(DISTINCT asset_id) FROM finding
+		WHERE workspace_id=? AND kind='identity_risk' AND status IN ('open','in_progress')`, s.ws).Scan(&risks, &risky)
+	return map[string]int{ExtraIdentityRisks: risks, ExtraIdentityRisky: risky}, err
+}
 
 // dataCounters counts classified stores, sensitive stores and stores with an
 // open data_exposure finding.

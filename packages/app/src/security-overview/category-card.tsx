@@ -7,6 +7,13 @@ import { SEVERITIES, lensPath, type OverviewCategory } from "./model"
  * One Category card. The title link is stretched over the whole card, so the card is one tab stop and the empty-state
  * link sits above it without nesting anchors. Counts are siblings of the link, so a screen reader reads them too.
  */
+const COUNTERS: Record<string, string[]> = {
+  network_exposure: ["net_internet", "net_internal", "net_unknown"],
+  identity: ["identity_risky_open", "identity_risk_open"],
+  data_security: ["data_stores", "data_sensitive", "data_exposed_open"],
+  runtime: ["runtime_threat_open", "runtime_events_24h", "sensors_ok", "sensors_unsupported"],
+  ai_security: ["ai_model", "ai_agent", "ai_tool", "mcp_server", "vector_store", "ai_risk_open"],
+}
 export function CategoryCard(props: { category: OverviewCategory }) {
   const language = useLanguage()
   return (
@@ -44,6 +51,20 @@ export function CategoryCard(props: { category: OverviewCategory }) {
           )}
         </For>
       </ul>
+      <Show when={COUNTERS[props.category.category]}>
+        {(keys) => (
+          <ul data-slot="card-counters" aria-label={language.t("home.security.overview.counters")}>
+            <For each={keys()}>
+              {(key) => (
+                <li data-counter={key}>
+                  <strong>{(props.category.kinds[key] ?? 0).toLocaleString()}</strong>
+                  <span>{language.t(`home.security.overview.counter.${key}`)}</span>
+                </li>
+              )}
+            </For>
+          </ul>
+        )}
+      </Show>
       <Show when={props.category.topIssues.length > 0}>
         <ol data-slot="card-issues" aria-label={language.t("home.security.overview.topIssues")}>
           <For each={props.category.topIssues.slice(0, 3)}>

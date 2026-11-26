@@ -33,11 +33,12 @@ import {
   licenseKey,
   type ExportFormat,
 } from "./model"
+import { BomDocumentTab } from "./document"
 import "./bom.css"
 type Tab = "sbom" | "aibom" | "cloudbom"
 const TABS: readonly Tab[] = ["sbom", "aibom", "cloudbom"]
 /**
- * BOM page. Only the SBOM tab works. AI-BOM and Cloud-BOM show a placeholder. Assets come from
+ * BOM page. The SBOM tab lists assets from
  * `client.experimental.sbom.list`, packages page in by cursor from `sbom.get`, and a download calls `sbom.export`.
  */
 export function SecurityBomPage() {
@@ -204,7 +205,7 @@ export function SecurityBomPage() {
           )}
         </For>
       </div>
-      <Show when={tab() === "sbom"} fallback={<p data-slot="bom-soon" role="status">{language.t("security.bom.soon")}</p>}>
+      <Show when={tab() === "sbom"} fallback={<BomDocumentTab kind={tab() === "aibom" ? "ai" : "cloud"} />}>
         <Switch>
           <Match when={assets().type === "loading"}>
             <div data-slot="bom-loading" role="status">

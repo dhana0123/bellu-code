@@ -374,9 +374,25 @@ import type {
   ExperimentalCveSetModeOutput,
   ExperimentalCveGetInput,
   ExperimentalCveGetOutput,
+  ExperimentalIdentityPathsInput,
+  ExperimentalIdentityPathsOutput,
   ExperimentalBomSbomListOutput,
   ExperimentalBomSbomExportInput,
   ExperimentalBomSbomExportOutput,
+  ExperimentalBomAiOutput,
+  ExperimentalBomAiExportInput,
+  ExperimentalBomAiExportOutput,
+  ExperimentalBomCloudOutput,
+  ExperimentalBomCloudExportInput,
+  ExperimentalBomCloudExportOutput,
+  ExperimentalAiEntitiesInput,
+  ExperimentalAiEntitiesOutput,
+  ExperimentalAiSummaryOutput,
+  ExperimentalRuntimeStatusOutput,
+  ExperimentalRuntimeEventsInput,
+  ExperimentalRuntimeEventsOutput,
+  ExperimentalRuntimeIngestInput,
+  ExperimentalRuntimeIngestOutput,
   ExperimentalIssuesListInput,
   ExperimentalIssuesListOutput,
   ExperimentalIssuesGetInput,
@@ -2595,6 +2611,20 @@ export function make(options: ClientOptions) {
             requestOptions,
           ),
       },
+      identity: {
+        paths: (input: ExperimentalIdentityPathsInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalIdentityPathsOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/identity/paths`,
+              query: { from: input["from"], to: input["to"], max_hops: input["max_hops"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 504],
+              empty: false,
+            },
+            requestOptions,
+          ),
+      },
       bom: {
         sbomList: (requestOptions?: RequestOptions) =>
           request<ExperimentalBomSbomListOutput>(
@@ -2617,6 +2647,127 @@ export function make(options: ClientOptions) {
               declaredStatuses: [400, 401, 404, 500],
               empty: false,
               binary: true,
+            },
+            requestOptions,
+          ),
+        ai: (requestOptions?: RequestOptions) =>
+          request<ExperimentalBomAiOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/bom/ai`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 500],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        aiExport: (input?: ExperimentalBomAiExportInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalBomAiExportOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/bom/ai/export`,
+              query: { format: input?.["format"], version: input?.["version"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 500],
+              empty: false,
+              binary: true,
+            },
+            requestOptions,
+          ),
+        cloud: (requestOptions?: RequestOptions) =>
+          request<ExperimentalBomCloudOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/bom/cloud`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 500],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        cloudExport: (input?: ExperimentalBomCloudExportInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalBomCloudExportOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/bom/cloud/export`,
+              query: { format: input?.["format"], version: input?.["version"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 500],
+              empty: false,
+              binary: true,
+            },
+            requestOptions,
+          ),
+      },
+      ai: {
+        entities: (input?: ExperimentalAiEntitiesInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalAiEntitiesOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/ai/entities`,
+              query: { kind: input?.["kind"], limit: input?.["limit"], cursor: input?.["cursor"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 500],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        summary: (requestOptions?: RequestOptions) =>
+          request<ExperimentalAiSummaryOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/ai/summary`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 500],
+              empty: false,
+            },
+            requestOptions,
+          ),
+      },
+      runtime: {
+        status: (requestOptions?: RequestOptions) =>
+          request<ExperimentalRuntimeStatusOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/runtime/status`,
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 500],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        events: (input?: ExperimentalRuntimeEventsInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalRuntimeEventsOutput>(
+            {
+              method: "GET",
+              path: `/api/experimental/runtime/events`,
+              query: { type: input?.["type"], limit: input?.["limit"], cursor: input?.["cursor"] },
+              successStatus: 200,
+              declaredStatuses: [400, 401, 404, 500],
+              empty: false,
+            },
+            requestOptions,
+          ),
+        ingest: (input: ExperimentalRuntimeIngestInput, requestOptions?: RequestOptions) =>
+          request<ExperimentalRuntimeIngestOutput>(
+            {
+              method: "POST",
+              path: `/api/experimental/runtime/ingest`,
+              body: {
+                ts: input["ts"],
+                type: input["type"],
+                node: input["node"],
+                namespace: input["namespace"],
+                pod: input["pod"],
+                container_id: input["container_id"],
+                process_path: input["process_path"],
+                args: input["args"],
+                user: input["user"],
+                unavailable: input["unavailable"],
+              },
+              successStatus: 204,
+              declaredStatuses: [400, 401, 403, 404, 500],
+              empty: true,
             },
             requestOptions,
           ),
@@ -3946,12 +4097,41 @@ export function make(options: ClientOptions) {
       /** @deprecated Use `client.experimental.cve.get`. Removed in the next minor. */
       get: client.experimental.cve.get,
     },
+    /** @deprecated Use `client.experimental.identity`. Removed in the next minor. */
+    identity: {
+      /** @deprecated Use `client.experimental.identity.paths`. Removed in the next minor. */
+      paths: client.experimental.identity.paths,
+    },
     /** @deprecated Use `client.experimental.bom`. Removed in the next minor. */
     bom: {
       /** @deprecated Use `client.experimental.bom.sbomList`. Removed in the next minor. */
       sbomList: client.experimental.bom.sbomList,
       /** @deprecated Use `client.experimental.bom.sbomExport`. Removed in the next minor. */
       sbomExport: client.experimental.bom.sbomExport,
+      /** @deprecated Use `client.experimental.bom.ai`. Removed in the next minor. */
+      ai: client.experimental.bom.ai,
+      /** @deprecated Use `client.experimental.bom.aiExport`. Removed in the next minor. */
+      aiExport: client.experimental.bom.aiExport,
+      /** @deprecated Use `client.experimental.bom.cloud`. Removed in the next minor. */
+      cloud: client.experimental.bom.cloud,
+      /** @deprecated Use `client.experimental.bom.cloudExport`. Removed in the next minor. */
+      cloudExport: client.experimental.bom.cloudExport,
+    },
+    /** @deprecated Use `client.experimental.ai`. Removed in the next minor. */
+    ai: {
+      /** @deprecated Use `client.experimental.ai.entities`. Removed in the next minor. */
+      entities: client.experimental.ai.entities,
+      /** @deprecated Use `client.experimental.ai.summary`. Removed in the next minor. */
+      summary: client.experimental.ai.summary,
+    },
+    /** @deprecated Use `client.experimental.runtime`. Removed in the next minor. */
+    runtime: {
+      /** @deprecated Use `client.experimental.runtime.status`. Removed in the next minor. */
+      status: client.experimental.runtime.status,
+      /** @deprecated Use `client.experimental.runtime.events`. Removed in the next minor. */
+      events: client.experimental.runtime.events,
+      /** @deprecated Use `client.experimental.runtime.ingest`. Removed in the next minor. */
+      ingest: client.experimental.runtime.ingest,
     },
     /** @deprecated Use `client.experimental.issues`. Removed in the next minor. */
     issues: {

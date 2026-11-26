@@ -69,3 +69,10 @@ func (n noNetwork) TargetHealth(_ context.Context, r, _ string) ([]TargetHealth,
 func (n noNetwork) BucketSecurity(context.Context, string, string) (DataSecurity, error) {
 	return unknownSecurity(), nil
 }
+
+func (n noNetwork) SageMakerEndpoints(_ context.Context, r string) ([]AIEndpoint, error) {
+	return nil, n.call("ai-sagemaker", r)
+}
+func (n noNetwork) BedrockAgents(_ context.Context, r string) ([]AIAgent, error) {
+	return nil, n.call("ai-bedrock-agent", r)
+}

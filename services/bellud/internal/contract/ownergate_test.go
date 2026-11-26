@@ -41,7 +41,10 @@ func TestOwnerGateStage0OnlyGraph(t *testing.T) {
 			!strings.HasPrefix(r.Pattern, "/api/experimental/issues") &&
 			!strings.HasPrefix(r.Pattern, "/api/experimental/rules") &&
 			!strings.HasPrefix(r.Pattern, "/api/experimental/data") &&
-			!strings.HasPrefix(r.Pattern, "/api/experimental/cve") {
+			!strings.HasPrefix(r.Pattern, "/api/experimental/cve") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/identity") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/ai") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/runtime") {
 			t.Errorf("go-owned route outside Stage 0: %s %s", r.Method, r.Pattern)
 		}
 	}

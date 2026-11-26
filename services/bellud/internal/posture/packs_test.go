@@ -49,7 +49,12 @@ func TestBundledPacksRules(t *testing.T) {
 		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "true", "sg": "sg"}, "cis_aws/sg_rdp_open"},
 		{"aws_policy_statement", map[string]any{"effect": "Allow", "actions": "*", "resources": []any{"*"}}, "cis_aws/iam_admin_policy"},
 		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "true", "from_port": 8080, "to_port": 8080, "sg": "sg"}, "bellu/open_ingress"},
+		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "true", "from_port": 80, "to_port": 90, "sg": "sg"}, "bellu/open_ingress"},
+		{"k8s_service", map[string]any{"direction": "ingress", "internet_open": "true", "from_port": 6379, "to_port": 6379}, "bellu/open_ingress"},
 		{"aws_resource", map[string]any{"public_access": "enabled", "data_classes": []any{"PII"}}, "bellu/data_exposure"},
+		{"ai_agent", map[string]any{"has_write_tool": "true", "external_input": "true"}, "bellu/ai_agent_write_tool_external_input"},
+		{"ai_service", map[string]any{"public_access": "enabled", "authentication": "none"}, "bellu/ai_endpoint_public_unauthenticated"},
+		{"ai_model", map[string]any{"serialization_format": "Pickle"}, "bellu/ai_model_unsafe_serialization"},
 		{"github_repo", map[string]any{"visibility": "public"}, "repo_hygiene/repo_public"},
 		{"github_repo", map[string]any{"default_branch": "main", "default_branch_protected": false}, "repo_hygiene/repo_branch_protection"},
 		{"github_alert", map[string]any{"alert_type": "dependabot", "state": "open"}, "repo_hygiene/open_dependabot_alert"},
@@ -68,6 +73,9 @@ func TestBundledPacksRules(t *testing.T) {
 		}
 	}
 	good := []c{
+		{"ai_agent", map[string]any{"has_write_tool": "true", "external_input": "true", "input_validated": "true"}, "bellu/ai_agent_write_tool_external_input"},
+		{"ai_service", map[string]any{"public_access": "enabled", "authentication": "oauth"}, "bellu/ai_endpoint_public_unauthenticated"},
+		{"ai_model", map[string]any{"serialization_format": "safetensors"}, "bellu/ai_model_unsafe_serialization"},
 		{"aws_resource", map[string]any{"resource_type": "s3:bucket", "public_access": "disabled", "encryption_at_rest": "enabled", "logging": "enabled", "encryption_in_transit": "enabled"}, ""},
 		{"aws_resource", map[string]any{"resource_type": "rds:instance", "public_access": "disabled", "encryption_at_rest": "enabled", "backup": "enabled"}, ""},
 		{"aws_sg_rule", map[string]any{"direction": "ingress", "internet_open": "false", "from_port": 22, "to_port": 22}, ""},

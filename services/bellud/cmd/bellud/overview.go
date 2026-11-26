@@ -7,11 +7,14 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/scanners/dataclass"
 	"net/http"
 
+	apiai "github.com/bellu/bellucode/services/bellud/internal/api/ai"
 	apibom "github.com/bellu/bellucode/services/bellud/internal/api/bom"
 	apicve "github.com/bellu/bellucode/services/bellud/internal/api/cve"
 	apifindings "github.com/bellu/bellucode/services/bellud/internal/api/findings"
+	apiidentity "github.com/bellu/bellucode/services/bellud/internal/api/identity"
 	apiissues "github.com/bellu/bellucode/services/bellud/internal/api/issues"
 	apiov "github.com/bellu/bellucode/services/bellud/internal/api/overview"
+	apiruntime "github.com/bellu/bellucode/services/bellud/internal/api/runtime"
 	apisbom "github.com/bellu/bellucode/services/bellud/internal/api/sbom"
 	apiscans "github.com/bellu/bellucode/services/bellud/internal/api/scans"
 	"github.com/bellu/bellucode/services/bellud/internal/config"
@@ -19,6 +22,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/findings"
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/schemaall"
+	"github.com/bellu/bellucode/services/bellud/internal/lens"
 	"github.com/bellu/bellucode/services/bellud/internal/overview"
 	"github.com/bellu/bellucode/services/bellud/internal/scanners/sbomstore"
 )
@@ -67,7 +71,7 @@ func openOverview(logger interface{ Println(...any) }, getenv func(string) strin
 // securityHandler mounts the findings and overview routes in front of next.
 // The routes always exist because the route table owns them; a flag that is off
 // (or a missing service) makes them answer 404.
-func securityHandler(getenv func(string) string, fnd *findingsWiring, ov *overviewWiring, pw *postureWiring, eng graph.Engine, next http.Handler) http.Handler {
+func securityHandler(getenv func(string) string, fnd *findingsWiring, ov *overviewWiring, pw *postureWiring, rt *runtimeHandle, eng graph.Engine, next http.Handler) http.Handler {
 	release := graph.IsRelease()
 	var store *findings.Store
 	if fnd != nil {
@@ -97,8 +101,24 @@ func securityHandler(getenv func(string) string, fnd *findingsWiring, ov *overvi
 	apicve.Mount(mux, cveDeps, apicve.Flags{Scanners: scanners, Graph: config.FeatureEnabled(getenv, cveGraphFlag, release)})
 	apisbom.Mount(mux, sboms, scanners)
 	apibom.Mount(mux, sboms, scanners)
+	aiOn := config.FeatureEnabled(getenv, aiFlag, release)
+	var q graph.Query
+	if eng != nil {
+		q = eng.Query()
+	}
+	var docs apibom.Docs
+	if bd := newBOMDocs(q, getenv("BELLUCODE_BOM_LICENSE_DENY")); bd != nil {
+		docs = bd
+	}
+	apibom.MountDocs(mux, docs, aiOn, scanners)
+	apiai.Mount(mux, q, aiOn)
 	apiissues.Mount(mux, pw.issueStore(), fndStore(store), config.FeatureEnabled(getenv, postureFlag, release))
 	posture := config.FeatureEnabled(getenv, postureFlag, release)
+	var reach apiidentity.Reacher
+	if lsrc, err := lens.NewSource(eng); err == nil {
+		reach = apiidentity.FromSource(lsrc)
+	}
+	apiidentity.Mount(mux, reach, posture)
 	var auditor apirules.Auditor
 	if re := pw.rulesEngine(); re != nil {
 		auditor = pw.engine
@@ -113,6 +133,11 @@ func securityHandler(getenv func(string) string, fnd *findingsWiring, ov *overvi
 		deps.Findings = fnd.store
 	}
 	apidata.Mount(mux, deps, posture)
+	var rtSrc apiruntime.Source // avoid a typed nil in the interface
+	if rt != nil {
+		rtSrc = rt.Server
+	}
+	apiruntime.Mount(mux, rtSrc, config.FeatureEnabled(getenv, runtimeFlag, release))
 	mux.Handle("/", next)
 	return mux
 }

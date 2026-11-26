@@ -75,7 +75,9 @@ func genNet(t *rapid.T) *memSource {
 	m := &memSource{}
 	count := func(name string) int { return rapid.IntRange(1, 4).Draw(t, name) }
 	nc, ne, ns, nn := count("compute"), count("enis"), count("groups"), count("subnets")
-	id := func(p string, n int, label string) string { return fmt.Sprintf("%s%d", p, rapid.IntRange(0, n-1).Draw(t, label)) }
+	id := func(p string, n int, label string) string {
+		return fmt.Sprintf("%s%d", p, rapid.IntRange(0, n-1).Draw(t, label))
+	}
 	for i := range nc {
 		m.entity(fmt.Sprintf("c%d", i), "aws_resource", map[string]any{"resource_type": "ec2:instance"})
 	}

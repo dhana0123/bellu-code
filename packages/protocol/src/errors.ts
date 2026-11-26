@@ -380,3 +380,11 @@ export class NotFoundError extends Schema.TaggedError<NotFoundError>()(
   },
   { httpApiStatus: 404 },
 ) {}
+
+export class QueryBudgetExceededError extends Schema.TaggedError<QueryBudgetExceededError>()(
+  "QueryBudgetExceeded",
+  {
+    message: Schema.String,
+  },
+  { httpApiStatus: 504 },
+) {}

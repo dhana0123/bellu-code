@@ -150,6 +150,20 @@ export const SettingsConnectors: Component<ConnectorsPageProps> = (props) => {
               <span>{language.t("settings.connectors.vault.memoryOnly")}</span>
             </Show>
             <Index each={warnings()}>{(key) => <span>{language.t(key())}</span>}</Index>
+            <Index each={data.status()?.connections ?? []}>
+              {(item) => (
+                <Show when={item().collection === "not_available" || item().gaps.length > 0}>
+                  <span>
+                    {item().collection === "not_available"
+                      ? language.t("settings.connectors.collection.notAvailable", { connector: item().connectorId })
+                      : language.t("settings.connectors.collection.gaps", {
+                          connector: item().connectorId,
+                          count: item().gaps.length,
+                        })}
+                  </span>
+                </Show>
+              )}
+            </Index>
           </div>
         </Show>
         <Switch>

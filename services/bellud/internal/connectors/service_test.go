@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/keysource"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/lifecycle"
@@ -321,5 +322,31 @@ func TestStartupReconcileExpiresCredentialLess(t *testing.T) {
 		if got, _ := s2.Connection(id); got.Status != want {
 			t.Fatalf("%s: status %s want %s", id, got.Status, want)
 		}
+	}
+}
+
+func TestStatusConnectionCollection(t *testing.T) {
+	s := newSvc(t, t.TempDir(), &memSource{slots: map[string][]byte{}}, testEngine(t), failTransport{})
+	gap := store.Gap{ResourceType: "compute.googleapis.com/Firewall", Scope: "p1", Reason: "missing_permission"}
+	for id, cid := range map[string]string{"c1": "gitlab", "c2": "gcp"} {
+		if err := s.store.AddConnection(store.Connection{ID: id, Alias: id, IntervalSec: 900, RotationIntervalDays: 90, ConnectorID: cid, Status: "ACTIVE", CreatedAt: time.Now()}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.store.UpdateConnection("c2", func(c *store.Connection) error {
+		c.LastSync = &store.LastSync{Gaps: []store.Gap{gap}}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]ConnectionStatus{}
+	for _, c := range s.Status().Connections {
+		got[c.ID] = c
+	}
+	if got["c1"].Collection != CollectionNotAvailable || len(got["c1"].Gaps) != 0 {
+		t.Fatalf("gitlab: %+v", got["c1"])
+	}
+	if got["c2"].Collection != CollectionAvailable || len(got["c2"].Gaps) != 1 || got["c2"].Gaps[0] != gap {
+		t.Fatalf("gcp: %+v", got["c2"])
 	}
 }

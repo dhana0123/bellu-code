@@ -111,6 +111,18 @@ routes:
     public: false
     stream: true
   - method: "GET"
+    pattern: "/api/experimental/ai/entities"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/ai/summary"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
     pattern: "/api/experimental/artifacts"
     group: experimental
     owner: ts
@@ -150,6 +162,30 @@ routes:
     pattern: "/api/experimental/artifacts/{artifactID}/view/*"
     group: experimental
     owner: ts
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/ai"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/ai/export"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/cloud"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/cloud/export"
+    group: experimental
+    owner: go
     public: false
     stream: false
   - method: "GET"
@@ -572,6 +608,12 @@ routes:
     owner: go
     public: false
     stream: true
+  - method: "GET"
+    pattern: "/api/experimental/identity/paths"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "POST"
     pattern: "/api/experimental/integration/wellknown"
     group: integration
@@ -712,6 +754,24 @@ routes:
     stream: false
   - method: "GET"
     pattern: "/api/experimental/rules/packs/{id}/rules"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/runtime/events"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/runtime/ingest"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/runtime/status"
     group: experimental
     owner: go
     public: false

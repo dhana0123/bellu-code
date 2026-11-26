@@ -164,6 +164,11 @@ func location(o map[string]any) map[string]any {
 	return map[string]any{"location": loc}
 }
 
+// TODO(task 41.1 follow-up): the cis_gcp pack reads direction, internet_open,
+// from_port, to_port, public_access, uniform_bucket_level_access, ssl_required
+// and role, which this collector does not emit yet, and Analysis (exposure.go)
+// is not called. Needs firewall, bucket, SQL and instance parsing; azure and
+// kubernetes have the same gap against cis_azure and cis_k8s.
 var resourceTypes = []resourceType{
 	{typ: gcpschema.TypeNetwork, host: ComputeHost, path: "/compute/v1/projects/{p}/global/networks",
 		items: list("items"), name: computeName},
@@ -190,7 +195,7 @@ var resourceTypes = []resourceType{
 			}
 			return ""
 		},
-		attrs: func(o map[string]any) map[string]any { return map[string]any{"location": str(o, "location")} }},
+		attrs: bucketAttrs},
 	{typ: gcpschema.TypeSQLInstance, host: SQLAdminHost, path: "/v1/projects/{p}/instances",
 		items: list("items"),
 		name: func(p string, o map[string]any) string {
@@ -199,7 +204,7 @@ var resourceTypes = []resourceType{
 			}
 			return ""
 		},
-		attrs: func(o map[string]any) map[string]any { return map[string]any{"location": str(o, "region")} }},
+		attrs: sqlAttrs},
 	{typ: gcpschema.TypeServiceAccount, host: IAMHost, path: "/v1/projects/{p}/serviceAccounts",
 		items: list("accounts"),
 		name:  func(_ string, o map[string]any) string { return str(o, "name") }},
@@ -374,6 +379,13 @@ func (c *collector) Collect(ctx context.Context) (graph.Batch, error) {
 				b.Entities = append(b.Entities, batch.Entity{Type: gcpschema.KindResource, Identity: idn, Attributes: a})
 				b.Relations = append(b.Relations, batch.Relation{Type: "gcp_in_project", From: string(id), To: string(pid)})
 			}
+		}
+		attempted++
+		if !c.collectAI(ctx, p, source, &b) {
+			if ctx.Err() != nil {
+				return graph.Batch{}, ctx.Err()
+			}
+			failed[TypeAIEndpoint] = true
 		}
 	}
 	if attempted > 0 && len(c.status.Status().Gaps) == attempted {

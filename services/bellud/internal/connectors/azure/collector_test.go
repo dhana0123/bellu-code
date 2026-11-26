@@ -58,6 +58,8 @@ func TestCollectPartialAndRetry(t *testing.T) {
 				`{"id":"/subscriptions/` + sub + `/resourceGroups/RG1/providers/Microsoft.Foo/bars/x","type":"Microsoft.Foo/bars"}]}`))
 		case strings.HasSuffix(p, "/roleassignments"):
 			w.WriteHeader(http.StatusForbidden)
+		case strings.HasSuffix(p, "/accounts"), strings.HasSuffix(p, "/workspaces"):
+			w.Write([]byte(`{"value":[]}`))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}

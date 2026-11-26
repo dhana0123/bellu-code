@@ -199,3 +199,14 @@ func TestCollectProbeRejectedLeavesNoBatch(t *testing.T) {
 		t.Fatal("no batch and an auth error expected")
 	}
 }
+
+func TestDatabaseEngine(t *testing.T) {
+	for img, want := range map[string]string{
+		"postgres:16": "postgres", "docker.io/library/Redis@sha256:ab": "redis",
+		"registry.local:5000/bitnami/mongodb:7": "mongodb", "nginx:1": "", "myorg/postgres-exporter:1": "",
+	} {
+		if got := databaseEngine(img); got != want {
+			t.Errorf("%s: got %q want %q", img, got, want)
+		}
+	}
+}

@@ -2,12 +2,14 @@ import { describe, expect, test } from "bun:test"
 import {
   assetsInitial,
   assetsTransition,
+  documentInitial,
+  documentTransition,
   exportInitial,
   exportTransition,
   packagesInitial,
   packagesTransition,
 } from "./machine"
-import { ecosystemCounts, licenseCounts } from "./model"
+import { ecosystemCounts, isLicenseDenied, licenseCounts } from "./model"
 const at = (state: { type: string; attempt?: number }) => state.attempt ?? -1
 const pkg = { name: "a", licenses: [], locations: [] }
 const asset = (id: string) => ({ assetId: id, digest: "d", packageCount: 1, createdAt: "", ecosystems: {}, licenses: {} })
@@ -54,5 +56,18 @@ describe("export machine", () => {
     const running = exportTransition(exportInitial, { type: "start" })
     expect(exportTransition(running, { type: "start" })).toBe(running)
     expect(exportTransition(running, { type: "done", attempt: 9 })).toBe(running)
+  })
+})
+
+describe("bom document", () => {
+  const document = { kind: "ai", components: [], incomplete: [], findings: [] }
+  test("ignores a result for a stale attempt and loads the current one", () => {
+    const refreshed = documentTransition(documentTransition(documentInitial, { type: "loaded", attempt: 1, document }), { type: "refresh" })
+    expect(documentTransition(refreshed, { type: "loaded", attempt: 1, document })).toBe(refreshed)
+    expect(documentTransition(refreshed, { type: "loaded", attempt: 2, document })).toEqual({ type: "ready", attempt: 2, document })
+  })
+  test("flags a denied license from the component property", () => {
+    expect(isLicenseDenied({ properties: { "bellu:license_denied": "true" } })).toBe(true)
+    expect(isLicenseDenied({})).toBe(false)
   })
 })

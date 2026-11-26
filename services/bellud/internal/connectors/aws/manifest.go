@@ -3,6 +3,7 @@ package aws
 import (
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/manifest"
 	"github.com/bellu/bellucode/services/bellud/internal/connectors/registry"
+	"github.com/bellu/bellucode/services/bellud/internal/graph/schema/aischema"
 )
 
 // ConnectorID is the registry id of the AWS connector.
@@ -18,14 +19,16 @@ const (
 // Host patterns. {region} is filled from the connection's selected regions,
 // so a request to any other region is blocked by the policy.
 const (
-	hostSTS      = "sts.{region}.amazonaws.com"
-	hostIAM      = "iam.amazonaws.com"
-	hostEC2      = "ec2.{region}.amazonaws.com"
-	hostS3       = "s3.{region}.amazonaws.com"
-	hostS3Bucket = "*.s3.{region}.amazonaws.com"
-	hostLambda   = "lambda.{region}.amazonaws.com"
-	hostRDS      = "rds.{region}.amazonaws.com"
-	hostELB      = "elasticloadbalancing.{region}.amazonaws.com"
+	hostSTS          = "sts.{region}.amazonaws.com"
+	hostIAM          = "iam.amazonaws.com"
+	hostEC2          = "ec2.{region}.amazonaws.com"
+	hostS3           = "s3.{region}.amazonaws.com"
+	hostS3Bucket     = "*.s3.{region}.amazonaws.com"
+	hostLambda       = "lambda.{region}.amazonaws.com"
+	hostRDS          = "rds.{region}.amazonaws.com"
+	hostELB          = "elasticloadbalancing.{region}.amazonaws.com"
+	hostSageMaker    = "api.sagemaker.{region}.amazonaws.com"
+	hostBedrockAgent = "bedrock-agent.{region}.amazonaws.com"
 )
 
 // Manifest returns the built-in AWS Connector_Manifest.
@@ -68,6 +71,11 @@ func Manifest() manifest.Manifest {
 		read("elasticloadbalancing:DescribeTargetGroups", hostELB),
 		read("elasticloadbalancing:DescribeListeners", hostELB),
 		read("elasticloadbalancing:DescribeTargetHealth", hostELB),
+		read("sagemaker:ListEndpoints", hostSageMaker),
+		read("sagemaker:ListTags", hostSageMaker),
+		read("bedrock:ListAgents", hostBedrockAgent),
+		read("bedrock:GetAgent", hostBedrockAgent),
+		read("bedrock:ListTagsForResource", hostBedrockAgent),
 		read("sts:GetCallerIdentity", hostSTS),
 		// manifest.IsWrite treats sts:AssumeRole as a write, so it is listed
 		// as a POST query. Class auth keeps it to lifecycle callers.
@@ -88,8 +96,8 @@ func Manifest() manifest.Manifest {
 		},
 		Permissions: perms,
 		Operations:  ops,
-		Egress:      []string{hostSTS, hostIAM, hostEC2, hostS3, hostS3Bucket, hostLambda, hostRDS, hostELB},
-		Entities:    []string{kindAccount, kindResource, kindSGRule, kindCIDR},
+		Egress:      []string{hostSTS, hostIAM, hostEC2, hostS3, hostS3Bucket, hostLambda, hostRDS, hostELB, hostSageMaker, hostBedrockAgent},
+		Entities:    []string{kindAccount, kindResource, kindSGRule, kindCIDR, aischema.KindService, aischema.KindAgent},
 	}
 }
 

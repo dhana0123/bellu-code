@@ -56,6 +56,7 @@ const (
 	SourceGCP        Source = "gcp"
 	SourceAzure      Source = "azure"
 	SourceK8s        Source = "k8s"
+	SourceAI         Source = "ai"
 )
 
 // OverviewCategory is one of the nine Overview groupings. It is not a

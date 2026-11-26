@@ -28,7 +28,7 @@ func Operations(infos []OperationInfo) []Operation {
 // goOwnedPrefixes lists path prefixes whose protocol operations are served by
 // the Go server (declared in TS for the contract only). Req 2.5 (registered
 // handler plus passing contract test) is enforced separately.
-var goOwnedPrefixes = []string{"/api/experimental/graph/", "/api/experimental/connectors/", "/api/experimental/overview/", "/api/experimental/findings", "/api/experimental/scans", "/api/experimental/sbom", "/api/experimental/bom", "/api/experimental/issues", "/api/experimental/rules", "/api/experimental/data", "/api/experimental/cve"}
+var goOwnedPrefixes = []string{"/api/experimental/graph/", "/api/experimental/connectors/", "/api/experimental/overview/", "/api/experimental/findings", "/api/experimental/scans", "/api/experimental/sbom", "/api/experimental/bom", "/api/experimental/issues", "/api/experimental/rules", "/api/experimental/data", "/api/experimental/cve", "/api/experimental/identity", "/api/experimental/ai", "/api/experimental/runtime"}
 
 func goOwned(path string) bool {
 	for _, p := range goOwnedPrefixes {
