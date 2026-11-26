@@ -63,6 +63,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "لم يحدد منتقي الملفات ملفًا",
   "desktop.picker.error.sizeLimit": "تتجاوز المرفقات المحددة الحد البالغ {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "التدقيق الإملائي",
+  "desktop.contextMenu.spellcheckLanguages": "لغات التدقيق الإملائي",
 
   "command.category.suggested": "مقترح",
   "command.category.view": "عرض",
@@ -649,7 +651,7 @@ export const dict = {
   "desktop.menu.installCli": "تثبيت CLI...",
   "desktop.cli.installed.title": "تم تثبيت CLI",
   "desktop.cli.installed.message":
-    "تم تثبيت CLI في \u2068{{path}}\u2069\n\nأعد تشغيل المحطة الطرفية لاستخدام الأمر 'bellucode2'.",
+    "تم تثبيت CLI في \u2068{{path}}\u2069\n\nأعد تشغيل المحطة الطرفية لاستخدام الأمر 'bellucode'.",
   "desktop.cli.failed.title": "فشل التثبيت",
   "desktop.cli.failed.message": "فشل تثبيت CLI: \u2068{{error}}\u2069",
   "dialog.server.menu.hide": "إخفاء من قائمة المشاريع",

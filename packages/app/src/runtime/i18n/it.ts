@@ -763,6 +763,8 @@ export const dict = {
   "desktop.dialog.files": "File",
   "desktop.picker.error.notSelected": "Il file non è stato selezionato nella finestra di selezione",
   "desktop.picker.error.sizeLimit": "Gli allegati selezionati superano il limite di {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Controllo ortografico",
+  "desktop.contextMenu.spellcheckLanguages": "Lingue del controllo ortografico",
 
   "provider.disconnect.toast.noCredentials.description": "Nessuna credenziale rimovibile trovata per {{provider}}.",
   "provider.disconnect.toast.failed.description": "Impossibile disconnettere {{provider}}.",
@@ -825,7 +827,7 @@ export const dict = {
   "desktop.menu.installCli": "Installa CLI...",
   "desktop.cli.installed.title": "CLI installata",
   "desktop.cli.installed.message":
-    "La CLI è stata installata in {{path}}.\n\nRiavvia il terminale per usare il comando 'bellucode2'.",
+    "La CLI è stata installata in {{path}}.\n\nRiavvia il terminale per usare il comando 'bellucode'.",
   "desktop.cli.failed.title": "Installazione non riuscita",
   "desktop.cli.failed.message": "Impossibile installare la CLI: {{error}}",
   "command.project.copyID": "Copia ID progetto",

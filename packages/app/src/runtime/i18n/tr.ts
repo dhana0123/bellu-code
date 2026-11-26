@@ -51,7 +51,7 @@ export const dict = {
 
   "desktop.cli.installed.title": "CLI yüklendi",
   "desktop.cli.installed.message":
-    "CLI, {{path}} konumuna yüklendi.\n\n'bellucode2' komutunu kullanmak için terminalinizi yeniden başlatın.",
+    "CLI, {{path}} konumuna yüklendi.\n\n'bellucode' komutunu kullanmak için terminalinizi yeniden başlatın.",
   "desktop.cli.failed.title": "Yükleme başarısız oldu",
   "desktop.cli.failed.message": "CLI yüklenemedi: {{error}}",
 
@@ -75,6 +75,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "Dosya seçici tarafından dosya seçilmedi",
   "desktop.picker.error.sizeLimit": "Seçilen ekler {{limit}} MB sınırını aşıyor",
+  "desktop.contextMenu.spellcheck": "Yazım denetimi",
+  "desktop.contextMenu.spellcheckLanguages": "Yazım denetimi dilleri",
 
   "command.category.suggested": "Önerilen",
   "command.category.view": "Görünüm",

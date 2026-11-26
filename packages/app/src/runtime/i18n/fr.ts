@@ -281,6 +281,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "Aucun fichier n'a été sélectionné dans le sélecteur",
   "desktop.picker.error.sizeLimit": "Les pièces jointes sélectionnées dépassent la limite de {{limit}} Mo",
+  "desktop.contextMenu.spellcheck": "Correction orthographique",
+  "desktop.contextMenu.spellcheckLanguages": "Langues de correction orthographique",
 
   "command.category.suggested": "Suggéré",
   "command.category.view": "Affichage",
@@ -839,7 +841,7 @@ export const dict = {
   "desktop.menu.installCli": "Installer la CLI...",
   "desktop.cli.installed.title": "CLI installée",
   "desktop.cli.installed.message":
-    "La CLI a été installée dans {{path}}.\n\nRedémarrez votre terminal pour utiliser la commande 'bellucode2'.",
+    "La CLI a été installée dans {{path}}.\n\nRedémarrez votre terminal pour utiliser la commande 'bellucode'.",
   "desktop.cli.failed.title": "Échec de l'installation",
   "desktop.cli.failed.message": "Échec de l'installation de la CLI : {{error}}",
   "command.project.copyID": "Copier l'ID du projet",

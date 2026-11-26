@@ -60,6 +60,8 @@ export const dict = {
   "desktop.dialog.files": "Soubory",
   "desktop.picker.error.notSelected": "Soubor nebyl vybrán nástrojem pro výběr",
   "desktop.picker.error.sizeLimit": "Vybrané přílohy překračují limit {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Kontrola pravopisu",
+  "desktop.contextMenu.spellcheckLanguages": "Jazyky kontroly pravopisu",
   "command.category.suggested": "Doporučeno",
   "command.category.view": "Zobrazit",
   "command.category.project": "Projekt",
@@ -610,7 +612,7 @@ export const dict = {
   "desktop.menu.installCli": "Nainstalovat CLI...",
   "desktop.cli.installed.title": "CLI nainstalováno",
   "desktop.cli.installed.message":
-    "CLI bylo nainstalováno do {{path}}\n\nChcete-li používat příkaz 'bellucode2', restartujte terminál.",
+    "CLI bylo nainstalováno do {{path}}\n\nChcete-li používat příkaz 'bellucode', restartujte terminál.",
   "desktop.cli.failed.title": "Instalace se nezdařila",
   "desktop.cli.failed.message": "CLI se nepodařilo nainstalovat: {{error}}",
   "command.project.copyID": "Kopírovat ID projektu",

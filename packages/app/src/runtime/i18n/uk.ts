@@ -90,6 +90,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "Засіб вибору не повернув вибраний файл",
   "desktop.picker.error.sizeLimit": "Вибрані вкладення перевищують обмеження в {{limit}} МБ",
+  "desktop.contextMenu.spellcheck": "Перевірка правопису",
+  "desktop.contextMenu.spellcheckLanguages": "Мови перевірки правопису",
 
   "command.category.suggested": "Рекомендовані",
   "command.category.view": "Вигляд",
@@ -697,7 +699,7 @@ export const dict = {
   "desktop.menu.installCli": "Інсталювати CLI...",
   "desktop.cli.installed.title": "CLI інстальовано",
   "desktop.cli.installed.message":
-    "CLI інстальовано в {{path}}\n\nПерезапустіть термінал, щоб використовувати команду «bellucode2».",
+    "CLI інстальовано в {{path}}\n\nПерезапустіть термінал, щоб використовувати команду «bellucode».",
   "desktop.cli.failed.title": "Не вдалося інсталювати",
   "desktop.cli.failed.message": "Не вдалося інсталювати CLI: {{error}}",
   "command.project.copyID": "Копіювати ідентифікатор проєкту",

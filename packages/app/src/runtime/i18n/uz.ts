@@ -61,6 +61,8 @@ export const dict = {
   "desktop.dialog.files": "Fayllar",
   "desktop.picker.error.notSelected": "Fayl tanlovchi tomonidan tanlanmagan",
   "desktop.picker.error.sizeLimit": "Tanlangan biriktirmalar {{limit}} MB chegarasidan oshib ketadi",
+  "desktop.contextMenu.spellcheck": "Imlo tekshiruvi",
+  "desktop.contextMenu.spellcheckLanguages": "Imlo tekshiruvi tillari",
   "command.category.suggested": "Tavsiya etilgan",
   "command.category.view": "Ko'rish",
   "command.category.project": "Loyiha",
@@ -608,7 +610,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI o‘rnatish...",
   "desktop.cli.installed.title": "CLI o‘rnatildi",
   "desktop.cli.installed.message":
-    "CLI {{path}} manziliga o‘rnatildi\n\n'bellucode2' buyrug‘idan foydalanish uchun terminalni qayta ishga tushiring.",
+    "CLI {{path}} manziliga o‘rnatildi\n\n'bellucode' buyrug‘idan foydalanish uchun terminalni qayta ishga tushiring.",
   "desktop.cli.failed.title": "O‘rnatish amalga oshmadi",
   "desktop.cli.failed.message": "CLI o‘rnatib bo‘lmadi: {{error}}",
   "command.project.copyID": "Loyiha ID-sini nusxalash",

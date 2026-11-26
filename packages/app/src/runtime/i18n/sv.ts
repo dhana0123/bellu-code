@@ -259,6 +259,8 @@ export const dict = {
   "desktop.dialog.files": "Filer",
   "desktop.picker.error.notSelected": "Ingen fil valdes i filväljaren",
   "desktop.picker.error.sizeLimit": "De valda bilagorna överskrider gränsen på {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Stavningskontroll",
+  "desktop.contextMenu.spellcheckLanguages": "Språk för stavningskontroll",
   "command.category.suggested": "Föreslagna",
   "command.category.view": "Visa",
   "command.category.project": "Projekt",
@@ -802,7 +804,7 @@ export const dict = {
   "desktop.menu.installCli": "Installera CLI...",
   "desktop.cli.installed.title": "CLI installerat",
   "desktop.cli.installed.message":
-    "CLI har installerats i {{path}}.\n\nStarta om terminalen för att använda kommandot 'bellucode2'.",
+    "CLI har installerats i {{path}}.\n\nStarta om terminalen för att använda kommandot 'bellucode'.",
   "desktop.cli.failed.title": "Installationen misslyckades",
   "desktop.cli.failed.message": "Det gick inte att installera CLI: {{error}}",
   "command.project.copyID": "Kopiera projekt-ID",

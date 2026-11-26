@@ -60,6 +60,8 @@ export const dict = {
   "desktop.dialog.files": "Faili",
   "desktop.picker.error.notSelected": "Fails netika izvēlēts ar atlasītāju",
   "desktop.picker.error.sizeLimit": "Izvēlētie pielikumi pārsniedz {{limit}} MB ierobežojumu",
+  "desktop.contextMenu.spellcheck": "Pareizrakstības pārbaude",
+  "desktop.contextMenu.spellcheckLanguages": "Pareizrakstības pārbaudes valodas",
   "command.category.suggested": "Ieteikts",
   "command.category.view": "Skats",
   "command.category.project": "Projekts",
@@ -608,7 +610,7 @@ export const dict = {
   "desktop.menu.installCli": "Instalēt CLI...",
   "desktop.cli.installed.title": "CLI ir instalēta",
   "desktop.cli.installed.message":
-    "CLI ir instalēta vietā {{path}}\n\nRestartējiet termināli, lai izmantotu komandu 'bellucode2'.",
+    "CLI ir instalēta vietā {{path}}\n\nRestartējiet termināli, lai izmantotu komandu 'bellucode'.",
   "desktop.cli.failed.title": "Instalēšana neizdevās",
   "desktop.cli.failed.message": "Neizdevās instalēt CLI: {{error}}",
   "command.project.copyID": "Kopēt projekta ID",

@@ -74,6 +74,8 @@ export const dict = {
   "desktop.dialog.files": "датотеке",
   "desktop.picker.error.notSelected": "Бирач није изабрао датотеку",
   "desktop.picker.error.sizeLimit": "Изабрани прилози премашују ограничење од {{limit}} МБ",
+  "desktop.contextMenu.spellcheck": "Провера правописа",
+  "desktop.contextMenu.spellcheckLanguages": "Језици провере правописа",
   "command.category.suggested": "Предложено",
   "command.category.view": "Приказ",
   "command.category.project": "Пројекат",
@@ -617,7 +619,7 @@ export const dict = {
   "desktop.menu.installCli": "Инсталирај CLI...",
   "desktop.cli.installed.title": "CLI је инсталиран",
   "desktop.cli.installed.message":
-    "CLI је инсталиран у {{path}}\n\nПоново покрените терминал да бисте користили наредбу 'bellucode2'.",
+    "CLI је инсталиран у {{path}}\n\nПоново покрените терминал да бисте користили наредбу 'bellucode'.",
   "desktop.cli.failed.title": "Инсталација није успела",
   "desktop.cli.failed.message": "Инсталација CLI-ја није успела: {{error}}",
   "command.project.copyID": "Копирај ID пројекта",

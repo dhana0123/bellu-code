@@ -60,6 +60,8 @@ export const dict = {
   "desktop.dialog.files": "Fitxers",
   "desktop.picker.error.notSelected": "El selector no ha seleccionat el fitxer",
   "desktop.picker.error.sizeLimit": "Els fitxers adjunts seleccionats superen el límit de {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Correcció ortogràfica",
+  "desktop.contextMenu.spellcheckLanguages": "Llengües de la correcció ortogràfica",
   "command.category.suggested": "Suggerit",
   "command.category.view": "Veure",
   "command.category.project": "Projecte",
@@ -610,7 +612,7 @@ export const dict = {
   "desktop.menu.installCli": "Instal·la la CLI...",
   "desktop.cli.installed.title": "CLI instal·lada",
   "desktop.cli.installed.message":
-    "La CLI s'ha instal·lat a {{path}}\n\nReinicieu el terminal per utilitzar l'ordre 'bellucode2'.",
+    "La CLI s'ha instal·lat a {{path}}\n\nReinicieu el terminal per utilitzar l'ordre 'bellucode'.",
   "desktop.cli.failed.title": "La instal·lació ha fallat",
   "desktop.cli.failed.message": "No s'ha pogut instal·lar la CLI: {{error}}",
   "command.project.copyID": "Copia l'ID del projecte",

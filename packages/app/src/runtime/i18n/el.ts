@@ -61,6 +61,8 @@ export const dict = {
   "desktop.dialog.files": "Αρχεία",
   "desktop.picker.error.notSelected": "Το αρχείο δεν επιλέχθηκε από τον επιλογέα",
   "desktop.picker.error.sizeLimit": "Τα επιλεγμένα συνημμένα υπερβαίνουν το όριο των {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Ορθογραφικός έλεγχος",
+  "desktop.contextMenu.spellcheckLanguages": "Γλώσσες ορθογραφικού ελέγχου",
   "command.category.suggested": "Προτεινόμενο",
   "command.category.view": "Προβολή",
   "command.category.project": "Έργο",
@@ -612,7 +614,7 @@ export const dict = {
   "desktop.menu.installCli": "Εγκατάσταση CLI...",
   "desktop.cli.installed.title": "Το CLI εγκαταστάθηκε",
   "desktop.cli.installed.message":
-    "Το CLI εγκαταστάθηκε στη διαδρομή {{path}}\n\nΕπανεκκινήστε το τερματικό για να χρησιμοποιήσετε την εντολή 'bellucode2'.",
+    "Το CLI εγκαταστάθηκε στη διαδρομή {{path}}\n\nΕπανεκκινήστε το τερματικό για να χρησιμοποιήσετε την εντολή 'bellucode'.",
   "desktop.cli.failed.title": "Η εγκατάσταση απέτυχε",
   "desktop.cli.failed.message": "Αποτυχία εγκατάστασης του CLI: {{error}}",
   "command.project.copyID": "Αντιγραφή ID έργου",
