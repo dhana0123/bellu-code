@@ -2,10 +2,16 @@
 import { $ } from "bun"
 import { exists } from "node:fs/promises"
 import path from "node:path"
-import { copyBuiltCliToResources, downloadCliToResources, getCurrentCli, resolveChannel } from "./utils"
-import { verifyBundles } from "./verify-bundles"
+import {
+  buildBelludToResources,
+  copyBuiltCliToResources,
+  downloadCliToResources,
+  getCurrentCli,
+  resolveChannel,
+} from "./utils"
+import { verifyBundles, verifyResources } from "./verify-bundles"
 
-// Prepares resources/ (icons, metainfo, the bundled CLI) for BELLUCODE_CHANNEL and builds the app into out/.
+// Prepares resources/ (icons, metainfo, the bundled CLI, the bellud sidecar) for BELLUCODE_CHANNEL and builds the app into out/.
 // The CLI comes from ../cli/dist when it holds the target; otherwise dev downloads the published dev CLI,
 // beta the beta CLI, and prod fails.
 const dir = path.resolve(import.meta.dir, "..")
@@ -28,6 +34,10 @@ if (channel === "prod" && !built)
 if (built) await copyBuiltCliToResources(cli)
 
 if (!built) await downloadCliToResources(channel === "beta" ? "beta" : undefined)
+// bellud is the sidecar server; it spawns the bellucode-cli binary copied above, so both must be in resources/.
+await buildBelludToResources(path.resolve(dir, "../../services/bellud"))
+
+await verifyResources(path.join(dir, "resources"), getCurrentCli().os)
 
 await $`bunx electron-vite build`
 

@@ -69,7 +69,7 @@ func main() {
 		os.Exit(runSecurity(os.Args[2:], securityEnv{getenv: os.Getenv, stdout: os.Stdout, stderr: os.Stderr}))
 	}
 	if len(os.Args) < 2 || os.Args[1] != "serve" {
-		fmt.Fprintln(os.Stderr, "usage: bellud serve [--hostname HOST] [--port PORT] [--repo DIR]")
+		fmt.Fprintln(os.Stderr, "usage: bellud serve [--hostname HOST] [--port PORT] [--repo DIR] [--cli-bin PATH]")
 		fmt.Fprintln(os.Stderr, "       bellud cve update|status|import ...")
 		fmt.Fprintln(os.Stderr, "       bellud security scan|findings|sbom ...")
 		os.Exit(2)
@@ -90,6 +90,7 @@ func serve(args []string) error {
 	hostname := fs.String("hostname", cfg.Hostname, "listen hostname")
 	port := fs.Int("port", cfg.Port, "listen port")
 	repo := fs.String("repo", os.Getenv("BELLUCODE_REPO"), "repository root containing packages/cli")
+	cliBin := fs.String("cli-bin", os.Getenv("BELLUCODE_CLI_BIN"), "compiled bellucode-cli binary to spawn instead of bun + packages/cli")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -104,11 +105,7 @@ func serve(args []string) error {
 		logger.Println("warning:", w)
 	}
 
-	cliDir, err := findCLIDir(*repo)
-	if err != nil {
-		return err
-	}
-	bun, err := findBun()
+	childCmd, cliDir, err := childLaunch(*cliBin, *repo)
 	if err != nil {
 		return err
 	}
@@ -129,7 +126,11 @@ func serve(args []string) error {
 		return fmt.Errorf("graph tokens: %w", err)
 	}
 	lensSvc := lens.NewService()
-	roots := scanRoots(filepath.Dir(filepath.Dir(cliDir)))
+	repoRoot := ""
+	if cliDir != "" {
+		repoRoot = filepath.Dir(filepath.Dir(cliDir))
+	}
+	roots := scanRoots(repoRoot)
 	// Findings and the scan queue exist only with the security_findings flag on.
 	var fnd *findingsWiring
 	if dd, derr := config.DataDir(); derr != nil {
@@ -234,7 +235,7 @@ func serve(args []string) error {
 
 	sup := tschild.New(tschild.Config{
 		Env:     childEnv,
-		Command: []string{bun, "run", "src/index.ts", "serve", "--stdio", "--hostname", "127.0.0.1", "--port", "0"},
+		Command: childCmd,
 		Dir:     cliDir,
 		Logger:  logger,
 	})
@@ -515,6 +516,24 @@ func scanRoots(repo string) []string {
 		out = []string{repo}
 	}
 	return out
+}
+
+// childLaunch returns the child command and working directory. A non-empty
+// cliBin selects the compiled bellucode-cli binary and skips bun and
+// packages/cli resolution; otherwise the bun-based command runs from packages/cli.
+func childLaunch(cliBin, repo string) (command []string, dir string, err error) {
+	if cliBin = strings.TrimSpace(cliBin); cliBin != "" {
+		return []string{cliBin, "serve", "--stdio", "--hostname", "127.0.0.1", "--port", "0"}, "", nil
+	}
+	dir, err = findCLIDir(repo)
+	if err != nil {
+		return nil, "", err
+	}
+	bun, err := findBun()
+	if err != nil {
+		return nil, "", err
+	}
+	return []string{bun, "run", "src/index.ts", "serve", "--stdio", "--hostname", "127.0.0.1", "--port", "0"}, dir, nil
 }
 
 // findCLIDir resolves <repo>/packages/cli from the flag/env or by walking up from the executable and cwd.

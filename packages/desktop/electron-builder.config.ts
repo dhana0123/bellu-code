@@ -82,6 +82,8 @@ const getBase = (appId: string): Configuration => {
       "out/**/*",
       "resources/**/*",
       "!resources/bellucode-cli*",
+      "!resources/bellud",
+      "!resources/bellud.exe",
       // Keep only the target platform's node-pty prebuild when cross-packaging with --cpu=*.
       ...CLI_BINARIES.filter((item) => item.os !== target.os || item.cpu !== target.cpu).map(
         (item) => `!**/node_modules/@lydell/node-pty-${item.os}-${item.cpu}{,/**/*}`,
@@ -106,6 +108,11 @@ const getBase = (appId: string): Configuration => {
         from: "resources/",
         to: "",
         filter: ["bellucode-cli", "bellucode-cli.exe", "bellucode-cli.version"],
+      },
+      {
+        from: "resources/",
+        to: "",
+        filter: ["bellud", "bellud.exe"],
       },
     ],
     afterPack: async (context) => {

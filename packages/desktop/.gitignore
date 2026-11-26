@@ -25,5 +25,6 @@ dist-ssr
 out/
 
 resources/bellucode-cli*
+resources/bellud*
 resources/icons
 resources/*.metainfo.xml
