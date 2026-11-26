@@ -42,3 +42,7 @@ legal-drafts-private/
 
 # bellud build output
 services/bellud/dist
+
+# build outputs
+services/bellud/bellud
+services/bellud/*.test
