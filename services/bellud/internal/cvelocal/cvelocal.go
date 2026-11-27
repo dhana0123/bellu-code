@@ -17,7 +17,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/bellu/global-cv-graph/pkg/intel"
+	"github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/intel"
 
 	_ "modernc.org/sqlite" // registers the "sqlite" driver used for the search handle
 )

@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/bellu/global-cv-graph/pkg/sign"
+	"github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/sign"
 	"pgregory.net/rapid"
 )
 

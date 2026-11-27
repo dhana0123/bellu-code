@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	pkginstall "github.com/bellu/global-cv-graph/pkg/install"
-	"github.com/bellu/global-cv-graph/pkg/intel"
+	pkginstall "github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/install"
+	"github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/intel"
 	_ "modernc.org/sqlite" // registers the "sqlite" driver
 )
 

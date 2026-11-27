@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	pkginstall "github.com/bellu/global-cv-graph/pkg/install"
-	"github.com/bellu/global-cv-graph/pkg/sign"
+	pkginstall "github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/install"
+	"github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/sign"
 )
 
 func writePack(t *testing.T, e *env, name string, data []byte) string {

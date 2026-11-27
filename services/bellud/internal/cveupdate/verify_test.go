@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bellu/global-cv-graph/pkg/sign"
+	"github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/sign"
 )
 
 func fixture(t *testing.T) (*Verifier, ed25519.PrivateKey) {

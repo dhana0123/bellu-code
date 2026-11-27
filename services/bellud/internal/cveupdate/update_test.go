@@ -10,7 +10,7 @@ import (
 
 	"github.com/bellu/bellucode/services/bellud/internal/config"
 	"github.com/bellu/bellucode/services/bellud/internal/store/sqlite"
-	"github.com/bellu/global-cv-graph/pkg/sign"
+	"github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/sign"
 )
 
 type memState struct{ row *sqlite.CVEUpdateState }

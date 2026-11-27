@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bellu/global-cv-graph/pkg/sign"
+	"github.com/dhana0123/Bellu-Security-Knowledge-Graph/pkg/cve/sign"
 )
 
 //go:embed pinned_keys
