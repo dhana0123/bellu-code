@@ -60,6 +60,8 @@ export const dict = {
   "desktop.dialog.files": "Fail",
   "desktop.picker.error.notSelected": "Fail tidak dipilih oleh pemilih",
   "desktop.picker.error.sizeLimit": "Lampiran yang dipilih melebihi had {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Semakan ejaan",
+  "desktop.contextMenu.spellcheckLanguages": "Bahasa semakan ejaan",
   "command.category.suggested": "Dicadangkan",
   "command.category.view": "Paparan",
   "command.category.project": "Projek",
@@ -608,7 +610,7 @@ export const dict = {
   "desktop.menu.installCli": "Pasang CLI...",
   "desktop.cli.installed.title": "CLI Dipasang",
   "desktop.cli.installed.message":
-    "CLI dipasang ke {{path}}\n\nMulakan semula terminal anda untuk menggunakan perintah 'bellucode2'.",
+    "CLI dipasang ke {{path}}\n\nMulakan semula terminal anda untuk menggunakan perintah 'bellucode'.",
   "desktop.cli.failed.title": "Pemasangan Gagal",
   "desktop.cli.failed.message": "Gagal memasang CLI: {{error}}",
   "command.project.copyID": "Salin ID Projek",

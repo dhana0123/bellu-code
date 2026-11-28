@@ -1,0 +1,8 @@
+title = "bellucode gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake planted-secret corpus for scanner tests (all values are fabricated)."
+paths = ['''services/bellud/internal/scanners/testdata/secrets/''']

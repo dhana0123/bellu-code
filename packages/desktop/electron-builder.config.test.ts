@@ -127,9 +127,18 @@ test("shared packaging defaults", async () => {
   expect(config.files).toContain("!resources/bellucode-cli*")
   expect(config.extraResources).toEqual([
     { from: "resources/", to: "", filter: ["bellucode-cli", "bellucode-cli.exe", "bellucode-cli.version"] },
+    { from: "resources/", to: "", filter: ["bellud", "bellud.exe"] },
   ])
+  expect(config.files).toContain("!resources/bellud")
 })
 
+test("the bellud extraResources filter covers both platform names and only those", () => {
+  const entry = (load("dev").extraResources as { filter: string[] }[]).find((item) => item.filter.includes("bellud"))
+  expect(entry?.filter).toEqual(["bellud", "bellud.exe"])
+  for (const name of entry?.filter ?? []) expect(name).not.toMatch(/[*?{}[\]]/)
+  expect(entry?.filter).not.toContain("bellucode-cli")
+  expect(entry?.filter).not.toContain("bellucode-cli.exe")
+})
 test("trims external dependencies without excluding runtime files", () => {
   const fileStats = statSync(import.meta.filename)
   const dirStats = statSync(import.meta.dirname)

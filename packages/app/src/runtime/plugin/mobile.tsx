@@ -139,13 +139,13 @@ export function MobileViewTabs(props: {
               fallback={
                 <div
                   data-slot="session-mobile-view-options"
-                  class="flex flex-col gap-0.5 rounded-[6px] bg-v2-background-bg-base p-0.5 shadow-[var(--v2-elevation-raised)] [[data-color-scheme=dark]_&]:bg-v2-background-bg-layer-01"
+                  class="flex flex-col gap-0.5 rounded-md bg-v2-background-bg-base p-0.5 shadow-[var(--v2-elevation-raised)] [[data-color-scheme=dark]_&]:bg-v2-background-bg-layer-01"
                 >
                   <For each={props.views.menu().filter((entry) => entry.mobile.kind === "menu")}>
                     {(entry) => (
                       <button
                         type="button"
-                        class="flex min-h-11 w-full items-center gap-2 rounded-[4px] py-1 ps-3 pe-2 text-start text-[13px] font-[440] leading-[var(--line-height-base)] text-v2-text-text-base hover:bg-[var(--v2-overlay-simple-overlay-hover)] focus-visible:outline-none focus-visible:bg-[var(--v2-overlay-simple-overlay-hover)] aria-pressed:bg-[var(--v2-overlay-simple-overlay-pressed)]"
+                        class="flex min-h-11 w-full items-center gap-2 rounded-sm py-1 ps-3 pe-2 text-start text-[13px] font-[440] leading-[var(--line-height-base)] text-v2-text-text-base hover:bg-[var(--v2-overlay-simple-overlay-hover)] focus-visible:outline-none focus-visible:bg-[var(--v2-overlay-simple-overlay-hover)] aria-pressed:bg-[var(--v2-overlay-simple-overlay-pressed)]"
                         aria-pressed={props.current === entry.key}
                         onClick={() => {
                           props.onSelect(entry.key)
@@ -166,7 +166,7 @@ export function MobileViewTabs(props: {
                     {(entry) => (
                       <button
                         type="button"
-                        class="flex min-h-11 w-full items-center gap-2 rounded-[4px] py-1 ps-3 pe-2 text-start text-[13px] font-[440] leading-[var(--line-height-base)] text-v2-text-text-base hover:bg-[var(--v2-overlay-simple-overlay-hover)] focus-visible:outline-none focus-visible:bg-[var(--v2-overlay-simple-overlay-hover)]"
+                        class="flex min-h-11 w-full items-center gap-2 rounded-sm py-1 ps-3 pe-2 text-start text-[13px] font-[440] leading-[var(--line-height-base)] text-v2-text-text-base hover:bg-[var(--v2-overlay-simple-overlay-hover)] focus-visible:outline-none focus-visible:bg-[var(--v2-overlay-simple-overlay-hover)]"
                         onClick={() => setStore("drawer", entry.key)}
                       >
                         <Show when={entry.mobile.icon}>

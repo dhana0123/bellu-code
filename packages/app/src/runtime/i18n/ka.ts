@@ -60,6 +60,8 @@ export const dict = {
   "desktop.dialog.files": "ფაილები",
   "desktop.picker.error.notSelected": "ფაილი არ იყო არჩეული ამომრჩევლის მიერ",
   "desktop.picker.error.sizeLimit": "არჩეული დანართები აღემატება {{limit}} MB ლიმიტს",
+  "desktop.contextMenu.spellcheck": "მართლწერის შემოწმება",
+  "desktop.contextMenu.spellcheckLanguages": "მართლწერის შემოწმების ენები",
   "command.category.suggested": "შემოთავაზებულია",
   "command.category.view": "ნახვა",
   "command.category.project": "პროექტი",
@@ -603,7 +605,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI-ის დაყენება...",
   "desktop.cli.installed.title": "CLI დაყენებულია",
   "desktop.cli.installed.message":
-    "CLI დაყენდა მისამართზე {{path}}\n\n'bellucode2' ბრძანების გამოსაყენებლად გადატვირთეთ ტერმინალი.",
+    "CLI დაყენდა მისამართზე {{path}}\n\n'bellucode' ბრძანების გამოსაყენებლად გადატვირთეთ ტერმინალი.",
   "desktop.cli.failed.title": "დაყენება ვერ მოხერხდა",
   "desktop.cli.failed.message": "CLI-ის დაყენება ვერ მოხერხდა: {{error}}",
   "command.project.copyID": "პროექტის ID-ის კოპირება",

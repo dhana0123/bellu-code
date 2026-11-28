@@ -206,11 +206,13 @@ function RootSettings() {
 
   const groups = createMemo<SettingsNavGroup[]>(() => [
     {
-      items: serverTabs.map((item) => ({
-        ...item,
-        label: language.t(item.label),
-        onPrefetch: item.value === "workspaces" ? prefetchWorkspaces : undefined,
-      })),
+      items: [
+        ...serverTabs.map((item) => ({
+          ...item,
+          label: language.t(item.label),
+          onPrefetch: item.value === "workspaces" ? prefetchWorkspaces : undefined,
+        })),
+      ],
     },
     {
       items: [

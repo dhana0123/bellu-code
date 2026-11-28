@@ -1,4 +1,14 @@
-import { createContext, createMemo, onCleanup, useContext, type Component, type JSX, type ParentProps } from "solid-js"
+import {
+  createContext,
+  createMemo,
+  onCleanup,
+  splitProps,
+  useContext,
+  type Component,
+  type ComponentProps,
+  type JSX,
+  type ParentProps,
+} from "solid-js"
 import { createStore } from "solid-js/store"
 
 type LocationState = {
@@ -188,4 +198,20 @@ export function Route(props: ParentProps<{ path?: string; component?: Component 
   }
 
   return props.children
+}
+
+// A link that navigates the memory router instead of the page, like the real `A` does on a plain click.
+export function A(props: ComponentProps<"a"> & { href: string }) {
+  const navigate = useNavigate()
+  const [local, rest] = splitProps(props, ["href"])
+  return (
+    <a
+      {...rest}
+      href={local.href}
+      onClick={(event) => {
+        event.preventDefault()
+        navigate(local.href)
+      }}
+    />
+  )
 }

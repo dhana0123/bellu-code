@@ -1,20 +1,17 @@
 import { app } from "electron"
 import type { Endpoint } from "@bellucode/client/service"
-import { Context, Effect, FileSystem, Layer, Option, Path, Schema } from "effect"
+import { Context, Effect, FileSystem, Layer, Path } from "effect"
 import { SidecarChanged } from "../../shared/ipc-rpc/events"
-import { CHANNEL } from "../constants"
 import { emitIpcEvent } from "../ipc-events"
 import { getMainWindows } from "../windows"
 import { BackgroundServiceMachine } from "./background-service-machine"
 import { cleanStages } from "./cli-stages"
-import { keptStages, serviceVersion, shouldRetryEnsure } from "./cli-version"
+import { keptStages } from "./cli-version"
 import { DesktopCli } from "./desktop-cli"
 import { SidecarCredentials } from "./sidecar-credentials"
-import { takeSidecarProbe } from "./sidecar-probe"
+import { ensureBellud } from "./bellud-sidecar"
 
 export * as BackgroundService from "./background-service"
-
-const RegisteredService = Schema.Struct({ version: Schema.optional(Schema.String) })
 
 export interface Interface {
   readonly connection: Effect.Effect<SidecarCredentials.Data>
@@ -30,7 +27,7 @@ export const layer = Layer.effect(
 
     return Service.of(
       yield* BackgroundServiceMachine.make({
-        probe: probe().pipe(Effect.provide(context)),
+        probe,
         ensure: (mode) => ensure(mode).pipe(Effect.provide(context)),
         publish: (data) => {
           SidecarCredentials.set(data)
@@ -43,53 +40,29 @@ export const layer = Layer.effect(
   }),
 )
 
-// A compatible service the entry module already found is adopted at once; the machine still verifies it with
-// `ensure("initial")` (which also completes a terminal handoff), off the renderer's path.
-const probe = Effect.fn("BackgroundService.probe")(function* () {
-  const service = yield* Effect.promise(takeSidecarProbe)
-
-  if (!service) return undefined
-  const setup = yield* prepare("initial")
-
-  return (yield* adopt(setup, service, true)).credentials
-})
+// bellud is a child of this app launch and writes no registration file, so there is never an earlier service to adopt.
+const probe = Effect.sync((): SidecarCredentials.Data | undefined => undefined)
 
 const ensure = Effect.fn("BackgroundService.ensure")(function* (mode: BackgroundServiceMachine.ConnectMode) {
   const runFork = Effect.runForkWith(yield* Effect.context<FileSystem.FileSystem | Path.Path>())
   const setup = yield* prepare(mode)
 
-  const run = (version = setup.version) =>
-    setup.client.Service.ensure({
-      file: setup.file,
-      version,
-      // A fixed port makes a second contender fail to bind and back off; port 0 never collides, so two
-      // services could boot against the same database.
-      command: [
-        ...setup.cli.command,
-        "serve",
-        "--service",
-        ...(setup.isolated ? ["--hostname", "0.0.0.0", "--port", String(0x0c0c)] : []),
-      ],
-      onStart: (reason, previousVersion) =>
-        runFork(Effect.logInfo("v2 CLI background service starting", { reason, previousVersion })),
-    })
+  // `bellud` is the Sidecar_Server. It spawns the bundled bellucode-cli binary itself (--cli-bin), or bun + packages/cli
+  // from source in development (--repo). One instance runs per app launch, so a reconnect reuses it while it is alive.
+  yield* Effect.logInfo("starting bellud sidecar", { bellud: setup.cli.bellud, mode })
+  const running = yield* Effect.tryPromise({
+    try: () => ensureBellud(setup.cli.bellud, { cliBinary: setup.cli.binary, repo: setup.cli.repo }),
+    // Keep the SidecarStartupError as is: its fixed message is what the startup failure page shows.
+    catch: (error) => error,
+  })
 
-  const service = yield* Effect.tryPromise(() =>
-    run().catch((error) => {
-      if (!shouldRetryEnsure(setup.version, error instanceof Error ? error.message : String(error))) throw error
-
-      return run(setup.cli.version)
-    }),
-  )
-
-  const ready = yield* adopt(setup, service, false)
+  const ready = yield* adopt(setup, running.endpoint)
 
   // Only packaged and isolated builds run a staged copy; any other binary sits in the source tree.
-  // Keep both the bundled stage and the running server's stage so its executable stays on disk. This runs only
-  // once `Service.ensure` settled which server runs, never for a probed one it may still replace.
-  if (mode === "initial" && (app.isPackaged || setup.isolated) && setup.cli.binary && ready.runningVersion)
+  // The staged bellucode-cli stays on disk while bellud runs it, so only the bundled stage is kept.
+  if (mode === "initial" && (app.isPackaged || setup.isolated) && setup.cli.binary)
     runFork(
-      cleanStages(setup.cli.binary, { keep: keptStages(setup.cli.version, ready.runningVersion) }).pipe(
+      cleanStages(setup.cli.binary, { keep: keptStages(setup.cli.version) }).pipe(
         Effect.catch((error) => Effect.logError("failed to clean staged v2 CLIs", { error })),
       ),
     )
@@ -97,60 +70,26 @@ const ensure = Effect.fn("BackgroundService.ensure")(function* (mode: Background
   return ready.credentials
 })
 
-const prepare = Effect.fn("BackgroundService.prepare")(function* (mode: BackgroundServiceMachine.ConnectMode) {
-  yield* Effect.logInfo("starting v2 background service")
-  const path = yield* Path.Path
+const prepare = Effect.fn("BackgroundService.prepare")(function* (_mode: BackgroundServiceMachine.ConnectMode) {
   const desktopCli = yield* DesktopCli.Service
   const isolated = !app.isPackaged && process.env.BELLUCODE_DESKTOP_ISOLATED_SERVER === "1"
   const cli = yield* desktopCli.resolve
-  const version = serviceVersion({ channel: CHANNEL, isolated, mode, version: cli.version })
 
   if (isolated) process.env.XDG_STATE_HOME = app.getPath("userData")
-  const client = yield* Effect.promise(() => import("@bellucode/client/service"))
 
-  const file =
-    process.env.BELLUCODE_DESKTOP_SERVER_CHANNEL === "local"
-      ? path.join(
-          process.env.XDG_STATE_HOME ?? path.join(app.getPath("home"), ".local", "state"),
-          "bellucode",
-          "service-local.json",
-        )
-      : undefined
-
-  return { cli, client, file, isolated, version }
+  return { cli, isolated }
 })
 
 const adopt = Effect.fn("BackgroundService.adopt")(function* (
   setup: Effect.Success<ReturnType<typeof prepare>>,
   service: Endpoint,
-  probed: boolean,
 ) {
-  const fs = yield* FileSystem.FileSystem
-
-  if (service.auth?.type !== "basic") throw new Error("V2 CLI background service did not provide authentication")
+  if (service.auth?.type !== "basic") throw new Error("bellud did not provide authentication")
   const url = new URL(service.url)
 
-  if (url.hostname === "0.0.0.0") url.hostname = "127.0.0.1"
+  yield* Effect.logInfo("bellud sidecar ready", { version: setup.cli.version, ...endpoint(url.origin) })
 
-  const runningVersion = yield* fs.readFileString(setup.file ?? setup.client.fallback()).pipe(
-    Effect.map(
-      (text) =>
-        Option.getOrUndefined(Schema.decodeUnknownOption(Schema.fromJsonString(RegisteredService))(text))?.version,
-    ),
-    Effect.orElseSucceed(() => undefined),
-  )
-
-  yield* Effect.logInfo("v2 CLI background service ready", {
-    version: setup.version,
-    runningVersion,
-    probed,
-    ...endpoint(url.origin),
-  })
-
-  return {
-    credentials: { url: url.origin, password: service.auth.password } satisfies SidecarCredentials.Data,
-    runningVersion,
-  }
+  return { credentials: { url: url.origin, password: service.auth.password } satisfies SidecarCredentials.Data }
 })
 
 function endpoint(url: string | undefined) {

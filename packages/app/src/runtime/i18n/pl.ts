@@ -63,6 +63,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "Nie wybrano pliku w oknie wyboru",
   "desktop.picker.error.sizeLimit": "Wybrane załączniki przekraczają limit {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Sprawdzanie pisowni",
+  "desktop.contextMenu.spellcheckLanguages": "Języki sprawdzania pisowni",
 
   "command.category.suggested": "Sugerowane",
   "command.category.view": "Widok",
@@ -623,7 +625,7 @@ export const dict = {
   "desktop.menu.installCli": "Zainstaluj CLI...",
   "desktop.cli.installed.title": "CLI zostało zainstalowane",
   "desktop.cli.installed.message":
-    "CLI zainstalowano w {{path}}\n\nUruchom terminal ponownie, aby używać polecenia „bellucode2”.",
+    "CLI zainstalowano w {{path}}\n\nUruchom terminal ponownie, aby używać polecenia „bellucode”.",
   "desktop.cli.failed.title": "Instalacja nie powiodła się",
   "desktop.cli.failed.message": "Nie udało się zainstalować CLI: {{error}}",
   "command.project.copyID": "Kopiuj identyfikator projektu",

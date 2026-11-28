@@ -5,6 +5,7 @@ import { Effect, Fiber, Schema, Stream } from "effect"
 import { Agent } from "@bellucode/core/agent"
 import { Bus } from "@bellucode/core/bus"
 import { Config } from "@bellucode/core/config"
+import { Flag } from "@bellucode/core/flag"
 import { Directory, Document, Event, Info } from "@bellucode/schema/config"
 import { Model } from "@bellucode/schema/model"
 import { ConfigAgentPlugin } from "@bellucode/core/config/plugin/agent"
@@ -20,7 +21,7 @@ import { ConfigAgentV1 } from "@bellucode/core/v1/config/agent"
 import { advance, drain } from "../lib/clock"
 import { tmpdir, tmpdirScoped } from "../fixture/tmpdir"
 import { testEffect } from "../lib/effect"
-import { agentHost, host } from "../plugin/host"
+import { agentHost, host, inertTools } from "../plugin/host"
 
 const it = testEffect(AppNodeBuilder.build(LayerNode.group([Agent.node, Bus.node, FSUtil.node, Global.node])))
 const decode = Schema.decodeUnknownSync(Info)
@@ -176,7 +177,9 @@ permissions:
     Effect.gen(function* () {
       const agents = yield* Agent.Service
       const global = yield* Global.Service
-      yield* AgentPlugin.Plugin.effect(host({ agent: agentHost(agents) }))
+      yield* AgentPlugin.Plugin.effect(host({ agent: agentHost(agents), tool: inertTools, session: { hook: () => Effect.succeed({ dispose: Effect.void }) } })).pipe(
+        Effect.provide(Flag.testLayer()),
+      )
 
       const entries = [
         new Document({

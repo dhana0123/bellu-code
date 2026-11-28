@@ -95,3 +95,19 @@ func TestDegradedAfterRepeatedFailures(t *testing.T) {
 		t.Fatalf("state = %s", s.State())
 	}
 }
+
+func TestBuildEnvStripsVaultKeyMaterial(t *testing.T) {
+	s := New(Config{
+		BaseEnv: []string{"PATH=/bin", "CREDENTIALS_DIRECTORY=/run/c", "BELLUCODE_MASTER_KEY_FILE=/k", "BELLUCODE_VAULT_PASSPHRASE=pp"},
+		Env:     map[string]string{"BELLUCODE_VAULT_PASSPHRASE": "evil"},
+	})
+	env := strings.Join(s.buildEnv("internal"), "\n")
+	for _, n := range []string{"CREDENTIALS_DIRECTORY", "BELLUCODE_MASTER_KEY_FILE", "BELLUCODE_VAULT_PASSPHRASE", "evil", "pp"} {
+		if strings.Contains(env, n) {
+			t.Fatalf("%s leaked: %s", n, env)
+		}
+	}
+	if !strings.Contains(env, "PATH=/bin") {
+		t.Fatalf("PATH dropped: %s", env)
+	}
+}

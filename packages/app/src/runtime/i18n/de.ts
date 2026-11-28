@@ -765,6 +765,8 @@ export const dict = {
   "desktop.dialog.files": "Dateien",
   "desktop.picker.error.notSelected": "Im Auswahldialog wurde keine Datei ausgewählt",
   "desktop.picker.error.sizeLimit": "Die ausgewählten Anhänge überschreiten das Limit von {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Rechtschreibprüfung",
+  "desktop.contextMenu.spellcheckLanguages": "Sprachen der Rechtschreibprüfung",
   "command.logs.export": "Protokolle exportieren",
 
   "provider.disconnect.toast.noCredentials.description":
@@ -827,7 +829,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI installieren...",
   "desktop.cli.installed.title": "CLI installiert",
   "desktop.cli.installed.message":
-    "CLI wurde unter {{path}} installiert.\n\nStarten Sie Ihr Terminal neu, um den Befehl 'bellucode2' zu verwenden.",
+    "CLI wurde unter {{path}} installiert.\n\nStarten Sie Ihr Terminal neu, um den Befehl 'bellucode' zu verwenden.",
   "desktop.cli.failed.title": "Installation fehlgeschlagen",
   "desktop.cli.failed.message": "CLI konnte nicht installiert werden: {{error}}",
   "command.project.copyID": "Projekt-ID kopieren",

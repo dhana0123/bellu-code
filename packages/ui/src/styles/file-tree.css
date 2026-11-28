@@ -52,7 +52,7 @@ file-tree-container.bellucode-pierre-file-tree {
   padding-inline-end: 8px;
   overflow: clip;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background-color: transparent;
   color: var(--v2-text-text-muted);
   text-align: start;
@@ -227,8 +227,8 @@ file-tree-container.bellucode-pierre-file-tree {
 [data-component="file-tree-v2"] :is([data-slot="file-tree-v2-change"], [data-slot="file-tree-v2-end"])::after {
   inset-inline: 0 calc(-1 * var(--file-tree-v2-end-inset));
   z-index: -1;
-  border-start-end-radius: 6px;
-  border-end-end-radius: 6px;
+  border-start-end-radius: var(--radius-md);
+  border-end-end-radius: var(--radius-md);
   background:
     linear-gradient(var(--file-tree-v2-row-overlay), var(--file-tree-v2-row-overlay)), var(--v2-background-bg-base);
   box-shadow: 8px 0 0 6px var(--v2-background-bg-base);

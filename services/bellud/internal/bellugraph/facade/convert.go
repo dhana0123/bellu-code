@@ -37,6 +37,7 @@ func toEdge(v bgeengine.EdgeView) Edge {
 	return Edge{
 		From: EntityID(v.From), To: EntityID(v.To), Type: v.Type,
 		Direction: v.Direction, Hops: v.Hops, Derived: v.Derived,
+		Evidence: v.Evidence, Confidence: v.Confidence, ObservedAt: v.ObservedAt,
 	}
 }
 

@@ -442,7 +442,7 @@
   top: calc((var(--tabs-bar-height, 48px) - var(--tabs-compact-pill-height, 24px)) / 2);
   height: var(--tabs-compact-pill-height, 24px);
   border: 1px solid var(--v2-border-border-base);
-  border-radius: var(--tabs-compact-pill-radius, 6px);
+  border-radius: var(--tabs-compact-pill-radius, var(--radius-md));
   background-color: var(--surface-base-active);
 }
 

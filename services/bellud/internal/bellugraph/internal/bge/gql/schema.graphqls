@@ -18,7 +18,7 @@ type Entity {
   history(from: Time, to: Time, first: Int = 100, after: String): ChangePage!
   dependents: [Entity!]!
 }
-type Edge { from: Entity!  to: Entity!  type: String!  direction: Direction!  hops: Int!  derived: Boolean! }
+type Edge { from: Entity!  to: Entity!  type: String!  direction: Direction!  hops: Int!  derived: Boolean!  evidence: String  confidence: String  observedAt: String }
 type Change { seq: String!  kind: ChangeKind!  subject: Subject!  entity: ID  from: ID  to: ID  relationType: String  observedAt: Time!  recordedAt: Time! }
 type EntityPage { items: [Entity!]!  total: Int!  truncated: Boolean!  nextCursor: String }
 type EdgePage   { items: [Edge!]!    total: Int!  truncated: Boolean!  nextCursor: String }

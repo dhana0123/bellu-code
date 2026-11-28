@@ -1,8 +1,12 @@
 export * as AgentPlugin from "./agent.js"
 
+import { SystemPart } from "@bellucode/ai/effect"
 import { define } from "@bellucode/plugin/effect/plugin"
 import { Effect } from "effect"
 import { Agent } from "../agent.js"
+import { PROMPT_SEEK, PROMPT_SEEK_USAGE } from "./seek-prompt.js"
+
+const SEEK_TOOL = "bellu-graph_seek_retrieve"
 
 const PROMPT_EXPLORE = `You are a file search specialist. You excel at thoroughly navigating and exploring codebases.
 
@@ -114,6 +118,28 @@ export const Plugin = define({
         item.system = PROMPT_SUMMARY
         item.permissions.push({ action: "*", resource: "*", effect: "deny" })
       })
+
+      editor.update(Agent.ID.make("seek"), (item) => {
+        item.name = Agent.Name.make("Seek")
+        item.description =
+          "Retrieves known CVEs and fix commits for the weaknesses a task is likely to introduce. Use it before writing or reviewing security-sensitive code."
+        item.system = PROMPT_SEEK
+        item.mode = "subagent"
+        item.steps = 4
+        item.permissions.push(
+          { action: "*", resource: "*", effect: "deny" },
+          { action: SEEK_TOOL, resource: "*", effect: "allow" },
+          { action: "subagent", resource: "*", effect: "deny" },
+        )
+      })
     })
+
+    // Not `item.system`: an agent `system` replaces the model-family prompt, and OptimizePlugin then skips the agent. A
+    // context hook adds a separate part after the existing ones, so those prompts stay.
+    yield* ctx.session.hook("context", (event) =>
+      Effect.sync(() => {
+        if (event.agent === Agent.defaultID) event.system.push(SystemPart.make(PROMPT_SEEK_USAGE))
+      }),
+    )
   }),
 })

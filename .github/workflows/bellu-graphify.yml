@@ -1,0 +1,56 @@
+name: bellu-graphify
+on:
+  pull_request:
+    paths:
+      - third_party/bellu-graphify/**
+      - .github/workflows/bellu-graphify.yml
+  push:
+    branches: [dev]
+    paths:
+      - third_party/bellu-graphify/**
+      - .github/workflows/bellu-graphify.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  bellu-graphify-check:
+    name: bellu-graphify-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      # Standard library only, no network. Exits non-zero with one line per violated item.
+      - name: Check the hard copy
+        run: python third_party/bellu-graphify/scripts/bellu_graphify_check.py
+
+  bellu-graphify-offline-install:
+    name: bellu-graphify-offline-install
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      # The runner has no route out for the install and import steps. A new network namespace has
+      # only a loopback interface, so any request fails. `unshare` needs root, hence sudo.
+      - name: Install from the wheelhouse with network disabled
+        working-directory: third_party/bellu-graphify
+        run: |
+          sudo unshare --net -- sh -c 'ip link set lo up; [ "$(ip -o link show | wc -l)" = 1 ]'
+          sudo -E unshare --net -- "$(command -v python)" scripts/bellu_install_offline.py --data-dir "$RUNNER_TEMP/bellu-data"
+          sudo chown -R "$(id -u):$(id -g)" "$RUNNER_TEMP/bellu-data"
+      - name: Import graphify and bellu_graphify with network disabled
+        working-directory: third_party/bellu-graphify
+        run: |
+          sudo -E unshare --net -- "$RUNNER_TEMP/bellu-data/venv/bin/python" -c "import graphify, bellu_graphify"

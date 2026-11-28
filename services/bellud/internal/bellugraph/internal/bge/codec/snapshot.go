@@ -156,6 +156,7 @@ type RelationRecord struct {
 	VTNS     int64
 	RTNS     int64
 	Seq      uint64
+	Attrs    EdgeAttrs
 }
 
 // Encode serializes the record canonically.
@@ -163,7 +164,8 @@ func (x RelationRecord) Encode() []byte {
 	b := appendStrList(nil, sortedCopy(x.Asserted))
 	b = appendU64(b, uint64(x.VTNS))
 	b = appendU64(b, uint64(x.RTNS))
-	return appendU64(b, x.Seq)
+	b = appendU64(b, x.Seq)
+	return AppendEdgeAttrs(b, x.Attrs)
 }
 
 // DecodeRelationRecord parses a relation record.
@@ -173,9 +175,7 @@ func DecodeRelationRecord(b []byte) (RelationRecord, error) {
 	x.VTNS = int64(r.u64())
 	x.RTNS = int64(r.u64())
 	x.Seq = r.u64()
-	if r.err == nil && len(r.b) != 0 {
-		r.fail("trailing bytes")
-	}
+	x.Attrs = r.edgeTrailer(len(b), x.Seq)
 	if r.err != nil {
 		return RelationRecord{}, r.err
 	}

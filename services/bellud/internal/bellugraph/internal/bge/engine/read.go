@@ -73,6 +73,9 @@ type EdgeView struct {
 	Direction string
 	Hops      int
 	Derived   bool
+	// Evidence, Confidence and ObservedAt are the stored relation's edge
+	// attributes; empty when absent and on derived edges.
+	Evidence, Confidence, ObservedAt string
 }
 
 // FindQuery filters live entities. An empty Kind matches every kind.
@@ -490,6 +493,8 @@ func changeKindSubject(t codec.EventType) (ChangeKind, ChangeSubject, bool) {
 		return ChangeRemoved, SubjectEntity, true
 	case codec.RelationAdded:
 		return ChangeAdded, SubjectRelation, true
+	case codec.RelationUpdated:
+		return ChangeChanged, SubjectRelation, true
 	case codec.RelationRemoved:
 		return ChangeRemoved, SubjectRelation, true
 	}

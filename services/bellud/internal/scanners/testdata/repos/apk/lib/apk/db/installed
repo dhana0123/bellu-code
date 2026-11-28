@@ -1,0 +1,18 @@
+C:Q1fixtureopenssl0000000000000=
+P:libcrypto1.1
+V:1.1.1k-r0
+A:x86_64
+T:SSL shared libraries
+U:https://www.openssl.org
+L:OpenSSL
+o:openssl
+
+C:Q1fixturebusybox0000000000000=
+P:busybox
+V:1.32.1-r5
+A:x86_64
+T:Size optimized toolbox of many common UNIX utilities
+U:https://busybox.net/
+L:GPL-2.0-only
+o:busybox
+

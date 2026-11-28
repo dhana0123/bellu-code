@@ -56,8 +56,10 @@ func TestCollect(t *testing.T) {
 			t.Fatalf("unexpected attrs %v", e.Attributes)
 		}
 	}
-	want := []string{"a.env:2:value_aws_access_key", "a.env:3:generic_assignment",
-		"b.txt:1:value_github_token", "b.txt:1:value_slack_token"}
+	// Gitleaks rule ids replace the old regex ids. The fake slack token is not
+	// in Gitleaks' slack-bot-token format, so it is no longer reported.
+	want := []string{"a.env:2:aws-access-token", "a.env:3:generic-api-key",
+		"b.txt:1:github-pat"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v", got)
 	}
@@ -67,11 +69,11 @@ func TestCollect(t *testing.T) {
 		}
 	}
 	// SHA-256("AKIAABCDEFGHIJKLMNOP")[:8] must be 8 lowercase hex chars.
-	h := got["a.env:2:value_aws_access_key"]
+	h := got["a.env:2:aws-access-token"]
 	if len(h) != 8 || strings.Trim(h, "0123456789abcdef") != "" {
 		t.Fatalf("bad hash prefix %q", h)
 	}
-	if len(b.Relations) != 4 {
+	if len(b.Relations) != 3 {
 		t.Fatalf("relations: %d", len(b.Relations))
 	}
 }

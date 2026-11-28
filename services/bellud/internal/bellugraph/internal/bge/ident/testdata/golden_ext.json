@@ -1,0 +1,519 @@
+{
+  "kinds": {
+    "ai_agent": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "ai_agent:354ed2ea9658d605354a87ba1bd24032"
+    },
+    "ai_model": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "ai_model:c85e5ae6142af7fa30fcd924c74f910a"
+    },
+    "ai_service": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "ai_service:088a9ea854f120a0ca06760c19f9a606"
+    },
+    "ai_tool": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "ai_tool:62e6d08139391424566b543407eda169"
+    },
+    "aws_cidr": {
+      "identity": [
+        "connection",
+        "cidr"
+      ],
+      "attrs": {
+        "cidr": "golden-cidr",
+        "connection": "golden-connection"
+      },
+      "hash": "aws_cidr:1e8514a600e687b2efae7d79f2c34935"
+    },
+    "aws_policy_statement": {
+      "identity": [
+        "connection",
+        "policy",
+        "statement_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "policy": "golden-policy",
+        "statement_id": "golden-statement_id"
+      },
+      "hash": "aws_policy_statement:2a134fb43b9d6247ca7b5869e3393ce2"
+    },
+    "aws_sg_rule": {
+      "identity": [
+        "connection",
+        "sg",
+        "rule_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "rule_id": "golden-rule_id",
+        "sg": "golden-sg"
+      },
+      "hash": "aws_sg_rule:272f90b25af1a973397b6060d37d984d"
+    },
+    "azure_resource": {
+      "identity": [
+        "connection",
+        "resource_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "resource_id": "golden-resource_id"
+      },
+      "hash": "azure_resource:ec622e6f46984c61fda3e84547cd57f6"
+    },
+    "azure_role_assignment": {
+      "identity": [
+        "connection",
+        "assignment_id"
+      ],
+      "attrs": {
+        "assignment_id": "golden-assignment_id",
+        "connection": "golden-connection"
+      },
+      "hash": "azure_role_assignment:d7d8ef6017c313eedc40f42668442564"
+    },
+    "azure_subscription": {
+      "identity": [
+        "connection",
+        "subscription_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "subscription_id": "golden-subscription_id"
+      },
+      "hash": "azure_subscription:84e1d49047ebf98309b6148dab5d657e"
+    },
+    "code_community": {
+      "identity": [
+        "connection",
+        "repo",
+        "community_id",
+        "revision"
+      ],
+      "attrs": {
+        "community_id": "golden-community_id",
+        "connection": "golden-connection",
+        "repo": "golden-repo",
+        "revision": "golden-revision"
+      },
+      "hash": "code_community:2f45fd838490a1895e10907ab15b1cdc"
+    },
+    "code_file": {
+      "identity": [
+        "connection",
+        "repo",
+        "path"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "path": "golden-path",
+        "repo": "golden-repo"
+      },
+      "hash": "code_file:afdbdf8aaffd6747af3a4c2d44ffec74"
+    },
+    "code_symbol": {
+      "identity": [
+        "connection",
+        "repo",
+        "bid"
+      ],
+      "attrs": {
+        "bid": "golden-bid",
+        "connection": "golden-connection",
+        "repo": "golden-repo"
+      },
+      "hash": "code_symbol:f4940a6a8e5ca720a11c5efa69736f0d"
+    },
+    "finding": {
+      "identity": [
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id"
+      },
+      "hash": "finding:9aac6f0de8d3977e48c9120986aab020"
+    },
+    "gcp_iam_binding": {
+      "identity": [
+        "connection",
+        "scope",
+        "role",
+        "member"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "member": "golden-member",
+        "role": "golden-role",
+        "scope": "golden-scope"
+      },
+      "hash": "gcp_iam_binding:f528d8c6465acc1e66df749238e8fc0c"
+    },
+    "gcp_project": {
+      "identity": [
+        "connection",
+        "project_id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "project_id": "golden-project_id"
+      },
+      "hash": "gcp_project:1893ec4fb3edc67dafb63a700e04b87a"
+    },
+    "gcp_resource": {
+      "identity": [
+        "connection",
+        "resource_name"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "resource_name": "golden-resource_name"
+      },
+      "hash": "gcp_resource:b3f01d29b01905fbf0d6436994aa5b38"
+    },
+    "k8s_binding": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_binding:f0e0d48867529ec97c7f9f08539499bb"
+    },
+    "k8s_cluster": {
+      "identity": [
+        "connection",
+        "uid"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_cluster:d2c37cebcdca7438283c5ac58c4a4ed6"
+    },
+    "k8s_configmap_ref": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_configmap_ref:748f1b45ad7de7ee56e478e12d143511"
+    },
+    "k8s_ingress": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_ingress:86bed7b36dbfcd315e47f3f5fe3c3110"
+    },
+    "k8s_namespace": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_namespace:bf1266c940ee9eee39795a40e7a1e0c5"
+    },
+    "k8s_netpol": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_netpol:8c8b0e08ad01df49a86b8a872e9faf74"
+    },
+    "k8s_node": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_node:d388e5c4b1b21632a172b17446dfde2e"
+    },
+    "k8s_pod": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_pod:e271b01e9cebd5cf01741f896dfa2c98"
+    },
+    "k8s_role": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_role:d60674b2bbc5b60ae030ac69f8149721"
+    },
+    "k8s_secret_ref": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_secret_ref:093ca3b871011cce5a353dc356fbdc44"
+    },
+    "k8s_service": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_service:909b74641025f4da7c6425bb90b2c7fd"
+    },
+    "k8s_serviceaccount": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_serviceaccount:aca80c5bbf931f3899c15ced1ef3299a"
+    },
+    "k8s_workload": {
+      "identity": [
+        "connection",
+        "cluster",
+        "uid"
+      ],
+      "attrs": {
+        "cluster": "golden-cluster",
+        "connection": "golden-connection",
+        "uid": "golden-uid"
+      },
+      "hash": "k8s_workload:e6dabe1fb2c6599f771d0ca357f6eb68"
+    },
+    "mcp_server": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "mcp_server:31fcd3f1053b1a7cc7d0daf8f948c5ff"
+    },
+    "posture_pack": {
+      "identity": [
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id"
+      },
+      "hash": "posture_pack:5ad638cb6842c95a240d5244a8d97dfc"
+    },
+    "posture_rule": {
+      "identity": [
+        "pack",
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id",
+        "pack": "golden-pack"
+      },
+      "hash": "posture_rule:ba03d74af119b40b373c40174322cb37"
+    },
+    "vector_store": {
+      "identity": [
+        "connection",
+        "id"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "id": "golden-id"
+      },
+      "hash": "vector_store:442b8d22e6976f999e7ede6f3a7c9b61"
+    }
+  },
+  "relations": {
+    "affects": "forward",
+    "ai_has_tool": "forward",
+    "ai_reads_input_from": "forward",
+    "ai_runs_in": "forward",
+    "ai_serves": "forward",
+    "ai_uses_identity": "forward",
+    "aws_alias_of": "reverse",
+    "aws_allows_egress_to": "forward",
+    "aws_allows_ingress_from": "reverse",
+    "aws_assigned_to": "forward",
+    "aws_associated_subnet": "forward",
+    "aws_attached_igw": "forward",
+    "aws_attached_policy": "reverse",
+    "aws_attached_volume": "reverse",
+    "aws_can_access": "forward",
+    "aws_can_assume": "forward",
+    "aws_can_pass_role": "forward",
+    "aws_child_of": "reverse",
+    "aws_cluster_role": "forward",
+    "aws_dns_points_to": "reverse",
+    "aws_encrypted_by": "reverse",
+    "aws_exec_role": "forward",
+    "aws_exposed_via": "reverse",
+    "aws_finding_affects": "reverse",
+    "aws_has_boundary": "reverse",
+    "aws_has_eni": "reverse",
+    "aws_has_instance_profile": "forward",
+    "aws_in_asg": "reverse",
+    "aws_in_cluster": "reverse",
+    "aws_in_nodegroup": "reverse",
+    "aws_in_subnet": "reverse",
+    "aws_in_vpc": "reverse",
+    "aws_lambda_role": "forward",
+    "aws_launched_from": "reverse",
+    "aws_lb_forwards_to": "forward",
+    "aws_lb_listener_of": "reverse",
+    "aws_logs_to": "reverse",
+    "aws_member_of": "reverse",
+    "aws_member_of_group": "reverse",
+    "aws_member_of_sg": "reverse",
+    "aws_monitors": "reverse",
+    "aws_mounts_fs": "forward",
+    "aws_nat_in_subnet": "reverse",
+    "aws_peers_with": "forward",
+    "aws_profile_has_role": "forward",
+    "aws_protects": "forward",
+    "aws_reads_from": "forward",
+    "aws_record_in_zone": "reverse",
+    "aws_route_of": "reverse",
+    "aws_routes_to": "forward",
+    "aws_rule_of": "forward",
+    "aws_rule_peer": "reverse",
+    "aws_scp_attached": "reverse",
+    "aws_service_of": "reverse",
+    "aws_snapshot_of": "reverse",
+    "aws_statement_of": "reverse",
+    "aws_stores_in": "reverse",
+    "aws_targets": "forward",
+    "aws_task_role": "forward",
+    "aws_tgw_attached": "forward",
+    "aws_trusts": "reverse",
+    "aws_uses_image": "reverse",
+    "aws_uses_layer": "reverse",
+    "aws_uses_subnet": "reverse",
+    "aws_writes_to": "forward",
+    "azure_assigned_to": "reverse",
+    "azure_assignment_scope": "forward",
+    "azure_deployed_on": "reverse",
+    "azure_has_identity": "reverse",
+    "azure_in_resource_group": "reverse",
+    "azure_in_subnet": "reverse",
+    "azure_in_subscription": "reverse",
+    "azure_in_vnet": "reverse",
+    "azure_load_balances": "forward",
+    "azure_nsg_applies_to": "forward",
+    "azure_stores_in": "forward",
+    "built_into": "reverse",
+    "calls": "reverse",
+    "can_assume": "forward",
+    "contained_in": "reverse",
+    "declares_dependency": "reverse",
+    "defined_in": "reverse",
+    "deployed_as": "reverse",
+    "gcp_binding_grants": "forward",
+    "gcp_binding_on": "reverse",
+    "gcp_encrypted_by": "reverse",
+    "gcp_firewall_applies_to": "forward",
+    "gcp_in_network": "reverse",
+    "gcp_in_project": "reverse",
+    "gcp_in_subnet": "reverse",
+    "gcp_runs_as": "forward",
+    "imports": "reverse",
+    "in_community": "reverse",
+    "k8s_bound_to": "forward",
+    "k8s_exposes": "forward",
+    "k8s_in_namespace": "reverse",
+    "k8s_runs_as_sa": "forward",
+    "k8s_uses_image": "reverse",
+    "observed_connection": "forward",
+    "reachable_from": "forward",
+    "rule_applies_to": "forward",
+    "same_issue_as": "forward",
+    "supersedes": "forward"
+  }
+}

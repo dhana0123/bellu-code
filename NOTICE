@@ -1,0 +1,10 @@
+Bellu Code
+Third-party attribution notices
+
+Graphify
+Copyright 2026 Safi Shamsi and the Graphify contributors.
+Licensed under the Apache License, Version 2.0.
+Upstream: https://github.com/Graphify-Labs/graphify (release v0.9.112,
+commit 340268a70a83588d6b3c6de1fffb05326350ef1d).
+A modified copy is included in third_party/bellu-graphify/. See
+third_party/bellu-graphify/LICENSE, NOTICE, PROVENANCE.md, and CHANGES.md.

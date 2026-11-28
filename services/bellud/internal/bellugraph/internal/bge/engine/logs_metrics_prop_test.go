@@ -114,6 +114,7 @@ func TestPropNoAttributeValuesInLogsOrMetrics(t *testing.T) {
 				bad.Entities = []batch.Entity{host, host}
 			case 3:
 				bad.Entities = []batch.Entity{host}
+				// A relation attribute name outside evidence, confidence and observed_at.
 				bad.Relations = []batch.Relation{{Type: "talks_to", From: hid, To: hid, Attributes: map[string]any{"w": fresh()}}}
 			case 4:
 				ghost, _ := ident.Hash("host", map[string]string{"hostname": fresh()})

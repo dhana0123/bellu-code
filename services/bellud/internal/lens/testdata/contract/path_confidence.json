@@ -1,0 +1,7 @@
+[
+  {"name": "all-extracted", "hops": ["affected_by", "same_as", "aws_in_vpc"], "want": "extracted"},
+  {"name": "one-inferred-hop-first", "hops": ["likely_same_as", "affected_by"], "want": "inferred"},
+  {"name": "one-inferred-hop-last", "hops": ["aws_in_vpc", "same_as", "aws_in_nodegroup"], "want": "inferred"},
+  {"name": "unregistered-type-is-extracted", "hops": ["contains", "owns"], "want": "extracted"},
+  {"name": "empty-path", "hops": [], "want": "extracted"}
+]

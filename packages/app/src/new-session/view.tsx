@@ -1,3 +1,4 @@
+import { SecurityMenuItem } from "@/security/composer-menu"
 import { useDialog } from "@bellucode/ui/context/dialog"
 import { Tooltip } from "@bellucode/ui/tooltip"
 import { Icon } from "@bellucode/ui/icon"
@@ -96,7 +97,7 @@ export function NewSessionView(props: {
       <div
         ref={panel}
         data-component="new-session"
-        class="relative isolate flex-1 min-h-0 overflow-hidden rounded-[10px] bg-v2-background-bg-base shadow-[var(--v2-elevation-raised)]"
+        class="relative isolate flex-1 min-h-0 overflow-hidden rounded-xl bg-v2-background-bg-base shadow-[var(--v2-elevation-raised)]"
       >
         <ComposerDropzone
           active={props.composer.state.drag === "active"}
@@ -114,7 +115,7 @@ export function NewSessionView(props: {
             <div class="mt-8 flex flex-col gap-3">
               <div data-slot="new-session-composer" class="flex flex-col gap-1">
                 <div class="relative z-10">
-                  <Composer model={props.composer} />
+                  <Composer model={props.composer} securityMenu={() => <SecurityMenuItem />} />
                 </div>
                 <Show when={props.project.selected()}>
                   {(project) => (
@@ -219,7 +220,7 @@ function NewSessionTips(props: { selection: ComposerModel["model"]["selection"];
         >
           <button
             type="button"
-            class="flex h-6 min-w-0 items-center rounded-[4px] pl-1.5 text-[13px] leading-text-compact tracking-[-0.04px] text-v2-text-text-faint transition-[background-color,color] duration-150 ease-in-out hover:bg-v2-overlay-simple-overlay-hover hover:text-v2-text-text-muted focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:text-v2-text-text-muted focus-visible:outline-none"
+            class="flex h-6 min-w-0 items-center rounded-sm pl-1.5 text-[13px] leading-text-compact tracking-[-0.04px] text-v2-text-text-faint transition-[background-color,color] duration-150 ease-in-out hover:bg-v2-overlay-simple-overlay-hover hover:text-v2-text-text-muted focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:text-v2-text-text-muted focus-visible:outline-none"
             onClick={open}
           >
             <span class="truncate">{language.t("home.providerTip")}</span>
@@ -235,7 +236,7 @@ function NewSessionTips(props: { selection: ComposerModel["model"]["selection"];
           >
             <button
               type="button"
-              class="flex size-6 items-center justify-center rounded-[4px] text-v2-icon-icon-muted transition-[background-color,color] duration-150 ease-in-out hover:bg-v2-overlay-simple-overlay-hover hover:text-v2-icon-icon-base focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:text-v2-icon-icon-base focus-visible:outline-none"
+              class="flex size-6 items-center justify-center rounded-sm text-v2-icon-icon-muted transition-[background-color,color] duration-150 ease-in-out hover:bg-v2-overlay-simple-overlay-hover hover:text-v2-icon-icon-base focus-visible:bg-v2-overlay-simple-overlay-hover focus-visible:text-v2-icon-icon-base focus-visible:outline-none"
               aria-label={language.t("common.dismiss")}
               onClick={dismiss}
             >

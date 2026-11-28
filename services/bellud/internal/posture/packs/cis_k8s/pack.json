@@ -1,0 +1,66 @@
+{
+  "id": "cis_k8s",
+  "version": "1",
+  "rules": [
+    {
+      "id": "privileged_pod",
+      "title": "Pod runs a privileged container",
+      "description": "A container runs in privileged mode.",
+      "severity": "high",
+      "category": "runtime",
+      "applies_to": [
+        "k8s_pod"
+      ],
+      "remediation": "Remove securityContext.privileged.",
+      "benchmarks": [
+        "CIS-K8s-1.8:5.2.2"
+      ],
+      "rego": "privileged_pod.rego"
+    },
+    {
+      "id": "host_network_pod",
+      "title": "Pod uses the host network",
+      "description": "The pod shares the node network namespace.",
+      "severity": "medium",
+      "category": "runtime",
+      "applies_to": [
+        "k8s_pod"
+      ],
+      "remediation": "Remove hostNetwork.",
+      "benchmarks": [
+        "CIS-K8s-1.8:5.2.4"
+      ],
+      "rego": "host_network_pod.rego"
+    },
+    {
+      "id": "run_as_root_pod",
+      "title": "Pod runs as root",
+      "description": "A container runs as UID 0 or may run as root.",
+      "severity": "medium",
+      "category": "runtime",
+      "applies_to": [
+        "k8s_pod"
+      ],
+      "remediation": "Set runAsNonRoot to true.",
+      "benchmarks": [
+        "CIS-K8s-1.8:5.2.6"
+      ],
+      "rego": "run_as_root_pod.rego"
+    },
+    {
+      "id": "cluster_admin_binding",
+      "title": "Binding grants cluster-admin",
+      "description": "A binding references the cluster-admin role.",
+      "severity": "high",
+      "category": "identity",
+      "applies_to": [
+        "k8s_binding"
+      ],
+      "remediation": "Bind least-privilege roles instead.",
+      "benchmarks": [
+        "CIS-K8s-1.8:5.1.1"
+      ],
+      "rego": "cluster_admin_binding.rego"
+    }
+  ]
+}

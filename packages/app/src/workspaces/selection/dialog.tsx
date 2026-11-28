@@ -452,7 +452,7 @@ export function DirectoryPickerDialog(props: DirectoryPickerDialogProps) {
           padding: 4px 8px !important;
           margin: 0 !important;
           gap: 6px !important;
-          border-radius: 4px !important;
+          border-radius: var(--radius-sm) !important;
           background: transparent !important;
           box-shadow: none !important;
           color: var(--v2-text-text-muted) !important;
@@ -522,7 +522,7 @@ export function DirectoryPickerDialog(props: DirectoryPickerDialogProps) {
         [data-item-section="decoration"] > span {
           height: 16px;
           padding: 0 4px;
-          border-radius: 2px;
+          border-radius: var(--radius-xs);
           background: var(--v2-background-bg-layer-03);
           color: var(--v2-text-text-muted);
           font-size: 11px;

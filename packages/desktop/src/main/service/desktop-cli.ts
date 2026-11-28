@@ -10,6 +10,7 @@ import { DesktopPaths } from "../paths"
 import { BUNDLED_CLI_VERSION_KEY } from "../storage/keys"
 import { getStore } from "../storage/store"
 import { parseCliVersion, stageName } from "./cli-version"
+import { belludExecutableName } from "./bellud-launch"
 import { DesktopCliState } from "./desktop-cli-state"
 
 const execFileAsync = promisify(execFile)
@@ -21,6 +22,10 @@ export interface Resolved {
   readonly version: string
   readonly command: readonly string[]
   readonly binary?: string
+  /** The bundled `bellud` sidecar server executable, which spawns `binary` (or bun + `repo` in development). */
+  readonly bellud: string
+  /** Repository root holding packages/cli, set only when the CLI runs from source (BELLUCODE_DESKTOP_CLI_DEV). */
+  readonly repo?: string
 }
 
 export interface Interface {
@@ -58,6 +63,9 @@ export const layer = Layer.effect(
 const make = Effect.fn("DesktopCli.resolve")(function* () {
   const development = !app.isPackaged && process.env.BELLUCODE_DESKTOP_CLI_DEV
   const version = process.env.BELLUCODE_VERSION ?? "local"
+  const path = yield* Path.Path
+  const paths = yield* DesktopPaths.resolve
+  const bellud = path.join(app.isPackaged ? process.resourcesPath : paths.developmentResourcesRoot, belludExecutableName())
 
   const cli = development
     ? {
@@ -73,10 +81,12 @@ const make = Effect.fn("DesktopCli.resolve")(function* () {
           "src/index.ts",
         ],
         binary: undefined,
+        // development is the packages/cli directory; bellud wants the repository root above packages/.
+        repo: path.dirname(path.dirname(development)),
       }
     : yield* resolveBundledCli(!app.isPackaged && process.env.BELLUCODE_DESKTOP_ISOLATED_SERVER === "1")
 
-  return cli satisfies Resolved
+  return { ...cli, bellud } satisfies Resolved
 })
 
 const resolveBundledCli = Effect.fn("DesktopCli.resolveBundled")(function* (isolated: boolean) {

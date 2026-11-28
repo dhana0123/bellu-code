@@ -363,6 +363,299 @@ export type GraphEngineState = "disabled" | "starting" | "ready" | "failed"
 
 export type GraphChildState = "starting" | "ready" | "restarting" | "degraded" | "stopped"
 
+export type GraphLensParam = { name: string; required: boolean }
+
+export type GraphLensRisk = {
+  score: number | "Infinity" | "-Infinity" | "NaN"
+  severity: string
+  cvss: number | "Infinity" | "-Infinity" | "NaN"
+  epss: number | "Infinity" | "-Infinity" | "NaN"
+  kev: boolean
+  reachable: boolean | null
+}
+
+export type GraphConfidence = "extracted" | "inferred"
+
+export type GraphLensGroup = { id: string; label: string; members: Array<string> }
+
+export type GraphIntelState = "not_configured" | "disabled" | "idle" | "syncing" | "ok" | "error"
+
+export type GraphOverlayAction = "focus_node" | "walk_path" | "proposed_change"
+
+export type ConnectorsConnectionGap = { resourceType: string; scope: string; reason: string; detail: string }
+
+export type ConnectorsConnectorID = string
+
+export type ConnectorsManifestDeviceSpec = {
+  device_code_url: string
+  token_url: string
+  client_id: string
+  scopes: Array<string>
+  token_grant?: string
+  tenant?: string
+  refresh?: boolean
+}
+
+export type ConnectorsManifestPermission = { name: string; description?: string; read_only: boolean }
+
+export type ConnectorsManifestOperation = {
+  name: string
+  class: "read" | "auth"
+  method?: string
+  host: string
+  path?: string
+  query?: boolean
+  strip_keys?: Array<string>
+  max_bytes?: number
+  issues_credential?: boolean
+}
+
+export type ConnectorsConnectionID = string
+
+export type ConnectorsStatus = "INITIATED" | "VERIFYING" | "ACTIVE" | "EXPIRED" | "PAUSED" | "ERROR"
+
+export type ConnectorsSelection = { regions: Array<string>; repos: Array<string>; items?: Array<string> }
+
+export type ConnectorsLastSync = { status: string; endedAt?: string; entities: number; partial: Array<string> }
+
+export type ConnectorsVaultResult = { ok: boolean }
+
+export type ConnectorsPermissionCheck = "ok" | "excess" | "unverifiable"
+
+export type ConnectorsAuditEntry = {
+  seq: number
+  ts: string
+  connectionId: string
+  connectorId: string
+  event: string
+  outcome: "success" | "failure" | "blocked"
+  actor: string
+  detail?: { [x: string]: string }
+  prev: string
+}
+
+export type ConnectorsAuthConfigID = string
+
+export type ConnectorsAwsSetup = {
+  externalId: string
+  cloudFormation: string
+  terraform: string
+  principal?: string
+  quickCreateUrl?: string
+}
+
+export type ConnectorsGithubRepo = { fullName: string; private: boolean }
+
+export type ConnectorsScopeOption = { id: string; name: string }
+
+export type ConnectorsDeviceAuthorization = {
+  id: string
+  userCode: string
+  verificationUri: string
+  expiresAt: number
+  intervalSec: number
+}
+
+export type ConnectorsDeviceAuthorizationStatusValue = "pending" | "connected" | "expired" | "denied" | "failed"
+
+export type ConnectorsErrorCode =
+  | "invalid_credential"
+  | "insufficient_permission"
+  | "excess_permission"
+  | "network"
+  | "rate_limited"
+  | "expired"
+  | "alias_invalid"
+  | "alias_taken"
+  | "blocked_by_policy"
+  | "scope_denied"
+  | "run_in_progress"
+  | "vault_unavailable"
+  | "audit_failed"
+  | "decrypt_failed"
+  | "transition_rejected"
+  | "validation_failed"
+  | "payload_too_large"
+  | "forbidden"
+  | "device_code_expired"
+  | "authorization_denied"
+  | "device_flow_disabled"
+  | "already_pending"
+
+export type ConnectorsScope = {
+  principal: string
+  connectors: Array<string>
+  connections: Array<string>
+  operations: { [x: string]: Array<string> }
+}
+
+export type OverviewCategory =
+  | "cloud_infrastructure"
+  | "identity"
+  | "vulnerabilities"
+  | "network_exposure"
+  | "secrets"
+  | "data_security"
+  | "code_and_dependencies"
+  | "runtime"
+  | "ai_security"
+
+export type OverviewSeverityCounts = { critical: number; high: number; medium: number; low: number; info: number }
+
+export type OverviewSeverity = "critical" | "high" | "medium" | "low" | "info"
+
+export type OverviewEmptyState = { missingSource: string; setupLink: string }
+
+export type FindingsType =
+  | "vulnerability"
+  | "misconfiguration"
+  | "secret"
+  | "license"
+  | "malware"
+  | "runtime_threat"
+  | "ai_risk"
+  | "data_exposure"
+  | "identity_risk"
+
+export type FindingsStatus = "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+
+export type FindingsEvidence = { kind: string; ref: string; line?: number; excerpt?: string }
+
+export type ScansKind =
+  | "sbom"
+  | "vulnerability"
+  | "misconfiguration"
+  | "secret"
+  | "posture"
+  | "data_classification"
+  | "ai_inventory"
+
+export type ScansTargetType = "repository" | "image" | "host" | "cloud_account" | "cluster"
+
+export type ScansStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged"
+
+export type SbomSummary = {
+  assetId: string
+  digest: string
+  packageCount: number
+  createdAt: string
+  ecosystems: { [x: string]: number }
+  licenses: { [x: string]: number }
+}
+
+export type SbomPackage = {
+  type?: string
+  name: string
+  version?: string
+  purl?: string
+  ecosystem?: string
+  licenses: Array<string>
+  supplier?: string
+  locations: Array<string>
+  properties?: { [x: string]: string }
+}
+
+export type CveRange = { introduced: string; fixed: string }
+
+export type CveGap = { kind: string; cause: string }
+
+export type CveWarning = { code: string; message: string }
+
+export type CveNode = { id: string; type: string; key: string; label: string; properties?: { [x: string]: JsonValue } }
+
+export type CveEdge = { id: string; source: string; target: string; type: string; viewID?: string }
+
+export type CveMode = "db" | "graph" | "both"
+
+export type CveRef = { id: string; type: string; key: string; label: string }
+
+export type CveConflict = { DB: JsonValue; Graph: JsonValue }
+
+export type IdentityHop = { from: string; to: string; relation: string; evidence?: string; inferred?: boolean }
+
+export type BomComponent = {
+  type: string
+  name: string
+  version?: string | undefined
+  licenses?: Array<string> | undefined
+  locations?: Array<string> | undefined
+  properties?: { [x: string]: string } | undefined
+}
+
+export type BomGap = { provider: string; cause: string }
+
+export type BomFinding = {
+  ID: string
+  Rule: string
+  Severity: string
+  Component: string
+  Version: string
+  Message: string
+}
+
+export type AiEntity = { id: string; kind: string; name: string; attributes: { [x: string]: any } }
+
+export type AiSummary = { total: number; counts: { [x: string]: number } }
+
+export type RuntimeSensor = {
+  node: string
+  status: string
+  reason?: string
+  drops: { [x: string]: number }
+  rejectedTotal: number
+  seenAt: string
+}
+
+export type RuntimeStoredEvent = {
+  seq: number
+  ts: string
+  type: string
+  node: string
+  namespace?: string
+  pod?: string
+  container_id?: string
+  process_path?: string
+  args?: string
+  user?: string
+  unavailable?: Array<string>
+}
+
+export type IssuesStatus = "open" | "resolved" | "ignored"
+
+export type IssuesHop = { entityId: string; relation?: string; evidence: Array<string>; inferred: boolean }
+
+export type IssuesMember = {
+  id: string
+  title?: string
+  ruleId?: string
+  severity?: string
+  status?: string
+  assetId?: string
+}
+
+export type RulesPack = { id: string; version: string; enabled: boolean; ruleCount: number }
+
+export type RulesKind = "posture" | "toxic_combination" | "runtime" | "identity"
+
+export type RulesBenchmarkList = { benchmarks: Array<string> }
+
+export type RulesControlStatus = "pass" | "fail" | "not_applicable" | "error"
+
+export type DataStore = {
+  id: string
+  type: string
+  name: string
+  region?: string
+  encryptionAtRest: JsonValue
+  encryptionInTransit: JsonValue
+  publicAccess: JsonValue
+  backup: JsonValue
+  logging: JsonValue
+  classes: Array<string>
+  matchCounts: { [x: string]: number }
+  openExposureCount: number
+}
+
 export type ReferenceGitSource = { type: "git"; repository: string; branch?: string }
 
 export type VcsBranch = { current?: string; default?: string }
@@ -1014,6 +1307,335 @@ export type GraphChange = {
 export type GraphSchemaSummary = { entity_types: Array<GraphSchemaType>; relation_types: Array<GraphSchemaType> }
 
 export type GraphStatus = { engine: GraphEngineState; ts_child: GraphChildState; detail?: string }
+
+export type GraphLens = {
+  id: string
+  name: string
+  description: string
+  layout: "force" | "radial" | "chain"
+  default: boolean
+  params: Array<GraphLensParam>
+}
+
+export type GraphLensNode = {
+  id: string
+  kind: string
+  label: string
+  group: string | null
+  hops: number
+  attrs: { [x: string]: string }
+  risk: GraphLensRisk | null
+}
+
+export type GraphLensEdge = {
+  from: string
+  to: string
+  type: string
+  confidence: GraphConfidence
+  evidence?: string
+  observed_at?: string
+}
+
+export type GraphLensPath = { nodes: Array<string>; confidence: GraphConfidence }
+
+export type GraphIntelStatus = {
+  state: GraphIntelState
+  version: string
+  records: number
+  last_synced_at: string
+  last_error: string
+}
+
+export type GraphOverlayEvent = {
+  seq: number
+  entity: string
+  action: GraphOverlayAction
+  path?: Array<string>
+  explanation: string
+}
+
+export type ConnectorsConnectionStatus = {
+  id: string
+  connectorId: string
+  collection: "available" | "not_available"
+  gaps: Array<ConnectorsConnectionGap>
+}
+
+export type ConnectorsManifestAuthMethod = {
+  id: string
+  name: string
+  enabled: boolean
+  disabled_reason?: string
+  device?: ConnectorsManifestDeviceSpec
+}
+
+export type ConnectorsConnection = {
+  id: ConnectorsConnectionID
+  connectorId: ConnectorsConnectorID
+  alias: string
+  authConfigId: string
+  method: string
+  status: ConnectorsStatus
+  statusReason: string
+  accountLabel: string
+  externalIdRef?: string
+  selection: ConnectorsSelection
+  intervalSec: number
+  allowAgentLiveReads: boolean
+  rotationIntervalDays: number
+  credentialCreatedAt: string | null
+  credentialExpiresAt: string | null
+  lastPermissionCheck: string | null
+  permissionCheck: string
+  lastSync?: ConnectorsLastSync
+  removed: boolean
+  createdAt: string
+}
+
+export type ConnectorsTestResult = {
+  ok: boolean
+  accountLabel: string
+  permissionCheck: ConnectorsPermissionCheck
+  offenders: Array<string>
+  warnings: Array<string>
+}
+
+export type ConnectorsAuditPage = { items: Array<ConnectorsAuditEntry>; nextCursor?: string }
+
+export type ConnectorsAuthConfig = {
+  id: ConnectorsAuthConfigID
+  connectorId: ConnectorsConnectorID
+  name: string
+  builtin: boolean
+  method: string
+  scopes: Array<string>
+  settings: { [x: string]: string }
+}
+
+export type ConnectorsGithubRepoList = {
+  items: Array<ConnectorsGithubRepo>
+  installations: number
+  installUrl?: string
+}
+
+export type ConnectorsScopeOptionList = { items: Array<ConnectorsScopeOption> }
+
+export type OverviewIssue = {
+  id: string
+  title: string
+  severity: OverviewSeverity
+  riskScore: number | "Infinity" | "-Infinity" | "NaN"
+}
+
+export type FindingsEvent = {
+  seq: number
+  at: string
+  actor: string
+  prevStatus?: FindingsStatus
+  newStatus: FindingsStatus
+  reason?: string
+}
+
+export type FindingsFinding = {
+  id: string
+  ruleId: string
+  title: string
+  description: string
+  category: OverviewCategory
+  type: FindingsType
+  severity: OverviewSeverity
+  status: FindingsStatus
+  assetId: string
+  evidence: Array<FindingsEvidence>
+  firstSeen: string
+  lastSeen: string
+  resolvedAt?: string
+  source: string
+  sourceRevision?: string
+  rulePackVersion?: string
+  occurrences: number
+  riskScore?: number | "Infinity" | "-Infinity" | "NaN"
+  unmappedSeverity?: boolean
+  details?: JsonValue
+}
+
+export type ScansSchedule = {
+  kind: ScansKind
+  targetType: ScansTargetType
+  targetId: string
+  intervalSeconds: number
+  enabled: boolean
+}
+
+export type ScansJob = {
+  id: string
+  kind: ScansKind
+  targetType: ScansTargetType
+  targetId: string
+  status: ScansStatus
+  reason?: string
+  queuedAt: string
+  startedAt?: string
+  endedAt?: string
+  created: number
+  updated: number
+  resolved: number
+  durationMs?: number
+  scannerVersions: { [x: string]: string }
+}
+
+export type SbomSummaryList = { items: Array<SbomSummary> }
+
+export type SbomDetail = {
+  assetId: string
+  digest: string
+  packageCount: number
+  createdAt: string
+  ecosystems: { [x: string]: number }
+  licenses: { [x: string]: number }
+  subject?: string
+  items: Array<SbomPackage>
+  nextCursor?: string
+}
+
+export type CveVuln = {
+  id: string
+  aliases: Array<string>
+  summary: string
+  severity: string
+  cvssScore: number | "Infinity" | "-Infinity" | "NaN"
+  cvssVector?: string
+  cvssVersion?: string
+  ranges: Array<CveRange>
+  fixedVersions: Array<string>
+  kev: boolean
+  epss: number | "Infinity" | "-Infinity" | "NaN"
+  published?: string
+  modified?: string
+  affectedState?: string
+  origin: string
+}
+
+export type CveGraph = {
+  nodes: Array<CveNode>
+  edges: Array<CveEdge>
+  gaps: Array<CveGap>
+  warnings: Array<CveWarning>
+  fieldFrom: { [x: string]: string }
+  truncated: boolean
+}
+
+export type CveStatus = {
+  mode: CveMode
+  dbInstalled: boolean
+  dataAgeHours: number
+  stale: boolean
+  staleLimitHours: number
+  bskgReachable: boolean
+  graphEnabled: boolean
+  lastGap: CveGap | null
+}
+
+export type CveModeResult = { mode: CveMode }
+
+export type CveDetail = {
+  id: string
+  aliases: Array<string>
+  summary: string
+  severity: string
+  cvssScore: number | "Infinity" | "-Infinity" | "NaN"
+  cvssVector?: string
+  cvssVersion?: string
+  ranges: Array<CveRange>
+  fixedVersions: Array<string>
+  kev: boolean
+  epss: number | "Infinity" | "-Infinity" | "NaN"
+  published?: string
+  modified?: string
+  affectedState?: string
+  origin: string
+  cwes: Array<CveRef>
+  exploits: Array<CveRef>
+  affected: Array<CveRef>
+  related: Array<CveRef>
+  conflicts?: { [x: string]: CveConflict }
+  gaps: Array<CveGap>
+  warnings: Array<CveWarning>
+  fieldFrom: { [x: string]: string }
+  truncated: boolean
+}
+
+export type IdentityPath = {
+  source: string
+  target: string
+  unreachable: boolean
+  inferred?: boolean
+  path: Array<IdentityHop>
+}
+
+export type BomDocument = {
+  kind: string
+  components: Array<BomComponent>
+  incomplete: Array<BomGap>
+  findings: Array<BomFinding>
+}
+
+export type AiPage = { items: Array<AiEntity>; nextCursor?: string | undefined; truncated: boolean }
+
+export type RuntimeStatus = { sensors: Array<RuntimeSensor>; rejectedTotal: number }
+
+export type RuntimeEventPage = { items: Array<RuntimeStoredEvent>; nextCursor?: string; truncated: boolean }
+
+export type IssuesIssue = {
+  id: string
+  title: string
+  ruleId: string
+  severity: OverviewSeverity
+  riskScore: number | "Infinity" | "-Infinity" | "NaN"
+  status: IssuesStatus
+  category: OverviewCategory
+  includesInferred: boolean
+  findingCount: number
+  path: Array<IssuesHop>
+  createdAt: string
+  updatedAt: string
+}
+
+export type IssuesDetail = {
+  id: string
+  title: string
+  ruleId: string
+  severity: OverviewSeverity
+  riskScore: number | "Infinity" | "-Infinity" | "NaN"
+  status: IssuesStatus
+  category: OverviewCategory
+  includesInferred: boolean
+  findingCount: number
+  path: Array<IssuesHop>
+  createdAt: string
+  updatedAt: string
+  findings: Array<IssuesMember>
+}
+
+export type RulesPackList = { items: Array<RulesPack> }
+
+export type RulesRule = {
+  id: string
+  packId: string
+  title: string
+  description: string
+  kind: RulesKind
+  category: string
+  appliesTo: Array<string>
+  benchmarks: Array<string>
+  enabled: boolean
+  severity: OverviewSeverity
+  defaultSeverity: OverviewSeverity
+}
+
+export type RulesControl = { control: string; status: RulesControlStatus; failingEntities: number }
+
+export type DataStorePage = { items: Array<DataStore>; nextCursor?: string; truncated: boolean }
 
 export type VcsInfo = { provider?: string; branch: VcsBranch }
 
@@ -2289,6 +2911,120 @@ export type GraphEdgePage = { items: Array<GraphEdge>; total: number; truncated:
 
 export type GraphChangePage = { items: Array<GraphChange>; total: number; truncated: boolean; limit: number }
 
+export type GraphLensSlice = {
+  lens: string
+  generated_at: string
+  truncated: boolean
+  counts: { nodes: number; edges: number; omitted_nodes: number; omitted_rules?: number }
+  nodes: Array<GraphLensNode>
+  edges: Array<GraphLensEdge>
+  groups: Array<GraphLensGroup>
+  paths?: Array<GraphLensPath>
+  missing_data?: Array<string>
+}
+
+export type ConnectorsServiceStatus = {
+  enabled: boolean
+  offline: boolean
+  keySource: string
+  persistent: boolean
+  locked: boolean
+  warnings: Array<string>
+  connections: Array<ConnectorsConnectionStatus>
+}
+
+export type ConnectorsManifest = {
+  id: ConnectorsConnectorID
+  version: string
+  name: string
+  icon: string
+  auth_methods: Array<ConnectorsManifestAuthMethod>
+  permissions: Array<ConnectorsManifestPermission>
+  operations: Array<ConnectorsManifestOperation>
+  egress: Array<string>
+  entities: Array<string>
+}
+
+export type ConnectorsConnectionList = { items: Array<ConnectorsConnection> }
+
+export type ConnectorsSyncResult = { started: boolean; connection: ConnectorsConnection }
+
+export type ConnectorsDeviceAuthorizationStatus = {
+  status: ConnectorsDeviceAuthorizationStatusValue
+  expiresAt?: number
+  intervalSec?: number
+  connection?: ConnectorsConnection
+  error?: { code: ConnectorsErrorCode; retryAfterSec?: number }
+}
+
+export type ConnectorsAuthConfigList = { items: Array<ConnectorsAuthConfig> }
+
+export type OverviewCategorySummary = {
+  category: OverviewCategory
+  title: string
+  subtitle: string
+  entityCount: number
+  severity: OverviewSeverityCounts
+  topIssues: Array<OverviewIssue>
+  emptyState?: OverviewEmptyState
+  kinds: { [x: string]: number }
+}
+
+export type FindingsDetail = {
+  id: string
+  ruleId: string
+  title: string
+  description: string
+  category: OverviewCategory
+  type: FindingsType
+  severity: OverviewSeverity
+  status: FindingsStatus
+  assetId: string
+  evidence: Array<FindingsEvidence>
+  firstSeen: string
+  lastSeen: string
+  resolvedAt?: string
+  source: string
+  sourceRevision?: string
+  rulePackVersion?: string
+  occurrences: number
+  riskScore?: number | "Infinity" | "-Infinity" | "NaN"
+  unmappedSeverity?: boolean
+  details?: JsonValue
+  events: Array<FindingsEvent>
+}
+
+export type FindingsPage = { items: Array<FindingsFinding>; nextCursor?: string; truncated: boolean }
+
+export type ScansJobPage = { items: Array<ScansJob>; nextCursor?: string; truncated: boolean }
+
+export type ScansScanner = {
+  name: string
+  kind: ScansKind
+  version: string
+  license: string
+  libraries?: { [x: string]: string }
+  lastRun?: ScansJob
+}
+
+export type CveLookupResult = {
+  vulns: Array<CveVuln>
+  gaps: Array<CveGap>
+  warnings: Array<CveWarning>
+  fieldFrom: { [x: string]: string }
+  truncated: boolean
+}
+
+export type IdentityPaths = { from: string; to: string; paths: Array<IdentityPath> }
+
+export type IssuesPage = { items: Array<IssuesIssue>; nextCursor?: string; truncated: boolean }
+
+export type RulesRuleList = { items: Array<RulesRule> }
+
+export type RulesOverrideResult = RulesPack | RulesRule
+
+export type RulesCompliance = { benchmark: string; controls: Array<RulesControl> }
+
 export type SessionInboxMove = {
   id: SessionMessageID
   sessionID: SessionID
@@ -2608,6 +3344,15 @@ export type ConfigEntry =
           artifacts?: boolean
           codemode_vm?: boolean
           bellu_graph?: boolean
+          connectors?: boolean
+          security_overview?: boolean
+          security_findings?: boolean
+          security_scanners?: boolean
+          security_posture?: boolean
+          security_cve_graph?: boolean
+          security_multicloud?: boolean
+          security_runtime?: boolean
+          security_ai?: boolean
           part_rows?: boolean
           image_generate?: boolean | { model?: string | { providerID: string; model: string; variant?: string } }
           subagent_depth?: number
@@ -2719,6 +3464,14 @@ export type ScheduleInfo = {
   lastOutput?: string
   time: { created: number; updated: number }
 }
+
+export type ConnectorsCatalog = { items: Array<ConnectorsManifest> }
+
+export type OverviewCategories = { revision: number; categories: Array<OverviewCategorySummary> }
+
+export type ScansScannerPage = { items: Array<ScansScanner>; nextCursor?: string; truncated: boolean }
+
+export type RulesComplianceResult = RulesBenchmarkList | RulesCompliance
 
 export type AgentInfo = {
   id: AgentID
@@ -3295,6 +4048,47 @@ export type ArtifactNotFoundError = {
 }
 export const isArtifactNotFoundError = (value: unknown): value is ArtifactNotFoundError =>
   typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "ArtifactNotFoundError"
+
+export type ConnectorError = {
+  readonly _tag: "ConnectorError"
+  readonly code:
+    | "invalid_credential"
+    | "insufficient_permission"
+    | "excess_permission"
+    | "network"
+    | "rate_limited"
+    | "expired"
+    | "alias_invalid"
+    | "alias_taken"
+    | "blocked_by_policy"
+    | "scope_denied"
+    | "run_in_progress"
+    | "vault_unavailable"
+    | "audit_failed"
+    | "decrypt_failed"
+    | "transition_rejected"
+    | "validation_failed"
+    | "payload_too_large"
+    | "forbidden"
+    | "device_code_expired"
+    | "authorization_denied"
+    | "device_flow_disabled"
+    | "already_pending"
+  readonly message: string
+  readonly offenders?: ReadonlyArray<string> | undefined
+  readonly inUse?: number | undefined
+  readonly retryAfterSec?: number | undefined
+}
+export const isConnectorError = (value: unknown): value is ConnectorError =>
+  typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "ConnectorError"
+
+export type NotFoundError = { readonly _tag: "NotFoundError"; readonly message: string }
+export const isNotFoundError = (value: unknown): value is NotFoundError =>
+  typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "NotFoundError"
+
+export type QueryBudgetExceeded = { readonly _tag: "QueryBudgetExceeded"; readonly message: string }
+export const isQueryBudgetExceeded = (value: unknown): value is QueryBudgetExceeded =>
+  typeof value === "object" && value !== null && "_tag" in value && value["_tag"] === "QueryBudgetExceeded"
 
 export type ShellNotFoundError = { readonly _tag: "ShellNotFoundError"; readonly id: string; readonly message: string }
 export const isShellNotFoundError = (value: unknown): value is ShellNotFoundError =>
@@ -4819,6 +5613,469 @@ export type ExperimentalGraphSchemaOutput = GraphSchemaSummary
 
 export type ExperimentalGraphStatusOutput = GraphStatus
 
+export type ExperimentalGraphLensesOutput = Array<GraphLens>
+
+export type ExperimentalGraphSliceInput = {
+  readonly lens: string
+  readonly entity?: string | undefined
+  readonly target?: string | undefined
+  readonly target_type?: string | undefined
+  readonly collapse_rules?: "true" | "false" | undefined
+  readonly depth?: number | undefined
+  readonly limit?: number | undefined
+}
+
+export type ExperimentalGraphSliceOutput = GraphLensSlice
+
+export type ExperimentalGraphIntelStatusOutput = GraphIntelStatus
+
+export type ExperimentalGraphOverlayInput = { readonly replay?: string | undefined }
+
+export type ExperimentalGraphOverlayOutput = GraphOverlayEvent
+
+export type ExperimentalConnectorsStatusOutput = ConnectorsServiceStatus
+
+export type ExperimentalConnectorsCatalogOutput = ConnectorsCatalog
+
+export type ExperimentalConnectorsListConnectionsOutput = ConnectorsConnectionList
+
+export type ExperimentalConnectorsCreateConnectionInput = {
+  readonly alias: string
+  readonly connectorId: string
+  readonly authConfigId?: string | undefined
+  readonly method: string
+  readonly params?: { readonly [x: string]: string } | undefined
+  readonly credential: { readonly [x: string]: string }
+  readonly intervalSec?: number | undefined
+}
+
+export type ExperimentalConnectorsCreateConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsGetConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsGetConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsUpdateConnectionInput = {
+  readonly id: string
+  readonly alias?: string | undefined
+  readonly intervalSec?: number | undefined
+  readonly allowAgentLiveReads?: boolean | undefined
+  readonly selection?:
+    | {
+        readonly regions: ReadonlyArray<string>
+        readonly repos: ReadonlyArray<string>
+        readonly items?: ReadonlyArray<string>
+      }
+    | undefined
+  readonly rotationIntervalDays?: number | undefined
+}
+
+export type ExperimentalConnectorsUpdateConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsDeleteConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsDeleteConnectionOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsTestConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsTestConnectionOutput = ConnectorsTestResult
+
+export type ExperimentalConnectorsSyncConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsSyncConnectionOutput = ConnectorsSyncResult
+
+export type ExperimentalConnectorsPauseConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsPauseConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsResumeConnectionInput = { readonly id: string }
+
+export type ExperimentalConnectorsResumeConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsReconnectConnectionInput = {
+  readonly id: string
+  readonly credential: { readonly [x: string]: string }
+}
+
+export type ExperimentalConnectorsReconnectConnectionOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsRotateCredentialInput = {
+  readonly id: string
+  readonly credential: { readonly [x: string]: string }
+}
+
+export type ExperimentalConnectorsRotateCredentialOutput = ConnectorsConnection
+
+export type ExperimentalConnectorsListAuditInput = { readonly id: string; readonly cursor?: string | undefined }
+
+export type ExperimentalConnectorsListAuditOutput = ConnectorsAuditPage
+
+export type ExperimentalConnectorsListAuthConfigsInput = { readonly cid: string }
+
+export type ExperimentalConnectorsListAuthConfigsOutput = ConnectorsAuthConfigList
+
+export type ExperimentalConnectorsCreateAuthConfigInput = {
+  readonly cid: string
+  readonly name: string
+  readonly method: string
+  readonly scopes?: ReadonlyArray<string> | undefined
+  readonly settings?: { readonly [x: string]: string } | undefined
+  readonly secrets?: { readonly [x: string]: string } | undefined
+}
+
+export type ExperimentalConnectorsCreateAuthConfigOutput = ConnectorsAuthConfig
+
+export type ExperimentalConnectorsDeleteAuthConfigInput = { readonly id: string }
+
+export type ExperimentalConnectorsDeleteAuthConfigOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsAwsSetupInput = { readonly alias?: string | undefined }
+
+export type ExperimentalConnectorsAwsSetupOutput = ConnectorsAwsSetup
+
+export type ExperimentalConnectorsListGithubReposInput = { readonly id: string }
+
+export type ExperimentalConnectorsListGithubReposOutput = ConnectorsGithubRepoList
+
+export type ExperimentalConnectorsListScopeOptionsInput = { readonly id: string }
+
+export type ExperimentalConnectorsListScopeOptionsOutput = ConnectorsScopeOptionList
+
+export type ExperimentalConnectorsStartDeviceAuthorizationInput = {
+  readonly connectorId: string
+  readonly alias?: string | undefined
+  readonly reconnectId?: string | undefined
+}
+
+export type ExperimentalConnectorsStartDeviceAuthorizationOutput = ConnectorsDeviceAuthorization
+
+export type ExperimentalConnectorsGetDeviceAuthorizationInput = { readonly id: string }
+
+export type ExperimentalConnectorsGetDeviceAuthorizationOutput = ConnectorsDeviceAuthorizationStatus
+
+export type ExperimentalConnectorsCancelDeviceAuthorizationInput = { readonly id: string }
+
+export type ExperimentalConnectorsCancelDeviceAuthorizationOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsGetScopeInput = { readonly principal: string }
+
+export type ExperimentalConnectorsGetScopeOutput = ConnectorsScope
+
+export type ExperimentalConnectorsPutScopeInput = {
+  readonly principal: string
+  readonly connectors: ReadonlyArray<string>
+  readonly connections: ReadonlyArray<string>
+  readonly operations: { readonly [x: string]: ReadonlyArray<string> }
+}
+
+export type ExperimentalConnectorsPutScopeOutput = ConnectorsScope
+
+export type ExperimentalConnectorsUnlockVaultInput = { readonly passphrase: string }
+
+export type ExperimentalConnectorsUnlockVaultOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsRotateMasterKeyOutput = ConnectorsVaultResult
+
+export type ExperimentalConnectorsForgetAllOutput = ConnectorsVaultResult
+
+export type ExperimentalOverviewCategoriesOutput = OverviewCategories
+
+export type ExperimentalFindingsListInput = {
+  readonly category?:
+    | ReadonlyArray<
+        | "cloud_infrastructure"
+        | "identity"
+        | "vulnerabilities"
+        | "network_exposure"
+        | "secrets"
+        | "data_security"
+        | "code_and_dependencies"
+        | "runtime"
+        | "ai_security"
+      >
+    | undefined
+  readonly severity?: ReadonlyArray<"critical" | "high" | "medium" | "low" | "info"> | undefined
+  readonly status?: ReadonlyArray<"open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"> | undefined
+  readonly type?:
+    | ReadonlyArray<
+        | "vulnerability"
+        | "misconfiguration"
+        | "secret"
+        | "license"
+        | "malware"
+        | "runtime_threat"
+        | "ai_risk"
+        | "data_exposure"
+        | "identity_risk"
+      >
+    | undefined
+  readonly asset?: ReadonlyArray<string> | undefined
+  readonly source?: ReadonlyArray<string> | undefined
+  readonly from?: string | undefined
+  readonly to?: string | undefined
+  readonly sort?:
+    | (
+        | "last_seen"
+        | "-last_seen"
+        | "first_seen"
+        | "-first_seen"
+        | "severity"
+        | "-severity"
+        | "risk_score"
+        | "-risk_score"
+      )
+    | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalFindingsListOutput = FindingsPage
+
+export type ExperimentalFindingsGetInput = { readonly id: string }
+
+export type ExperimentalFindingsGetOutput = FindingsDetail
+
+export type ExperimentalFindingsSetStatusInput = {
+  readonly id: string
+  readonly status: "open" | "in_progress" | "resolved" | "ignored" | "accepted_risk"
+  readonly reason?: string | undefined
+  readonly until?: string | undefined
+}
+
+export type ExperimentalFindingsSetStatusOutput = FindingsDetail
+
+export type ExperimentalScansEnqueueInput = {
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly targetId: string
+}
+
+export type ExperimentalScansEnqueueOutput = ScansJob
+
+export type ExperimentalScansListInput = {
+  readonly status?: ("queued" | "running" | "succeeded" | "failed" | "cancelled" | "skipped_unchanged") | undefined
+  readonly kind?:
+    | ("sbom" | "vulnerability" | "misconfiguration" | "secret" | "posture" | "data_classification" | "ai_inventory")
+    | undefined
+  readonly limit?: number | undefined
+}
+
+export type ExperimentalScansListOutput = ScansJobPage
+
+export type ExperimentalScansScannersOutput = ScansScannerPage
+
+export type ExperimentalScansGetInput = { readonly id: string }
+
+export type ExperimentalScansGetOutput = ScansJob
+
+export type ExperimentalScansCancelInput = { readonly id: string }
+
+export type ExperimentalScansCancelOutput = ScansJob
+
+export type ExperimentalScansScheduleInput = {
+  readonly id: string
+  readonly kind:
+    | "sbom"
+    | "vulnerability"
+    | "misconfiguration"
+    | "secret"
+    | "posture"
+    | "data_classification"
+    | "ai_inventory"
+  readonly targetType: "repository" | "image" | "host" | "cloud_account" | "cluster"
+  readonly intervalSeconds: number
+  readonly enabled: boolean
+}
+
+export type ExperimentalScansScheduleOutput = ScansSchedule
+
+export type ExperimentalSbomListOutput = SbomSummaryList
+
+export type ExperimentalSbomGetInput = {
+  readonly assetId: string
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalSbomGetOutput = SbomDetail
+
+export type ExperimentalSbomExportInput = {
+  readonly assetId: string
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+
+export type ExperimentalSbomExportOutput = globalThis.Uint8Array
+
+export type ExperimentalCveLookupInput = {
+  readonly id?: string | undefined
+  readonly purl?: string | undefined
+  readonly version?: string | undefined
+  readonly cpe?: string | undefined
+  readonly mode?: ("db" | "graph" | "both") | undefined
+}
+
+export type ExperimentalCveLookupOutput = CveLookupResult
+
+export type ExperimentalCveGraphInput = {
+  readonly id?: string | undefined
+  readonly relTypes?: string | undefined
+  readonly nodeTypes?: string | undefined
+  readonly depth?: number | undefined
+  readonly limit?: number | undefined
+}
+
+export type ExperimentalCveGraphOutput = CveGraph
+
+export type ExperimentalCveStatusOutput = CveStatus
+
+export type ExperimentalCveSetModeInput = { readonly mode: "db" | "graph" | "both" }
+
+export type ExperimentalCveSetModeOutput = CveModeResult
+
+export type ExperimentalCveGetInput = { readonly id: string; readonly mode?: ("db" | "graph" | "both") | undefined }
+
+export type ExperimentalCveGetOutput = CveDetail
+
+export type ExperimentalIdentityPathsInput = {
+  readonly from: string
+  readonly to: string
+  readonly max_hops?: number | undefined
+}
+
+export type ExperimentalIdentityPathsOutput = IdentityPaths
+
+export type ExperimentalBomSbomListOutput = SbomSummaryList
+
+export type ExperimentalBomSbomExportInput = {
+  readonly assetId: string
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+
+export type ExperimentalBomSbomExportOutput = globalThis.Uint8Array
+
+export type ExperimentalBomAiOutput = BomDocument
+
+export type ExperimentalBomAiExportInput = {
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+
+export type ExperimentalBomAiExportOutput = globalThis.Uint8Array
+
+export type ExperimentalBomCloudOutput = BomDocument
+
+export type ExperimentalBomCloudExportInput = {
+  readonly format?: ("cyclonedx" | "spdx") | undefined
+  readonly version?: string | undefined
+}
+
+export type ExperimentalBomCloudExportOutput = globalThis.Uint8Array
+
+export type ExperimentalAiEntitiesInput = {
+  readonly kind?: string | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalAiEntitiesOutput = AiPage
+
+export type ExperimentalAiSummaryOutput = AiSummary
+
+export type ExperimentalRuntimeStatusOutput = RuntimeStatus
+
+export type ExperimentalRuntimeEventsInput = {
+  readonly type?:
+    | ("process_exec" | "network_connect" | "file_write" | "shell_spawn" | "privilege_change" | "container_escape")
+    | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalRuntimeEventsOutput = RuntimeEventPage
+
+export type ExperimentalRuntimeIngestInput = {
+  readonly ts: string
+  readonly type: string
+  readonly node: string
+  readonly namespace?: string | undefined
+  readonly pod?: string | undefined
+  readonly container_id?: string | undefined
+  readonly process_path?: string | undefined
+  readonly args?: string | undefined
+  readonly user?: string | undefined
+  readonly unavailable?: ReadonlyArray<string> | undefined
+}
+
+export type ExperimentalRuntimeIngestOutput = void
+
+export type ExperimentalIssuesListInput = {
+  readonly category?:
+    | ReadonlyArray<
+        | "cloud_infrastructure"
+        | "identity"
+        | "vulnerabilities"
+        | "network_exposure"
+        | "secrets"
+        | "data_security"
+        | "code_and_dependencies"
+        | "runtime"
+        | "ai_security"
+      >
+    | undefined
+  readonly severity?: ReadonlyArray<"critical" | "high" | "medium" | "low" | "info"> | undefined
+  readonly status?: ReadonlyArray<"open" | "resolved" | "ignored"> | undefined
+  readonly asset?: string | undefined
+  readonly sort?: ("risk_score" | "-risk_score") | undefined
+  readonly limit?: number | undefined
+  readonly cursor?: string | undefined
+}
+
+export type ExperimentalIssuesListOutput = IssuesPage
+
+export type ExperimentalIssuesGetInput = { readonly id: string }
+
+export type ExperimentalIssuesGetOutput = IssuesDetail
+
+export type ExperimentalIssuesSetStatusInput = { readonly id: string; readonly status: "open" | "resolved" | "ignored" }
+
+export type ExperimentalIssuesSetStatusOutput = IssuesDetail
+
+export type ExperimentalRulesPacksOutput = RulesPackList
+
+export type ExperimentalRulesPackRulesInput = { readonly id: string }
+
+export type ExperimentalRulesPackRulesOutput = RulesRuleList
+
+export type ExperimentalRulesOverrideInput = {
+  readonly packId: string
+  readonly ruleId?: string | undefined
+  readonly enabled?: boolean | undefined
+  readonly severity?: ("critical" | "high" | "medium" | "low" | "info") | undefined
+}
+
+export type ExperimentalRulesOverrideOutput = RulesOverrideResult
+
+export type ExperimentalRulesComplianceInput = { readonly benchmark?: string | undefined }
+
+export type ExperimentalRulesComplianceOutput = RulesComplianceResult
+
+export type ExperimentalDataStoresInput = { readonly limit?: number | undefined; readonly cursor?: string | undefined }
+
+export type ExperimentalDataStoresOutput = DataStorePage
+
+export type ExperimentalDataStoreInput = { readonly id: string }
+
+export type ExperimentalDataStoreOutput = DataStore
+
 export type ShellListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
 
 export type ShellListOutput = { location: LocationPublicRef; data: Array<ShellInfo1> }
@@ -5148,6 +6405,381 @@ export type GraphSchemaOutput = ExperimentalGraphSchemaOutput
 
 /** @deprecated Use `ExperimentalGraphStatusOutput`. Removed in the next minor. */
 export type GraphStatusOutput = ExperimentalGraphStatusOutput
+
+/** @deprecated Use `ExperimentalGraphLensesOutput`. Removed in the next minor. */
+export type GraphLensesOutput = ExperimentalGraphLensesOutput
+
+/** @deprecated Use `ExperimentalGraphSliceInput`. Removed in the next minor. */
+export type GraphSliceInput = ExperimentalGraphSliceInput
+
+/** @deprecated Use `ExperimentalGraphSliceOutput`. Removed in the next minor. */
+export type GraphSliceOutput = ExperimentalGraphSliceOutput
+
+/** @deprecated Use `ExperimentalGraphIntelStatusOutput`. Removed in the next minor. */
+export type GraphIntelStatusOutput = ExperimentalGraphIntelStatusOutput
+
+/** @deprecated Use `ExperimentalGraphOverlayInput`. Removed in the next minor. */
+export type GraphOverlayInput = ExperimentalGraphOverlayInput
+
+/** @deprecated Use `ExperimentalGraphOverlayOutput`. Removed in the next minor. */
+export type GraphOverlayOutput = ExperimentalGraphOverlayOutput
+
+/** @deprecated Use `ExperimentalConnectorsStatusOutput`. Removed in the next minor. */
+export type ConnectorsStatusOutput = ExperimentalConnectorsStatusOutput
+
+/** @deprecated Use `ExperimentalConnectorsCatalogOutput`. Removed in the next minor. */
+export type ConnectorsCatalogOutput = ExperimentalConnectorsCatalogOutput
+
+/** @deprecated Use `ExperimentalConnectorsListConnectionsOutput`. Removed in the next minor. */
+export type ConnectorsListConnectionsOutput = ExperimentalConnectorsListConnectionsOutput
+
+/** @deprecated Use `ExperimentalConnectorsCreateConnectionInput`. Removed in the next minor. */
+export type ConnectorsCreateConnectionInput = ExperimentalConnectorsCreateConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsCreateConnectionOutput`. Removed in the next minor. */
+export type ConnectorsCreateConnectionOutput = ExperimentalConnectorsCreateConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetConnectionInput`. Removed in the next minor. */
+export type ConnectorsGetConnectionInput = ExperimentalConnectorsGetConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsGetConnectionOutput`. Removed in the next minor. */
+export type ConnectorsGetConnectionOutput = ExperimentalConnectorsGetConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsUpdateConnectionInput`. Removed in the next minor. */
+export type ConnectorsUpdateConnectionInput = ExperimentalConnectorsUpdateConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsUpdateConnectionOutput`. Removed in the next minor. */
+export type ConnectorsUpdateConnectionOutput = ExperimentalConnectorsUpdateConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteConnectionInput`. Removed in the next minor. */
+export type ConnectorsDeleteConnectionInput = ExperimentalConnectorsDeleteConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteConnectionOutput`. Removed in the next minor. */
+export type ConnectorsDeleteConnectionOutput = ExperimentalConnectorsDeleteConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsTestConnectionInput`. Removed in the next minor. */
+export type ConnectorsTestConnectionInput = ExperimentalConnectorsTestConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsTestConnectionOutput`. Removed in the next minor. */
+export type ConnectorsTestConnectionOutput = ExperimentalConnectorsTestConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsSyncConnectionInput`. Removed in the next minor. */
+export type ConnectorsSyncConnectionInput = ExperimentalConnectorsSyncConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsSyncConnectionOutput`. Removed in the next minor. */
+export type ConnectorsSyncConnectionOutput = ExperimentalConnectorsSyncConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsPauseConnectionInput`. Removed in the next minor. */
+export type ConnectorsPauseConnectionInput = ExperimentalConnectorsPauseConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsPauseConnectionOutput`. Removed in the next minor. */
+export type ConnectorsPauseConnectionOutput = ExperimentalConnectorsPauseConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsResumeConnectionInput`. Removed in the next minor. */
+export type ConnectorsResumeConnectionInput = ExperimentalConnectorsResumeConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsResumeConnectionOutput`. Removed in the next minor. */
+export type ConnectorsResumeConnectionOutput = ExperimentalConnectorsResumeConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsReconnectConnectionInput`. Removed in the next minor. */
+export type ConnectorsReconnectConnectionInput = ExperimentalConnectorsReconnectConnectionInput
+
+/** @deprecated Use `ExperimentalConnectorsReconnectConnectionOutput`. Removed in the next minor. */
+export type ConnectorsReconnectConnectionOutput = ExperimentalConnectorsReconnectConnectionOutput
+
+/** @deprecated Use `ExperimentalConnectorsRotateCredentialInput`. Removed in the next minor. */
+export type ConnectorsRotateCredentialInput = ExperimentalConnectorsRotateCredentialInput
+
+/** @deprecated Use `ExperimentalConnectorsRotateCredentialOutput`. Removed in the next minor. */
+export type ConnectorsRotateCredentialOutput = ExperimentalConnectorsRotateCredentialOutput
+
+/** @deprecated Use `ExperimentalConnectorsListAuditInput`. Removed in the next minor. */
+export type ConnectorsListAuditInput = ExperimentalConnectorsListAuditInput
+
+/** @deprecated Use `ExperimentalConnectorsListAuditOutput`. Removed in the next minor. */
+export type ConnectorsListAuditOutput = ExperimentalConnectorsListAuditOutput
+
+/** @deprecated Use `ExperimentalConnectorsListAuthConfigsInput`. Removed in the next minor. */
+export type ConnectorsListAuthConfigsInput = ExperimentalConnectorsListAuthConfigsInput
+
+/** @deprecated Use `ExperimentalConnectorsListAuthConfigsOutput`. Removed in the next minor. */
+export type ConnectorsListAuthConfigsOutput = ExperimentalConnectorsListAuthConfigsOutput
+
+/** @deprecated Use `ExperimentalConnectorsCreateAuthConfigInput`. Removed in the next minor. */
+export type ConnectorsCreateAuthConfigInput = ExperimentalConnectorsCreateAuthConfigInput
+
+/** @deprecated Use `ExperimentalConnectorsCreateAuthConfigOutput`. Removed in the next minor. */
+export type ConnectorsCreateAuthConfigOutput = ExperimentalConnectorsCreateAuthConfigOutput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteAuthConfigInput`. Removed in the next minor. */
+export type ConnectorsDeleteAuthConfigInput = ExperimentalConnectorsDeleteAuthConfigInput
+
+/** @deprecated Use `ExperimentalConnectorsDeleteAuthConfigOutput`. Removed in the next minor. */
+export type ConnectorsDeleteAuthConfigOutput = ExperimentalConnectorsDeleteAuthConfigOutput
+
+/** @deprecated Use `ExperimentalConnectorsAwsSetupInput`. Removed in the next minor. */
+export type ConnectorsAwsSetupInput = ExperimentalConnectorsAwsSetupInput
+
+/** @deprecated Use `ExperimentalConnectorsAwsSetupOutput`. Removed in the next minor. */
+export type ConnectorsAwsSetupOutput = ExperimentalConnectorsAwsSetupOutput
+
+/** @deprecated Use `ExperimentalConnectorsListGithubReposInput`. Removed in the next minor. */
+export type ConnectorsListGithubReposInput = ExperimentalConnectorsListGithubReposInput
+
+/** @deprecated Use `ExperimentalConnectorsListGithubReposOutput`. Removed in the next minor. */
+export type ConnectorsListGithubReposOutput = ExperimentalConnectorsListGithubReposOutput
+
+/** @deprecated Use `ExperimentalConnectorsListScopeOptionsInput`. Removed in the next minor. */
+export type ConnectorsListScopeOptionsInput = ExperimentalConnectorsListScopeOptionsInput
+
+/** @deprecated Use `ExperimentalConnectorsListScopeOptionsOutput`. Removed in the next minor. */
+export type ConnectorsListScopeOptionsOutput = ExperimentalConnectorsListScopeOptionsOutput
+
+/** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsStartDeviceAuthorizationInput = ExperimentalConnectorsStartDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsStartDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsStartDeviceAuthorizationOutput = ExperimentalConnectorsStartDeviceAuthorizationOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsGetDeviceAuthorizationInput = ExperimentalConnectorsGetDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsGetDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsGetDeviceAuthorizationOutput = ExperimentalConnectorsGetDeviceAuthorizationOutput
+
+/** @deprecated Use `ExperimentalConnectorsCancelDeviceAuthorizationInput`. Removed in the next minor. */
+export type ConnectorsCancelDeviceAuthorizationInput = ExperimentalConnectorsCancelDeviceAuthorizationInput
+
+/** @deprecated Use `ExperimentalConnectorsCancelDeviceAuthorizationOutput`. Removed in the next minor. */
+export type ConnectorsCancelDeviceAuthorizationOutput = ExperimentalConnectorsCancelDeviceAuthorizationOutput
+
+/** @deprecated Use `ExperimentalConnectorsGetScopeInput`. Removed in the next minor. */
+export type ConnectorsGetScopeInput = ExperimentalConnectorsGetScopeInput
+
+/** @deprecated Use `ExperimentalConnectorsGetScopeOutput`. Removed in the next minor. */
+export type ConnectorsGetScopeOutput = ExperimentalConnectorsGetScopeOutput
+
+/** @deprecated Use `ExperimentalConnectorsPutScopeInput`. Removed in the next minor. */
+export type ConnectorsPutScopeInput = ExperimentalConnectorsPutScopeInput
+
+/** @deprecated Use `ExperimentalConnectorsPutScopeOutput`. Removed in the next minor. */
+export type ConnectorsPutScopeOutput = ExperimentalConnectorsPutScopeOutput
+
+/** @deprecated Use `ExperimentalConnectorsUnlockVaultInput`. Removed in the next minor. */
+export type ConnectorsUnlockVaultInput = ExperimentalConnectorsUnlockVaultInput
+
+/** @deprecated Use `ExperimentalConnectorsUnlockVaultOutput`. Removed in the next minor. */
+export type ConnectorsUnlockVaultOutput = ExperimentalConnectorsUnlockVaultOutput
+
+/** @deprecated Use `ExperimentalConnectorsRotateMasterKeyOutput`. Removed in the next minor. */
+export type ConnectorsRotateMasterKeyOutput = ExperimentalConnectorsRotateMasterKeyOutput
+
+/** @deprecated Use `ExperimentalConnectorsForgetAllOutput`. Removed in the next minor. */
+export type ConnectorsForgetAllOutput = ExperimentalConnectorsForgetAllOutput
+
+/** @deprecated Use `ExperimentalOverviewCategoriesOutput`. Removed in the next minor. */
+export type OverviewCategoriesOutput = ExperimentalOverviewCategoriesOutput
+
+/** @deprecated Use `ExperimentalFindingsListInput`. Removed in the next minor. */
+export type FindingsListInput = ExperimentalFindingsListInput
+
+/** @deprecated Use `ExperimentalFindingsListOutput`. Removed in the next minor. */
+export type FindingsListOutput = ExperimentalFindingsListOutput
+
+/** @deprecated Use `ExperimentalFindingsGetInput`. Removed in the next minor. */
+export type FindingsGetInput = ExperimentalFindingsGetInput
+
+/** @deprecated Use `ExperimentalFindingsGetOutput`. Removed in the next minor. */
+export type FindingsGetOutput = ExperimentalFindingsGetOutput
+
+/** @deprecated Use `ExperimentalFindingsSetStatusInput`. Removed in the next minor. */
+export type FindingsSetStatusInput = ExperimentalFindingsSetStatusInput
+
+/** @deprecated Use `ExperimentalFindingsSetStatusOutput`. Removed in the next minor. */
+export type FindingsSetStatusOutput = ExperimentalFindingsSetStatusOutput
+
+/** @deprecated Use `ExperimentalScansEnqueueInput`. Removed in the next minor. */
+export type ScansEnqueueInput = ExperimentalScansEnqueueInput
+
+/** @deprecated Use `ExperimentalScansEnqueueOutput`. Removed in the next minor. */
+export type ScansEnqueueOutput = ExperimentalScansEnqueueOutput
+
+/** @deprecated Use `ExperimentalScansListInput`. Removed in the next minor. */
+export type ScansListInput = ExperimentalScansListInput
+
+/** @deprecated Use `ExperimentalScansListOutput`. Removed in the next minor. */
+export type ScansListOutput = ExperimentalScansListOutput
+
+/** @deprecated Use `ExperimentalScansScannersOutput`. Removed in the next minor. */
+export type ScansScannersOutput = ExperimentalScansScannersOutput
+
+/** @deprecated Use `ExperimentalScansGetInput`. Removed in the next minor. */
+export type ScansGetInput = ExperimentalScansGetInput
+
+/** @deprecated Use `ExperimentalScansGetOutput`. Removed in the next minor. */
+export type ScansGetOutput = ExperimentalScansGetOutput
+
+/** @deprecated Use `ExperimentalScansCancelInput`. Removed in the next minor. */
+export type ScansCancelInput = ExperimentalScansCancelInput
+
+/** @deprecated Use `ExperimentalScansCancelOutput`. Removed in the next minor. */
+export type ScansCancelOutput = ExperimentalScansCancelOutput
+
+/** @deprecated Use `ExperimentalScansScheduleInput`. Removed in the next minor. */
+export type ScansScheduleInput = ExperimentalScansScheduleInput
+
+/** @deprecated Use `ExperimentalScansScheduleOutput`. Removed in the next minor. */
+export type ScansScheduleOutput = ExperimentalScansScheduleOutput
+
+/** @deprecated Use `ExperimentalSbomListOutput`. Removed in the next minor. */
+export type SbomListOutput = ExperimentalSbomListOutput
+
+/** @deprecated Use `ExperimentalSbomGetInput`. Removed in the next minor. */
+export type SbomGetInput = ExperimentalSbomGetInput
+
+/** @deprecated Use `ExperimentalSbomGetOutput`. Removed in the next minor. */
+export type SbomGetOutput = ExperimentalSbomGetOutput
+
+/** @deprecated Use `ExperimentalSbomExportInput`. Removed in the next minor. */
+export type SbomExportInput = ExperimentalSbomExportInput
+
+/** @deprecated Use `ExperimentalSbomExportOutput`. Removed in the next minor. */
+export type SbomExportOutput = ExperimentalSbomExportOutput
+
+/** @deprecated Use `ExperimentalCveLookupInput`. Removed in the next minor. */
+export type CveLookupInput = ExperimentalCveLookupInput
+
+/** @deprecated Use `ExperimentalCveLookupOutput`. Removed in the next minor. */
+export type CveLookupOutput = ExperimentalCveLookupOutput
+
+/** @deprecated Use `ExperimentalCveGraphInput`. Removed in the next minor. */
+export type CveGraphInput = ExperimentalCveGraphInput
+
+/** @deprecated Use `ExperimentalCveGraphOutput`. Removed in the next minor. */
+export type CveGraphOutput = ExperimentalCveGraphOutput
+
+/** @deprecated Use `ExperimentalCveStatusOutput`. Removed in the next minor. */
+export type CveStatusOutput = ExperimentalCveStatusOutput
+
+/** @deprecated Use `ExperimentalCveSetModeInput`. Removed in the next minor. */
+export type CveSetModeInput = ExperimentalCveSetModeInput
+
+/** @deprecated Use `ExperimentalCveSetModeOutput`. Removed in the next minor. */
+export type CveSetModeOutput = ExperimentalCveSetModeOutput
+
+/** @deprecated Use `ExperimentalCveGetInput`. Removed in the next minor. */
+export type CveGetInput = ExperimentalCveGetInput
+
+/** @deprecated Use `ExperimentalCveGetOutput`. Removed in the next minor. */
+export type CveGetOutput = ExperimentalCveGetOutput
+
+/** @deprecated Use `ExperimentalIdentityPathsInput`. Removed in the next minor. */
+export type IdentityPathsInput = ExperimentalIdentityPathsInput
+
+/** @deprecated Use `ExperimentalIdentityPathsOutput`. Removed in the next minor. */
+export type IdentityPathsOutput = ExperimentalIdentityPathsOutput
+
+/** @deprecated Use `ExperimentalBomSbomListOutput`. Removed in the next minor. */
+export type BomSbomListOutput = ExperimentalBomSbomListOutput
+
+/** @deprecated Use `ExperimentalBomSbomExportInput`. Removed in the next minor. */
+export type BomSbomExportInput = ExperimentalBomSbomExportInput
+
+/** @deprecated Use `ExperimentalBomSbomExportOutput`. Removed in the next minor. */
+export type BomSbomExportOutput = ExperimentalBomSbomExportOutput
+
+/** @deprecated Use `ExperimentalBomAiOutput`. Removed in the next minor. */
+export type BomAiOutput = ExperimentalBomAiOutput
+
+/** @deprecated Use `ExperimentalBomAiExportInput`. Removed in the next minor. */
+export type BomAiExportInput = ExperimentalBomAiExportInput
+
+/** @deprecated Use `ExperimentalBomAiExportOutput`. Removed in the next minor. */
+export type BomAiExportOutput = ExperimentalBomAiExportOutput
+
+/** @deprecated Use `ExperimentalBomCloudOutput`. Removed in the next minor. */
+export type BomCloudOutput = ExperimentalBomCloudOutput
+
+/** @deprecated Use `ExperimentalBomCloudExportInput`. Removed in the next minor. */
+export type BomCloudExportInput = ExperimentalBomCloudExportInput
+
+/** @deprecated Use `ExperimentalBomCloudExportOutput`. Removed in the next minor. */
+export type BomCloudExportOutput = ExperimentalBomCloudExportOutput
+
+/** @deprecated Use `ExperimentalAiEntitiesInput`. Removed in the next minor. */
+export type AiEntitiesInput = ExperimentalAiEntitiesInput
+
+/** @deprecated Use `ExperimentalAiEntitiesOutput`. Removed in the next minor. */
+export type AiEntitiesOutput = ExperimentalAiEntitiesOutput
+
+/** @deprecated Use `ExperimentalAiSummaryOutput`. Removed in the next minor. */
+export type AiSummaryOutput = ExperimentalAiSummaryOutput
+
+/** @deprecated Use `ExperimentalRuntimeStatusOutput`. Removed in the next minor. */
+export type RuntimeStatusOutput = ExperimentalRuntimeStatusOutput
+
+/** @deprecated Use `ExperimentalRuntimeEventsInput`. Removed in the next minor. */
+export type RuntimeEventsInput = ExperimentalRuntimeEventsInput
+
+/** @deprecated Use `ExperimentalRuntimeEventsOutput`. Removed in the next minor. */
+export type RuntimeEventsOutput = ExperimentalRuntimeEventsOutput
+
+/** @deprecated Use `ExperimentalRuntimeIngestInput`. Removed in the next minor. */
+export type RuntimeIngestInput = ExperimentalRuntimeIngestInput
+
+/** @deprecated Use `ExperimentalRuntimeIngestOutput`. Removed in the next minor. */
+export type RuntimeIngestOutput = ExperimentalRuntimeIngestOutput
+
+/** @deprecated Use `ExperimentalIssuesListInput`. Removed in the next minor. */
+export type IssuesListInput = ExperimentalIssuesListInput
+
+/** @deprecated Use `ExperimentalIssuesListOutput`. Removed in the next minor. */
+export type IssuesListOutput = ExperimentalIssuesListOutput
+
+/** @deprecated Use `ExperimentalIssuesGetInput`. Removed in the next minor. */
+export type IssuesGetInput = ExperimentalIssuesGetInput
+
+/** @deprecated Use `ExperimentalIssuesGetOutput`. Removed in the next minor. */
+export type IssuesGetOutput = ExperimentalIssuesGetOutput
+
+/** @deprecated Use `ExperimentalIssuesSetStatusInput`. Removed in the next minor. */
+export type IssuesSetStatusInput = ExperimentalIssuesSetStatusInput
+
+/** @deprecated Use `ExperimentalIssuesSetStatusOutput`. Removed in the next minor. */
+export type IssuesSetStatusOutput = ExperimentalIssuesSetStatusOutput
+
+/** @deprecated Use `ExperimentalRulesPacksOutput`. Removed in the next minor. */
+export type RulesPacksOutput = ExperimentalRulesPacksOutput
+
+/** @deprecated Use `ExperimentalRulesPackRulesInput`. Removed in the next minor. */
+export type RulesPackRulesInput = ExperimentalRulesPackRulesInput
+
+/** @deprecated Use `ExperimentalRulesPackRulesOutput`. Removed in the next minor. */
+export type RulesPackRulesOutput = ExperimentalRulesPackRulesOutput
+
+/** @deprecated Use `ExperimentalRulesOverrideInput`. Removed in the next minor. */
+export type RulesOverrideInput = ExperimentalRulesOverrideInput
+
+/** @deprecated Use `ExperimentalRulesOverrideOutput`. Removed in the next minor. */
+export type RulesOverrideOutput = ExperimentalRulesOverrideOutput
+
+/** @deprecated Use `ExperimentalRulesComplianceInput`. Removed in the next minor. */
+export type RulesComplianceInput = ExperimentalRulesComplianceInput
+
+/** @deprecated Use `ExperimentalRulesComplianceOutput`. Removed in the next minor. */
+export type RulesComplianceOutput = ExperimentalRulesComplianceOutput
+
+/** @deprecated Use `ExperimentalDataStoresInput`. Removed in the next minor. */
+export type DataStoresInput = ExperimentalDataStoresInput
+
+/** @deprecated Use `ExperimentalDataStoresOutput`. Removed in the next minor. */
+export type DataStoresOutput = ExperimentalDataStoresOutput
+
+/** @deprecated Use `ExperimentalDataStoreInput`. Removed in the next minor. */
+export type DataStoreInput = ExperimentalDataStoreInput
+
+/** @deprecated Use `ExperimentalDataStoreOutput`. Removed in the next minor. */
+export type DataStoreOutput = ExperimentalDataStoreOutput
 
 /** @deprecated Use `ExperimentalMigrationV1StatusOutput`. Removed in the next minor. */
 export type MigrationV1StatusOutput = ExperimentalMigrationV1StatusOutput

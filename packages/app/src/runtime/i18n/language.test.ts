@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import en from "./en"
 import { DESKTOP_NATIVE_LOCALES } from "./desktop-native"
 import { localizedListParts, richTemplateParts } from "./language"
 
@@ -31,5 +32,17 @@ describe("dictionaries", () => {
     )
 
     expect(nested).toEqual([])
+  })
+})
+
+describe("connectors keys", () => {
+  test("exist only in the English catalog so other locales fall back to English", async () => {
+    const keys = Object.keys(en).filter((key) => key.startsWith("settings.connectors."))
+    expect(keys.length).toBeGreaterThan(0)
+    const locales = DESKTOP_NATIVE_LOCALES.filter((locale) => locale !== "en")
+    const modules = await Promise.all(locales.map((locale) => import(`./${locale}`)))
+    expect(
+      modules.flatMap((module) => Object.keys(module.dict).filter((key) => key.startsWith("settings.connectors."))),
+    ).toEqual([])
   })
 })

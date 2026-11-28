@@ -120,6 +120,8 @@
     "@tsconfig/node22": "catalog:",
     "@types/bun": "catalog:",
     "@typescript/native": "catalog:",
+    "devicon": "2.18.0",
+    "simple-icons": "16.37.0",
     "solid-js": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",
@@ -128,9 +130,10 @@
     "vite-plugin-solid": "catalog:"
   },
   "dependencies": {
+    "@bellucode/util": "workspace:*",
     "@kitlangton/solid-motion": "0.2.2",
     "@kobalte/core": "catalog:",
-    "@bellucode/util": "workspace:*",
+    "@phosphor-icons/core": "2.1.1",
     "@pierre/diffs": "catalog:",
     "@pierre/highlights": "catalog:",
     "@solid-primitives/event-listener": "catalog:",

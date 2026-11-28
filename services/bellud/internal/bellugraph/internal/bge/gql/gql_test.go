@@ -250,3 +250,48 @@ func TestChangesSubscriptionSSE(t *testing.T) {
 		t.Fatalf("frames = %v", got)
 	}
 }
+
+func TestEdgeAttributes(t *testing.T) {
+	f := newFixture(t)
+	if _, err := f.core.Apply(context.Background(), batch.Batch{Collector: "t2", Entities: []batch.Entity{
+		{Type: "host", Identity: map[string]string{"hostname": "db-1"}},
+	}, Relations: []batch.Relation{
+		{Type: "depends_on", From: f.ids["host"], To: hash(t, "host", map[string]string{"hostname": "db-1"}),
+			Attributes: map[string]any{"evidence": "seen", "confidence": "inferred", "observed_at": "2025-01-01T00:00:00Z"}},
+	}}, engine.ModeFull); err != nil {
+		t.Fatal(err)
+	}
+	r := f.do(t, `query($id: ID!) { neighbors(id: $id) { items { type evidence confidence observedAt } } }`,
+		map[string]any{"id": f.ids["host"]})
+	if len(r.Errors) > 0 {
+		t.Fatalf("errors: %+v", r.Errors)
+	}
+	var n struct {
+		Items []struct {
+			Type                             string
+			Evidence, Confidence, ObservedAt *string
+		}
+	}
+	if err := json.Unmarshal(r.Data["neighbors"], &n); err != nil {
+		t.Fatal(err)
+	}
+	seen := 0
+	for _, e := range n.Items {
+		switch e.Type {
+		case "depends_on":
+			seen++
+			if e.Evidence == nil || *e.Evidence != "seen" || e.Confidence == nil || *e.Confidence != "inferred" ||
+				e.ObservedAt == nil || *e.ObservedAt != "2025-01-01T00:00:00Z" {
+				t.Errorf("depends_on = %+v", e)
+			}
+		case "on":
+			seen++
+			if e.Evidence != nil || e.Confidence != nil || e.ObservedAt != nil {
+				t.Errorf("on must have null attributes: %+v", e)
+			}
+		}
+	}
+	if seen != 2 {
+		t.Fatalf("items = %+v", n.Items)
+	}
+}

@@ -1,0 +1,305 @@
+{
+  "kinds": {
+    "aws_account": {
+      "identity": [
+        "connection",
+        "account_id"
+      ],
+      "attrs": {
+        "account_id": "golden-account_id",
+        "connection": "golden-connection"
+      },
+      "hash": "aws_account:662096595662f09d1ad0805442e5187a"
+    },
+    "aws_resource": {
+      "identity": [
+        "connection",
+        "arn"
+      ],
+      "attrs": {
+        "arn": "golden-arn",
+        "connection": "golden-connection"
+      },
+      "hash": "aws_resource:05395d72a7dff2d50f5c8115a1566a70"
+    },
+    "collector_status": {
+      "identity": [
+        "collector"
+      ],
+      "attrs": {
+        "collector": "golden-collector"
+      },
+      "hash": "collector_status:2b50ea6f4d0c5222828108244443e6dd"
+    },
+    "container": {
+      "identity": [
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id"
+      },
+      "hash": "container:2fbedbc4bd6a8fb9c969132998538d27"
+    },
+    "dependency": {
+      "identity": [
+        "repo",
+        "name",
+        "range"
+      ],
+      "attrs": {
+        "name": "golden-name",
+        "range": "golden-range",
+        "repo": "golden-repo"
+      },
+      "hash": "dependency:d1afdac2ba3d9bc9cc52865d47cb3a3a"
+    },
+    "endpoint": {
+      "identity": [
+        "protocol",
+        "address",
+        "port"
+      ],
+      "attrs": {
+        "address": "golden-address",
+        "port": "golden-port",
+        "protocol": "golden-protocol"
+      },
+      "hash": "endpoint:f75489781e1eb1f77ed875649c398a64"
+    },
+    "github_alert": {
+      "identity": [
+        "connection",
+        "repo",
+        "alert_type",
+        "number"
+      ],
+      "attrs": {
+        "alert_type": "golden-alert_type",
+        "connection": "golden-connection",
+        "number": "golden-number",
+        "repo": "golden-repo"
+      },
+      "hash": "github_alert:a0db2e2c55a7c1d52802fb9bd01f917d"
+    },
+    "github_org": {
+      "identity": [
+        "connection",
+        "login"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "login": "golden-login"
+      },
+      "hash": "github_org:96fc33268a7d444893dc856036949b42"
+    },
+    "github_pull_request": {
+      "identity": [
+        "connection",
+        "repo",
+        "number"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "number": "golden-number",
+        "repo": "golden-repo"
+      },
+      "hash": "github_pull_request:854e9991433c9428c3691a4b4eb8b3e7"
+    },
+    "github_repo": {
+      "identity": [
+        "connection",
+        "full_name"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "full_name": "golden-full_name"
+      },
+      "hash": "github_repo:23fb41e8738a6e682c2dba429540b71e"
+    },
+    "github_workflow": {
+      "identity": [
+        "connection",
+        "repo",
+        "path"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "path": "golden-path",
+        "repo": "golden-repo"
+      },
+      "hash": "github_workflow:4ec422039493b9e85e16400c3ca408aa"
+    },
+    "host": {
+      "identity": [
+        "hostname"
+      ],
+      "attrs": {
+        "hostname": "golden-hostname"
+      },
+      "hash": "host:e609eb3bebcadbcb7d385b75a2ed4990"
+    },
+    "iac_resource": {
+      "identity": [
+        "path",
+        "address"
+      ],
+      "attrs": {
+        "address": "golden-address",
+        "path": "golden-path"
+      },
+      "hash": "iac_resource:6e83e99b294846f047eaf6da843efd9d"
+    },
+    "image": {
+      "identity": [
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id"
+      },
+      "hash": "image:48635a05e2c82aacf0c9c23f1f631a4d"
+    },
+    "k8s_object": {
+      "identity": [
+        "source",
+        "kind",
+        "namespace",
+        "name"
+      ],
+      "attrs": {
+        "kind": "golden-kind",
+        "name": "golden-name",
+        "namespace": "golden-namespace",
+        "source": "golden-source"
+      },
+      "hash": "k8s_object:b29b13df0d7f32b3637dab3ab53875b8"
+    },
+    "listening_port": {
+      "identity": [
+        "host",
+        "protocol",
+        "address",
+        "port"
+      ],
+      "attrs": {
+        "address": "golden-address",
+        "host": "golden-host",
+        "port": "golden-port",
+        "protocol": "golden-protocol"
+      },
+      "hash": "listening_port:3f0c5affadbb41f4a61d24acb809b329"
+    },
+    "network": {
+      "identity": [
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id"
+      },
+      "hash": "network:07a61f77dca564cf5d740d5c633ec616"
+    },
+    "package": {
+      "identity": [
+        "connection",
+        "scope",
+        "purl"
+      ],
+      "attrs": {
+        "connection": "golden-connection",
+        "purl": "golden-purl",
+        "scope": "golden-scope"
+      },
+      "hash": "package:09fc6a6e2fe65aab0f7ea04f8d406353"
+    },
+    "process": {
+      "identity": [
+        "host",
+        "pid",
+        "start_time"
+      ],
+      "attrs": {
+        "host": "golden-host",
+        "pid": "golden-pid",
+        "start_time": "golden-start_time"
+      },
+      "hash": "process:3f09230af4665d2268b7d2e30cee6cff"
+    },
+    "repository": {
+      "identity": [
+        "path"
+      ],
+      "attrs": {
+        "path": "golden-path"
+      },
+      "hash": "repository:cfcfb179a07f812822966b94ff6dc0fb"
+    },
+    "secret_finding": {
+      "identity": [
+        "path",
+        "line",
+        "rule"
+      ],
+      "attrs": {
+        "line": "golden-line",
+        "path": "golden-path",
+        "rule": "golden-rule"
+      },
+      "hash": "secret_finding:0dcbe82eda2bb388a3aa44ab6aeb2982"
+    },
+    "secret_ref": {
+      "identity": [
+        "repo",
+        "path",
+        "name"
+      ],
+      "attrs": {
+        "name": "golden-name",
+        "path": "golden-path",
+        "repo": "golden-repo"
+      },
+      "hash": "secret_ref:45a362a0be40c0c36577e49946fae05f"
+    },
+    "volume": {
+      "identity": [
+        "name"
+      ],
+      "attrs": {
+        "name": "golden-name"
+      },
+      "hash": "volume:d834885772fc93ba59e5d60d10d6433a"
+    },
+    "vulnerability": {
+      "identity": [
+        "id"
+      ],
+      "attrs": {
+        "id": "golden-id"
+      },
+      "hash": "vulnerability:8ac1087c2fc6e734d1aa78abc9e6e4d1"
+    },
+    "workflow": {
+      "identity": [
+        "repo",
+        "path"
+      ],
+      "attrs": {
+        "path": "golden-path",
+        "repo": "golden-repo"
+      },
+      "hash": "workflow:ae8954d8d9ec86915e563a88fb31f07c"
+    }
+  },
+  "relations": {
+    "affected_by": "reverse",
+    "attached_to": "reverse",
+    "depends_on": "reverse",
+    "found_in": "forward",
+    "likely_same_as": "reverse",
+    "mounts": "reverse",
+    "on": "reverse",
+    "owned_by": "reverse",
+    "resolves_to": "reverse",
+    "runs_on": "reverse",
+    "same_as": "reverse",
+    "uses": "reverse"
+  }
+}

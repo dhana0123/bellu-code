@@ -290,6 +290,24 @@ export function createComposerModel(adapter: ComposerAdapter, options?: { queue?
     })),
   ])
 
+  const commandSkills = createMemo<ComposerSuggestion[]>(() =>
+    skills().map((skill) => ({
+      id: `skill:/${skill.id}`,
+      kind: "skill" as const,
+      label: `/${skill.id}`,
+      trigger: skill.id,
+      description: skill.description,
+      mention: {
+        type: "skill" as const,
+        id: Skill.ID.make(skill.id),
+        name: Skill.Name.make(skill.name),
+        content: `/${skill.id}`,
+        start: 0,
+        end: 0,
+      },
+    })),
+  )
+
   const variants = createMemo(() => ["default", ...adapter.controls().model.selection.variant.list()])
 
   const submission = createComposerSubmit({
@@ -354,6 +372,7 @@ export function createComposerModel(adapter: ComposerAdapter, options?: { queue?
       restore: (metadata) => restoreHistoryComments(metadata as PromptHistoryComment[]),
     },
     commands,
+    skills: commandSkills,
     context,
     // The server narrows by the first word; the title match then needs the whole query.
     requestSessionSearch: (word, signal) => sessions.search(word, signal).then(() => undefined),

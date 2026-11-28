@@ -124,7 +124,8 @@ export default defineConfig(async ({ command }) => {
           command === "serve" && process.env.BELLUCODE_TEST_ONBOARDING === "1",
         ),
       },
-      plugins: [pickerPlugin(), appPlugin, initialChunk],
+      // The picker injects a dev-server-only script into index.html, so a production build can't resolve it.
+      plugins: [...(command === "serve" ? [pickerPlugin()] : []), appPlugin, initialChunk],
       publicDir: "../../../app/public",
       root: "src/renderer",
       build: {

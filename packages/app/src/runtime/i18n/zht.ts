@@ -67,6 +67,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "檔案選擇器未選取檔案",
   "desktop.picker.error.sizeLimit": "所選附件超過 {{limit}} MB 的限制",
+  "desktop.contextMenu.spellcheck": "拼字檢查",
+  "desktop.contextMenu.spellcheckLanguages": "拼字檢查語言",
 
   "command.category.suggested": "建議",
   "command.category.view": "檢視",
@@ -657,7 +659,7 @@ export const dict = {
   "session.summary.basedOn": "以 {{branch}} 為基礎",
   "desktop.menu.installCli": "安裝 CLI...",
   "desktop.cli.installed.title": "CLI 已安裝",
-  "desktop.cli.installed.message": "CLI 已安裝至 {{path}}\n\n請重新啟動終端機，以使用「bellucode2」命令。",
+  "desktop.cli.installed.message": "CLI 已安裝至 {{path}}\n\n請重新啟動終端機，以使用「bellucode」命令。",
   "desktop.cli.failed.title": "安裝失敗",
   "desktop.cli.failed.message": "無法安裝 CLI：{{error}}",
   "command.project.copyID": "複製專案 ID",

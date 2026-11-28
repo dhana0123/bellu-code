@@ -99,6 +99,20 @@
   },
   {
     "method": "GET",
+    "path": "/api/experimental/ai/entities",
+    "operationId": "experimental.ai.entities",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/ai/summary",
+    "operationId": "experimental.ai.summary",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
     "path": "/api/experimental/artifacts",
     "operationId": "experimental.artifacts.list",
     "group": "experimental",
@@ -148,6 +162,48 @@
   },
   {
     "method": "GET",
+    "path": "/api/experimental/bom/ai",
+    "operationId": "experimental.bom.ai",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/ai/export",
+    "operationId": "experimental.bom.aiExport",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/cloud",
+    "operationId": "experimental.bom.cloud",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/cloud/export",
+    "operationId": "experimental.bom.cloudExport",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/sbom",
+    "operationId": "experimental.bom.sbomList",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/bom/sbom/{assetId}/export",
+    "operationId": "experimental.bom.sbomExport",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
     "path": "/api/experimental/client-mcp",
     "operationId": "experimental.mcp.client",
     "group": "mcp",
@@ -165,6 +221,272 @@
     "path": "/api/experimental/config",
     "operationId": "experimental.config.update",
     "group": "config",
+    "stream": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/experimental/connectors/auth-configs/{id}",
+    "operationId": "experimental.connectors.deleteAuthConfig",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/aws/setup",
+    "operationId": "experimental.connectors.awsSetup",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/catalog",
+    "operationId": "experimental.connectors.catalog",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections",
+    "operationId": "experimental.connectors.listConnections",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections",
+    "operationId": "experimental.connectors.createConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/experimental/connectors/connections/{id}",
+    "operationId": "experimental.connectors.deleteConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections/{id}",
+    "operationId": "experimental.connectors.getConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/experimental/connectors/connections/{id}",
+    "operationId": "experimental.connectors.updateConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections/{id}/audit",
+    "operationId": "experimental.connectors.listAudit",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections/{id}/github/repos",
+    "operationId": "experimental.connectors.listGithubRepos",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/pause",
+    "operationId": "experimental.connectors.pauseConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/reconnect",
+    "operationId": "experimental.connectors.reconnectConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/resume",
+    "operationId": "experimental.connectors.resumeConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/rotate",
+    "operationId": "experimental.connectors.rotateCredential",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connections/{id}/scope-options",
+    "operationId": "experimental.connectors.listScopeOptions",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/sync",
+    "operationId": "experimental.connectors.syncConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connections/{id}/test",
+    "operationId": "experimental.connectors.testConnection",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/connectors/{cid}/auth-configs",
+    "operationId": "experimental.connectors.listAuthConfigs",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/connectors/{cid}/auth-configs",
+    "operationId": "experimental.connectors.createAuthConfig",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/device-authorizations",
+    "operationId": "experimental.connectors.startDeviceAuthorization",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/experimental/connectors/device-authorizations/{id}",
+    "operationId": "experimental.connectors.cancelDeviceAuthorization",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/device-authorizations/{id}",
+    "operationId": "experimental.connectors.getDeviceAuthorization",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/scopes/{principal}",
+    "operationId": "experimental.connectors.getScope",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/experimental/connectors/scopes/{principal}",
+    "operationId": "experimental.connectors.putScope",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/connectors/status",
+    "operationId": "experimental.connectors.status",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/vault/forget",
+    "operationId": "experimental.connectors.forgetAll",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/vault/rotate",
+    "operationId": "experimental.connectors.rotateMasterKey",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/connectors/vault/unlock",
+    "operationId": "experimental.connectors.unlockVault",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/cve/{id}",
+    "operationId": "experimental.cve.get",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/cve/graph",
+    "operationId": "experimental.cve.graph",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/cve/lookup",
+    "operationId": "experimental.cve.lookup",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/experimental/cve/mode",
+    "operationId": "experimental.cve.setMode",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/cve/status",
+    "operationId": "experimental.cve.status",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/data/stores",
+    "operationId": "experimental.data.stores",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/data/stores/{id}",
+    "operationId": "experimental.data.store",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/findings",
+    "operationId": "experimental.findings.list",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/findings/{id}",
+    "operationId": "experimental.findings.get",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/findings/{id}/status",
+    "operationId": "experimental.findings.setStatus",
+    "group": "experimental",
     "stream": false
   },
   {
@@ -260,8 +582,36 @@
   },
   {
     "method": "GET",
+    "path": "/api/experimental/graph/intel/status",
+    "operationId": "experimental.graph.intelStatus",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/graph/lenses",
+    "operationId": "experimental.graph.lenses",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/graph/overlay",
+    "operationId": "experimental.graph.overlay",
+    "group": "experimental",
+    "stream": true
+  },
+  {
+    "method": "GET",
     "path": "/api/experimental/graph/schema",
     "operationId": "experimental.graph.schema",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/graph/slice",
+    "operationId": "experimental.graph.slice",
     "group": "experimental",
     "stream": false
   },
@@ -273,10 +623,38 @@
     "stream": false
   },
   {
+    "method": "GET",
+    "path": "/api/experimental/identity/paths",
+    "operationId": "experimental.identity.paths",
+    "group": "experimental",
+    "stream": false
+  },
+  {
     "method": "POST",
     "path": "/api/experimental/integration/wellknown",
     "operationId": "experimental.integration.wellknown.add",
     "group": "integration",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/issues",
+    "operationId": "experimental.issues.list",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/issues/{id}",
+    "operationId": "experimental.issues.get",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/issues/{id}/status",
+    "operationId": "experimental.issues.setStatus",
+    "group": "experimental",
     "stream": false
   },
   {
@@ -326,6 +704,13 @@
     "path": "/api/experimental/migration/v1",
     "operationId": "experimental.migration.v1.status",
     "group": "migration",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/overview/categories",
+    "operationId": "experimental.overview.categories",
+    "group": "experimental",
     "stream": false
   },
   {
@@ -382,6 +767,118 @@
     "path": "/api/experimental/persistent-pty/shutdown",
     "operationId": "experimental.persistentPty.shutdown",
     "group": "persistentPty",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/rules/compliance",
+    "operationId": "experimental.rules.compliance",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/experimental/rules/overrides",
+    "operationId": "experimental.rules.override",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/rules/packs",
+    "operationId": "experimental.rules.packs",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/rules/packs/{id}/rules",
+    "operationId": "experimental.rules.packRules",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/runtime/events",
+    "operationId": "experimental.runtime.events",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/runtime/ingest",
+    "operationId": "experimental.runtime.ingest",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/runtime/status",
+    "operationId": "experimental.runtime.status",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/sbom",
+    "operationId": "experimental.sbom.list",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/sbom/{assetId}",
+    "operationId": "experimental.sbom.get",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/sbom/{assetId}/export",
+    "operationId": "experimental.sbom.export",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/scans",
+    "operationId": "experimental.scans.list",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/scans",
+    "operationId": "experimental.scans.enqueue",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/scans/{id}",
+    "operationId": "experimental.scans.get",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "POST",
+    "path": "/api/experimental/scans/{id}/cancel",
+    "operationId": "experimental.scans.cancel",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "GET",
+    "path": "/api/experimental/scans/scanners",
+    "operationId": "experimental.scans.scanners",
+    "group": "experimental",
+    "stream": false
+  },
+  {
+    "method": "PUT",
+    "path": "/api/experimental/scans/schedules/{id}",
+    "operationId": "experimental.scans.schedule",
+    "group": "experimental",
     "stream": false
   },
   {

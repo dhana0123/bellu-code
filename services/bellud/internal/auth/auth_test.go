@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -118,12 +119,50 @@ func TestMalformedTokensRejected(t *testing.T) {
 }
 
 func TestWriteUnauthorized(t *testing.T) {
-	w := httptest.NewRecorder()
-	WriteUnauthorized(w)
-	if w.Code != http.StatusUnauthorized {
-		t.Fatalf("status %d", w.Code)
+	for _, tc := range []struct{ mode, want string }{
+		{"", `Basic realm="Secure Area"`},
+		{"navigate", `Basic realm="Secure Area"`},
+		{"cors", ""},
+		{"same-origin", ""},
+	} {
+		r := httptest.NewRequest(http.MethodGet, "http://localhost:4096/api/info", nil)
+		if tc.mode != "" {
+			r.Header.Set("Sec-Fetch-Mode", tc.mode)
+		}
+		w := httptest.NewRecorder()
+		WriteUnauthorized(w, r)
+		if w.Code != http.StatusUnauthorized || w.Header().Get("Content-Type") != "application/json" {
+			t.Fatalf("mode %q: status %d type %q", tc.mode, w.Code, w.Header().Get("Content-Type"))
+		}
+		if got := w.Header().Get("WWW-Authenticate"); got != tc.want {
+			t.Fatalf("mode %q: challenge %q, want %q", tc.mode, got, tc.want)
+		}
 	}
-	if got := w.Header().Get("WWW-Authenticate"); got != "Basic" {
-		t.Fatalf("header %q", got)
+}
+
+func TestAuthTokenQuery(t *testing.T) {
+	a := New("secret")
+	ok := base64.StdEncoding.EncodeToString([]byte("bellucode:secret"))
+	if !a.Authorize(httptest.NewRequest(http.MethodGet, "http://localhost:4096/x?auth_token="+ok, nil)) {
+		t.Fatal("auth_token rejected")
+	}
+	bad := base64.StdEncoding.EncodeToString([]byte("bellucode:wrong"))
+	if a.Authorize(httptest.NewRequest(http.MethodGet, "http://localhost:4096/x?auth_token="+bad, nil)) {
+		t.Fatal("wrong auth_token accepted")
+	}
+}
+
+func TestCookieRejectedCrossOrigin(t *testing.T) {
+	a := New("secret")
+	tok, _ := a.IssueSession(time.Now())
+	r := httptest.NewRequest(http.MethodGet, "http://localhost:4096/x", nil)
+	r.AddCookie(&http.Cookie{Name: "bellucode_session_4096", Value: tok})
+	r.Header.Set("Origin", "http://localhost:5173")
+	if a.Authorize(r) {
+		t.Fatal("cross-origin cookie accepted")
+	}
+	r.Header.Set("Origin", "http://localhost:4096")
+	if !a.Authorize(r) {
+		t.Fatal("same-origin cookie rejected")
 	}
 }

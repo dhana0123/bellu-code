@@ -557,6 +557,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "선택기에서 파일을 선택하지 않았습니다",
   "desktop.picker.error.sizeLimit": "선택한 첨부 파일이 {{limit}} MB 제한을 초과합니다",
+  "desktop.contextMenu.spellcheck": "맞춤법 검사",
+  "desktop.contextMenu.spellcheckLanguages": "맞춤법 검사 언어",
 
   "provider.disconnect.toast.noCredentials.description":
     "{{provider}}에 대해 제거할 수 있는 자격 증명을 찾을 수 없습니다.",
@@ -618,7 +620,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI 설치...",
   "desktop.cli.installed.title": "CLI 설치됨",
   "desktop.cli.installed.message":
-    "CLI가 {{path}}에 설치되었습니다\n\n'bellucode2' 명령을 사용하려면 터미널을 다시 시작하세요.",
+    "CLI가 {{path}}에 설치되었습니다\n\n'bellucode' 명령을 사용하려면 터미널을 다시 시작하세요.",
   "desktop.cli.failed.title": "설치 실패",
   "desktop.cli.failed.message": "CLI 설치 실패: {{error}}",
   "command.project.copyID": "프로젝트 ID 복사",

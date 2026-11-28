@@ -94,6 +94,8 @@ export type ComposerEditorProps = {
   alternateKeybind?: string[]
   exitShellKeybind?: string[]
   suggestionBoundary?: () => HTMLElement | undefined
+  /** The add menu's Security item, supplied by the app shell because it needs the router. */
+  securityMenu?: () => JSX.Element
 }
 
 export function ComposerEditor(props: ComposerEditorProps) {
@@ -203,8 +205,19 @@ export function ComposerEditor(props: ComposerEditorProps) {
 
     return {
       value: state.popover.query,
-      label: i18n.t(state.popover.type === "history" ? "ui.promptInput.history" : "ui.promptInput.commands"),
-      placeholder: state.popover.type === "history" ? i18n.t("ui.promptInput.history.search") : "/",
+      label: i18n.t(
+        state.popover.type === "history"
+          ? "ui.promptInput.history"
+          : props.controller.commandTab() === "skills"
+            ? "ui.promptInput.skills"
+            : "ui.promptInput.commands",
+      ),
+      placeholder:
+        state.popover.type === "history"
+          ? i18n.t("ui.promptInput.history.search")
+          : props.controller.commandTab() === "skills"
+            ? i18n.t("ui.promptInput.skills.search")
+            : "/",
       onValueChange: props.controller.setQuery,
       onKeyDown: props.controller.onKeyDown,
     }
@@ -437,10 +450,13 @@ export function ComposerEditor(props: ComposerEditorProps) {
                 attachShortcut={props.attachShortcut ?? "Mod+U"}
                 commandsLabel={i18n.t("ui.promptInput.commands")}
                 contextLabel={i18n.t("ui.promptInput.context")}
+                skillsLabel={i18n.t("ui.promptInput.skills")}
                 shellLabel={i18n.t("ui.promptInput.shell")}
+                securityMenu={props.securityMenu}
                 onAttach={props.controller.attach}
                 onCommands={props.controller.openCommands}
                 onContext={props.controller.openContext}
+                onSkills={props.controller.openSkills}
                 onShell={props.controller.openShell}
               />
             </div>
@@ -857,12 +873,12 @@ function ComposerAttachments(props: {
                           <img
                             src={value()}
                             alt={attachment.filename}
-                            class="w-[58px] h-[46px] rounded-[6px] object-cover"
+                            class="w-[58px] h-[46px] rounded-md object-cover"
                             onClick={(event) => props.onAttachmentClick?.(attachment, event.currentTarget)}
                           />
                         )}
                       </Show>
-                      <div class="absolute inset-0 rounded-[6px] shadow-[inset_0_0_0_0.5px_var(--v2-border-border-base)] pointer-events-none" />
+                      <div class="absolute inset-0 rounded-md shadow-[inset_0_0_0_0.5px_var(--v2-border-border-base)] pointer-events-none" />
                     </Show>
                   </Tooltip>
                   <button
@@ -947,6 +963,18 @@ function ComposerAttachments(props: {
   )
 }
 
+function AddMenuLabel(props: {
+  icon: "photo" | "console" | "file-document" | "post-skill" | "terminal"
+  label: string
+}) {
+  return (
+    <span class="flex items-center gap-2">
+      <Icon name={props.icon} size="small" class="shrink-0 text-v2-icon-icon-muted" />
+      {props.label}
+    </span>
+  )
+}
+
 function ComposerEditorAddMenu(props: {
   disabled?: boolean
   title: string
@@ -955,10 +983,13 @@ function ComposerEditorAddMenu(props: {
   attachShortcut?: string
   commandsLabel: string
   contextLabel: string
+  skillsLabel: string
   shellLabel: string
   onAttach: () => void
   onCommands: () => void
   onContext: () => void
+  onSkills: () => void
+  securityMenu?: () => JSX.Element
   onShell: () => void
 }) {
   const focus = pointerFocusReturn()
@@ -988,21 +1019,25 @@ function ComposerEditorAddMenu(props: {
         <Menu.Portal>
           <Menu.Content
             onCloseAutoFocus={focus.onCloseAutoFocus}
-            class="[&_[data-slot=menu-v2-item-shortcut]]:w-5 [&_[data-slot=menu-v2-item-shortcut]]:justify-center"
-            style={{ "min-width": "180px" }}
+            class="[&_[data-slot=menu-v2-item-shortcut]]:min-w-5 [&_[data-slot=menu-v2-item-shortcut]]:justify-center"
+            style={{ "min-width": "220px" }}
           >
             <Menu.Item onSelect={props.onAttach} shortcut={props.attachShortcut}>
-              {props.attachLabel}
+              <AddMenuLabel icon="photo" label={props.attachLabel} />
             </Menu.Item>
             <Menu.Separator />
             <Menu.Item onSelect={props.onCommands} shortcut="/">
-              {props.commandsLabel}
+              <AddMenuLabel icon="console" label={props.commandsLabel} />
             </Menu.Item>
             <Menu.Item onSelect={props.onContext} shortcut="@">
-              {props.contextLabel}
+              <AddMenuLabel icon="file-document" label={props.contextLabel} />
             </Menu.Item>
+            <Menu.Item onSelect={props.onSkills}>
+              <AddMenuLabel icon="post-skill" label={props.skillsLabel} />
+            </Menu.Item>
+            {props.securityMenu?.()}
             <Menu.Item onSelect={props.onShell} shortcut="!">
-              {props.shellLabel}
+              <AddMenuLabel icon="terminal" label={props.shellLabel} />
             </Menu.Item>
           </Menu.Content>
         </Menu.Portal>
@@ -1282,7 +1317,7 @@ function ComposerEditorPopover(props: {
     <div
       ref={container}
       data-component="composer-suggestions"
-      class="absolute inset-x-0 -top-2 z-40 flex -translate-y-full scroll-pb-[18px] flex-col rounded-xl bg-v2-background-bg-base p-1.5 shadow-[var(--v2-elevation-raised)] no-scrollbar"
+      class="absolute -top-2 z-40 sm:-inset-x-2 inset-x-0 flex -translate-y-full scroll-pb-[18px] flex-col rounded-xl bg-v2-background-bg-base p-1.5 shadow-[var(--v2-elevation-raised)] no-scrollbar"
       classList={{ "overflow-auto": !props.history, "overflow-hidden": !!props.history }}
       style={{ "max-height": `${store.maxHeight}px` }}
       onMouseDown={(event) => event.preventDefault()}
@@ -1668,6 +1703,22 @@ function ComposerEditorTouchBar(props: { controller: ComposerEditorModel; docked
   )
 }
 
+// Commands carry no icon of their own, so the id's first segment picks one. Custom commands share the terminal.
+const COMMAND_ICONS = {
+  model: "models",
+  provider: "plug",
+  config: "refresh",
+  agent: "brain",
+  usage: "sliders",
+  custom: "terminal",
+} as const
+
+function commandIcon(id: string) {
+  const area = id.split(".")[0] as keyof typeof COMMAND_ICONS
+
+  return COMMAND_ICONS[area] ?? "console"
+}
+
 function ComposerSuggestionIcon(props: { item: ComposerSuggestion }) {
   if (props.item.kind === "session") return <Icon name="speech-bubble" size="small" class="shrink-0" />
 
@@ -1675,7 +1726,8 @@ function ComposerSuggestionIcon(props: { item: ComposerSuggestion }) {
 
   if (props.item.kind === "skill") return <Icon name="post-skill" size="small" class="shrink-0" />
 
-  if (props.item.kind === "command") return null
+  if (props.item.kind === "command")
+    return <Icon name={commandIcon(props.item.id)} size="small" class="shrink-0 text-v2-icon-icon-muted" />
 
   return (
     <FileIcon

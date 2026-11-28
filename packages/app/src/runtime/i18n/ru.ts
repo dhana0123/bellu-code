@@ -63,6 +63,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "В средстве выбора не выбран файл",
   "desktop.picker.error.sizeLimit": "Размер выбранных вложений превышает лимит {{limit}} МБ",
+  "desktop.contextMenu.spellcheck": "Проверка орфографии",
+  "desktop.contextMenu.spellcheckLanguages": "Языки проверки орфографии",
 
   "command.category.suggested": "Предложено",
   "command.category.view": "Просмотр",
@@ -676,7 +678,7 @@ export const dict = {
   "desktop.menu.installCli": "Установить CLI...",
   "desktop.cli.installed.title": "CLI установлен",
   "desktop.cli.installed.message":
-    "CLI установлен в {{path}}\n\nПерезапустите терминал, чтобы использовать команду «bellucode2».",
+    "CLI установлен в {{path}}\n\nПерезапустите терминал, чтобы использовать команду «bellucode».",
   "desktop.cli.failed.title": "Не удалось установить",
   "desktop.cli.failed.message": "Не удалось установить CLI: {{error}}",
   "command.project.copyID": "Копировать идентификатор проекта",

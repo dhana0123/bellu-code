@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -66,6 +67,51 @@ func Build(inbound string, present, enabled bool, url, token string) (content st
 	}
 	out, err := json.Marshal(root)
 	return string(out), true, err
+}
+
+// ConnectorsServerName is the mcp entry key of the connector MCP endpoint.
+const ConnectorsServerName = "bellu-connectors"
+
+// ConnectorsMCPPath is the connector MCP endpoint path.
+const ConnectorsMCPPath = "/api/experimental/connectors/mcp"
+
+// ConnectorsMCPURL returns the connector MCP URL for a listen address.
+func ConnectorsMCPURL(host string, port int) string {
+	return strings.TrimSuffix(MCPURL(host, port), MCPPath) + ConnectorsMCPPath
+}
+
+// AddConnectors merges the bellu-connectors mcp entry (its own bearer header)
+// into content, the config produced by Build (set reports whether it exists).
+// The header is the connector MCP token only: no provider credential, master
+// key or passphrase is ever part of the child config.
+func AddConnectors(content string, set bool, url, authorization string) (string, error) {
+	root := map[string]json.RawMessage{}
+	if set {
+		if err := decodeObject([]byte(content), &root); err != nil {
+			return "", fmt.Errorf("%w: %v", ErrInvalidInbound, err)
+		}
+	}
+	mcp := map[string]json.RawMessage{}
+	if raw, ok := root["mcp"]; ok {
+		if err := decodeObject(raw, &mcp); err != nil {
+			return "", fmt.Errorf("%w: \"mcp\" must be an object", ErrInvalidInbound)
+		}
+	}
+	entry, err := json.Marshal(map[string]any{
+		"type":    "remote",
+		"url":     url,
+		"headers": map[string]string{"Authorization": authorization},
+		"oauth":   false,
+	})
+	if err != nil {
+		return "", err
+	}
+	mcp[ConnectorsServerName] = entry
+	if root["mcp"], err = json.Marshal(mcp); err != nil {
+		return "", err
+	}
+	out, err := json.Marshal(root)
+	return string(out), err
 }
 
 // decodeObject requires data to be exactly one JSON object (not null, array or scalar).

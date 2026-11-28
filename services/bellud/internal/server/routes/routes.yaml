@@ -111,6 +111,18 @@ routes:
     public: false
     stream: true
   - method: "GET"
+    pattern: "/api/experimental/ai/entities"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/ai/summary"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
     pattern: "/api/experimental/artifacts"
     group: experimental
     owner: ts
@@ -153,6 +165,42 @@ routes:
     public: false
     stream: false
   - method: "GET"
+    pattern: "/api/experimental/bom/ai"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/ai/export"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/cloud"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/cloud/export"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/sbom"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/bom/sbom/{assetId}/export"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
     pattern: "/api/experimental/client-mcp"
     group: mcp
     owner: ts
@@ -168,6 +216,240 @@ routes:
     pattern: "/api/experimental/config"
     group: config
     owner: ts
+    public: false
+    stream: false
+  - method: "DELETE"
+    pattern: "/api/experimental/connectors/auth-configs/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/aws/setup"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/catalog"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "DELETE"
+    pattern: "/api/experimental/connectors/connections/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PATCH"
+    pattern: "/api/experimental/connectors/connections/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections/{id}/audit"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections/{id}/github/repos"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/pause"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/reconnect"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/resume"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/rotate"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connections/{id}/scope-options"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/sync"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connections/{id}/test"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/connectors/{cid}/auth-configs"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/connectors/{cid}/auth-configs"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/device-authorizations"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "DELETE"
+    pattern: "/api/experimental/connectors/device-authorizations/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/device-authorizations/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "*"
+    pattern: "/api/experimental/connectors/mcp"
+    group: experimental
+    owner: go
+    public: false
+    stream: true
+  - method: "GET"
+    pattern: "/api/experimental/connectors/scopes/{principal}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PUT"
+    pattern: "/api/experimental/connectors/scopes/{principal}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/connectors/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/vault/forget"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/vault/rotate"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/connectors/vault/unlock"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/cve/graph"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/cve/lookup"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PUT"
+    pattern: "/api/experimental/cve/mode"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/cve/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/cve/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/data/stores"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/data/stores/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/findings"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/findings/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/findings/{id}/status"
+    group: experimental
+    owner: go
     public: false
     stream: false
   - method: "DELETE"
@@ -272,6 +554,18 @@ routes:
     owner: go
     public: false
     stream: true
+  - method: "GET"
+    pattern: "/api/experimental/graph/intel/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/graph/lenses"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "*"
     pattern: "/api/experimental/graph/mcp"
     group: experimental
@@ -285,7 +579,19 @@ routes:
     public: false
     stream: false
   - method: "GET"
+    pattern: "/api/experimental/graph/overlay"
+    group: experimental
+    owner: go
+    public: false
+    stream: true
+  - method: "GET"
     pattern: "/api/experimental/graph/schema"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/graph/slice"
     group: experimental
     owner: go
     public: false
@@ -302,10 +608,34 @@ routes:
     owner: go
     public: false
     stream: true
+  - method: "GET"
+    pattern: "/api/experimental/identity/paths"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
   - method: "POST"
     pattern: "/api/experimental/integration/wellknown"
     group: integration
     owner: ts
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/issues"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/issues/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/issues/{id}/status"
+    group: experimental
+    owner: go
     public: false
     stream: false
   - method: "GET"
@@ -348,6 +678,12 @@ routes:
     pattern: "/api/experimental/migration/v1"
     group: migration
     owner: ts
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/overview/categories"
+    group: experimental
+    owner: go
     public: false
     stream: false
   - method: "POST"
@@ -396,6 +732,102 @@ routes:
     pattern: "/api/experimental/persistent-pty/{ptyID}/snapshot"
     group: persistentPty
     owner: ts
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/rules/compliance"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PUT"
+    pattern: "/api/experimental/rules/overrides"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/rules/packs"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/rules/packs/{id}/rules"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/runtime/events"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/runtime/ingest"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/runtime/status"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/sbom"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/sbom/{assetId}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/sbom/{assetId}/export"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/scans"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/scans"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/scans/scanners"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "PUT"
+    pattern: "/api/experimental/scans/schedules/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "GET"
+    pattern: "/api/experimental/scans/{id}"
+    group: experimental
+    owner: go
+    public: false
+    stream: false
+  - method: "POST"
+    pattern: "/api/experimental/scans/{id}/cancel"
+    group: experimental
+    owner: go
     public: false
     stream: false
   - method: "GET"

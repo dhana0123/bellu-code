@@ -63,6 +63,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "ไม่ได้เลือกไฟล์จากตัวเลือกไฟล์",
   "desktop.picker.error.sizeLimit": "ไฟล์แนบที่เลือกมีขนาดเกินขีดจำกัด {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "ตรวจตัวสะกด",
+  "desktop.contextMenu.spellcheckLanguages": "ภาษาสำหรับตรวจตัวสะกด",
 
   "command.category.suggested": "แนะนำ",
   "command.category.view": "มุมมอง",
@@ -667,7 +669,7 @@ export const dict = {
   "desktop.menu.installCli": "ติดตั้ง CLI...",
   "desktop.cli.installed.title": "ติดตั้ง CLI แล้ว",
   "desktop.cli.installed.message":
-    "ติดตั้ง CLI ไปยัง {{path}} แล้ว\n\nโปรดเริ่มเทอร์มินัลใหม่เพื่อใช้คำสั่ง 'bellucode2'",
+    "ติดตั้ง CLI ไปยัง {{path}} แล้ว\n\nโปรดเริ่มเทอร์มินัลใหม่เพื่อใช้คำสั่ง 'bellucode'",
   "desktop.cli.failed.title": "การติดตั้งล้มเหลว",
   "desktop.cli.failed.message": "ติดตั้ง CLI ไม่สำเร็จ: {{error}}",
   "command.project.copyID": "คัดลอก ID โปรเจกต์",

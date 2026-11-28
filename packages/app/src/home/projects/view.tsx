@@ -102,7 +102,7 @@ export function HomeProjectsView(props: HomeProjectsViewProps) {
         <Popover.Trigger
           data-component="home-projects-dropdown"
           aria-label={props.language.t("home.projects")}
-          class="flex h-10 w-full min-w-0 items-center gap-2 rounded-[6px] bg-v2-background-bg-base px-1.5 text-start text-v2-text-text-base outline-none hover:bg-v2-background-bg-layer-01"
+          class="flex h-10 w-full min-w-0 items-center gap-2 rounded-md bg-v2-background-bg-base px-1.5 text-start text-v2-text-text-base outline-none hover:bg-v2-background-bg-layer-01"
         >
           <Show when={selected()} fallback={<Icon name="folder" size="small" />}>
             {(project) => <HomeProjectAvatar project={project()} />}
@@ -114,11 +114,7 @@ export function HomeProjectsView(props: HomeProjectsViewProps) {
               </Show>
             </bdi>
             <Show when={props.servers.length > 1 && server()}>
-              {(server) => (
-                <bdi class="truncate text-v2-text-text-muted opacity-70">
-                  {props.serverLabel(server())}
-                </bdi>
-              )}
+              {(server) => <bdi class="truncate text-v2-text-text-muted opacity-70">{props.serverLabel(server())}</bdi>}
             </Show>
           </span>
           <Icon name="chevron-down" size="small" class="shrink-0 text-v2-icon-icon-muted" />
@@ -127,7 +123,7 @@ export function HomeProjectsView(props: HomeProjectsViewProps) {
           <Popover.Content
             aria-label={props.language.t("home.projects")}
             dir={props.language.direction()}
-            class="z-50 max-h-[min(70dvh,var(--kb-popper-content-available-height))] overflow-hidden rounded-[10px] bg-v2-background-bg-base p-1.5 shadow-[var(--v2-elevation-floating)] outline-none data-[expanded]:animate-in data-[expanded]:fade-in data-[expanded]:slide-in-from-top-2 duration-150 ease-out motion-reduce:animate-none"
+            class="z-50 max-h-[min(70dvh,var(--kb-popper-content-available-height))] overflow-hidden rounded-xl bg-v2-background-bg-base p-1.5 shadow-[var(--v2-elevation-floating)] outline-none data-[expanded]:animate-in data-[expanded]:fade-in data-[expanded]:slide-in-from-top-2 duration-150 ease-out motion-reduce:animate-none"
           >
             <HomeProjectsPanel
               {...props}
@@ -186,7 +182,7 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
           ? "flex max-h-[min(60dvh,calc(var(--kb-popper-content-available-height)-12px))] min-h-0 min-w-0 flex-col overflow-hidden"
           : `
         mt-2.5 flex min-h-0 min-w-0 flex-col gap-4 overflow-hidden
-        lg:sticky lg:top-14 lg:mt-14 lg:h-[calc(100cqh-56px)] lg:self-start lg:pt-[52px]
+        lg:sticky lg:top-0 lg:mt-0 lg:h-[100cqh] lg:self-start lg:border-e lg:border-v2-border-border-muted lg:pl-4 lg:pt-4
       `
       }
       aria-label={props.language.t("home.projects")}
@@ -196,7 +192,7 @@ function HomeProjectsPanel(props: HomeProjectsViewProps) {
       }}
     >
       <Show when={!props.dropdown}>
-        <div class="flex h-7 min-w-0 shrink-0 items-center justify-between pl-1.5 pr-3">
+        <div class="flex h-7 min-w-0 shrink-0 items-center justify-between pl-1.5 pr-3 lg:h-9">
           {/* Below lg, Projects heads the page on the collapsed sidebar toggle's line. Starting the space at the row's
               edge (the shell's 8px inset plus the grid's 12px padding) keeps the row's 6px padding after the toggle,
               which lines the label up with the icons that follow it in the session and settings headers. */}
@@ -409,7 +405,7 @@ function HomeServerRow(props: {
       }
     >
       <div
-        class="group/server relative flex h-7 w-full min-w-0 items-center rounded-[6px]"
+        class="group/server relative flex h-7 w-full min-w-0 items-center rounded-md"
         data-home-row
         data-dimmed={!healthy() && !incompatible()}
         data-selected={props.selected ? "" : undefined}
@@ -424,7 +420,7 @@ function HomeServerRow(props: {
             data-action="home-server-collapse"
             class={`
             -ml-0.5 -mr-1.5 inline-flex size-5 shrink-0 items-center justify-center
-            rounded-[4px] text-v2-icon-icon-muted
+            rounded-sm text-v2-icon-icon-muted
           `}
             classList={{
               "hover:bg-v2-overlay-simple-overlay-hover": canToggle(),
@@ -459,12 +455,14 @@ function HomeServerRow(props: {
             class="flex min-w-0 flex-1 items-center gap-1"
             classList={{ "opacity-60": !healthy() && !incompatible() }}
           >
-            <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{props.serverLabel(props.server)}</span>
+            <span class="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+              {props.serverLabel(props.server)}
+            </span>
             <Show when={props.server.label}>
               {(label) => (
                 <span
                   class={`
-                  shrink-0 rounded-[3px] border border-v2-border-border-base px-1 py-0.5
+                  shrink-0 rounded-xs border border-v2-border-border-base px-1 py-0.5
                   text-[9px] leading-none text-v2-text-text-muted
                 `}
                 >
@@ -477,7 +475,7 @@ function HomeServerRow(props: {
         <div
           data-slot="home-row-actions"
           class={`
-          hover-reveal absolute bottom-0 right-1 top-0 flex items-center gap-1 rounded-r-[6px] pl-2
+          hover-reveal absolute bottom-0 right-1 top-0 flex items-center gap-1 rounded-r-md pl-2
           group-hover/server:opacity-100 focus-within:opacity-100 data-[menu=true]:opacity-100
         `}
           data-menu={props.contextMenuOpen(contextMenuID())}
@@ -610,7 +608,7 @@ function HomeProjectRow(
 
   return (
     <div
-      class="group/project relative flex h-7 min-w-0 items-center rounded-[6px]"
+      class="group/project relative flex h-7 min-w-0 items-center rounded-md"
       data-home-row
       data-dimmed={serverUnreachable()}
       data-selected={props.selected ? "" : undefined}
@@ -636,7 +634,7 @@ function HomeProjectRow(
       <div
         data-slot="home-row-actions"
         class={`
-          hover-reveal absolute bottom-0 right-1 top-0 flex items-center gap-1 rounded-r-[6px] pl-2
+          hover-reveal absolute bottom-0 right-1 top-0 flex items-center gap-1 rounded-r-md pl-2
           group-hover/project:opacity-100 focus-within:opacity-100 data-[menu=true]:opacity-100
         `}
         data-menu={props.contextMenuOpen(contextMenuID())}
@@ -682,7 +680,7 @@ function HomeProjectNavButton(props: JSX.ButtonHTMLAttributes<HTMLButtonElement>
     <button
       {...rest}
       class={`
-        flex h-7 min-w-0 w-full shrink-0 cursor-default items-center gap-2 rounded-[6px] bg-transparent px-1.5 text-left
+        flex h-7 min-w-0 w-full shrink-0 cursor-default items-center gap-2 rounded-md bg-transparent px-1.5 text-left
         text-v2-text-text-muted [font-weight:440] transition-[background-color,color,box-shadow] duration-[120ms] ease-in-out
         hover:bg-v2-background-bg-layer-01 hover:text-v2-text-text-base
         data-[selected]:bg-v2-background-bg-layer-03 data-[selected]:text-v2-text-text-base

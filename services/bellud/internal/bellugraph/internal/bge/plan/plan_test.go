@@ -184,7 +184,7 @@ func TestValidationErrorsNameTheOffender(t *testing.T) {
 		{"empty identity attribute", batch.Batch{Collector: "c", Entities: []batch.Entity{{Type: "host", Identity: map[string]string{"hostname": ""}}}}, []string{`"hostname"`}},
 		{"duplicate entity", batch.Batch{Collector: "c", Entities: []batch.Entity{host("a", nil), host("a", nil)}}, []string{"duplicate", `"host"`, a}},
 		{"relation without type", batch.Batch{Collector: "c", Entities: two, Relations: []batch.Relation{{From: a, To: b}}}, []string{"no type", a, b}},
-		{"relation attributes", batch.Batch{Collector: "c", Entities: two, Relations: []batch.Relation{{Type: "depends_on", From: a, To: b, Attributes: map[string]any{"w": 1}}}}, []string{`"depends_on"`, a, b, "attributes"}},
+		{"relation attributes", batch.Batch{Collector: "c", Entities: two, Relations: []batch.Relation{{Type: "depends_on", From: a, To: b, Attributes: map[string]any{"w": 1}}}}, []string{`"depends_on"`, a, b, `attribute "w"`, "evidence, confidence and observed_at"}},
 		{"unknown from endpoint", batch.Batch{Collector: "c", Entities: two, Relations: []batch.Relation{{Type: "runs_on", From: "host:ghost", To: b}}}, []string{`"runs_on"`, `"host:ghost"`, "from"}},
 		{"unknown to endpoint", batch.Batch{Collector: "c", Entities: two, Relations: []batch.Relation{{Type: "runs_on", From: a, To: "host:ghost"}}}, []string{`"runs_on"`, `"host:ghost"`, "to"}},
 	}
@@ -202,6 +202,31 @@ func TestValidationErrorsNameTheOffender(t *testing.T) {
 	}
 }
 
+// Relations accept exactly the fixed attribute names (Req 16.6).
+func TestRelationAttributeNamesFixedSet(t *testing.T) {
+	a, b := hid("a"), hid("b")
+	two := []batch.Entity{host("a", nil), host("b", nil)}
+	run := func(attrs map[string]any) error {
+		_, err := plan.Plan(graph.New(), batch.Batch{Collector: "c", Entities: two,
+			Relations: []batch.Relation{{Type: "depends_on", From: a, To: b, Attributes: attrs}}}, plan.ModeFull, t0)
+		return err
+	}
+	ok := map[string]any{"evidence": "seen in config", "confidence": "inferred", "observed_at": "2024-01-02T03:04:05Z"}
+	if err := run(ok); err != nil {
+		t.Fatalf("fixed names rejected: %v", err)
+	}
+	for name := range ok {
+		if err := run(map[string]any{name: ok[name]}); err != nil {
+			t.Errorf("%s rejected: %v", name, err)
+		}
+	}
+	for _, name := range []string{"w", "Evidence", "evidence ", "weight", ""} {
+		err := run(map[string]any{name: "x"})
+		if !errors.Is(err, errs.Validation) || !strings.Contains(err.Error(), "not allowed") {
+			t.Errorf("name %q: got %v, want validation error", name, err)
+		}
+	}
+}
 func TestValidationRetiredEndpointNamed(t *testing.T) {
 	g := graph.New()
 	apply(t, g, batch.Batch{Collector: "c", Entities: []batch.Entity{host("a", nil), host("b", nil)}}, plan.ModeFull)
@@ -227,4 +252,65 @@ func TestValidationRejectsWholeBatch(t *testing.T) {
 		t.Fatalf("err=%v live=%d", err, g.LiveCount())
 	}
 	_ = r
+}
+
+func TestRetainKeepsEntitiesAndRelationsInFullMode(t *testing.T) {
+	g := graph.New()
+	apply(t, g, batch.Batch{Collector: "c", Entities: []batch.Entity{
+		host("keep", map[string]any{"os": "linux"}), host("gone", map[string]any{"os": "bsd"}), host("other", map[string]any{"os": "linux"}),
+	}, Relations: []batch.Relation{
+		{Type: "runs_on", From: hid("other"), To: hid("keep")},
+		{Type: "runs_on", From: hid("other"), To: hid("gone")},
+	}}, plan.ModeFull)
+
+	r := apply(t, g, batch.Batch{Collector: "c",
+		Entities: []batch.Entity{host("other", map[string]any{"os": "linux"})},
+		Retain:   []batch.Retain{{Kind: "host", Attrs: map[string]string{"os": "linux"}}},
+	}, plan.ModeFull)
+
+	if _, ok := g.Entity(hid("keep")); !ok || !mustEntity(g, hid("keep")).Live {
+		t.Fatal("retained entity was retired")
+	}
+	if mustEntity(g, hid("gone")).Live {
+		t.Fatal("unmatched entity should be retired")
+	}
+	if _, ok := g.Relation(graph.RelKey{Type: "runs_on", From: hid("other"), To: hid("keep")}); !ok {
+		t.Fatal("relation to retained entity was removed")
+	}
+	if _, ok := g.Relation(graph.RelKey{Type: "runs_on", From: hid("other"), To: hid("gone")}); ok {
+		t.Fatal("relation to retired entity should be removed")
+	}
+	for _, ev := range r.Events {
+		if ev.Type == codec.EntityRemoved && ev.ID == hid("keep") {
+			t.Fatal("EntityRemoved emitted for retained entity")
+		}
+	}
+	if !mustEntityAsserted(g, hid("keep"), "c") {
+		t.Fatal("retained entity lost its assertion")
+	}
+}
+
+func TestRetainEmptyAttrsMatchesKindAndMismatchRetires(t *testing.T) {
+	g := graph.New()
+	apply(t, g, batch.Batch{Collector: "c", Entities: []batch.Entity{host("a", map[string]any{"os": "linux"})}}, plan.ModeFull)
+	apply(t, g, batch.Batch{Collector: "c", Retain: []batch.Retain{{Kind: "host", Attrs: map[string]string{"os": "bsd"}}}}, plan.ModeFull)
+	if mustEntity(g, hid("a")).Live {
+		t.Fatal("non-matching rule must not retain")
+	}
+	g = graph.New()
+	apply(t, g, batch.Batch{Collector: "c", Entities: []batch.Entity{host("a", nil)}}, plan.ModeFull)
+	r := apply(t, g, batch.Batch{Collector: "c", Retain: []batch.Retain{{Kind: "host"}}}, plan.ModeFull)
+	if !mustEntity(g, hid("a")).Live || len(r.Events) != 0 {
+		t.Fatalf("empty Attrs rule should retain by kind with no events, got %v", types(r))
+	}
+}
+
+func mustEntity(g *graph.Graph, id string) *graph.EntityState {
+	es, _ := g.Entity(id)
+	return es
+}
+
+func mustEntityAsserted(g *graph.Graph, id, c string) bool {
+	_, ok := mustEntity(g, id).Asserted[c]
+	return ok
 }

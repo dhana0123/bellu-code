@@ -1,0 +1,12 @@
+{
+  "products": {
+    "postgres": [{"cycle":"12","eol":"2024-11-14"},{"cycle":"13","eol":"2025-11-13"},{"cycle":"14","eol":"2026-11-12"},{"cycle":"15","eol":"2027-11-11"}],
+    "mysql": [{"cycle":"5.7","eol":"2023-10-31"},{"cycle":"8.0","eol":"2026-04-30"}],
+    "redis": [{"cycle":"6.0","eol":"2023-07-31"},{"cycle":"6.2","eol":"2024-02-28"},{"cycle":"7.0","eol":"2024-07-29"}],
+    "python": [{"cycle":"3.8","eol":"2024-10-07"},{"cycle":"3.9","eol":"2025-10-31"}],
+    "nodejs": [{"cycle":"16","eol":"2023-09-11"},{"cycle":"18","eol":"2025-04-30"},{"cycle":"20","eol":"2026-04-30"}],
+    "kubernetes": [{"cycle":"1.26","eol":"2024-02-28"},{"cycle":"1.27","eol":"2024-06-28"},{"cycle":"1.28","eol":"2024-10-28"},{"cycle":"1.29","eol":"2025-02-28"}],
+    "java": [{"cycle":"8","eol":"2030-12-31"},{"cycle":"11","eol":"2032-01-31"}]
+  },
+  "ai_unsafe_formats": ["pickle","pkl","joblib","dill","cloudpickle","pt","pth","ckpt","bin","npy","npz","h5","keras","marshal"]
+}

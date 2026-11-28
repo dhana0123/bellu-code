@@ -1,0 +1,32 @@
+# 2026/11/25 15:14:06.271366 [TestPropertyAWSCollectorPartialFailureIsolation] [rapid] draw selection: []string{"us-east-1"}
+# 2026/11/25 15:14:06.271373 [TestPropertyAWSCollectorPartialFailureIsolation] [rapid] draw buckets: 0
+# 2026/11/25 15:14:06.271375 [TestPropertyAWSCollectorPartialFailureIsolation] [rapid] draw perType: 0
+# 2026/11/25 15:14:06.271377 [TestPropertyAWSCollectorPartialFailureIsolation] [rapid] draw roles: 0
+# 2026/11/25 15:14:06.271379 [TestPropertyAWSCollectorPartialFailureIsolation] [rapid] draw names: []string{""}
+# 2026/11/25 15:14:06.271383 [TestPropertyAWSCollectorPartialFailureIsolation] [rapid] draw failing: []string{"vpc", "ai-sagemaker"}
+# 2026/11/25 15:14:06.271399 [TestPropertyAWSCollectorPartialFailureIsolation] reported [vpc] want [ai-sagemaker vpc]
+# 
+v0.4.8#908605989316354709
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x5555555555555
+0x0
+0x0
+0x5555555555555
+0xc05c654ab866b
+0x15
+0x0

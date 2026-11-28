@@ -469,7 +469,7 @@ function Section(props: { label: string; badge?: string; dimmed?: boolean; child
         <Line class="text-v2-text-text-muted">{props.label}</Line>
         <Show when={props.badge}>
           {(badge) => (
-            <span class="flex h-4 items-center rounded-[2px] bg-v2-background-bg-layer-03 px-1 text-[11px] leading-text-tight font-[530] tracking-[0.05px] text-v2-text-text-muted">
+            <span class="flex h-4 items-center rounded-xs bg-v2-background-bg-layer-03 px-1 text-[11px] leading-text-tight font-[530] tracking-[0.05px] text-v2-text-text-muted">
               {badge()}
             </span>
           )}
@@ -544,7 +544,7 @@ function Spend(props: { status: string; reached: boolean; children: JSX.Element 
 
 function Track(props: { fill: number; reached: boolean }) {
   return (
-    <div class="flex h-2 items-center self-stretch overflow-hidden rounded-[2px] bg-v2-background-bg-layer-03">
+    <div class="flex h-2 items-center self-stretch overflow-hidden rounded-xs bg-v2-background-bg-layer-03">
       <div
         class="h-2"
         classList={{ "bg-v2-background-bg-inverse": !props.reached, "bg-[var(--usage-reached)]": props.reached }}

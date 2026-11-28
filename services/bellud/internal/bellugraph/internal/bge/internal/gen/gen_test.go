@@ -1,6 +1,7 @@
 package gen_test
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -153,5 +154,90 @@ func TestModelSemantics(t *testing.T) {
 	}
 	if _, ok := m.Current().Entities[h.ID()].Attrs["state"]; !ok {
 		t.Fatal("c4 unset an attribute owned by c3")
+	}
+}
+
+// Valid attribute maps fold; maps with one injected defect are rejected whole.
+func TestRelAttrsGenerators(t *testing.T) {
+	h, p := gen.Ref{Kind: "host", Index: 0}, gen.Ref{Kind: "process", Index: 0}
+	ents := []batch.Entity{
+		{Type: h.Kind, Identity: h.Identity()},
+		{Type: p.Kind, Identity: p.Identity()},
+	}
+	rel := func(attrs map[string]any) batch.Batch {
+		return batch.Batch{Collector: "c1", Entities: ents, Relations: []batch.Relation{{Type: "runs_on", From: p.ID(), To: h.ID(), Attributes: attrs}}}
+	}
+	rapid.Check(t, func(t *rapid.T) {
+		m := model.New()
+		if _, err := m.Fold(rel(gen.RelAttrs().Draw(t, "ok")), model.Full, gen.Epoch); err != nil {
+			t.Fatalf("valid attributes rejected: %v", err)
+		}
+		bad := gen.BadRelAttrs().Draw(t, "bad")
+		n := len(m.Log)
+		if _, err := m.Fold(rel(bad.Attributes), model.Full, gen.Epoch); !errors.Is(err, errs.Validation) || len(m.Log) != n {
+			t.Fatalf("defect %s (%v): err %v, log %d -> %d", bad.Defect, bad.Attributes, err, n, len(m.Log))
+		}
+	})
+}
+
+func TestModelRelationAttributes(t *testing.T) {
+	now := gen.Epoch
+	h, p := gen.Ref{Kind: "host", Index: 0}, gen.Ref{Kind: "process", Index: 0}
+	ents := []batch.Entity{{Type: h.Kind, Identity: h.Identity()}, {Type: p.Kind, Identity: p.Identity()}}
+	key := model.RelKey{Type: "runs_on", From: p.ID(), To: h.ID()}
+	apply := func(m *model.Model, collector string, attrs map[string]any) ([]model.Event, error) {
+		return m.Fold(batch.Batch{Collector: collector, Entities: ents,
+			Relations: []batch.Relation{{Type: key.Type, From: key.From, To: key.To, Attributes: attrs}}}, model.Partial, now)
+	}
+	types := func(evs []model.Event) []model.EventType {
+		var out []model.EventType
+		for _, ev := range evs {
+			out = append(out, ev.Type)
+		}
+		return out
+	}
+	m := model.New()
+	evs, err := apply(m, "c1", map[string]any{"evidence": "", "confidence": "inferred"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := m.Current().Rels[key].Attrs; got.Has != 3 || got.Evidence != "" || got.Confidence != "inferred" {
+		t.Fatalf("attrs after add = %+v", got)
+	}
+	// Same attributes: no event. Different: one RelationUpdated, reported as changed.
+	if evs, _ = apply(m, "c1", map[string]any{"evidence": "", "confidence": "inferred"}); len(evs) != 0 {
+		t.Fatalf("equal attributes produced %v", types(evs))
+	}
+	evs, _ = apply(m, "c1", map[string]any{"evidence": "x"})
+	c := model.Changes(evs)
+	if len(evs) != 1 || evs[0].Type != model.RelationUpdated || len(c) != 1 || c[0].Kind != "changed" || c[0].Subject != "relation" {
+		t.Fatalf("update events = %v, changes = %+v", types(evs), c)
+	}
+	// An omitted evidence differs from an empty one.
+	if evs, _ = apply(m, "c1", map[string]any{"evidence": ""}); len(evs) != 1 {
+		t.Fatalf("empty vs omitted: %v", types(evs))
+	}
+	// Another collector with different attributes adds scope and replaces them.
+	evs, _ = apply(m, "c2", nil)
+	if got := types(evs); len(got) != 2 || got[0] != model.RelationUpdated || got[1] != model.ScopeDelta {
+		t.Fatalf("c2 events = %v", got)
+	}
+	if !m.Current().Rels[key].Attrs.Zero() {
+		t.Fatal("attributes not cleared")
+	}
+	// Rejections: conflicting duplicates, unknown name.
+	n := len(m.Log)
+	dup := batch.Batch{Collector: "c1", Entities: ents, Relations: []batch.Relation{
+		{Type: key.Type, From: key.From, To: key.To, Attributes: map[string]any{"evidence": "a"}},
+		{Type: key.Type, From: key.From, To: key.To, Attributes: map[string]any{"evidence": "b"}},
+	}}
+	if _, err := m.Fold(dup, model.Partial, now); !errors.Is(err, errs.Validation) || len(m.Log) != n {
+		t.Fatalf("conflicting duplicates: %v", err)
+	}
+	// RelationUpdated for a relation that is not live changes nothing.
+	s := model.NewState()
+	s.Step(model.Event{Seq: 1, Type: model.RelationUpdated, Rel: key, Attrs: codec.EdgeAttrs{Evidence: "x", Has: 1}})
+	if len(s.Rels) != 0 {
+		t.Fatal("update created a relation")
 	}
 }

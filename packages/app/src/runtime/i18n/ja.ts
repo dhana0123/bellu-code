@@ -63,6 +63,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "ピッカーでファイルが選択されませんでした",
   "desktop.picker.error.sizeLimit": "選択した添付ファイルが上限の{{limit}} MBを超えています",
+  "desktop.contextMenu.spellcheck": "スペルチェック",
+  "desktop.contextMenu.spellcheckLanguages": "スペルチェックの言語",
 
   "command.category.suggested": "おすすめ",
   "command.category.view": "表示",
@@ -618,7 +620,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI をインストール...",
   "desktop.cli.installed.title": "CLI をインストールしました",
   "desktop.cli.installed.message":
-    "CLI を {{path}} にインストールしました\n\n「bellucode2」コマンドを使用するには、ターミナルを再起動してください。",
+    "CLI を {{path}} にインストールしました\n\n「bellucode」コマンドを使用するには、ターミナルを再起動してください。",
   "desktop.cli.failed.title": "インストールに失敗しました",
   "desktop.cli.failed.message": "CLI をインストールできませんでした: {{error}}",
   "command.project.copyID": "プロジェクト ID をコピー",

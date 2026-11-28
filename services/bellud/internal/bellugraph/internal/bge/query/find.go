@@ -23,6 +23,7 @@ type Reader interface {
 	Entity(id graph.EntityID) (*graph.EntityState, bool)
 	LiveIDs() []graph.EntityID
 	LiveIDsOfKind(kind string) []graph.EntityID
+	Relation(k graph.RelKey) (*graph.RelState, bool)
 	RelationsFrom(id graph.EntityID) []graph.RelKey
 	RelationsTo(id graph.EntityID) []graph.RelKey
 }

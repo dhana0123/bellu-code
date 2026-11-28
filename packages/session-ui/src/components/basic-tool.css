@@ -255,7 +255,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: 0.5px solid var(--v2-border-border-base);
   background: color-mix(in srgb, var(--background-base) 92%, transparent);
   transition:
@@ -366,7 +366,7 @@
     [data-component="task-tool-surface"] {
       padding: 8px 12px;
       gap: 0;
-      border-radius: 8px;
+      border-radius: var(--radius-lg);
       background: var(--v2-background-bg-layer-02);
     }
 

@@ -1,6 +1,7 @@
 import { Schema } from "effect"
 import { Skill } from "@bellucode/schema/skill"
 import { Location } from "@bellucode/schema/location"
+import { Connectors } from "@bellucode/schema/connectors"
 
 export class LocationNotFoundError extends Schema.TaggedError<LocationNotFoundError>()(
   "LocationNotFoundError",
@@ -350,4 +351,40 @@ export class ArtifactNotFoundError extends Schema.TaggedError<ArtifactNotFoundEr
     message: Schema.String,
   },
   { httpApiStatus: 404 },
+) {}
+
+/** Typed, credential-free connector error. Mirrors `lifecycle.Error` in the Go server. */
+export class ConnectorError extends Schema.TaggedError<ConnectorError>()(
+  "ConnectorError",
+  {
+    code: Connectors.ErrorCode,
+    message: Schema.String,
+    offenders: Schema.optional(Schema.Array(Schema.String)),
+    inUse: Schema.optional(Schema.Int),
+    retryAfterSec: Schema.optional(Schema.Int),
+  },
+  { httpApiStatus: 400 },
+) {}
+
+/** `ConnectorError` as served for a refused credential write (403). Same wire body, own status. */
+export const ConnectorForbiddenError = ConnectorError.annotate({ httpApiStatus: 403 })
+
+/** `ConnectorError` as served for a request body over 1 MiB (413). Same wire body, own status. */
+export const ConnectorPayloadTooLargeError = ConnectorError.annotate({ httpApiStatus: 413 })
+
+/** Generic 404 served by the Go connector routes (flag off, unknown connection or auth config). */
+export class NotFoundError extends Schema.TaggedError<NotFoundError>()(
+  "NotFoundError",
+  {
+    message: Schema.String,
+  },
+  { httpApiStatus: 404 },
+) {}
+
+export class QueryBudgetExceededError extends Schema.TaggedError<QueryBudgetExceededError>()(
+  "QueryBudgetExceeded",
+  {
+    message: Schema.String,
+  },
+  { httpApiStatus: 504 },
 ) {}

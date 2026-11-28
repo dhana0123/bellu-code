@@ -145,7 +145,9 @@ export function settingsSearchIndex(input: {
     })
 
     if (!server.connected || server.key !== input.selected) return
-    serverSettings.forEach((entry) => add(entry, view(entry.tab, entry.target, entry.subtab), server.name, server.key))
+    serverSettings.forEach((entry) => {
+      add(entry, view(entry.tab, entry.target, entry.subtab), server.name, server.key)
+    })
     // Sections on the servers page render with each server's connection.
     plugins.forEach((item) => {
       if (item.value.page !== "servers") return

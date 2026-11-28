@@ -18,7 +18,20 @@ import { ServerHandler } from "./handlers/server"
 import { DebugHandler } from "./handlers/debug"
 import { PtyHandler } from "./handlers/pty"
 import { PersistentPtyHandler } from "./handlers/persistent-pty"
+import { ExperimentalConnectorsHandler } from "./handlers/experimental-connectors"
+import { ExperimentalAiHandler } from "./handlers/experimental-ai"
+import { ExperimentalRuntimeHandler } from "./handlers/experimental-runtime"
+import { ExperimentalBomHandler } from "./handlers/experimental-bom"
+import { ExperimentalDataHandler } from "./handlers/experimental-data"
+import { ExperimentalIssuesHandler } from "./handlers/experimental-issues"
+import { ExperimentalRulesHandler } from "./handlers/experimental-rules"
+import { ExperimentalFindingsHandler } from "./handlers/experimental-findings"
 import { ExperimentalGraphHandler } from "./handlers/experimental-graph"
+import { ExperimentalOverviewHandler } from "./handlers/experimental-overview"
+import { ExperimentalSbomHandler } from "./handlers/experimental-sbom"
+import { ExperimentalCveHandler } from "./handlers/experimental-cve"
+import { ExperimentalIdentityHandler } from "./handlers/experimental-identity"
+import { ExperimentalScansHandler } from "./handlers/experimental-scans"
 import { ShellHandler } from "./handlers/shell"
 import { ReferenceHandler } from "./handlers/reference"
 import { LocationHandler } from "./handlers/location"
@@ -63,6 +76,19 @@ export const handlers = Layer.mergeAll(
   PtyHandler,
   PersistentPtyHandler,
   ExperimentalGraphHandler,
+  ExperimentalConnectorsHandler,
+  ExperimentalOverviewHandler,
+  ExperimentalFindingsHandler,
+  ExperimentalScansHandler,
+  ExperimentalSbomHandler,
+  ExperimentalCveHandler,
+  ExperimentalIdentityHandler,
+  ExperimentalBomHandler,
+  ExperimentalAiHandler,
+  ExperimentalRuntimeHandler,
+  ExperimentalIssuesHandler,
+  ExperimentalRulesHandler,
+  ExperimentalDataHandler,
   ShellHandler,
   ReferenceHandler,
   WorktreeHandler,

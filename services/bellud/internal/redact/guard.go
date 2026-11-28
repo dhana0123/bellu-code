@@ -86,8 +86,11 @@ func firstValueRule(s string) (string, bool) {
 	return "", false
 }
 
+// ValueLeak reports the id of the first value rule that matches s.
+func ValueLeak(s string) (string, bool) { return firstValueRule(s) }
+
 func (guard) Scrub(b batch.Batch) batch.Batch {
-	out := batch.Batch{Collector: b.Collector}
+	out := batch.Batch{Collector: b.Collector, ObservedAt: b.ObservedAt}
 	if b.Entities != nil {
 		out.Entities = make([]batch.Entity, len(b.Entities))
 		for i, e := range b.Entities {
@@ -98,6 +101,12 @@ func (guard) Scrub(b batch.Batch) batch.Batch {
 		out.Relations = make([]batch.Relation, len(b.Relations))
 		for i, r := range b.Relations {
 			out.Relations[i] = batch.Relation{Type: r.Type, From: r.From, To: r.To, Attributes: scrubMap(r.Attributes, nil)}
+		}
+	}
+	if b.Retain != nil {
+		out.Retain = make([]batch.Retain, len(b.Retain))
+		for i, r := range b.Retain {
+			out.Retain[i] = batch.Retain{Kind: r.Kind, Attrs: cloneIdentity(r.Attrs)}
 		}
 	}
 	return out

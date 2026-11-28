@@ -1,0 +1,1 @@
+{"nodes":[{"id":"Weakness:CWE-730","type":"Weakness","key":"CWE-730","label":"CWE-730","properties":{}}],"edges":[],"truncated":false,"graph":{"version":"dev","buildState":"ready","buildMode":"sample","stale":false,"sources":{"cwe":{"lastSuccess":"2025-01-09T03:00:00Z"},"nvd":{"lastSuccess":null},"exploitdb":{"lastSuccess":null}}}}

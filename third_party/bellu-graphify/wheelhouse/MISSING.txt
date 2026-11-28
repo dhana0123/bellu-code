@@ -1,0 +1,1 @@
+# Package/target pairs with no wheel in uv.lock. Installing on these targets fails by design.

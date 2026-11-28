@@ -418,3 +418,22 @@ test("the draft's mode is the only mode, and an outside change ends browsing", (
     type: "closed",
   })
 })
+
+test("the add menu's Skills item opens the searchable menu on the skills and a second press closes it", () => {
+  const opened = transitionComposer(createComposerInteractionState(), { type: "skills.open" }, persisted("draft"))
+  expect(opened.state.popover).toEqual({ type: "command-menu", query: "", tab: "skills" })
+  expect(opened.state.focus).toBe("command-search")
+  expect(opened.commands).toEqual([
+    { type: "popover.filter", popover: "command", query: "" },
+    { type: "focus.command-search" },
+  ])
+  // Searching keeps the skills.
+  const searched = transitionComposer(opened.state, { type: "popover.query", value: "agent" }, persisted("draft"))
+  expect(searched.state.popover).toMatchObject({ type: "command-menu", query: "agent", tab: "skills" })
+  expect(transitionComposer(opened.state, { type: "skills.open" }, persisted("draft")).state.popover).toEqual({
+    type: "closed",
+  })
+  // The Commands item opens the commands, not the skills.
+  const commands = transitionComposer(createComposerInteractionState(), { type: "commands.open" }, persisted("draft"))
+  expect(commands.state.popover).toEqual({ type: "command-menu", query: "" })
+})

@@ -261,6 +261,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "Ingen fil ble valgt i filvelgeren",
   "desktop.picker.error.sizeLimit": "De valgte vedleggene overskrider grensen på {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Stavekontroll",
+  "desktop.contextMenu.spellcheckLanguages": "Språk for stavekontroll",
 
   "command.category.suggested": "Foreslått",
   "command.category.view": "Visning",
@@ -869,7 +871,7 @@ export const dict = {
   "desktop.menu.installCli": "Installer CLI...",
   "desktop.cli.installed.title": "CLI installert",
   "desktop.cli.installed.message":
-    "CLI-en ble installert i {{path}}.\n\nStart terminalen på nytt for å bruke kommandoen 'bellucode2'.",
+    "CLI-en ble installert i {{path}}.\n\nStart terminalen på nytt for å bruke kommandoen 'bellucode'.",
   "desktop.cli.failed.title": "Installasjonen mislyktes",
   "desktop.cli.failed.message": "Kunne ikke installere CLI-en: {{error}}",
   "command.project.copyID": "Kopier prosjekt-ID",

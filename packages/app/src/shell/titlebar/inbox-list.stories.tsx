@@ -168,7 +168,7 @@ function SessionListStory(props: {
   return (
     <div class="flex flex-col gap-3">
       <div
-        class="flex min-h-0 flex-col overflow-hidden rounded-[6px] bg-v2-background-bg-deep py-2 ps-[11px] pe-[3px]"
+        class="flex min-h-0 flex-col overflow-hidden rounded-md bg-v2-background-bg-deep py-2 ps-[11px] pe-[3px]"
         style={{ width: `${props.width}px`, height: `${props.height}px` }}
       >
         <InboxSessionList

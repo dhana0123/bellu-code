@@ -11,7 +11,7 @@ import (
 //
 // Stage order (earlier stages must be promoted before later ones):
 //
-//	0  graph routes (/api/experimental/graph/*): Go-native, TS never served them,
+//	0  graph, connectors, overview and findings routes (/api/experimental/{graph,connectors,overview,findings}/*): Go-native, TS never served them,
 //	   so no TS fixtures exist; validated by the Go-side contract test instead.
 //	1  auth, pairing, web UI
 //	2  server info, health, event feed
@@ -25,13 +25,14 @@ type Stage struct {
 	Name     string
 	Groups   []string // route groups covered
 	Prefix   string   // alternative selector: route pattern prefix (used by Stage 0)
+	Extra    []string // additional Go-native route pattern prefixes (e.g. connectors)
 	Native   bool     // Go-native: exempt from TS-fixture parity
 	Promoted bool     // go ownership permitted
 }
 
 // Stages is the promotion manifest. Only Stage 0 is promoted today.
 var Stages = []Stage{
-	{Index: 0, Name: "graph", Prefix: "/api/experimental/graph", Native: true, Promoted: true},
+	{Index: 0, Name: "graph", Prefix: "/api/experimental/graph", Extra: []string{"/api/experimental/connectors", "/api/experimental/overview", "/api/experimental/findings", "/api/experimental/scans", "/api/experimental/sbom", "/api/experimental/bom", "/api/experimental/issues", "/api/experimental/rules", "/api/experimental/data", "/api/experimental/cve", "/api/experimental/identity", "/api/experimental/ai", "/api/experimental/runtime"}, Native: true, Promoted: true},
 	{Index: 1, Name: "auth-pairing-webui", Groups: []string{"auth", "web"}},
 	{Index: 2, Name: "server-info-health-events", Groups: []string{"server", "event", "openapi"}},
 	{Index: 3, Name: "remaining", Groups: []string{"agent", "api", "command", "config", "credential", "debug", "filesystem", "form", "generate", "integration", "location", "mcp", "migration", "model", "permission", "persistentPty", "plugin", "project", "provider", "pty", "reference", "rpc", "shell", "skill", "usage", "vcs", "voice", "websearch", "worktree", "experimental"}},
@@ -43,6 +44,11 @@ func StageOf(r routes.Route) (Stage, bool) {
 	for _, s := range Stages {
 		if s.Prefix != "" && strings.HasPrefix(r.Pattern, s.Prefix) {
 			return s, true
+		}
+		for _, p := range s.Extra {
+			if strings.HasPrefix(r.Pattern, p) {
+				return s, true
+			}
 		}
 	}
 	for _, s := range Stages {

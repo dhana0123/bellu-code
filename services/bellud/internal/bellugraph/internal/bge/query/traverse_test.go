@@ -40,6 +40,14 @@ func (f *fakeGraph) LiveIDs() []string {
 	return o
 }
 func (f *fakeGraph) LiveIDsOfKind(string) []string { return f.LiveIDs() }
+func (f *fakeGraph) Relation(k graph.RelKey) (*graph.RelState, bool) {
+	for _, r := range f.rels {
+		if r == k {
+			return &graph.RelState{Key: k}, true
+		}
+	}
+	return nil, false
+}
 func (f *fakeGraph) RelationsFrom(id string) []graph.RelKey {
 	var o []graph.RelKey
 	for _, r := range f.rels {

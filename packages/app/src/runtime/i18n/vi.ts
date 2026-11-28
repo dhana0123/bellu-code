@@ -63,6 +63,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "Không có tệp nào được chọn trong bộ chọn tệp",
   "desktop.picker.error.sizeLimit": "Các tệp đính kèm đã chọn vượt quá giới hạn {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Kiểm tra chính tả",
+  "desktop.contextMenu.spellcheckLanguages": "Ngôn ngữ kiểm tra chính tả",
 
   "command.category.suggested": "Đề xuất",
   "command.category.view": "Xem",
@@ -614,7 +616,7 @@ export const dict = {
   "desktop.menu.installCli": "Cài đặt CLI...",
   "desktop.cli.installed.title": "Đã cài đặt CLI",
   "desktop.cli.installed.message":
-    "Đã cài đặt CLI vào {{path}}\n\nHãy khởi động lại terminal để sử dụng lệnh 'bellucode2'.",
+    "Đã cài đặt CLI vào {{path}}\n\nHãy khởi động lại terminal để sử dụng lệnh 'bellucode'.",
   "desktop.cli.failed.title": "Cài đặt thất bại",
   "desktop.cli.failed.message": "Không thể cài đặt CLI: {{error}}",
   "command.project.copyID": "Sao chép ID dự án",

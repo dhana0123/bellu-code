@@ -24,8 +24,9 @@ const (
 	// SessionTTL is how long an issued session token stays valid.
 	SessionTTL = 30 * 24 * time.Hour
 
-	cookieBase  = "bellucode_session"    // compatibility name
-	hmacContext = "bellucode-session-v1" // compatibility name
+	cookieBase     = "bellucode_session"    // compatibility name
+	hmacContext    = "bellucode-session-v1" // compatibility name
+	authTokenQuery = "auth_token"
 )
 
 // Authenticator authorizes requests and issues/verifies session tokens.
@@ -52,13 +53,33 @@ func (a *auth) Authorize(r *http.Request) bool {
 	if a.password == "" {
 		return false
 	}
-	if user, pass, ok := r.BasicAuth(); ok {
-		return user == Username && (ctEq(pass, a.password) || a.VerifySession(pass, time.Now()))
+	if user, pass, ok := credential(r); ok && user == Username && (ctEq(pass, a.password) || a.VerifySession(pass, time.Now())) {
+		return true
 	}
-	if c, err := r.Cookie(SessionCookieName(r.Host)); err == nil {
-		return a.VerifySession(c.Value, time.Now())
+	c, err := r.Cookie(SessionCookieName(r.Host))
+	if err != nil {
+		return false
 	}
-	return false
+	// Same-site pages on other ports still send this cookie, so only same-origin requests may use it.
+	if origin := r.Header.Get("Origin"); origin != "" {
+		if u, err := url.Parse(origin); err != nil || u.Host != r.Host {
+			return false
+		}
+	}
+	return a.VerifySession(c.Value, time.Now())
+}
+
+// credential reads Basic credentials from the auth_token query (base64 "user:pass", used where a
+// client cannot set headers) or the Authorization header.
+func credential(r *http.Request) (string, string, bool) {
+	if tok := r.URL.Query().Get(authTokenQuery); tok != "" {
+		raw, err := base64.StdEncoding.DecodeString(tok)
+		if err != nil {
+			return "", "", false
+		}
+		return strings.Cut(string(raw), ":")
+	}
+	return r.BasicAuth()
 }
 
 // IssueSession returns "<expiresUnixSec>.<base64url(HMAC)>".
@@ -103,9 +124,13 @@ func SessionCookieName(host string) string {
 	return cookieBase + "_" + port
 }
 
-// WriteUnauthorized writes a 401 with WWW-Authenticate: Basic.
-func WriteUnauthorized(w http.ResponseWriter) {
-	w.Header().Set("WWW-Authenticate", "Basic")
+// WriteUnauthorized writes the JSON 401. Only page navigations and non-browser clients get the
+// Basic challenge: browsers show a native credentials prompt for it even on fetch, which would
+// block the web app before it can show its own sign-in screen.
+func WriteUnauthorized(w http.ResponseWriter, r *http.Request) {
+	if mode := r.Header.Get("Sec-Fetch-Mode"); mode == "" || mode == "navigate" {
+		w.Header().Set("WWW-Authenticate", `Basic realm="Secure Area"`)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
 	_, _ = w.Write([]byte(`{"_tag":"UnauthorizedError","message":"Authentication required"}`))

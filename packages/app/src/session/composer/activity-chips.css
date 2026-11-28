@@ -23,7 +23,7 @@
   padding: 0;
   /* The capsule's hairline, so both insets round to the same device pixels. */
   border: 0.5px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   background: var(--v2-background-bg-layer-01);
   text-align: start;
 
@@ -60,7 +60,7 @@
 
   [data-component="menu-v2-item"] {
     padding-inline: 6px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 
   /* A shell's command spans the agent and description columns. */
@@ -208,7 +208,7 @@
     overflow-y: auto;
     margin-top: 4px;
     padding: 8px 10px;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     background: var(--v2-background-bg-base);
 
     pre {

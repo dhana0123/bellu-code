@@ -1,0 +1,17 @@
+# Built-in data classification patterns (Requirement 13.3, 13.9).
+# field: name | tag | schema | any. Patterns match case-insensitively by default.
+patterns:
+  - {id: pii-name, class: pii, field: any, regex: '(?i)(^|[^a-z])(pii|ssn|social[-_]?security|passport|dob|birth[-_]?date|email|phone|address|customer|person|user[-_]?profile|gdpr)([^a-z]|$)'}
+  - {id: financial-name, class: financial, field: any, regex: '(?i)(^|[^a-z])(pci|payment|card|credit[-_]?card|cvv|iban|invoice|billing|account[-_]?number|ledger|salary|payroll|finance|financial|bank)([^a-z]|$)'}
+  - {id: health-name, class: health, field: any, regex: '(?i)(^|[^a-z])(phi|hipaa|health|patient|medical|diagnosis|clinical|prescription|ehr)([^a-z]|$)'}
+  - {id: credentials-name, class: credentials, field: any, regex: '(?i)(^|[^a-z])(secret|secrets|credential|credentials|password|passwd|api[-_]?key|token|private[-_]?key|keystore|vault)([^a-z]|$)'}
+  - {id: tag-classification, class: pii, field: tag, regex: '(?i)^(data[-_]?classification|sensitivity|data[-_]?class)\s*=\s*(pii|personal)'}
+  - {id: tag-classification-financial, class: financial, field: tag, regex: '(?i)^(data[-_]?classification|sensitivity|data[-_]?class)\s*=\s*(financial|pci)'}
+  - {id: tag-classification-health, class: health, field: tag, regex: '(?i)^(data[-_]?classification|sensitivity|data[-_]?class)\s*=\s*(health|phi|hipaa)'}
+  - {id: tag-classification-credentials, class: credentials, field: tag, regex: '(?i)^(data[-_]?classification|sensitivity|data[-_]?class)\s*=\s*(credentials|secret)'}
+  # field: content patterns apply only to opt-in sampling (13.4); they never match names, tags or schema.
+  - {id: content-email, class: pii, field: content, regex: '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'}
+  - {id: content-ssn, class: pii, field: content, regex: '\b\d{3}-\d{2}-\d{4}\b'}
+  - {id: content-card, class: financial, field: content, regex: '\b(?:\d{4}[ -]?){3}\d{4}\b'}
+  - {id: content-aws-key, class: credentials, field: content, regex: '\b(?:AKIA|ASIA)[A-Z0-9]{16}\b'}
+  - {id: content-private-key, class: credentials, field: content, regex: '-----BEGIN [A-Z ]*PRIVATE KEY-----'}

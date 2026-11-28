@@ -17,12 +17,11 @@ export function Home() {
   const sessions = createHomeSessionsController(home)
   const search = createHomeSessionSearchController(home, sessions)
   const scroll = createHomeScrollController(sessions.data.groups)
-
   return (
     <div
       data-slot="home-panel"
       class={`
-        mx-[var(--shell-inline-inset,8px)] mb-[var(--shell-bottom-inset,8px)] mt-[var(--shell-top-inset,8px)] flex min-h-0 flex-1 flex-col self-stretch overflow-hidden rounded-[10px]
+        mx-[var(--shell-inline-inset,8px)] mb-[var(--shell-bottom-inset,8px)] mt-[var(--shell-top-inset,8px)] flex min-h-0 flex-1 flex-col self-stretch overflow-hidden rounded-xl
         bg-v2-background-bg-base shadow-[var(--v2-elevation-raised)]
       `}
     >
@@ -41,7 +40,7 @@ export function Home() {
         <div
           class={`
             mx-auto grid min-h-full w-full max-w-[1080px] grid-rows-[auto_minmax(0,1fr)] gap-4 px-3
-            max-md:grid-rows-[minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,720px)] lg:grid-rows-1 lg:gap-8 lg:px-6
+            max-md:grid-rows-[minmax(0,1fr)] lg:max-w-none lg:grid-cols-[260px_minmax(0,1fr)] lg:grid-rows-1 lg:gap-0 lg:px-0
           `}
         >
           <Show when={!mobile()}>

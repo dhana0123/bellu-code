@@ -22,7 +22,7 @@
     position: relative;
     aspect-ratio: 1;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: var(--radius-xl);
     background: var(--v2-background-bg-deep);
   }
 

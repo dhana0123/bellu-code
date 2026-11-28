@@ -1,0 +1,1 @@
+{"items":[{"cveID":"CVE-2023-0801","publishedDate":"2024-01-01","v3baseScore":5.0},{"cveID":"CVE-2023-0802","publishedDate":"2024-01-01","v3baseScore":5.0}],"limit":50,"graph":{"version":"dev","buildState":"ready","buildMode":"sample","stale":false,"sources":{"cwe":{"lastSuccess":"2025-01-09T03:00:00Z"},"nvd":{"lastSuccess":null},"exploitdb":{"lastSuccess":null}}}}

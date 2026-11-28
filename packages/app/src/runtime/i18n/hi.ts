@@ -64,6 +64,8 @@ export const dict = {
 
   "desktop.picker.error.notSelected": "पिकर में फ़ाइल नहीं चुनी गई",
   "desktop.picker.error.sizeLimit": "चुने गए अटैचमेंट {{limit}} MB की सीमा से अधिक हैं",
+  "desktop.contextMenu.spellcheck": "वर्तनी जाँच",
+  "desktop.contextMenu.spellcheckLanguages": "वर्तनी जाँच की भाषाएँ",
 
   "command.category.suggested": "सुझाए गए",
   "command.category.view": "दृश्य",
@@ -607,7 +609,7 @@ export const dict = {
   "desktop.menu.installCli": "CLI इंस्टॉल करें...",
   "desktop.cli.installed.title": "CLI इंस्टॉल हो गया",
   "desktop.cli.installed.message":
-    "CLI को {{path}} पर इंस्टॉल किया गया\n\n'bellucode2' कमांड का उपयोग करने के लिए अपना टर्मिनल पुनः आरंभ करें।",
+    "CLI को {{path}} पर इंस्टॉल किया गया\n\n'bellucode' कमांड का उपयोग करने के लिए अपना टर्मिनल पुनः आरंभ करें।",
   "desktop.cli.failed.title": "इंस्टॉलेशन विफल",
   "desktop.cli.failed.message": "CLI इंस्टॉल नहीं हो सका: {{error}}",
   "command.project.copyID": "प्रोजेक्ट ID कॉपी करें",

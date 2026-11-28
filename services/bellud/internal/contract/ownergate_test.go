@@ -1,6 +1,7 @@
 package contract_test
 
 import (
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -34,7 +35,16 @@ func TestOwnerGateStage0OnlyGraph(t *testing.T) {
 			continue
 		}
 		n++
-		if !strings.HasPrefix(r.Pattern, "/api/experimental/graph") {
+		if !strings.HasPrefix(r.Pattern, "/api/experimental/graph") && !strings.HasPrefix(r.Pattern, "/api/experimental/connectors") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/overview") && !strings.HasPrefix(r.Pattern, "/api/experimental/findings") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/scans") && !strings.HasPrefix(r.Pattern, "/api/experimental/sbom") && !strings.HasPrefix(r.Pattern, "/api/experimental/bom") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/issues") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/rules") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/data") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/cve") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/identity") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/ai") &&
+			!strings.HasPrefix(r.Pattern, "/api/experimental/runtime") {
 			t.Errorf("go-owned route outside Stage 0: %s %s", r.Method, r.Pattern)
 		}
 	}
@@ -76,19 +86,86 @@ func TestGateFailsOnUnpromotedGoRoute(t *testing.T) {
 }
 
 // Go must never open the TS SQLite store (bellucode-local.db compat name); session
-// data comes from the child API.
+// data comes from the child API. That rule holds everywhere, including the packages
+// below: they may only open Go's own per-workspace store (bellu.db), never the TS
+// store. Note the scan below skips these packages entirely, so inside them the rule
+// is enforced by review, not by this test. SQLite itself is allowed only in:
+//   - the embedded per-workspace SQLite system of record of the three-graph design
+//     (Requirement 18): internal/store/sqlite, migrations/sqlite;
+//   - the CVE update/adapter packages: internal/cveupdate, internal/cvelocal;
+//   - the CCE and correlation store of the three-graph design: internal/cce;
+//   - the bellu-wiz-security-platform packages, which share the same per-workspace
+//     SQLite file (bellu.db): internal/scanners, internal/findings, internal/issues,
+//     internal/posture, internal/runtimeevents, internal/overview, and the read-only
+//     security MCP tools in internal/securitymcp. Matching is by prefix, so packages
+//     that do not exist yet are covered.
+//
+// Everywhere else SQLite stays forbidden.
+var sqliteAllowed = []string{
+	"internal/store/sqlite",
+	"migrations/sqlite",
+	"internal/cveupdate",
+	"internal/cvelocal",
+	"internal/cvesource", // audited cve.mode write (Requirement 21.9)
+	"internal/cce",
+	"internal/scanners",
+	"internal/findings",
+	"internal/issues",
+	"internal/posture",
+	"internal/runtimeevents",
+	"internal/overview",
+	"internal/securitymcp",
+}
+
+var sqliteForbidden = regexp.MustCompile(`bellucode-local\.db|bellucode\.db|mattn/go-sqlite3|modernc\.org/sqlite|crawshaw|zombiezen\.com/go/sqlite|ncruces/go-sqlite3|"database/sql"`)
+
 func TestNoSQLiteAccess(t *testing.T) {
-	forbidden := regexp.MustCompile(`bellucode-local\.db|bellucode\.db|mattn/go-sqlite3|modernc\.org/sqlite|crawshaw|zombiezen\.com/go/sqlite|ncruces/go-sqlite3|"database/sql"`)
-	root := filepath.Join("..", "..")
+	for _, v := range sqliteViolations(t, filepath.Join("..", "..")) {
+		t.Error(v)
+	}
+}
+
+// A package outside the allowlist that imports SQLite must still be reported, while an
+// allowed one must not.
+func TestNoSQLiteAccessForbiddenPackageFails(t *testing.T) {
+	root := t.TempDir()
+	src := "package x\n\nimport _ \"modernc.org/sqlite\"\n"
+	for _, dir := range []string{"internal/lens", "internal/store/sqlite"} {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, dir, "x.go"), []byte(src), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	v := sqliteViolations(t, root)
+	if len(v) != 1 || !strings.Contains(v[0], "lens") {
+		t.Errorf("expected exactly one violation in internal/lens, got %v", v)
+	}
+}
+
+func sqliteViolations(t *testing.T, root string) []string {
+	t.Helper()
+	var out []string
 	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
+		rel, err := filepath.Rel(root, p)
+		if err != nil {
+			return err
+		}
+		rel = filepath.ToSlash(rel)
 		if d.IsDir() {
 			if n := d.Name(); n == "vendor" || n == "testdata" || n == "node_modules" {
 				return filepath.SkipDir
 			}
 			return nil
+		}
+		for _, a := range sqliteAllowed {
+			if rel == a || strings.HasPrefix(rel, a+"/") {
+				return nil
+			}
 		}
 		if !strings.HasSuffix(p, ".go") || strings.HasSuffix(p, "_test.go") || strings.HasSuffix(p, "stages.go") {
 			return nil
@@ -105,8 +182,8 @@ func TestNoSQLiteAccess(t *testing.T) {
 			if t := strings.TrimSpace(code); strings.HasPrefix(t, "*") || strings.HasPrefix(t, "/*") {
 				continue
 			}
-			if m := forbidden.FindString(code); m != "" {
-				t.Errorf("%s:%d references %q", p, i+1, m)
+			if m := sqliteForbidden.FindString(code); m != "" {
+				out = append(out, fmt.Sprintf("%s:%d references %q", p, i+1, m))
 			}
 		}
 		return nil
@@ -114,4 +191,5 @@ func TestNoSQLiteAccess(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return out
 }

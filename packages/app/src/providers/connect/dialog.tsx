@@ -123,7 +123,7 @@ export const DialogConnectProvider: Component<{
     <Dialog
       preventBackdropDismiss={view().preventBackdropDismiss}
       // The top edge stays where the provider list puts it, so a step that fits its content only moves the bottom edge.
-      containerClass={`!self-start !rounded-[12px] !bg-v2-background-bg-base [--connect-top:max(8px,calc((100vh_-_512px)/2))] !mt-[var(--connect-top)] !w-[min(calc(100vw_-_16px),640px)] ${
+      containerClass={`!self-start !rounded-xl !bg-v2-background-bg-base [--connect-top:max(8px,calc((100vh_-_512px)/2))] !mt-[var(--connect-top)] !w-[min(calc(100vw_-_16px),640px)] ${
         FRAME_HEIGHT[frame()]
       }`}
       onCloseAutoFocus={(event) => {

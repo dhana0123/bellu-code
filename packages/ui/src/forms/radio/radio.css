@@ -85,7 +85,7 @@
     left: 0;
     top: calc(50% - 16px / 2);
 
-    border-radius: 9999px;
+    border-radius: var(--radius-xs); /* square-cut like the brand mark */
     border: none;
     box-shadow: inset 0 0 0 0.5px var(--v2-border-border-strong);
 
@@ -144,7 +144,8 @@
     height: 6px;
     left: calc(50% - 6px / 2);
     top: calc(50% - 6px / 2);
-    border-radius: 9999px;
+    border-radius: var(--radius-xs);
+    transform: rotate(45deg);
 
     background: var(--v2-grey-300);
     border: none;

@@ -120,7 +120,7 @@ export function SidebarOrganized(props: {
           <section class="flex shrink-0 flex-col gap-2">
             <button
               type="button"
-              class="flex h-6 w-full shrink-0 items-center gap-1.5 rounded-[6px] px-2 text-start text-[13px] leading-4 font-medium text-v2-text-text-muted hover:text-v2-text-text-base focus-visible:outline-none focus-visible:bg-v2-overlay-simple-overlay-hover"
+              class="flex h-6 w-full shrink-0 items-center gap-1.5 rounded-md px-2 text-start text-[13px] leading-4 font-medium text-v2-text-text-muted hover:text-v2-text-text-base focus-visible:outline-none focus-visible:bg-v2-overlay-simple-overlay-hover"
               aria-expanded={!state.projectsCollapsed}
               onClick={() => setState("projectsCollapsed", (value) => !value)}
             >
@@ -391,7 +391,7 @@ function ProjectRow(props: {
   return (
     <div ref={sortable.ref} class="relative shrink-0">
       <div
-        class="group/project relative flex h-7 min-w-0 shrink-0 items-center rounded-[6px] pe-1 hover:bg-v2-overlay-simple-overlay-hover has-[:focus-visible]:bg-v2-overlay-simple-overlay-hover"
+        class="group/project relative flex h-7 min-w-0 shrink-0 items-center rounded-md pe-1 hover:bg-v2-overlay-simple-overlay-hover has-[:focus-visible]:bg-v2-overlay-simple-overlay-hover"
         onContextMenu={(event) => {
           event.preventDefault()
           setMenu("open", true)
@@ -404,7 +404,7 @@ function ProjectRow(props: {
       >
         <button
           type="button"
-          class="flex h-full min-w-0 flex-1 shrink-0 cursor-default items-center gap-2 rounded-[6px] bg-transparent px-2 text-start text-[13px] leading-[var(--line-height-compact)] text-v2-text-text-muted [font-weight:440] transition-colors duration-[120ms] ease-in-out group-hover/project:text-v2-text-text-base focus-visible:text-v2-text-text-base focus-visible:outline-none"
+          class="flex h-full min-w-0 flex-1 shrink-0 cursor-default items-center gap-2 rounded-md bg-transparent px-2 text-start text-[13px] leading-[var(--line-height-compact)] text-v2-text-text-muted [font-weight:440] transition-colors duration-[120ms] ease-in-out group-hover/project:text-v2-text-text-base focus-visible:text-v2-text-text-base focus-visible:outline-none"
           aria-expanded={props.expanded}
           onClick={props.onToggle}
         >

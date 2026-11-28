@@ -1,0 +1,1 @@
+{"items":[{"cveID":"CVE-2021-0001","publishedDate":"2021-01-02","v3baseScore":6.1},{"cveID":"CVE-2021-0002","publishedDate":"2021-02-03","v3baseScore":9.8}],"limit":50,"graph":{"version":"dev","buildState":"ready","buildMode":"sample","stale":false,"sources":{"cwe":{"lastSuccess":"2025-01-09T03:00:00Z"},"nvd":{"lastSuccess":null},"exploitdb":{"lastSuccess":null}}}}

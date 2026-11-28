@@ -78,12 +78,15 @@ type ComplexityRoot struct {
 	}
 
 	Edge struct {
-		Derived   func(childComplexity int) int
-		Direction func(childComplexity int) int
-		From      func(childComplexity int) int
-		Hops      func(childComplexity int) int
-		To        func(childComplexity int) int
-		Type      func(childComplexity int) int
+		Confidence func(childComplexity int) int
+		Derived    func(childComplexity int) int
+		Direction  func(childComplexity int) int
+		Evidence   func(childComplexity int) int
+		From       func(childComplexity int) int
+		Hops       func(childComplexity int) int
+		ObservedAt func(childComplexity int) int
+		To         func(childComplexity int) int
+		Type       func(childComplexity int) int
 	}
 
 	EdgePage struct {
@@ -354,6 +357,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Digest.Total(childComplexity), true
 
+	case "Edge.confidence":
+		if e.ComplexityRoot.Edge.Confidence == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Edge.Confidence(childComplexity), true
 	case "Edge.derived":
 		if e.ComplexityRoot.Edge.Derived == nil {
 			break
@@ -366,6 +375,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Edge.Direction(childComplexity), true
+	case "Edge.evidence":
+		if e.ComplexityRoot.Edge.Evidence == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Edge.Evidence(childComplexity), true
 	case "Edge.from":
 		if e.ComplexityRoot.Edge.From == nil {
 			break
@@ -378,6 +393,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Edge.Hops(childComplexity), true
+	case "Edge.observedAt":
+		if e.ComplexityRoot.Edge.ObservedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Edge.ObservedAt(childComplexity), true
 	case "Edge.to":
 		if e.ComplexityRoot.Edge.To == nil {
 			break
@@ -933,6 +954,12 @@ func (ec *executionContext) childFields_Edge(ctx context.Context, field graphql.
 		return ec.fieldContext_Edge_hops(ctx, field)
 	case "derived":
 		return ec.fieldContext_Edge_derived(ctx, field)
+	case "evidence":
+		return ec.fieldContext_Edge_evidence(ctx, field)
+	case "confidence":
+		return ec.fieldContext_Edge_confidence(ctx, field)
+	case "observedAt":
+		return ec.fieldContext_Edge_observedAt(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Edge", field.Name)
 }
@@ -2483,6 +2510,75 @@ func (ec *executionContext) _Edge_derived(ctx context.Context, field graphql.Col
 }
 func (ec *executionContext) fieldContext_Edge_derived(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Edge", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _Edge_evidence(ctx context.Context, field graphql.CollectedField, obj *Edge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Edge_evidence(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Evidence, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Edge_evidence(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Edge", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Edge_confidence(ctx context.Context, field graphql.CollectedField, obj *Edge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Edge_confidence(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Confidence, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Edge_confidence(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Edge", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _Edge_observedAt(ctx context.Context, field graphql.CollectedField, obj *Edge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Edge_observedAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ObservedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *string) graphql.Marshaler {
+			return ec.marshalOString2ᚖstring(ctx, selections, v)
+		},
+		true,
+		false,
+	)
+}
+func (ec *executionContext) fieldContext_Edge_observedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Edge", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _EdgePage_items(ctx context.Context, field graphql.CollectedField, obj *EdgePage) (ret graphql.Marshaler) {
@@ -5396,6 +5492,12 @@ func (ec *executionContext) _Edge(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "evidence":
+			out.Values[i] = ec._Edge_evidence(ctx, field, obj)
+		case "confidence":
+			out.Values[i] = ec._Edge_confidence(ctx, field, obj)
+		case "observedAt":
+			out.Values[i] = ec._Edge_observedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -1,0 +1,19 @@
+# 2026/11/16 17:06:36.845991 [TestRelationConstraintProperty] [rapid] draw n: 1
+# 2026/11/16 17:06:36.846003 [TestRelationConstraintProperty] [rapid] draw attributed_0: true
+# 2026/11/16 17:06:36.846012 [TestRelationConstraintProperty] [rapid] draw key: "a"
+# 2026/11/16 17:06:36.846015 [TestRelationConstraintProperty] [rapid] draw val: 0
+# 2026/11/16 17:06:36.846040 [TestRelationConstraintProperty] error does not name relation 0: validation failed: relation "runs_on" from "process:3fa5c29f6ad29d417a3166a11a588a68" to "host:b511440c48a051e631727ad65696e902": attribute "a" is not allowed; only evidence, confidence and observed_at
+# 
+v0.4.8#11864589759629146348
+0x0
+0x0
+0x0
+0x1
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0

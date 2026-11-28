@@ -92,3 +92,21 @@ func TestLoadEnv(t *testing.T) {
 		t.Fatalf("got %+v err=%v", c, err)
 	}
 }
+
+func TestValidateBindLoopbackOnly(t *testing.T) {
+	for h, ok := range map[string]bool{"127.0.0.1": true, "::1": true, "localhost": true, "0.0.0.0": false, "192.168.1.5": false} {
+		if err := (Config{Hostname: h}).ValidateBind(); (err == nil) != ok {
+			t.Errorf("%s: err=%v", h, err)
+		}
+	}
+}
+
+func TestLoadPostureCustomDir(t *testing.T) {
+	env := func(k string) (string, bool) { return " /x ", k == "BELLUCODE_POSTURE_CUSTOM_DIR" }
+	if c := LoadPosture(env); c.CustomDir != "/x" {
+		t.Fatalf("%+v", c)
+	}
+	if c := LoadPosture(func(string) (string, bool) { return "", false }); c.CustomDir != "" {
+		t.Fatalf("%+v", c)
+	}
+}

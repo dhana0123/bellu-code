@@ -6,7 +6,7 @@
   [data-slot="location-body"] {
     padding: 8px;
     background-color: var(--v2-background-bg-base);
-    border-radius: 10px;
+    border-radius: var(--radius-xl);
     box-shadow: var(--v2-elevation-raised);
   }
 
@@ -66,8 +66,8 @@
     border: 0.5px solid var(--v2-border-border-base);
     border-start-start-radius: 0;
     border-start-end-radius: 0;
-    border-end-start-radius: 10px;
-    border-end-end-radius: 10px;
+    border-end-start-radius: var(--radius-xl);
+    border-end-end-radius: var(--radius-xl);
     background-color: var(--v2-background-bg-layer-01);
   }
 }

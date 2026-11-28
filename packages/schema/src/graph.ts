@@ -113,3 +113,114 @@ export const Status = Schema.Struct({
   detail: optional(Schema.String),
 }).annotate({ identifier: "Graph.Status" })
 export interface Status extends Schema.Schema.Type<typeof Status> {}
+
+export const LensParam = Schema.Struct({
+  name: Schema.String,
+  required: Schema.Boolean,
+}).annotate({ identifier: "Graph.LensParam" })
+export interface LensParam extends Schema.Schema.Type<typeof LensParam> {}
+
+export const Lens = Schema.Struct({
+  id: Schema.String.check(Schema.isNonEmpty()),
+  name: Schema.String,
+  description: Schema.String,
+  layout: Schema.Literals(["force", "radial", "chain"]),
+  default: Schema.Boolean,
+  params: Schema.Array(LensParam),
+}).annotate({ identifier: "Graph.Lens" })
+export interface Lens extends Schema.Schema.Type<typeof Lens> {}
+
+export const Confidence = Schema.Literals(["extracted", "inferred"]).annotate({ identifier: "Graph.Confidence" })
+export type Confidence = typeof Confidence.Type
+
+export const LensRisk = Schema.Struct({
+  score: Schema.Number,
+  severity: Schema.String,
+  cvss: Schema.Number,
+  epss: Schema.Number,
+  kev: Schema.Boolean,
+  reachable: Schema.NullOr(Schema.Boolean),
+}).annotate({ identifier: "Graph.LensRisk" })
+export interface LensRisk extends Schema.Schema.Type<typeof LensRisk> {}
+
+export const LensNode = Schema.Struct({
+  id: EntityID,
+  kind: Schema.String,
+  label: Schema.String,
+  group: Schema.NullOr(Schema.String),
+  hops: Schema.Int,
+  attrs: Schema.Record(Schema.String, Schema.String),
+  risk: Schema.NullOr(LensRisk),
+}).annotate({ identifier: "Graph.LensNode" })
+export interface LensNode extends Schema.Schema.Type<typeof LensNode> {}
+
+export const LensEdge = Schema.Struct({
+  from: EntityID,
+  to: EntityID,
+  type: Schema.String,
+  confidence: Confidence,
+  evidence: optional(Schema.String),
+  observed_at: optional(Schema.String),
+}).annotate({ identifier: "Graph.LensEdge" })
+export interface LensEdge extends Schema.Schema.Type<typeof LensEdge> {}
+
+export const LensGroup = Schema.Struct({
+  id: Schema.String,
+  label: Schema.String,
+  members: Schema.Array(EntityID),
+}).annotate({ identifier: "Graph.LensGroup" })
+export interface LensGroup extends Schema.Schema.Type<typeof LensGroup> {}
+
+export const LensPath = Schema.Struct({
+  nodes: Schema.Array(EntityID),
+  confidence: Confidence,
+}).annotate({ identifier: "Graph.LensPath" })
+export interface LensPath extends Schema.Schema.Type<typeof LensPath> {}
+
+export const LensSlice = Schema.Struct({
+  lens: Schema.String,
+  generated_at: Timestamp,
+  truncated: Schema.Boolean,
+  counts: Schema.Struct({
+    nodes: Schema.Int,
+    edges: Schema.Int,
+    omitted_nodes: Schema.Int,
+    omitted_rules: optional(Schema.Int),
+  }),
+  nodes: Schema.Array(LensNode),
+  edges: Schema.Array(LensEdge),
+  groups: Schema.Array(LensGroup),
+  paths: optional(Schema.Array(LensPath)),
+  missing_data: optional(Schema.Array(Schema.String)),
+}).annotate({ identifier: "Graph.LensSlice" })
+export interface LensSlice extends Schema.Schema.Type<typeof LensSlice> {}
+
+export const IntelState = Schema.Literals(["not_configured", "disabled", "idle", "syncing", "ok", "error"]).annotate({
+  identifier: "Graph.IntelState",
+})
+export type IntelState = typeof IntelState.Type
+
+// Unset strings are empty, never absent.
+export const IntelStatus = Schema.Struct({
+  state: IntelState,
+  version: Schema.String,
+  records: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  last_synced_at: Schema.String,
+  last_error: Schema.String,
+}).annotate({ identifier: "Graph.IntelStatus" })
+export interface IntelStatus extends Schema.Schema.Type<typeof IntelStatus> {}
+
+export const OverlayAction = Schema.Literals(["focus_node", "walk_path", "proposed_change"]).annotate({
+  identifier: "Graph.OverlayAction",
+})
+export type OverlayAction = typeof OverlayAction.Type
+
+// Transient agent instruction. Never stored and never a graph fact.
+export const OverlayEvent = Schema.Struct({
+  seq: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  entity: EntityID,
+  action: OverlayAction,
+  path: optional(Schema.Array(EntityID)),
+  explanation: Schema.String,
+}).annotate({ identifier: "Graph.OverlayEvent" })
+export interface OverlayEvent extends Schema.Schema.Type<typeof OverlayEvent> {}

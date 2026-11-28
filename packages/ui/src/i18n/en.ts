@@ -167,6 +167,8 @@ const source = {
 
   "ui.promptInput.noMatchingItems": "No matching items",
   "ui.promptInput.commands": "Commands",
+  "ui.promptInput.skills": "Skills",
+  "ui.promptInput.skills.search": "Search skills…",
   "ui.promptInput.history": "Prompt history",
   "ui.promptInput.history.search": "Search prompt history…",
   "ui.promptInput.history.contextOnly": "Prompt with context",

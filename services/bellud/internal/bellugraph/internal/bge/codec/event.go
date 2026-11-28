@@ -19,6 +19,7 @@ const (
 	RelationRemoved EventType = 5
 	Annotated       EventType = 6
 	ScopeDelta      EventType = 7
+	RelationUpdated EventType = 8
 )
 
 // Update classes for EntityUpdated.
@@ -60,7 +61,9 @@ type Event struct {
 	Set   map[string]Value // Updated
 	Unset []string         // Updated, Annotated
 
-	RelType, From, To string // RelationAdded, RelationRemoved
+	RelType, From, To string // RelationAdded, RelationRemoved, RelationUpdated
+
+	EdgeAttrs EdgeAttrs // RelationAdded, RelationUpdated
 
 	Actor   string            // Annotated
 	AnnoSet map[string]string // Annotated
@@ -92,8 +95,17 @@ func EncodeEvent(ev Event) ([]byte, error) {
 		b = appendStrList(b, ev.Unset)
 	case EntityRemoved:
 		b = appendStr(b, ev.ID)
-	case RelationAdded, RelationRemoved:
+	case RelationAdded, RelationRemoved, RelationUpdated:
+		if ev.EdgeAttrs.Has&^edgeHasMask != 0 {
+			return nil, fmt.Errorf("%w: edge attribute flags 0x%02x", errs.Validation, ev.EdgeAttrs.Has)
+		}
 		b = appendStr(appendStr(appendStr(b, ev.RelType), ev.From), ev.To)
+		switch ev.Type {
+		case RelationAdded:
+			b = AppendEdgeAttrs(b, ev.EdgeAttrs)
+		case RelationUpdated:
+			b = appendEdgeBody(b, ev.EdgeAttrs)
+		}
 	case Annotated:
 		b = appendStr(b, ev.ID)
 		b = appendStr(b, ev.Actor)
@@ -146,8 +158,14 @@ func DecodeEvent(b []byte) (Event, error) {
 		ev.Unset = r.strList()
 	case EntityRemoved:
 		ev.ID = r.str()
-	case RelationAdded, RelationRemoved:
+	case RelationAdded, RelationRemoved, RelationUpdated:
 		ev.RelType, ev.From, ev.To = r.str(), r.str(), r.str()
+		switch ev.Type {
+		case RelationAdded:
+			ev.EdgeAttrs = r.edgeTrailer(len(body), ev.Seq)
+		case RelationUpdated:
+			ev.EdgeAttrs = r.edgeBody()
+		}
 	case Annotated:
 		ev.ID = r.str()
 		ev.Actor = r.str()

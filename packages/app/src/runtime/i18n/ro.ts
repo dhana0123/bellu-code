@@ -60,6 +60,8 @@ export const dict = {
   "desktop.dialog.files": "Fișiere",
   "desktop.picker.error.notSelected": "Fișierul nu a fost selectat din selector",
   "desktop.picker.error.sizeLimit": "Atașamentele selectate depășesc limita de {{limit}} MB",
+  "desktop.contextMenu.spellcheck": "Verificare ortografică",
+  "desktop.contextMenu.spellcheckLanguages": "Limbi pentru verificarea ortografică",
   "command.category.suggested": "Sugerat",
   "command.category.view": "Vizualizare",
   "command.category.project": "Proiect",
@@ -608,7 +610,7 @@ export const dict = {
   "desktop.menu.installCli": "Instalează CLI...",
   "desktop.cli.installed.title": "CLI instalat",
   "desktop.cli.installed.message":
-    "CLI a fost instalat în {{path}}\n\nReporniți terminalul pentru a utiliza comanda 'bellucode2'.",
+    "CLI a fost instalat în {{path}}\n\nReporniți terminalul pentru a utiliza comanda 'bellucode'.",
   "desktop.cli.failed.title": "Instalarea a eșuat",
   "desktop.cli.failed.message": "CLI nu a putut fi instalat: {{error}}",
   "command.project.copyID": "Copiază ID-ul proiectului",

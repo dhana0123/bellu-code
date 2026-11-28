@@ -13,6 +13,7 @@ import (
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/bellugraph/internal/bge/ident"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
+	"github.com/bellu/bellucode/services/bellud/internal/redact"
 )
 
 // EntityID is the stable entity identifier.
@@ -41,8 +42,8 @@ type View interface {
 //
 // Events carry Type, Collector, ValidNS (= ObservedAt) and the body fields.
 // Seq, ULID and RecordedNS are left zero for the engine to assign. Order:
-// entity created/updated, relation added, relation removed, entity removed,
-// then at most one ScopeDelta.
+// entity created/updated, relation added, relation updated, relation removed, entity removed,
+// then at most one ScopeDelta. Relation updated follows relation added.
 type Result struct {
 	Collector  string
 	ObservedAt time.Time
@@ -104,6 +105,9 @@ func Plan(v View, b batch.Batch, mode Mode, now time.Time) (Result, error) {
 				continue
 			}
 			es, ok := v.Entity(id)
+			if ok && retained(b.Retain, es) {
+				continue
+			}
 			if !ok || !es.Live {
 				dropEnts = append(dropEnts, id)
 				continue
@@ -120,12 +124,14 @@ func Plan(v View, b batch.Batch, mode Mode, now time.Time) (Result, error) {
 	// Relations.
 	rels := make([]graph.RelKey, 0, len(b.Relations))
 	seenRel := map[graph.RelKey]struct{}{}
+	wantAttrs := map[graph.RelKey]codec.EdgeAttrs{}
 	for i, r := range b.Relations {
 		if r.Type == "" {
 			return p, invalid("relation %d (from %q to %q) has no type", i, r.From, r.To)
 		}
-		if len(r.Attributes) > 0 {
-			return p, invalid("relation %d (%q from %q to %q) carries attributes; relations take none", i, r.Type, r.From, r.To)
+		attrs, err := edgeAttrs(r)
+		if err != nil {
+			return p, fmt.Errorf("relation %d: %w", i, err)
 		}
 		for _, ep := range [...]struct{ role, id string }{{"from", r.From}, {"to", r.To}} {
 			if _, retired := removedSet[ep.id]; retired {
@@ -140,14 +146,19 @@ func Plan(v View, b batch.Batch, mode Mode, now time.Time) (Result, error) {
 		}
 		k := graph.RelKey{Type: r.Type, From: r.From, To: r.To}
 		if _, dup := seenRel[k]; dup {
+			if !wantAttrs[k].Equal(attrs) {
+				return p, invalid("relation %q from %q to %q appears twice with different attributes", r.Type, r.From, r.To)
+			}
 			continue
 		}
 		seenRel[k] = struct{}{}
+		wantAttrs[k] = attrs
 		rels = append(rels, k)
 	}
 
 	var addEnts []EntityID
 	var addRels []graph.RelKey
+	var updEvents []codec.Event
 
 	// Entity classification.
 	for _, pe := range ents {
@@ -203,15 +214,22 @@ func Plan(v View, b batch.Batch, mode Mode, now time.Time) (Result, error) {
 		if !ok {
 			p.Events = append(p.Events, codec.Event{
 				Type: codec.RelationAdded, Collector: c, ValidNS: vns,
-				RelType: k.Type, From: k.From, To: k.To,
+				RelType: k.Type, From: k.From, To: k.To, EdgeAttrs: wantAttrs[k],
 			})
 			continue
 		}
 		if _, asserted := rs.Asserted[c]; !asserted {
 			addRels = append(addRels, k)
 		}
+		if !rs.Attrs.Equal(wantAttrs[k]) {
+			updEvents = append(updEvents, codec.Event{
+				Type: codec.RelationUpdated, Collector: c, ValidNS: vns,
+				RelType: k.Type, From: k.From, To: k.To, EdgeAttrs: wantAttrs[k],
+			})
+		}
 	}
 
+	p.Events = append(p.Events, updEvents...)
 	// ModeFull relation removals.
 	var delRels []graph.RelKey
 	relRemoved := map[graph.RelKey]struct{}{}
@@ -224,6 +242,9 @@ func Plan(v View, b batch.Batch, mode Mode, now time.Time) (Result, error) {
 				rs, ok := v.Relation(k)
 				if !ok {
 					delRels = append(delRels, k)
+					continue
+				}
+				if retainedEnd(v, b.Retain, k) {
 					continue
 				}
 				_, touchesRemoved := removedSet[k.From]
@@ -267,6 +288,44 @@ func Plan(v View, b batch.Batch, mode Mode, now time.Time) (Result, error) {
 		})
 	}
 	return p, nil
+}
+
+const maxEvidence = 512
+
+// edgeAttrs validates the attributes of r and converts them.
+func edgeAttrs(r batch.Relation) (codec.EdgeAttrs, error) {
+	var a codec.EdgeAttrs
+	for _, name := range sortedKeys(r.Attributes) {
+		raw := r.Attributes[name]
+		if name != "evidence" && name != "confidence" && name != "observed_at" {
+			return a, invalid("relation %q from %q to %q: attribute %q is not allowed; only evidence, confidence and observed_at", r.Type, r.From, r.To, name)
+		}
+		s, isStr := raw.(string)
+		switch name {
+		case "evidence":
+			if !isStr || len(s) > maxEvidence {
+				return a, invalid("relation %q from %q to %q: attribute evidence must be a string of at most %d bytes", r.Type, r.From, r.To, maxEvidence)
+			}
+			a.Evidence, a.Has = s, a.Has|1
+		case "confidence":
+			if !isStr || (s != "extracted" && s != "inferred") {
+				return a, invalid("relation %q from %q to %q: attribute confidence must be \"extracted\" or \"inferred\"", r.Type, r.From, r.To)
+			}
+			a.Confidence, a.Has = s, a.Has|2
+		case "observed_at":
+			if !isStr {
+				return a, invalid("relation %q from %q to %q: attribute observed_at must be an RFC 3339 string", r.Type, r.From, r.To)
+			}
+			if _, err := time.Parse(time.RFC3339, s); err != nil {
+				return a, invalid("relation %q from %q to %q: attribute observed_at is not RFC 3339", r.Type, r.From, r.To)
+			}
+			a.ObservedAt, a.Has = s, a.Has|4
+		}
+		if id, leaked := redact.ValueLeak(s); leaked {
+			return a, invalid("relation %q from %q to %q: attribute %s matches redaction rule %s", r.Type, r.From, r.To, name, id)
+		}
+	}
+	return a, nil
 }
 
 func convertEntity(e batch.Entity) (pent, error) {
@@ -360,4 +419,41 @@ func sortedRelKeys[V any](m map[graph.RelKey]V) []graph.RelKey {
 		return a.To < b.To
 	})
 	return out
+}
+
+// retained reports whether any rule matches the entity: same kind and every
+// Attrs pair equal to the entity's string attribute (identity values count as
+// string attributes).
+func retained(rules []batch.Retain, es *graph.EntityState) bool {
+	for _, r := range rules {
+		if r.Kind != es.Kind {
+			continue
+		}
+		match := true
+		for k, want := range r.Attrs {
+			if a, ok := es.Attrs[k]; ok {
+				match = match && a.T == codec.TagString && a.S == want
+				continue
+			}
+			id, ok := es.Identity[k]
+			match = match && ok && id == want
+		}
+		if match {
+			return true
+		}
+	}
+	return false
+}
+
+// retainedEnd reports whether the From or To entity of k matches a rule.
+func retainedEnd(v View, rules []batch.Retain, k graph.RelKey) bool {
+	if len(rules) == 0 {
+		return false
+	}
+	for _, id := range [...]EntityID{k.From, k.To} {
+		if es, ok := v.Entity(id); ok && retained(rules, es) {
+			return true
+		}
+	}
+	return false
 }

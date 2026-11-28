@@ -232,3 +232,20 @@ func TestBadParams(t *testing.T) {
 		t.Errorf("post %d", rec.Code)
 	}
 }
+
+// ChangeView carries no relation attributes, so the relation frame does not
+// either. The design (section 4.6) lists evidence/confidence/observed_at on the
+// SSE frame; the code leaves the frame unchanged. This pins the actual shape.
+func TestRelationFrameCarriesNoAttributes(t *testing.T) {
+	f := newFake()
+	_, r := stream(t, New(f, Options{}), "/subscribe?subject=relation", nil)
+	<-f.opts
+	f.hub.Publish([]engine.ChangeView{{Seq: 3, Kind: engine.ChangeChanged, Subject: engine.SubjectRelation,
+		From: "host:aa", To: "host:bb", RelationType: "depends_on",
+		ObservedAt: time.Unix(10, 0).UTC(), RecordedAt: time.Unix(20, 0).UTC()}})
+	want := "id: 3\nevent: change\ndata: " +
+		`{"seq":3,"kind":"changed","subject":"relation","entity":"","local_id":"","from":"host:aa","to":"host:bb","relation_type":"depends_on","observed_at":"1970-01-01T00:00:10Z","recorded_at":"1970-01-01T00:00:20Z"}` + "\n\n"
+	if got := frame(t, r); got != want {
+		t.Fatalf("got %q\nwant %q", got, want)
+	}
+}

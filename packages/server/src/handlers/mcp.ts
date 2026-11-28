@@ -13,6 +13,10 @@ import { CorsConfig, isAllowedRequestOrigin } from "../cors"
 import { locationErrors, requestRef, response } from "../location"
 import { holdLocation, type Outbound, runPtySocket } from "./pty-socket"
 
+// bellud injects these engine servers into the agent's config. They are part of the agent itself, so clients never
+// list them as attachable MCPs or offer a switch for them; their tools stay available to the agent.
+const BUILT_IN_SERVERS = new Set(["bellu-graph", "bellu-connectors"])
+
 const notFound = <A, R>(effect: Effect.Effect<A, Mcp.NotFoundError, R>) =>
   effect.pipe(Effect.mapError((error) => new McpServerNotFoundError({ server: error.server, message: error.message })))
 
@@ -27,7 +31,9 @@ export const McpHandler = HttpApiBuilder.group(Api, "server.mcp", (handlers) =>
         "mcp.list",
         Effect.fn(function* () {
           const service = yield* Mcp.Service
-          return yield* response(service.servers())
+          return yield* response(
+            service.servers().pipe(Effect.map((servers) => servers.filter((server) => !BUILT_IN_SERVERS.has(server.name)))),
+          )
         }),
       )
       .handle(

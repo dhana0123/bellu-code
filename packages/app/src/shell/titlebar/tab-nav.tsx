@@ -394,7 +394,7 @@ export function TabNavItem(
       data-orientation={props.orientation ?? "horizontal"}
       data-title-overflow={titleOverflowing()}
       data-editing={editing()}
-      class="group relative flex h-7 w-full min-w-0 select-none flex-row items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-[6px] px-1.5 [container-type:inline-size]"
+      class="group relative flex h-7 w-full min-w-0 select-none flex-row items-center gap-1.5 overflow-hidden whitespace-nowrap rounded-md px-1.5 [container-type:inline-size]"
       classList={{ invisible: props.hidden }}
       data-active={props.active}
       data-status={status()}
@@ -451,9 +451,7 @@ export function TabNavItem(
         <span data-slot="project-avatar-slot" class="flex size-4 shrink-0 items-center justify-center">
           <Show
             when={props.session?.location.directory ?? props.fallbackDirectory}
-            fallback={
-              <span class="block size-4 rounded-[3px] border border-v2-border-border-muted" aria-hidden="true" />
-            }
+            fallback={<span class="block size-4 rounded-xs border border-v2-border-border-muted" aria-hidden="true" />}
           >
             {(directory) => <SessionTabAvatarView project={project()} directory={directory()} unread={false} />}
           </Show>
@@ -623,7 +621,7 @@ export function DraftTabItem(
         data-active={props.active}
         data-dragging={props.dragging}
         data-state={props.active || props.pressed ? "pressed" : undefined}
-        class="group relative flex h-7 w-full min-w-0 flex-row items-center gap-1.5 overflow-hidden rounded-[6px] px-1.5 [container-type:inline-size] whitespace-nowrap"
+        class="group relative flex h-7 w-full min-w-0 flex-row items-center gap-1.5 overflow-hidden rounded-md px-1.5 [container-type:inline-size] whitespace-nowrap"
         classList={{ invisible: props.hidden }}
         onMouseDown={(event) => {
           if (event.button !== MIDDLE_MOUSE_BUTTON) return

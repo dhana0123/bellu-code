@@ -283,6 +283,131 @@ import type {
   ExperimentalGraphDiffOutput,
   ExperimentalGraphSchemaOutput,
   ExperimentalGraphStatusOutput,
+  ExperimentalGraphLensesOutput,
+  ExperimentalGraphSliceInput,
+  ExperimentalGraphSliceOutput,
+  ExperimentalGraphIntelStatusOutput,
+  ExperimentalGraphOverlayInput,
+  ExperimentalGraphOverlayOutput,
+  ExperimentalConnectorsStatusOutput,
+  ExperimentalConnectorsCatalogOutput,
+  ExperimentalConnectorsListConnectionsOutput,
+  ExperimentalConnectorsCreateConnectionInput,
+  ExperimentalConnectorsCreateConnectionOutput,
+  ExperimentalConnectorsGetConnectionInput,
+  ExperimentalConnectorsGetConnectionOutput,
+  ExperimentalConnectorsUpdateConnectionInput,
+  ExperimentalConnectorsUpdateConnectionOutput,
+  ExperimentalConnectorsDeleteConnectionInput,
+  ExperimentalConnectorsDeleteConnectionOutput,
+  ExperimentalConnectorsTestConnectionInput,
+  ExperimentalConnectorsTestConnectionOutput,
+  ExperimentalConnectorsSyncConnectionInput,
+  ExperimentalConnectorsSyncConnectionOutput,
+  ExperimentalConnectorsPauseConnectionInput,
+  ExperimentalConnectorsPauseConnectionOutput,
+  ExperimentalConnectorsResumeConnectionInput,
+  ExperimentalConnectorsResumeConnectionOutput,
+  ExperimentalConnectorsReconnectConnectionInput,
+  ExperimentalConnectorsReconnectConnectionOutput,
+  ExperimentalConnectorsRotateCredentialInput,
+  ExperimentalConnectorsRotateCredentialOutput,
+  ExperimentalConnectorsListAuditInput,
+  ExperimentalConnectorsListAuditOutput,
+  ExperimentalConnectorsListAuthConfigsInput,
+  ExperimentalConnectorsListAuthConfigsOutput,
+  ExperimentalConnectorsCreateAuthConfigInput,
+  ExperimentalConnectorsCreateAuthConfigOutput,
+  ExperimentalConnectorsDeleteAuthConfigInput,
+  ExperimentalConnectorsDeleteAuthConfigOutput,
+  ExperimentalConnectorsAwsSetupInput,
+  ExperimentalConnectorsAwsSetupOutput,
+  ExperimentalConnectorsListGithubReposInput,
+  ExperimentalConnectorsListGithubReposOutput,
+  ExperimentalConnectorsListScopeOptionsInput,
+  ExperimentalConnectorsListScopeOptionsOutput,
+  ExperimentalConnectorsStartDeviceAuthorizationInput,
+  ExperimentalConnectorsStartDeviceAuthorizationOutput,
+  ExperimentalConnectorsGetDeviceAuthorizationInput,
+  ExperimentalConnectorsGetDeviceAuthorizationOutput,
+  ExperimentalConnectorsCancelDeviceAuthorizationInput,
+  ExperimentalConnectorsCancelDeviceAuthorizationOutput,
+  ExperimentalConnectorsGetScopeInput,
+  ExperimentalConnectorsGetScopeOutput,
+  ExperimentalConnectorsPutScopeInput,
+  ExperimentalConnectorsPutScopeOutput,
+  ExperimentalConnectorsUnlockVaultInput,
+  ExperimentalConnectorsUnlockVaultOutput,
+  ExperimentalConnectorsRotateMasterKeyOutput,
+  ExperimentalConnectorsForgetAllOutput,
+  ExperimentalOverviewCategoriesOutput,
+  ExperimentalFindingsListInput,
+  ExperimentalFindingsListOutput,
+  ExperimentalFindingsGetInput,
+  ExperimentalFindingsGetOutput,
+  ExperimentalFindingsSetStatusInput,
+  ExperimentalFindingsSetStatusOutput,
+  ExperimentalScansEnqueueInput,
+  ExperimentalScansEnqueueOutput,
+  ExperimentalScansListInput,
+  ExperimentalScansListOutput,
+  ExperimentalScansScannersOutput,
+  ExperimentalScansGetInput,
+  ExperimentalScansGetOutput,
+  ExperimentalScansCancelInput,
+  ExperimentalScansCancelOutput,
+  ExperimentalScansScheduleInput,
+  ExperimentalScansScheduleOutput,
+  ExperimentalSbomListOutput,
+  ExperimentalSbomGetInput,
+  ExperimentalSbomGetOutput,
+  ExperimentalSbomExportInput,
+  ExperimentalSbomExportOutput,
+  ExperimentalCveLookupInput,
+  ExperimentalCveLookupOutput,
+  ExperimentalCveGraphInput,
+  ExperimentalCveGraphOutput,
+  ExperimentalCveStatusOutput,
+  ExperimentalCveSetModeInput,
+  ExperimentalCveSetModeOutput,
+  ExperimentalCveGetInput,
+  ExperimentalCveGetOutput,
+  ExperimentalIdentityPathsInput,
+  ExperimentalIdentityPathsOutput,
+  ExperimentalBomSbomListOutput,
+  ExperimentalBomSbomExportInput,
+  ExperimentalBomSbomExportOutput,
+  ExperimentalBomAiOutput,
+  ExperimentalBomAiExportInput,
+  ExperimentalBomAiExportOutput,
+  ExperimentalBomCloudOutput,
+  ExperimentalBomCloudExportInput,
+  ExperimentalBomCloudExportOutput,
+  ExperimentalAiEntitiesInput,
+  ExperimentalAiEntitiesOutput,
+  ExperimentalAiSummaryOutput,
+  ExperimentalRuntimeStatusOutput,
+  ExperimentalRuntimeEventsInput,
+  ExperimentalRuntimeEventsOutput,
+  ExperimentalRuntimeIngestInput,
+  ExperimentalRuntimeIngestOutput,
+  ExperimentalIssuesListInput,
+  ExperimentalIssuesListOutput,
+  ExperimentalIssuesGetInput,
+  ExperimentalIssuesGetOutput,
+  ExperimentalIssuesSetStatusInput,
+  ExperimentalIssuesSetStatusOutput,
+  ExperimentalRulesPacksOutput,
+  ExperimentalRulesPackRulesInput,
+  ExperimentalRulesPackRulesOutput,
+  ExperimentalRulesOverrideInput,
+  ExperimentalRulesOverrideOutput,
+  ExperimentalRulesComplianceInput,
+  ExperimentalRulesComplianceOutput,
+  ExperimentalDataStoresInput,
+  ExperimentalDataStoresOutput,
+  ExperimentalDataStoreInput,
+  ExperimentalDataStoreOutput,
   ShellListInput,
   ShellListOutput,
   ShellCreateInput,
@@ -1812,6 +1937,37 @@ const EndpointExperimentalGraphSchema = (raw: RawClient["server.graph"]) => () =
 const EndpointExperimentalGraphStatus = (raw: RawClient["server.graph"]) => () =>
   preserveEffect<ExperimentalGraphStatusOutput>()(raw["status"]({}).pipe(Effect.mapError(mapClientError)))
 
+const EndpointExperimentalGraphLenses = (raw: RawClient["server.graph"]) => () =>
+  preserveEffect<ExperimentalGraphLensesOutput>()(raw["lenses"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalGraphSlice = (raw: RawClient["server.graph"]) => (input: ExperimentalGraphSliceInput) =>
+  preserveEffect<ExperimentalGraphSliceOutput>()(
+    raw["slice"]({
+      query: {
+        lens: input["lens"],
+        entity: input["entity"],
+        target: input["target"],
+        target_type: input["target_type"],
+        collapse_rules: input["collapse_rules"],
+        depth: input["depth"],
+        limit: input["limit"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalGraphIntelStatus = (raw: RawClient["server.graph"]) => () =>
+  preserveEffect<ExperimentalGraphIntelStatusOutput>()(raw["intelStatus"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalGraphOverlay = (raw: RawClient["server.graph"]) => (input?: ExperimentalGraphOverlayInput) =>
+  preserveStream<ExperimentalGraphOverlayOutput>()(
+    Stream.unwrap(
+      raw["overlay"]({ query: { replay: input?.["replay"] } }).pipe(
+        Effect.mapError(mapClientError),
+        Effect.map((stream) => stream.pipe(Stream.mapError(mapClientError))),
+      ),
+    ),
+  )
+
 const adaptGroupExperimentalGraph = (raw: RawClient["server.graph"]) => ({
   find: EndpointExperimentalGraphFind(raw),
   entity: EndpointExperimentalGraphEntity(raw),
@@ -1821,6 +1977,598 @@ const adaptGroupExperimentalGraph = (raw: RawClient["server.graph"]) => ({
   diff: EndpointExperimentalGraphDiff(raw),
   schema: EndpointExperimentalGraphSchema(raw),
   status: EndpointExperimentalGraphStatus(raw),
+  lenses: EndpointExperimentalGraphLenses(raw),
+  slice: EndpointExperimentalGraphSlice(raw),
+  intelStatus: EndpointExperimentalGraphIntelStatus(raw),
+  overlay: EndpointExperimentalGraphOverlay(raw),
+})
+
+const EndpointExperimentalConnectorsStatus = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsStatusOutput>()(raw["status"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalConnectorsCatalog = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsCatalogOutput>()(raw["catalog"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalConnectorsListConnections = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsListConnectionsOutput>()(
+    raw["listConnections"]({}).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalConnectorsCreateConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsCreateConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsCreateConnectionOutput>()(
+      raw["createConnection"]({
+        payload: {
+          alias: input["alias"],
+          connectorId: input["connectorId"],
+          authConfigId: input["authConfigId"],
+          method: input["method"],
+          params: input["params"],
+          credential: input["credential"],
+          intervalSec: input["intervalSec"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsGetConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsGetConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsGetConnectionOutput>()(
+      raw["getConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsUpdateConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsUpdateConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsUpdateConnectionOutput>()(
+      raw["updateConnection"]({
+        params: { id: input["id"] },
+        payload: {
+          alias: input["alias"],
+          intervalSec: input["intervalSec"],
+          allowAgentLiveReads: input["allowAgentLiveReads"],
+          selection: input["selection"],
+          rotationIntervalDays: input["rotationIntervalDays"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsDeleteConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsDeleteConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsDeleteConnectionOutput>()(
+      raw["deleteConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsTestConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsTestConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsTestConnectionOutput>()(
+      raw["testConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsSyncConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsSyncConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsSyncConnectionOutput>()(
+      raw["syncConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsPauseConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsPauseConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsPauseConnectionOutput>()(
+      raw["pauseConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsResumeConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsResumeConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsResumeConnectionOutput>()(
+      raw["resumeConnection"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsReconnectConnection =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsReconnectConnectionInput) =>
+    preserveEffect<ExperimentalConnectorsReconnectConnectionOutput>()(
+      raw["reconnectConnection"]({ params: { id: input["id"] }, payload: { credential: input["credential"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const EndpointExperimentalConnectorsRotateCredential =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsRotateCredentialInput) =>
+    preserveEffect<ExperimentalConnectorsRotateCredentialOutput>()(
+      raw["rotateCredential"]({ params: { id: input["id"] }, payload: { credential: input["credential"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const EndpointExperimentalConnectorsListAudit =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsListAuditInput) =>
+    preserveEffect<ExperimentalConnectorsListAuditOutput>()(
+      raw["listAudit"]({ params: { id: input["id"] }, query: { cursor: input["cursor"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const EndpointExperimentalConnectorsListAuthConfigs =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsListAuthConfigsInput) =>
+    preserveEffect<ExperimentalConnectorsListAuthConfigsOutput>()(
+      raw["listAuthConfigs"]({ params: { cid: input["cid"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsCreateAuthConfig =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsCreateAuthConfigInput) =>
+    preserveEffect<ExperimentalConnectorsCreateAuthConfigOutput>()(
+      raw["createAuthConfig"]({
+        params: { cid: input["cid"] },
+        payload: {
+          name: input["name"],
+          method: input["method"],
+          scopes: input["scopes"],
+          settings: input["settings"],
+          secrets: input["secrets"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsDeleteAuthConfig =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsDeleteAuthConfigInput) =>
+    preserveEffect<ExperimentalConnectorsDeleteAuthConfigOutput>()(
+      raw["deleteAuthConfig"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsAwsSetup =
+  (raw: RawClient["server.connectors"]) => (input?: ExperimentalConnectorsAwsSetupInput) =>
+    preserveEffect<ExperimentalConnectorsAwsSetupOutput>()(
+      raw["awsSetup"]({ payload: { alias: input?.["alias"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsListGithubRepos =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsListGithubReposInput) =>
+    preserveEffect<ExperimentalConnectorsListGithubReposOutput>()(
+      raw["listGithubRepos"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsListScopeOptions =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsListScopeOptionsInput) =>
+    preserveEffect<ExperimentalConnectorsListScopeOptionsOutput>()(
+      raw["listScopeOptions"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsStartDeviceAuthorization =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsStartDeviceAuthorizationInput) =>
+    preserveEffect<ExperimentalConnectorsStartDeviceAuthorizationOutput>()(
+      raw["startDeviceAuthorization"]({
+        payload: { connectorId: input["connectorId"], alias: input["alias"], reconnectId: input["reconnectId"] },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsGetDeviceAuthorization =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsGetDeviceAuthorizationInput) =>
+    preserveEffect<ExperimentalConnectorsGetDeviceAuthorizationOutput>()(
+      raw["getDeviceAuthorization"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsCancelDeviceAuthorization =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsCancelDeviceAuthorizationInput) =>
+    preserveEffect<ExperimentalConnectorsCancelDeviceAuthorizationOutput>()(
+      raw["cancelDeviceAuthorization"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsGetScope =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsGetScopeInput) =>
+    preserveEffect<ExperimentalConnectorsGetScopeOutput>()(
+      raw["getScope"]({ params: { principal: input["principal"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsPutScope =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsPutScopeInput) =>
+    preserveEffect<ExperimentalConnectorsPutScopeOutput>()(
+      raw["putScope"]({
+        params: { principal: input["principal"] },
+        payload: {
+          connectors: input["connectors"],
+          connections: input["connections"],
+          operations: input["operations"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsUnlockVault =
+  (raw: RawClient["server.connectors"]) => (input: ExperimentalConnectorsUnlockVaultInput) =>
+    preserveEffect<ExperimentalConnectorsUnlockVaultOutput>()(
+      raw["unlockVault"]({ payload: { passphrase: input["passphrase"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalConnectorsRotateMasterKey = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsRotateMasterKeyOutput>()(
+    raw["rotateMasterKey"]({}).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalConnectorsForgetAll = (raw: RawClient["server.connectors"]) => () =>
+  preserveEffect<ExperimentalConnectorsForgetAllOutput>()(raw["forgetAll"]({}).pipe(Effect.mapError(mapClientError)))
+
+const adaptGroupExperimentalConnectors = (raw: RawClient["server.connectors"]) => ({
+  status: EndpointExperimentalConnectorsStatus(raw),
+  catalog: EndpointExperimentalConnectorsCatalog(raw),
+  listConnections: EndpointExperimentalConnectorsListConnections(raw),
+  createConnection: EndpointExperimentalConnectorsCreateConnection(raw),
+  getConnection: EndpointExperimentalConnectorsGetConnection(raw),
+  updateConnection: EndpointExperimentalConnectorsUpdateConnection(raw),
+  deleteConnection: EndpointExperimentalConnectorsDeleteConnection(raw),
+  testConnection: EndpointExperimentalConnectorsTestConnection(raw),
+  syncConnection: EndpointExperimentalConnectorsSyncConnection(raw),
+  pauseConnection: EndpointExperimentalConnectorsPauseConnection(raw),
+  resumeConnection: EndpointExperimentalConnectorsResumeConnection(raw),
+  reconnectConnection: EndpointExperimentalConnectorsReconnectConnection(raw),
+  rotateCredential: EndpointExperimentalConnectorsRotateCredential(raw),
+  listAudit: EndpointExperimentalConnectorsListAudit(raw),
+  listAuthConfigs: EndpointExperimentalConnectorsListAuthConfigs(raw),
+  createAuthConfig: EndpointExperimentalConnectorsCreateAuthConfig(raw),
+  deleteAuthConfig: EndpointExperimentalConnectorsDeleteAuthConfig(raw),
+  awsSetup: EndpointExperimentalConnectorsAwsSetup(raw),
+  listGithubRepos: EndpointExperimentalConnectorsListGithubRepos(raw),
+  listScopeOptions: EndpointExperimentalConnectorsListScopeOptions(raw),
+  startDeviceAuthorization: EndpointExperimentalConnectorsStartDeviceAuthorization(raw),
+  getDeviceAuthorization: EndpointExperimentalConnectorsGetDeviceAuthorization(raw),
+  cancelDeviceAuthorization: EndpointExperimentalConnectorsCancelDeviceAuthorization(raw),
+  getScope: EndpointExperimentalConnectorsGetScope(raw),
+  putScope: EndpointExperimentalConnectorsPutScope(raw),
+  unlockVault: EndpointExperimentalConnectorsUnlockVault(raw),
+  rotateMasterKey: EndpointExperimentalConnectorsRotateMasterKey(raw),
+  forgetAll: EndpointExperimentalConnectorsForgetAll(raw),
+})
+
+const EndpointExperimentalOverviewCategories = (raw: RawClient["server.overview"]) => () =>
+  preserveEffect<ExperimentalOverviewCategoriesOutput>()(raw["categories"]({}).pipe(Effect.mapError(mapClientError)))
+
+const adaptGroupExperimentalOverview = (raw: RawClient["server.overview"]) => ({
+  categories: EndpointExperimentalOverviewCategories(raw),
+})
+
+const EndpointExperimentalFindingsList =
+  (raw: RawClient["server.findings"]) => (input?: ExperimentalFindingsListInput) =>
+    preserveEffect<ExperimentalFindingsListOutput>()(
+      raw["list"]({
+        query: {
+          category: input?.["category"],
+          severity: input?.["severity"],
+          status: input?.["status"],
+          type: input?.["type"],
+          asset: input?.["asset"],
+          source: input?.["source"],
+          from: input?.["from"],
+          to: input?.["to"],
+          sort: input?.["sort"],
+          limit: input?.["limit"],
+          cursor: input?.["cursor"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalFindingsGet = (raw: RawClient["server.findings"]) => (input: ExperimentalFindingsGetInput) =>
+  preserveEffect<ExperimentalFindingsGetOutput>()(
+    raw["get"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalFindingsSetStatus =
+  (raw: RawClient["server.findings"]) => (input: ExperimentalFindingsSetStatusInput) =>
+    preserveEffect<ExperimentalFindingsSetStatusOutput>()(
+      raw["setStatus"]({
+        params: { id: input["id"] },
+        payload: { status: input["status"], reason: input["reason"], until: input["until"] },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const adaptGroupExperimentalFindings = (raw: RawClient["server.findings"]) => ({
+  list: EndpointExperimentalFindingsList(raw),
+  get: EndpointExperimentalFindingsGet(raw),
+  setStatus: EndpointExperimentalFindingsSetStatus(raw),
+})
+
+const EndpointExperimentalScansEnqueue = (raw: RawClient["server.scans"]) => (input: ExperimentalScansEnqueueInput) =>
+  preserveEffect<ExperimentalScansEnqueueOutput>()(
+    raw["enqueue"]({
+      payload: { kind: input["kind"], targetType: input["targetType"], targetId: input["targetId"] },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalScansList = (raw: RawClient["server.scans"]) => (input?: ExperimentalScansListInput) =>
+  preserveEffect<ExperimentalScansListOutput>()(
+    raw["list"]({ query: { status: input?.["status"], kind: input?.["kind"], limit: input?.["limit"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
+const EndpointExperimentalScansScanners = (raw: RawClient["server.scans"]) => () =>
+  preserveEffect<ExperimentalScansScannersOutput>()(raw["scanners"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalScansGet = (raw: RawClient["server.scans"]) => (input: ExperimentalScansGetInput) =>
+  preserveEffect<ExperimentalScansGetOutput>()(
+    raw["get"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalScansCancel = (raw: RawClient["server.scans"]) => (input: ExperimentalScansCancelInput) =>
+  preserveEffect<ExperimentalScansCancelOutput>()(
+    raw["cancel"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalScansSchedule = (raw: RawClient["server.scans"]) => (input: ExperimentalScansScheduleInput) =>
+  preserveEffect<ExperimentalScansScheduleOutput>()(
+    raw["schedule"]({
+      params: { id: input["id"] },
+      payload: {
+        kind: input["kind"],
+        targetType: input["targetType"],
+        intervalSeconds: input["intervalSeconds"],
+        enabled: input["enabled"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalScans = (raw: RawClient["server.scans"]) => ({
+  enqueue: EndpointExperimentalScansEnqueue(raw),
+  list: EndpointExperimentalScansList(raw),
+  scanners: EndpointExperimentalScansScanners(raw),
+  get: EndpointExperimentalScansGet(raw),
+  cancel: EndpointExperimentalScansCancel(raw),
+  schedule: EndpointExperimentalScansSchedule(raw),
+})
+
+const EndpointExperimentalSbomList = (raw: RawClient["server.sbom"]) => () =>
+  preserveEffect<ExperimentalSbomListOutput>()(raw["list"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalSbomGet = (raw: RawClient["server.sbom"]) => (input: ExperimentalSbomGetInput) =>
+  preserveEffect<ExperimentalSbomGetOutput>()(
+    raw["get"]({
+      params: { assetId: input["assetId"] },
+      query: { limit: input["limit"], cursor: input["cursor"] },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalSbomExport = (raw: RawClient["server.sbom"]) => (input: ExperimentalSbomExportInput) =>
+  preserveEffect<ExperimentalSbomExportOutput>()(
+    raw["export"]({
+      params: { assetId: input["assetId"] },
+      query: { format: input["format"], version: input["version"] },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalSbom = (raw: RawClient["server.sbom"]) => ({
+  list: EndpointExperimentalSbomList(raw),
+  get: EndpointExperimentalSbomGet(raw),
+  export: EndpointExperimentalSbomExport(raw),
+})
+
+const EndpointExperimentalCveLookup = (raw: RawClient["server.cve"]) => (input?: ExperimentalCveLookupInput) =>
+  preserveEffect<ExperimentalCveLookupOutput>()(
+    raw["lookup"]({
+      query: {
+        id: input?.["id"],
+        purl: input?.["purl"],
+        version: input?.["version"],
+        cpe: input?.["cpe"],
+        mode: input?.["mode"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalCveGraph = (raw: RawClient["server.cve"]) => (input?: ExperimentalCveGraphInput) =>
+  preserveEffect<ExperimentalCveGraphOutput>()(
+    raw["graph"]({
+      query: {
+        id: input?.["id"],
+        relTypes: input?.["relTypes"],
+        nodeTypes: input?.["nodeTypes"],
+        depth: input?.["depth"],
+        limit: input?.["limit"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalCveStatus = (raw: RawClient["server.cve"]) => () =>
+  preserveEffect<ExperimentalCveStatusOutput>()(raw["status"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalCveSetMode = (raw: RawClient["server.cve"]) => (input: ExperimentalCveSetModeInput) =>
+  preserveEffect<ExperimentalCveSetModeOutput>()(
+    raw["setMode"]({ payload: { mode: input["mode"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalCveGet = (raw: RawClient["server.cve"]) => (input: ExperimentalCveGetInput) =>
+  preserveEffect<ExperimentalCveGetOutput>()(
+    raw["get"]({ params: { id: input["id"] }, query: { mode: input["mode"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalCve = (raw: RawClient["server.cve"]) => ({
+  lookup: EndpointExperimentalCveLookup(raw),
+  graph: EndpointExperimentalCveGraph(raw),
+  status: EndpointExperimentalCveStatus(raw),
+  setMode: EndpointExperimentalCveSetMode(raw),
+  get: EndpointExperimentalCveGet(raw),
+})
+
+const EndpointExperimentalIdentityPaths =
+  (raw: RawClient["server.identity"]) => (input: ExperimentalIdentityPathsInput) =>
+    preserveEffect<ExperimentalIdentityPathsOutput>()(
+      raw["paths"]({ query: { from: input["from"], to: input["to"], max_hops: input["max_hops"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const adaptGroupExperimentalIdentity = (raw: RawClient["server.identity"]) => ({
+  paths: EndpointExperimentalIdentityPaths(raw),
+})
+
+const EndpointExperimentalBomSbomList = (raw: RawClient["server.bom"]) => () =>
+  preserveEffect<ExperimentalBomSbomListOutput>()(raw["sbomList"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalBomSbomExport = (raw: RawClient["server.bom"]) => (input: ExperimentalBomSbomExportInput) =>
+  preserveEffect<ExperimentalBomSbomExportOutput>()(
+    raw["sbomExport"]({
+      params: { assetId: input["assetId"] },
+      query: { format: input["format"], version: input["version"] },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalBomAi = (raw: RawClient["server.bom"]) => () =>
+  preserveEffect<ExperimentalBomAiOutput>()(raw["ai"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalBomAiExport = (raw: RawClient["server.bom"]) => (input?: ExperimentalBomAiExportInput) =>
+  preserveEffect<ExperimentalBomAiExportOutput>()(
+    raw["aiExport"]({ query: { format: input?.["format"], version: input?.["version"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
+const EndpointExperimentalBomCloud = (raw: RawClient["server.bom"]) => () =>
+  preserveEffect<ExperimentalBomCloudOutput>()(raw["cloud"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalBomCloudExport =
+  (raw: RawClient["server.bom"]) => (input?: ExperimentalBomCloudExportInput) =>
+    preserveEffect<ExperimentalBomCloudExportOutput>()(
+      raw["cloudExport"]({ query: { format: input?.["format"], version: input?.["version"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const adaptGroupExperimentalBom = (raw: RawClient["server.bom"]) => ({
+  sbomList: EndpointExperimentalBomSbomList(raw),
+  sbomExport: EndpointExperimentalBomSbomExport(raw),
+  ai: EndpointExperimentalBomAi(raw),
+  aiExport: EndpointExperimentalBomAiExport(raw),
+  cloud: EndpointExperimentalBomCloud(raw),
+  cloudExport: EndpointExperimentalBomCloudExport(raw),
+})
+
+const EndpointExperimentalAiEntities = (raw: RawClient["server.ai"]) => (input?: ExperimentalAiEntitiesInput) =>
+  preserveEffect<ExperimentalAiEntitiesOutput>()(
+    raw["entities"]({ query: { kind: input?.["kind"], limit: input?.["limit"], cursor: input?.["cursor"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
+const EndpointExperimentalAiSummary = (raw: RawClient["server.ai"]) => () =>
+  preserveEffect<ExperimentalAiSummaryOutput>()(raw["summary"]({}).pipe(Effect.mapError(mapClientError)))
+
+const adaptGroupExperimentalAi = (raw: RawClient["server.ai"]) => ({
+  entities: EndpointExperimentalAiEntities(raw),
+  summary: EndpointExperimentalAiSummary(raw),
+})
+
+const EndpointExperimentalRuntimeStatus = (raw: RawClient["server.runtime"]) => () =>
+  preserveEffect<ExperimentalRuntimeStatusOutput>()(raw["status"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalRuntimeEvents =
+  (raw: RawClient["server.runtime"]) => (input?: ExperimentalRuntimeEventsInput) =>
+    preserveEffect<ExperimentalRuntimeEventsOutput>()(
+      raw["events"]({ query: { type: input?.["type"], limit: input?.["limit"], cursor: input?.["cursor"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const EndpointExperimentalRuntimeIngest =
+  (raw: RawClient["server.runtime"]) => (input: ExperimentalRuntimeIngestInput) =>
+    preserveEffect<ExperimentalRuntimeIngestOutput>()(
+      raw["ingest"]({
+        payload: {
+          ts: input["ts"],
+          type: input["type"],
+          node: input["node"],
+          namespace: input["namespace"],
+          pod: input["pod"],
+          container_id: input["container_id"],
+          process_path: input["process_path"],
+          args: input["args"],
+          user: input["user"],
+          unavailable: input["unavailable"],
+        },
+      }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const adaptGroupExperimentalRuntime = (raw: RawClient["server.runtime"]) => ({
+  status: EndpointExperimentalRuntimeStatus(raw),
+  events: EndpointExperimentalRuntimeEvents(raw),
+  ingest: EndpointExperimentalRuntimeIngest(raw),
+})
+
+const EndpointExperimentalIssuesList = (raw: RawClient["server.issues"]) => (input?: ExperimentalIssuesListInput) =>
+  preserveEffect<ExperimentalIssuesListOutput>()(
+    raw["list"]({
+      query: {
+        category: input?.["category"],
+        severity: input?.["severity"],
+        status: input?.["status"],
+        asset: input?.["asset"],
+        sort: input?.["sort"],
+        limit: input?.["limit"],
+        cursor: input?.["cursor"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalIssuesGet = (raw: RawClient["server.issues"]) => (input: ExperimentalIssuesGetInput) =>
+  preserveEffect<ExperimentalIssuesGetOutput>()(
+    raw["get"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalIssuesSetStatus =
+  (raw: RawClient["server.issues"]) => (input: ExperimentalIssuesSetStatusInput) =>
+    preserveEffect<ExperimentalIssuesSetStatusOutput>()(
+      raw["setStatus"]({ params: { id: input["id"] }, payload: { status: input["status"] } }).pipe(
+        Effect.mapError(mapClientError),
+      ),
+    )
+
+const adaptGroupExperimentalIssues = (raw: RawClient["server.issues"]) => ({
+  list: EndpointExperimentalIssuesList(raw),
+  get: EndpointExperimentalIssuesGet(raw),
+  setStatus: EndpointExperimentalIssuesSetStatus(raw),
+})
+
+const EndpointExperimentalRulesPacks = (raw: RawClient["server.rules"]) => () =>
+  preserveEffect<ExperimentalRulesPacksOutput>()(raw["packs"]({}).pipe(Effect.mapError(mapClientError)))
+
+const EndpointExperimentalRulesPackRules =
+  (raw: RawClient["server.rules"]) => (input: ExperimentalRulesPackRulesInput) =>
+    preserveEffect<ExperimentalRulesPackRulesOutput>()(
+      raw["packRules"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const EndpointExperimentalRulesOverride = (raw: RawClient["server.rules"]) => (input: ExperimentalRulesOverrideInput) =>
+  preserveEffect<ExperimentalRulesOverrideOutput>()(
+    raw["override"]({
+      payload: {
+        packId: input["packId"],
+        ruleId: input["ruleId"],
+        enabled: input["enabled"],
+        severity: input["severity"],
+      },
+    }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const EndpointExperimentalRulesCompliance =
+  (raw: RawClient["server.rules"]) => (input?: ExperimentalRulesComplianceInput) =>
+    preserveEffect<ExperimentalRulesComplianceOutput>()(
+      raw["compliance"]({ query: { benchmark: input?.["benchmark"] } }).pipe(Effect.mapError(mapClientError)),
+    )
+
+const adaptGroupExperimentalRules = (raw: RawClient["server.rules"]) => ({
+  packs: EndpointExperimentalRulesPacks(raw),
+  packRules: EndpointExperimentalRulesPackRules(raw),
+  override: EndpointExperimentalRulesOverride(raw),
+  compliance: EndpointExperimentalRulesCompliance(raw),
+})
+
+const EndpointExperimentalDataStores = (raw: RawClient["server.data"]) => (input?: ExperimentalDataStoresInput) =>
+  preserveEffect<ExperimentalDataStoresOutput>()(
+    raw["stores"]({ query: { limit: input?.["limit"], cursor: input?.["cursor"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
+  )
+
+const EndpointExperimentalDataStore = (raw: RawClient["server.data"]) => (input: ExperimentalDataStoreInput) =>
+  preserveEffect<ExperimentalDataStoreOutput>()(
+    raw["store"]({ params: { id: input["id"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupExperimentalData = (raw: RawClient["server.data"]) => ({
+  stores: EndpointExperimentalDataStores(raw),
+  store: EndpointExperimentalDataStore(raw),
 })
 
 const EndpointShellList = (raw: RawClient["server.shell"]) => (input?: ShellListInput) =>
@@ -2053,6 +2801,19 @@ const adaptClient = (raw: RawClient) => {
       mcp: adaptGroupExperimentalMcp(raw["server.mcp"]),
       file: adaptGroupExperimentalFile(raw["server.fs"]),
       graph: adaptGroupExperimentalGraph(raw["server.graph"]),
+      connectors: adaptGroupExperimentalConnectors(raw["server.connectors"]),
+      overview: adaptGroupExperimentalOverview(raw["server.overview"]),
+      findings: adaptGroupExperimentalFindings(raw["server.findings"]),
+      scans: adaptGroupExperimentalScans(raw["server.scans"]),
+      sbom: adaptGroupExperimentalSbom(raw["server.sbom"]),
+      cve: adaptGroupExperimentalCve(raw["server.cve"]),
+      identity: adaptGroupExperimentalIdentity(raw["server.identity"]),
+      bom: adaptGroupExperimentalBom(raw["server.bom"]),
+      ai: adaptGroupExperimentalAi(raw["server.ai"]),
+      runtime: adaptGroupExperimentalRuntime(raw["server.runtime"]),
+      issues: adaptGroupExperimentalIssues(raw["server.issues"]),
+      rules: adaptGroupExperimentalRules(raw["server.rules"]),
+      data: adaptGroupExperimentalData(raw["server.data"]),
       migration: adaptGroupExperimentalMigration(raw["server.migration"]),
       usage: adaptGroupExperimentalUsage(raw["server.usage"]),
       config: adaptGroupExperimentalConfig(raw["server.config"]),
@@ -2174,6 +2935,187 @@ const adaptClient = (raw: RawClient) => {
       schema: client.experimental.graph.schema,
       /** @deprecated Use `client.experimental.graph.status`. Removed in the next minor. */
       status: client.experimental.graph.status,
+      /** @deprecated Use `client.experimental.graph.lenses`. Removed in the next minor. */
+      lenses: client.experimental.graph.lenses,
+      /** @deprecated Use `client.experimental.graph.slice`. Removed in the next minor. */
+      slice: client.experimental.graph.slice,
+      /** @deprecated Use `client.experimental.graph.intelStatus`. Removed in the next minor. */
+      intelStatus: client.experimental.graph.intelStatus,
+      /** @deprecated Use `client.experimental.graph.overlay`. Removed in the next minor. */
+      overlay: client.experimental.graph.overlay,
+    },
+    /** @deprecated Use `client.experimental.connectors`. Removed in the next minor. */
+    connectors: {
+      /** @deprecated Use `client.experimental.connectors.status`. Removed in the next minor. */
+      status: client.experimental.connectors.status,
+      /** @deprecated Use `client.experimental.connectors.catalog`. Removed in the next minor. */
+      catalog: client.experimental.connectors.catalog,
+      /** @deprecated Use `client.experimental.connectors.listConnections`. Removed in the next minor. */
+      listConnections: client.experimental.connectors.listConnections,
+      /** @deprecated Use `client.experimental.connectors.createConnection`. Removed in the next minor. */
+      createConnection: client.experimental.connectors.createConnection,
+      /** @deprecated Use `client.experimental.connectors.getConnection`. Removed in the next minor. */
+      getConnection: client.experimental.connectors.getConnection,
+      /** @deprecated Use `client.experimental.connectors.updateConnection`. Removed in the next minor. */
+      updateConnection: client.experimental.connectors.updateConnection,
+      /** @deprecated Use `client.experimental.connectors.deleteConnection`. Removed in the next minor. */
+      deleteConnection: client.experimental.connectors.deleteConnection,
+      /** @deprecated Use `client.experimental.connectors.testConnection`. Removed in the next minor. */
+      testConnection: client.experimental.connectors.testConnection,
+      /** @deprecated Use `client.experimental.connectors.syncConnection`. Removed in the next minor. */
+      syncConnection: client.experimental.connectors.syncConnection,
+      /** @deprecated Use `client.experimental.connectors.pauseConnection`. Removed in the next minor. */
+      pauseConnection: client.experimental.connectors.pauseConnection,
+      /** @deprecated Use `client.experimental.connectors.resumeConnection`. Removed in the next minor. */
+      resumeConnection: client.experimental.connectors.resumeConnection,
+      /** @deprecated Use `client.experimental.connectors.reconnectConnection`. Removed in the next minor. */
+      reconnectConnection: client.experimental.connectors.reconnectConnection,
+      /** @deprecated Use `client.experimental.connectors.rotateCredential`. Removed in the next minor. */
+      rotateCredential: client.experimental.connectors.rotateCredential,
+      /** @deprecated Use `client.experimental.connectors.listAudit`. Removed in the next minor. */
+      listAudit: client.experimental.connectors.listAudit,
+      /** @deprecated Use `client.experimental.connectors.listAuthConfigs`. Removed in the next minor. */
+      listAuthConfigs: client.experimental.connectors.listAuthConfigs,
+      /** @deprecated Use `client.experimental.connectors.createAuthConfig`. Removed in the next minor. */
+      createAuthConfig: client.experimental.connectors.createAuthConfig,
+      /** @deprecated Use `client.experimental.connectors.deleteAuthConfig`. Removed in the next minor. */
+      deleteAuthConfig: client.experimental.connectors.deleteAuthConfig,
+      /** @deprecated Use `client.experimental.connectors.awsSetup`. Removed in the next minor. */
+      awsSetup: client.experimental.connectors.awsSetup,
+      /** @deprecated Use `client.experimental.connectors.listGithubRepos`. Removed in the next minor. */
+      listGithubRepos: client.experimental.connectors.listGithubRepos,
+      /** @deprecated Use `client.experimental.connectors.listScopeOptions`. Removed in the next minor. */
+      listScopeOptions: client.experimental.connectors.listScopeOptions,
+      /** @deprecated Use `client.experimental.connectors.startDeviceAuthorization`. Removed in the next minor. */
+      startDeviceAuthorization: client.experimental.connectors.startDeviceAuthorization,
+      /** @deprecated Use `client.experimental.connectors.getDeviceAuthorization`. Removed in the next minor. */
+      getDeviceAuthorization: client.experimental.connectors.getDeviceAuthorization,
+      /** @deprecated Use `client.experimental.connectors.cancelDeviceAuthorization`. Removed in the next minor. */
+      cancelDeviceAuthorization: client.experimental.connectors.cancelDeviceAuthorization,
+      /** @deprecated Use `client.experimental.connectors.getScope`. Removed in the next minor. */
+      getScope: client.experimental.connectors.getScope,
+      /** @deprecated Use `client.experimental.connectors.putScope`. Removed in the next minor. */
+      putScope: client.experimental.connectors.putScope,
+      /** @deprecated Use `client.experimental.connectors.unlockVault`. Removed in the next minor. */
+      unlockVault: client.experimental.connectors.unlockVault,
+      /** @deprecated Use `client.experimental.connectors.rotateMasterKey`. Removed in the next minor. */
+      rotateMasterKey: client.experimental.connectors.rotateMasterKey,
+      /** @deprecated Use `client.experimental.connectors.forgetAll`. Removed in the next minor. */
+      forgetAll: client.experimental.connectors.forgetAll,
+    },
+    /** @deprecated Use `client.experimental.overview`. Removed in the next minor. */
+    overview: {
+      /** @deprecated Use `client.experimental.overview.categories`. Removed in the next minor. */
+      categories: client.experimental.overview.categories,
+    },
+    /** @deprecated Use `client.experimental.findings`. Removed in the next minor. */
+    findings: {
+      /** @deprecated Use `client.experimental.findings.list`. Removed in the next minor. */
+      list: client.experimental.findings.list,
+      /** @deprecated Use `client.experimental.findings.get`. Removed in the next minor. */
+      get: client.experimental.findings.get,
+      /** @deprecated Use `client.experimental.findings.setStatus`. Removed in the next minor. */
+      setStatus: client.experimental.findings.setStatus,
+    },
+    /** @deprecated Use `client.experimental.scans`. Removed in the next minor. */
+    scans: {
+      /** @deprecated Use `client.experimental.scans.enqueue`. Removed in the next minor. */
+      enqueue: client.experimental.scans.enqueue,
+      /** @deprecated Use `client.experimental.scans.list`. Removed in the next minor. */
+      list: client.experimental.scans.list,
+      /** @deprecated Use `client.experimental.scans.scanners`. Removed in the next minor. */
+      scanners: client.experimental.scans.scanners,
+      /** @deprecated Use `client.experimental.scans.get`. Removed in the next minor. */
+      get: client.experimental.scans.get,
+      /** @deprecated Use `client.experimental.scans.cancel`. Removed in the next minor. */
+      cancel: client.experimental.scans.cancel,
+      /** @deprecated Use `client.experimental.scans.schedule`. Removed in the next minor. */
+      schedule: client.experimental.scans.schedule,
+    },
+    /** @deprecated Use `client.experimental.sbom`. Removed in the next minor. */
+    sbom: {
+      /** @deprecated Use `client.experimental.sbom.list`. Removed in the next minor. */
+      list: client.experimental.sbom.list,
+      /** @deprecated Use `client.experimental.sbom.get`. Removed in the next minor. */
+      get: client.experimental.sbom.get,
+      /** @deprecated Use `client.experimental.sbom.export`. Removed in the next minor. */
+      export: client.experimental.sbom.export,
+    },
+    /** @deprecated Use `client.experimental.cve`. Removed in the next minor. */
+    cve: {
+      /** @deprecated Use `client.experimental.cve.lookup`. Removed in the next minor. */
+      lookup: client.experimental.cve.lookup,
+      /** @deprecated Use `client.experimental.cve.graph`. Removed in the next minor. */
+      graph: client.experimental.cve.graph,
+      /** @deprecated Use `client.experimental.cve.status`. Removed in the next minor. */
+      status: client.experimental.cve.status,
+      /** @deprecated Use `client.experimental.cve.setMode`. Removed in the next minor. */
+      setMode: client.experimental.cve.setMode,
+      /** @deprecated Use `client.experimental.cve.get`. Removed in the next minor. */
+      get: client.experimental.cve.get,
+    },
+    /** @deprecated Use `client.experimental.identity`. Removed in the next minor. */
+    identity: {
+      /** @deprecated Use `client.experimental.identity.paths`. Removed in the next minor. */
+      paths: client.experimental.identity.paths,
+    },
+    /** @deprecated Use `client.experimental.bom`. Removed in the next minor. */
+    bom: {
+      /** @deprecated Use `client.experimental.bom.sbomList`. Removed in the next minor. */
+      sbomList: client.experimental.bom.sbomList,
+      /** @deprecated Use `client.experimental.bom.sbomExport`. Removed in the next minor. */
+      sbomExport: client.experimental.bom.sbomExport,
+      /** @deprecated Use `client.experimental.bom.ai`. Removed in the next minor. */
+      ai: client.experimental.bom.ai,
+      /** @deprecated Use `client.experimental.bom.aiExport`. Removed in the next minor. */
+      aiExport: client.experimental.bom.aiExport,
+      /** @deprecated Use `client.experimental.bom.cloud`. Removed in the next minor. */
+      cloud: client.experimental.bom.cloud,
+      /** @deprecated Use `client.experimental.bom.cloudExport`. Removed in the next minor. */
+      cloudExport: client.experimental.bom.cloudExport,
+    },
+    /** @deprecated Use `client.experimental.ai`. Removed in the next minor. */
+    ai: {
+      /** @deprecated Use `client.experimental.ai.entities`. Removed in the next minor. */
+      entities: client.experimental.ai.entities,
+      /** @deprecated Use `client.experimental.ai.summary`. Removed in the next minor. */
+      summary: client.experimental.ai.summary,
+    },
+    /** @deprecated Use `client.experimental.runtime`. Removed in the next minor. */
+    runtime: {
+      /** @deprecated Use `client.experimental.runtime.status`. Removed in the next minor. */
+      status: client.experimental.runtime.status,
+      /** @deprecated Use `client.experimental.runtime.events`. Removed in the next minor. */
+      events: client.experimental.runtime.events,
+      /** @deprecated Use `client.experimental.runtime.ingest`. Removed in the next minor. */
+      ingest: client.experimental.runtime.ingest,
+    },
+    /** @deprecated Use `client.experimental.issues`. Removed in the next minor. */
+    issues: {
+      /** @deprecated Use `client.experimental.issues.list`. Removed in the next minor. */
+      list: client.experimental.issues.list,
+      /** @deprecated Use `client.experimental.issues.get`. Removed in the next minor. */
+      get: client.experimental.issues.get,
+      /** @deprecated Use `client.experimental.issues.setStatus`. Removed in the next minor. */
+      setStatus: client.experimental.issues.setStatus,
+    },
+    /** @deprecated Use `client.experimental.rules`. Removed in the next minor. */
+    rules: {
+      /** @deprecated Use `client.experimental.rules.packs`. Removed in the next minor. */
+      packs: client.experimental.rules.packs,
+      /** @deprecated Use `client.experimental.rules.packRules`. Removed in the next minor. */
+      packRules: client.experimental.rules.packRules,
+      /** @deprecated Use `client.experimental.rules.override`. Removed in the next minor. */
+      override: client.experimental.rules.override,
+      /** @deprecated Use `client.experimental.rules.compliance`. Removed in the next minor. */
+      compliance: client.experimental.rules.compliance,
+    },
+    /** @deprecated Use `client.experimental.data`. Removed in the next minor. */
+    data: {
+      /** @deprecated Use `client.experimental.data.stores`. Removed in the next minor. */
+      stores: client.experimental.data.stores,
+      /** @deprecated Use `client.experimental.data.store`. Removed in the next minor. */
+      store: client.experimental.data.store,
     },
     /** @deprecated Use `client.experimental.migration`. Removed in the next minor. */
     migration: {

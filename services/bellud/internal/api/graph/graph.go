@@ -17,6 +17,9 @@ import (
 
 	"github.com/bellu/bellucode/services/bellud/internal/graph"
 	"github.com/bellu/bellucode/services/bellud/internal/graph/batch"
+	intelsync "github.com/bellu/bellucode/services/bellud/internal/intel/sync"
+	"github.com/bellu/bellucode/services/bellud/internal/lens"
+	"github.com/bellu/bellucode/services/bellud/internal/overlay"
 	"github.com/bellu/bellucode/services/bellud/internal/tschild"
 )
 
@@ -55,14 +58,20 @@ var idPattern = regexp.MustCompile(`^(?:[a-z][a-z0-9_]*:[0-9a-f]{32}|@[23456789a
 const maxBatchBytes = 4 << 20
 
 type handler struct {
-	engine graph.Engine
-	child  func() ChildState
+	engine  graph.Engine
+	child   func() ChildState
+	intel   func() intelsync.Status
+	lens    *lens.Service
+	overlay *overlay.Hub
 }
 
 // New returns the graph API handler. child may be nil (reported as stopped);
 // it must not block. engine may be nil (reported as disabled, routes answer 503).
-func New(engine graph.Engine, child func() ChildState) http.Handler {
+func New(engine graph.Engine, child func() ChildState, opts ...Option) http.Handler {
 	h := &handler{engine: engine, child: child}
+	for _, o := range opts {
+		o(h)
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+Prefix+"/entities", h.find)
 	mux.HandleFunc("GET "+Prefix+"/entities/{id}", h.entity)
@@ -72,6 +81,10 @@ func New(engine graph.Engine, child func() ChildState) http.Handler {
 	mux.HandleFunc("GET "+Prefix+"/diff", h.diff)
 	mux.HandleFunc("GET "+Prefix+"/schema", h.schema)
 	mux.HandleFunc("GET "+Prefix+"/status", h.status)
+	mux.HandleFunc("GET "+Prefix+"/intel/status", h.intelStatus)
+	mux.HandleFunc("GET "+Prefix+"/lenses", h.lenses)
+	mux.HandleFunc("GET "+Prefix+"/slice", h.slice)
+	mux.HandleFunc("GET "+Prefix+"/overlay", h.overlayStream)
 	mux.HandleFunc("POST "+Prefix+"/batches", h.batches)
 	return mux
 }
